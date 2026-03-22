@@ -18,3 +18,7 @@ Thumbs.db
 
 # Backups locais
 backup_*.sql
+
+# Captura automatizada (local only)
+capture.js
+screenshots/

@@ -35,6 +35,7 @@
   --accent:  #5b8af5;
   --accent2: #3d6fe0;
   --accent-fg: #fff;
+  --date-picker-filter: invert(1);
   --green:   #3ecf8e;
   --blue:    #4a9eff;
   --yellow:  #f5c542;
@@ -66,6 +67,7 @@
   --accent:  #3a6fe0;
   --accent2: #2455c0;
   --accent-fg: #fff;
+  --date-picker-filter: none;
   --green:   #1a9e6a;
   --blue:    #2576d6;
   --yellow:  #c49010;
@@ -103,6 +105,7 @@ body{font-family:var(--ff-sans);background:var(--bg);color:var(--text);min-heigh
 .btn-danger:hover{color:var(--red);border-color:var(--red);background:transparent}
 .btn-sm{padding:4px 10px;font-size:var(--fs-080)}
 .btn-icon{padding:5px 8px}
+.btn-icon svg{display:block}
 .btn-loading{position:relative;color:transparent!important}
 .btn-loading::after{content:'';position:absolute;width:12px;height:12px;border:2px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:spin .6s linear infinite}
 
@@ -111,6 +114,20 @@ input,select,textarea{background:var(--bg3);border:1px solid var(--border2);colo
 input:focus,select:focus,textarea:focus{border-color:var(--accent)}
 input::placeholder,textarea::placeholder{color:var(--text3)}
 select option{background:var(--bg3)}
+select{
+  appearance:none;
+  -webkit-appearance:none;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath d='M2 4l4 4 4-4' stroke='%238e8e9e' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+  background-repeat:no-repeat;
+  background-position:right 10px center;
+  padding-right:30px;
+  cursor:pointer;
+}
+select:focus{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath d='M2 4l4 4 4-4' stroke='%235b8af5' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E")}
+[data-theme="light"] select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath d='M2 4l4 4 4-4' stroke='%235a5a6a' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E")}
+input[type="date"]{appearance:none;-webkit-appearance:none;cursor:pointer}
+input[type="date"]::-webkit-calendar-picker-indicator{opacity:.4;cursor:pointer;filter:var(--date-picker-filter)}
+input[type="date"]:hover::-webkit-calendar-picker-indicator{opacity:.7}
 textarea{resize:vertical;min-height:80px;line-height:1.6}
 label{font-size:var(--fs-080);color:var(--text2);display:block;margin-bottom:5px}
 
@@ -190,7 +207,7 @@ label{font-size:var(--fs-080);color:var(--text2);display:block;margin-bottom:5px
 .dash-sub{font-size:var(--fs-090);color:var(--text3);margin-bottom:24px}
 
 /* COMEÇAR O DIA */
-.startday-wrap{margin-bottom:18px}
+.startday-wrap{margin-bottom:28px;padding-bottom:24px;border-bottom:1px solid var(--border)}
 .startday-title{font-size:var(--fs-080);color:var(--text3);text-transform:uppercase;letter-spacing:.08em;margin-bottom:10px}
 .startday-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:10px}
 .startday-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r2);padding:14px;display:flex;flex-direction:column;gap:8px;min-height:132px}
@@ -205,11 +222,11 @@ label{font-size:var(--fs-080);color:var(--text2);display:block;margin-bottom:5px
 .admin-title{font-size:var(--fs-500);font-weight:300}
 .admin-tabs{display:flex;gap:6px;flex-wrap:wrap}
 .admin-tab{padding:7px 12px;border:1px solid var(--border2);border-radius:999px;background:transparent;color:var(--text2);font-size:var(--fs-080);cursor:pointer}
-.admin-tab.ativo{background:var(--bg3);border-color:var(--border3);color:var(--text)}
+.admin-tab.ativo{background:var(--accent);color:var(--accent-fg);border-color:var(--accent);font-weight:500}
 .admin-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px}
 .admin-kpi{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r2);padding:12px}
 .admin-kpi-label{font-size:var(--fs-075);color:var(--text3);text-transform:uppercase;letter-spacing:.06em}
-.admin-kpi-val{font-size:1.25rem;color:var(--text);font-family:var(--ff-mono);margin-top:4px}
+.admin-kpi-val{font-size:1.5rem;color:var(--text);font-family:var(--ff-mono);font-style:normal;font-weight:500;margin-top:6px;letter-spacing:-.01em}
 .admin-note{font-size:var(--fs-080);color:var(--text3)}
 .admin-tools{display:flex;gap:8px;align-items:end;flex-wrap:wrap;margin-bottom:10px}
 .admin-tools .tool-field{display:flex;flex-direction:column;gap:4px}
@@ -219,7 +236,8 @@ label{font-size:var(--fs-080);color:var(--text2);display:block;margin-bottom:5px
 .dash-filters{display:flex;gap:8px;margin-bottom:24px;flex-wrap:wrap}
 .filter-btn{padding:5px 14px;border-radius:20px;border:1px solid var(--border);background:transparent;color:var(--text2);font-size:var(--fs-080);font-family:inherit;cursor:pointer;transition:all .15s}
 .filter-btn:hover{border-color:var(--border2);color:var(--text)}
-.filter-btn.ativo{background:var(--bg3);border-color:var(--border3);color:var(--text)}
+.filter-btn.ativo{background:var(--accent);color:var(--accent-fg);border-color:var(--accent);font-weight:500}
+.filter-btn.ativo:hover{background:var(--accent2);border-color:var(--accent2);color:var(--accent-fg)}
 .search-dash{padding:5px 12px;border-radius:20px;border:1px solid var(--border);background:transparent;color:var(--text);font-size:var(--fs-080);font-family:inherit;outline:none;width:160px;transition:all .15s}
 .search-dash:hover{border-color:var(--border2)}
 .search-dash:focus{border-color:var(--accent)}
@@ -235,6 +253,10 @@ label{font-size:var(--fs-080);color:var(--text2);display:block;margin-bottom:5px
 .proj-card[data-status="Concluído"]::before{background:var(--green)}
 .proj-card[data-status="Pausado"]::before{background:var(--text3)}
 .proj-card:hover{border-color:var(--border2);background:var(--bg3);transform:translateY(-3px);box-shadow:var(--shadow2)}
+[data-theme="light"] .proj-card{box-shadow:0 1px 3px rgba(0,0,0,.07),0 0 0 1px rgba(0,0,0,.05);border-color:transparent}
+[data-theme="light"] .proj-card:hover{box-shadow:0 4px 14px rgba(0,0,0,.10),0 0 0 1px rgba(0,0,0,.06);border-color:transparent}
+[data-theme="light"] .startday-card{box-shadow:0 1px 3px rgba(0,0,0,.06),0 0 0 1px rgba(0,0,0,.04);border-color:transparent}
+[data-theme="light"] .modal{box-shadow:0 8px 32px rgba(0,0,0,.14),0 0 0 1px rgba(0,0,0,.06)}
 .proj-card-header{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:14px;gap:8px}
 .proj-card-nome{font-size:var(--fs-200);font-weight:500;line-height:1.3;flex:1;color:var(--text)}
 .proj-card-edit{opacity:0;transition:opacity .15s;flex-shrink:0}
@@ -499,7 +521,7 @@ tr:hover .td-ações{opacity:1}
 .inline-detail-row{font-size:var(--fs-075);color:var(--text3);margin-top:2px}
 .inline-tag-wrap{margin:2px}
 .foco-placeholder{color:var(--text3);font-size:var(--fs-100);padding:3px}
-.status-select{background:transparent;border:none;padding:2px 4px;font-size:var(--fs-075);cursor:pointer;color:var(--text2)}
+.status-select{background:transparent;border:none;padding:2px 4px;font-size:var(--fs-075);cursor:pointer;color:var(--text2);appearance:none;-webkit-appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 10 10'%3E%3Cpath d='M2 3l3 3 3-3' stroke='%238e8e9e' stroke-width='1.3' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 6px center;padding-right:22px}
 .mono-cell-muted{font-size:var(--fs-075);color:var(--text3)}
 .resp-filter{font-size:var(--fs-080);padding:3px 8px;background:var(--bg3);border:1px solid var(--border2);border-radius:var(--r);color:var(--text2)}
 .inline-running{color:var(--green)}
@@ -556,8 +578,12 @@ tr:hover .td-ações{opacity:1}
     <div class="topbar-sep"></div>
     <div class="topbar-actions">
       <span class="topbar-user-name" id="topbar-nome"></span>
-      <button class="btn btn-ghost btn-sm" id="btn-admin-toggle" style="display:none" onclick="alternarPerfilAdmin()">Perfil: Admin</button>
-      <button class="topbar-theme" id="btn-tema" onclick="alternarTema()" title="Alternar tema">🌙</button>
+      <button class="btn btn-ghost btn-sm" id="btn-admin-toggle" style="display:none" onclick="alternarPerfilAdmin()">Visão admin</button>
+      <button class="topbar-theme" id="btn-tema" onclick="alternarTema()" title="Alternar tema">
+        <svg id="icon-tema-svg" width="15" height="15" viewBox="0 0 15 15" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M12.5 9.5A5.5 5.5 0 0 1 5.5 2.5a5.5 5.5 0 1 0 7 7z" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </button>
       <button class="btn btn-ghost btn-sm" onclick="fazerLogout()">Sair</button>
     </div>
   </nav>
@@ -712,7 +738,7 @@ function projetoConcluido(status) {
 // ── INIT ──
 async function init() {
   if (API === 'SUBSTITUA_PELA_URL_DO_SEU_WORKER') {
-    document.getElementById('content').innerHTML = `<div class="api-empty"><div class="api-empty-icon">⚠</div><div class="api-empty-text">Configure a URL do Worker em <code style="color:var(--red)">const API</code> no início do script.<br>Siga as instruções em <strong>INSTRUÇÕES.md</strong>.</div></div>`;
+    document.getElementById('content').innerHTML = `<div class="api-empty"><div class="api-empty-icon"><svg width="30" height="30" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 3.5l9 15.5H3l9-15.5z" stroke="currentColor" stroke-width="1.7"/><path d="M12 9v5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/><circle cx="12" cy="16.7" r="1" fill="currentColor"/></svg></div><div class="api-empty-text">Configure a URL do Worker em <code style="color:var(--red)">const API</code> no início do script.<br>Siga as instruções em <strong>INSTRUÇÕES.md</strong>.</div></div>`;
     document.getElementById('page-app').classList.remove('hidden');
     return;
   }
@@ -768,7 +794,7 @@ function syncAdminModeUI() {
     return;
   }
   btn.style.display = 'inline-flex';
-  btn.textContent = ADMIN_MODE === 'admin' ? 'Perfil: Admin' : 'Perfil: Normal';
+  btn.textContent = ADMIN_MODE === 'admin' ? 'Visão admin' : 'Visão membro';
   btn.title = ADMIN_MODE === 'admin'
     ? 'Clique para usar o sistema como usuário normal'
     : 'Clique para voltar ao perfil admin';
@@ -1011,7 +1037,7 @@ function renderProjetosDash(projetos, grupos) {
   const busca = BUSCA_DASH.toLowerCase().trim();
   const lista = busca ? projetos.filter(p => p.nome.toLowerCase().includes(busca)) : projetos;
   if (!lista.length) {
-    return `<div class="empty-state"><div class="empty-icon" aria-hidden="true">🏗</div><div class="empty-text">Nenhum projeto encontrado</div><div class="empty-sub">${busca ? 'Tente outro termo de busca' : FILTRO_STATUS !== 'todos' ? 'Tente outro filtro' : 'Crie o primeiro projeto'}</div></div>`;
+    return `<div class="empty-state"><div class="empty-icon" aria-hidden="true"><svg width="36" height="36" viewBox="0 0 24 24" fill="none"><path d="M3 18h18" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><path d="M7 18V9.5h4V18M13 18V6h4v12" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><path d="M8 7.5l2-2 2 2M14 4l2-2 2 2" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></div><div class="empty-text">Nenhum projeto encontrado</div><div class="empty-sub">${busca ? 'Tente outro termo de busca' : FILTRO_STATUS !== 'todos' ? 'Tente outro filtro' : 'Crie o primeiro projeto'}</div></div>`;
   }
 
   const collapsed = JSON.parse(localStorage.getItem('telier_grupos_collapsed') || '[]');
@@ -1035,8 +1061,8 @@ function renderProjetosDash(projetos, grupos) {
           <span class="grupo-nome">${esc(grupo.nome)}</span>
           <span class="grupo-count">${gprojetos.length}</span>
           <div class="grupo-actions" onclick="event.stopPropagation()">
-            <button class="btn btn-ghost btn-icon btn-sm" onclick="modalRenomearGrupo('${grupo.id}','${esc(grupo.nome)}')" title="Renomear">✎</button>
-            <button class="btn btn-ghost btn-icon btn-sm" onclick="deletarGrupo('${grupo.id}','${esc(grupo.nome)}')" title="Excluir grupo">✕</button>
+            <button class="btn btn-ghost btn-icon btn-sm" onclick="modalRenomearGrupo('${grupo.id}','${esc(grupo.nome)}')" title="Renomear"><svg width="13" height="13" viewBox="0 0 13 13" fill="none"><path d="M2 9.5V11h1.5l5.5-5.5-1.5-1.5L2 9.5zM10.85 2.65a1 1 0 0 0-1.42 0l-.79.79 1.42 1.42.79-.79a1 1 0 0 0 0-1.42z" fill="currentColor"/></svg></button>
+            <button class="btn btn-ghost btn-icon btn-sm" onclick="deletarGrupo('${grupo.id}','${esc(grupo.nome)}')" title="Excluir grupo"><svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M1.5 1.5l9 9M10.5 1.5l-9 9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></button>
           </div>
         </div>
         ${col ? '' : gprojetos.length
@@ -1063,7 +1089,7 @@ function renderProjetosDash(projetos, grupos) {
     }
   }
 
-  return html || `<div class="empty-state"><div class="empty-icon" aria-hidden="true">🏗</div><div class="empty-text">Nenhum projeto encontrado</div></div>`;
+  return html || `<div class="empty-state"><div class="empty-icon" aria-hidden="true"><svg width="36" height="36" viewBox="0 0 24 24" fill="none"><path d="M3 18h18" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><path d="M7 18V9.5h4V18M13 18V6h4v12" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><path d="M8 7.5l2-2 2 2M14 4l2-2 2 2" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></div><div class="empty-text">Nenhum projeto encontrado</div></div>`;
 }
 
 function renderCardsDash(projetos) {
@@ -1083,7 +1109,7 @@ function renderCardsDash(projetos) {
         onclick="if(!_dragJustEnded)abrirProjeto('${p.id}')">
         <div class="proj-card-header">
           <div class="proj-card-nome">${esc(p.nome)}</div>
-          ${souDono(p.dono_id) ? `<button class="btn btn-ghost btn-icon btn-sm proj-card-edit" onclick="event.stopPropagation();modalEditarProjeto('${p.id}')" title="Editar">✎</button>` : ''}
+          ${souDono(p.dono_id) ? `<button class="btn btn-ghost btn-icon btn-sm proj-card-edit" onclick="event.stopPropagation();modalEditarProjeto('${p.id}')" title="Editar"><svg width="13" height="13" viewBox="0 0 13 13" fill="none"><path d="M2 9.5V11h1.5l5.5-5.5-1.5-1.5L2 9.5zM10.85 2.65a1 1 0 0 0-1.42 0l-.79.79 1.42 1.42.79-.79a1 1 0 0 0 0-1.42z" fill="currentColor"/></svg></button>` : ''}
         </div>
         <div class="card-meta">
           <div class="card-meta-item"><span class="card-meta-label">Fase</span>${tag(p.fase, FT[p.fase])}</div>
@@ -1100,7 +1126,7 @@ function renderCardsDash(projetos) {
         </div>` : ''}
         <div class="proj-card-footer">
           <div class="proj-card-dono">${avatar(p.dono_nome,'avatar-sm')} <span>${esc(p.dono_nome||'—')}</span></div>
-          ${urgente ? `<div class="proj-urgente ${dias <= 0 ? 'overdue' : 'warning'}">⚠ ${dias <= 0 ? 'vencido' : dias + 'd'}</div>` : ''}
+          ${urgente ? `<div class="proj-urgente ${dias <= 0 ? 'overdue' : 'warning'}"><svg width="11" height="11" viewBox="0 0 24 24" fill="none"><path d="M12 3.5l9 15.5H3l9-15.5z" stroke="currentColor" stroke-width="1.9"/><path d="M12 9v5" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/><circle cx="12" cy="16.7" r="1" fill="currentColor"/></svg>${dias <= 0 ? 'vencido' : dias + 'd'}</div>` : ''}
         </div>
         ${p.minha_tarefa_foco ? `<div class="proj-foco-chip">→ ${esc(p.minha_tarefa_foco)}</div>` : ''}
       </div>`;
@@ -1498,7 +1524,6 @@ function renderProjeto(proj, tarefas, decisoes, abaAtiva) {
 
   const c = document.getElementById('content');
   c.innerHTML = `
-    <button class="btn-back" onclick="renderDash()">← Projetos</button>
     <div class="proj-hero" data-status="${esc(statusProjeto)}">
       <div class="proj-hero-top">
         <div class="proj-hero-left">
@@ -1612,10 +1637,10 @@ function renderLista(el, tarefas) {
     const podeCron = minha || (t.colaboradores_ids || []).includes(EU?.id) || isAdmin();
     const sessaoAtiva = timerAtivoPorTarefa[t.id];
     const horas = sessaoAtiva
-      ? `<button class="btn btn-sm btn-danger" onclick="pararCronometro('${sessaoAtiva}')" title="Parar cronômetro">■ Parar</button>`
+      ? `<button class="btn btn-sm btn-danger" onclick="pararCronometro('${sessaoAtiva}')" title="Parar cronômetro"><svg width="11" height="11" viewBox="0 0 11 11" fill="none" style="margin-right:4px"><rect x="2" y="2" width="7" height="7" rx="1" fill="currentColor"/></svg>Parar</button>`
       : podeCron
-        ? `<button class="btn btn-ghost btn-icon btn-sm" onclick="iniciarCronometro('${t.id}','${esc(t.nome)}')" title="Iniciar cronômetro" style="color:var(--green)">▶</button>`
-        : `<button class="btn btn-ghost btn-icon btn-sm" disabled title="Você não é colaborador desta tarefa" style="opacity:.3">▶</button>`;
+        ? `<button class="btn btn-ghost btn-icon btn-sm" onclick="iniciarCronometro('${t.id}','${esc(t.nome)}')" title="Iniciar cronômetro" style="color:var(--green)"><svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M4 2.5l5 3.5-5 3.5v-7z" fill="currentColor"/></svg></button>`
+        : `<button class="btn btn-ghost btn-icon btn-sm" disabled title="Você não é colaborador desta tarefa" style="opacity:.3"><svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M4 2.5l5 3.5-5 3.5v-7z" fill="currentColor"/></svg></button>`;
 
     const data = t.data ? prazoFmt(t.data, true) : '—';
 
@@ -1636,9 +1661,9 @@ function renderLista(el, tarefas) {
       <td>${horas}</td>
       <td><span class="mono mono-cell-muted">${esc(data)}</span></td>
       <td><div class="td-ações">
-        ${minha ? `<button class="btn btn-ghost btn-icon btn-sm" onclick="modalColabsTarefa('${t.id}')" title="Colaboradores">👥</button>` : ''}
-        ${canEdit ? `<button class="btn btn-ghost btn-icon btn-sm" onclick="modalEditarTarefa('${t.id}')" title="Editar">✎</button>` : ''}
-        ${canEdit ? `<button class="btn btn-danger btn-icon btn-sm" onclick="deletarTarefa('${t.id}')" title="Excluir">✕</button>` : ''}
+        ${minha ? `<button class="btn btn-ghost btn-icon btn-sm" onclick="modalColabsTarefa('${t.id}')" title="Colaboradores da tarefa"><svg width="14" height="14" viewBox="0 0 14 14" fill="none"><circle cx="5" cy="4.5" r="2" stroke="currentColor" stroke-width="1.3"/><path d="M1.5 11.5c0-1.93 1.57-3.5 3.5-3.5s3.5 1.57 3.5 3.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/><path d="M9 7a2 2 0 1 0 0-4M12 11.5c0-1.65-1.12-3.04-2.66-3.43" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg></button>` : ''}
+        ${canEdit ? `<button class="btn btn-ghost btn-icon btn-sm" onclick="modalEditarTarefa('${t.id}')" title="Editar tarefa"><svg width="13" height="13" viewBox="0 0 13 13" fill="none"><path d="M2 9.5V11h1.5l5.5-5.5-1.5-1.5L2 9.5zM10.85 2.65a1 1 0 0 0-1.42 0l-.79.79 1.42 1.42.79-.79a1 1 0 0 0 0-1.42z" fill="currentColor"/></svg></button>` : ''}
+        ${canEdit ? `<button class="btn btn-danger btn-icon btn-sm" onclick="deletarTarefa('${t.id}')" title="Excluir tarefa"><svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M1.5 1.5l9 9M10.5 1.5l-9 9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></button>` : ''}
       </div></td>
     </tr>`;
   }).join('');
@@ -1672,7 +1697,7 @@ function renderMapa(el, tarefas) {
     .sort((a,b) => { const p = PO[a.prioridade]-PO[b.prioridade]; return p || DO[a.complexidade]-DO[b.complexidade]; });
 
   if (!pendentes.length) {
-    el.innerHTML = `<div class="empty-state"><div class="empty-icon" aria-hidden="true">✓</div><div class="empty-text">Todas as tarefas concluídas</div></div>`;
+    el.innerHTML = `<div class="empty-state"><div class="empty-icon" aria-hidden="true"><svg width="36" height="36" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.6"/><path d="M8 12.5l2.6 2.6L16.5 9.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></div><div class="empty-text">Todas as tarefas concluídas</div></div>`;
     return;
   }
 
@@ -1752,7 +1777,7 @@ async function renderRelatorio(el, tarefas) {
     </div>`;
   });
 
-  el.innerHTML = html || `<div class="empty-state"><div class="empty-icon" aria-hidden="true">📋</div><div class="empty-text">Nenhuma tarefa</div></div>`;
+  el.innerHTML = html || `<div class="empty-state"><div class="empty-icon" aria-hidden="true"><svg width="36" height="36" viewBox="0 0 24 24" fill="none"><rect x="7" y="4" width="10" height="15" rx="2" stroke="currentColor" stroke-width="1.6"/><path d="M10 4.5h4M10 9h4M10 12h4M10 15h4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></div><div class="empty-text">Nenhuma tarefa</div></div>`;
 }
 
 // ── DECISÕES ──
@@ -1772,7 +1797,7 @@ function renderDecisoes(projetoId, decisoes, canEdit) {
           <div class="decisao-texto">${esc(d.descricao)}</div>
           <div class="decisao-autor">${avatar(d.dono_nome,'avatar-sm')} ${esc(d.dono_nome||'—')}</div>
         </div>
-        ${(souDono(d.dono_id)||canEdit) ? `<div style="display:flex;gap:4px;flex-shrink:0"><button class="decisao-del" onclick="modalEditarDecisao('${d.id}','${projetoId}',\`${d.descricao.replace(/`/g,'&#96;')}\`,'${d.data||''}')" title="Editar" style="color:var(--text2)">✎</button><button class="decisao-del" onclick="deletarDecisao('${d.id}','${projetoId}')" title="Excluir">✕</button></div>` : ''}
+        ${(souDono(d.dono_id)||canEdit) ? `<div style="display:flex;gap:4px;flex-shrink:0"><button class="decisao-del" onclick="modalEditarDecisao('${d.id}','${projetoId}',\`${d.descricao.replace(/`/g,'&#96;')}\`,'${d.data||''}')" title="Editar" style="color:var(--text2)"><svg width="13" height="13" viewBox="0 0 13 13" fill="none"><path d="M2 9.5V11h1.5l5.5-5.5-1.5-1.5L2 9.5zM10.85 2.65a1 1 0 0 0-1.42 0l-.79.79 1.42 1.42.79-.79a1 1 0 0 0 0-1.42z" fill="currentColor"/></svg></button><button class="decisao-del" onclick="deletarDecisao('${d.id}','${projetoId}')" title="Excluir"><svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M1.5 1.5l9 9M10.5 1.5l-9 9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></button></div>` : ''}
       </div>`).join('')
     : `<div class="decisoes-empty">Nenhuma decisão registrada ainda.</div>`}`;
 }
@@ -1972,7 +1997,7 @@ async function modalPermissoes(projetoId) {
   const editorRows = editores.map(e => `
     <div class="editor-row">
       <div class="editor-info">${avatar(e.nome)} ${esc(e.nome)} <span class="inline-user-handle">@${esc(e.usuario_login)}</span></div>
-      <button class="editor-del" onclick="removerPerm('${projetoId}','${e.usuario_id}')" title="Remover">✕</button>
+      <button class="editor-del" onclick="removerPerm('${projetoId}','${e.usuario_id}')" title="Remover"><svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M1.5 1.5l9 9M10.5 1.5l-9 9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></button>
     </div>`).join('') || `<div class="inline-muted-sm">Nenhum colaborador adicionado</div>`;
 
   abrirModal(`
@@ -2108,7 +2133,7 @@ async function modalColabsTarefa(tarefaId) {
   const colabRows = colabs.map(c => `
     <div class="colab-row">
       <div class="colab-info">${avatar(c.nome)} <span>${esc(c.nome)}</span> <span class="inline-user-handle">@${esc(c.usuario_login)}</span></div>
-      <button class="colab-del" onclick="removerColab('${tarefaId}','${c.id}')" title="Remover">✕</button>
+      <button class="colab-del" onclick="removerColab('${tarefaId}','${c.id}')" title="Remover"><svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M1.5 1.5l9 9M10.5 1.5l-9 9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></button>
     </div>`).join('') || `<div class="inline-muted-sm">Nenhum colaborador adicionado</div>`;
 
   abrirModal(`
@@ -2327,10 +2352,10 @@ function renderTimerDock() {
           <div class="timer-card-nome">${esc(t.tarefa_nome)}</div>
         </div>
         <div class="timer-display${longo ? ' timer-alerta' : ''}" id="tdisp-${sessaoId}">${fmtDuracao(segundos)}</div>
-        ${longo ? `<div class="timer-aviso">⚠ Timer rodando há mais de ${Math.floor(horas)}h</div>` : ''}
+        ${longo ? `<div class="timer-aviso"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" style="vertical-align:-2px;margin-right:4px"><path d="M12 3.5l9 15.5H3l9-15.5z" stroke="currentColor" stroke-width="1.9"/><path d="M12 9v5" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/><circle cx="12" cy="16.7" r="1" fill="currentColor"/></svg>Timer rodando há mais de ${Math.floor(horas)}h</div>` : ''}
         <div class="timer-actions">
-          <button class="btn btn-sm" onclick="modalAdicionarIntervalo('${sessaoId}')">+ Intervalo</button>
-          <button class="btn btn-sm btn-danger" onclick="pararCronometro('${sessaoId}')">■ Parar</button>
+          <button class="btn btn-sm" onclick="modalAdicionarIntervalo('${sessaoId}')"><svg width="11" height="11" viewBox="0 0 11 11" fill="none" style="margin-right:4px"><path d="M5.5 2v7M2 5.5h7" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>Intervalo</button>
+          <button class="btn btn-sm btn-danger" onclick="pararCronometro('${sessaoId}')"><svg width="11" height="11" viewBox="0 0 11 11" fill="none" style="margin-right:4px"><rect x="2" y="2" width="7" height="7" rx="1" fill="currentColor"/></svg>Parar</button>
         </div>
       </div>`;
   }).join('');
@@ -2406,8 +2431,8 @@ async function renderSessoesTarefa(tarefaId, containerEl) {
               <div class="intervalo-tipo">${esc(iv.tipo)}</div>
               <div class="intervalo-tempo">${fmtDatetime(iv.inicio)} → ${iv.fim ? fmtDatetime(iv.fim) : 'aberto'}</div>
               ${dur !== null ? `<div class="intervalo-duracao">${dur}min</div>` : ''}
-              <button class="btn btn-danger btn-icon btn-sm" onclick="editarIntervalo('${iv.id}')" title="Editar">✎</button>
-              <button class="btn btn-danger btn-icon btn-sm" onclick="deletarIntervalo('${iv.id}','${tarefaId}')" title="Excluir">✕</button>
+              <button class="btn btn-danger btn-icon btn-sm" onclick="editarIntervalo('${iv.id}')" title="Editar"><svg width="13" height="13" viewBox="0 0 13 13" fill="none"><path d="M2 9.5V11h1.5l5.5-5.5-1.5-1.5L2 9.5zM10.85 2.65a1 1 0 0 0-1.42 0l-.79.79 1.42 1.42.79-.79a1 1 0 0 0 0-1.42z" fill="currentColor"/></svg></button>
+              <button class="btn btn-danger btn-icon btn-sm" onclick="deletarIntervalo('${iv.id}','${tarefaId}')" title="Excluir"><svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M1.5 1.5l9 9M10.5 1.5l-9 9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></button>
             </div>`;
           }).join('')}
         </div>` : '';
@@ -2421,9 +2446,9 @@ async function renderSessoesTarefa(tarefaId, containerEl) {
             </div>
             <div class="sessao-liquido" ${ativa ? `id="sdur-${s.id}"` : ''}>${fmtDuracao(duracaoSeg)}</div>
             <div class="sessao-actions">
-              <button class="btn btn-ghost btn-icon btn-sm" onclick="editarSessao('${s.id}','${s.inicio}','${s.fim||''}')" title="Editar">✎</button>
-              <button class="btn btn-ghost btn-icon btn-sm" onclick="modalAdicionarIntervalo('${s.id}')" title="+ Intervalo">+</button>
-              <button class="btn btn-danger btn-icon btn-sm" onclick="deletarSessao('${s.id}','${tarefaId}')" title="Excluir">✕</button>
+              <button class="btn btn-ghost btn-icon btn-sm" onclick="editarSessao('${s.id}','${s.inicio}','${s.fim||''}')" title="Editar"><svg width="13" height="13" viewBox="0 0 13 13" fill="none"><path d="M2 9.5V11h1.5l5.5-5.5-1.5-1.5L2 9.5zM10.85 2.65a1 1 0 0 0-1.42 0l-.79.79 1.42 1.42.79-.79a1 1 0 0 0 0-1.42z" fill="currentColor"/></svg></button>
+              <button class="btn btn-ghost btn-icon btn-sm" onclick="modalAdicionarIntervalo('${s.id}')" title="Adicionar intervalo"><svg width="11" height="11" viewBox="0 0 11 11" fill="none"><path d="M5.5 2v7M2 5.5h7" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg></button>
+              <button class="btn btn-danger btn-icon btn-sm" onclick="deletarSessao('${s.id}','${tarefaId}')" title="Excluir"><svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M1.5 1.5l9 9M10.5 1.5l-9 9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></button>
             </div>
           </div>
           ${intervalosHtml}
@@ -2519,8 +2544,13 @@ async function deletarIntervalo(id, tarefaId) {
 function aplicarTema(tema) {
   document.documentElement.setAttribute('data-theme', tema);
   localStorage.setItem('ea_tema', tema);
-  const btn = document.getElementById('btn-tema');
-  if (btn) btn.textContent = tema === 'dark' ? '🌙' : '☀️';
+  const btn = document.getElementById('icon-tema-svg');
+  if (!btn) return;
+  if (tema === 'dark') {
+    btn.innerHTML = '<path d="M12.5 9.5A5.5 5.5 0 0 1 5.5 2.5a5.5 5.5 0 1 0 7 7z" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>';
+  } else {
+    btn.innerHTML = '<circle cx="7.5" cy="7.5" r="2.5" stroke="currentColor" stroke-width="1.4"/><path d="M7.5 1v1.5M7.5 12v1.5M1 7.5h1.5M12 7.5h1.5M3.05 3.05l1.06 1.06M10.9 10.9l1.06 1.06M3.05 11.95l1.06-1.06M10.9 4.1l1.06-1.06" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>';
+  }
 }
 
 function alternarTema() {
