@@ -264,6 +264,9 @@ label{font-size:12px;color:var(--text2);display:block;margin-bottom:5px}
 .proj-meta{display:flex;flex-wrap:wrap;gap:16px;margin-bottom:18px}
 .proj-meta-item{display:flex;flex-direction:column;gap:5px}
 .proj-meta-label{font-size:10px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.07em}
+.card-meta{display:flex;flex-wrap:wrap;gap:8px 14px;margin-bottom:10px}
+.card-meta-item{display:flex;flex-direction:column;gap:3px}
+.card-meta-label{font-size:9px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.06em}
 .proj-stats{display:flex;align-items:center;gap:16px;margin-bottom:12px;flex-wrap:wrap}
 .proj-stat{display:flex;flex-direction:column;gap:2px}
 .proj-stat-label{font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:.06em}
@@ -932,11 +935,13 @@ function renderCardsDash(projetos) {
           <div class="proj-card-nome">${esc(p.nome)}</div>
           ${souDono(p.dono_id) ? `<button class="btn btn-ghost btn-icon btn-sm proj-card-edit" onclick="event.stopPropagation();modalEditarProjeto('${p.id}')" title="Editar">✎</button>` : ''}
         </div>
-        <div class="proj-card-tags">
-          ${tag(p.fase, FT[p.fase], 'Fase')} ${tag(statusProjeto, null, 'Status')} ${tag(p.prioridade, PT[p.prioridade], 'Prioridade')}
-          ${p.prazo ? `<span class="tag ${urgente?'tag-red':'tag-gray'} mono" title="Prazo">${prazoFmt(p.prazo, true)}</span>` : ''}
-          ${p.area_m2 ? `<span class="tag tag-gray mono" title="Área">${p.area_m2.toLocaleString('pt-BR')} m²</span>` : ''}
-          ${timerAtivo ? `<span class="tag tag-green" style="display:inline-flex;align-items:center;gap:4px" title="Timer ativo"><span style="animation:pulse 1.5s ease infinite">●</span> Em progresso</span>` : ''}
+        <div class="card-meta">
+          <div class="card-meta-item"><span class="card-meta-label">Fase</span>${tag(p.fase, FT[p.fase])}</div>
+          <div class="card-meta-item"><span class="card-meta-label">Status</span>${tag(statusProjeto)}</div>
+          <div class="card-meta-item"><span class="card-meta-label">Prioridade</span>${tag(p.prioridade, PT[p.prioridade])}</div>
+          ${p.prazo ? `<div class="card-meta-item"><span class="card-meta-label">Prazo</span><span class="tag ${urgente?'tag-red':'tag-gray'} mono">${prazoFmt(p.prazo, true)}</span></div>` : ''}
+          ${p.area_m2 ? `<div class="card-meta-item"><span class="card-meta-label">Área</span><span class="tag tag-gray mono">${p.area_m2.toLocaleString('pt-BR')} m²</span></div>` : ''}
+          ${timerAtivo ? `<div class="card-meta-item"><span class="card-meta-label">Ativo</span><span class="tag tag-green" style="display:inline-flex;align-items:center;gap:4px"><span style="animation:pulse 1.5s ease infinite">●</span> Em progresso</span></div>` : ''}
         </div>
         ${total ? `
         <div class="proj-card-progress">
@@ -1226,6 +1231,11 @@ function renderProjeto(proj, tarefas, decisoes, abaAtiva) {
   const urgente = dias !== null && dias <= 7 && !projetoConcluido(statusProjeto);
   const canEdit = podeEditar(proj);
 
+  setBreadcrumb([
+    { label: 'Projetos', onClick: 'renderDash()' },
+    { label: proj.nome },
+  ]);
+
   const c = document.getElementById('content');
   c.innerHTML = `
     <div class="proj-hero" data-status="${esc(statusProjeto)}">
@@ -1388,7 +1398,7 @@ function renderLista(el, tarefas) {
         <thead><tr>
           <th></th><th>Tarefa</th><th>Origem</th>
           <th>Complexidade</th><th>Prioridade</th><th>Status</th>
-          <th>Tempo</th><th>Data</th><th></th>
+          <th>Tempo</th><th>Data</th><th>Ações</th>
         </tr></thead>
         <tbody>${rows || `<tr><td colspan="9" style="text-align:center;color:var(--text3);padding:32px;font-style:italic">Nenhuma tarefa ainda — clique em "+ Nova tarefa" para começar</td></tr>`}</tbody>
       </table>
