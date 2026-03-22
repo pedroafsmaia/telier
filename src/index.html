@@ -398,6 +398,12 @@ tr:hover .td-ações{opacity:1}
     <div class="auth-sub">Acesse sua conta para continuar</div>
     <div class="form-row"><label>Usuário</label><input type="text" id="l-login" placeholder="seu_usuario" autocomplete="username"></div>
     <div class="form-row"><label>Senha</label><input type="password" id="l-senha" placeholder="••••••••" autocomplete="current-password"></div>
+    <div class="form-row" style="margin-top:-10px;margin-bottom:12px">
+      <label style="display:flex;align-items:center;gap:8px;cursor:pointer;margin:0">
+        <input type="checkbox" id="l-show-pass" onchange="toggleSenhaLogin()" style="width:auto">
+        <span>Mostrar senha</span>
+      </label>
+    </div>
     <button class="btn btn-primary" id="btn-login" onclick="fazerLogin()">Entrar</button>
     <button class="btn" style="width:100%;justify-content:center;margin-top:8px" onclick="modalCadastroPublico()">Criar minha conta</button>
     <button class="btn btn-ghost" id="btn-admin-setup" style="width:100%;justify-content:center;margin-top:8px;display:none" onclick="mostrar('setup')">Criar administrador inicial</button>
@@ -599,6 +605,13 @@ function alternarPerfilAdmin() {
 }
 
 // ── AUTH ──
+function toggleSenhaLogin() {
+  const input = document.getElementById('l-senha');
+  const check = document.getElementById('l-show-pass');
+  if (!input || !check) return;
+  input.type = check.checked ? 'text' : 'password';
+}
+
 async function fazerLogin() {
   const errEl = document.getElementById('login-err');
   errEl.classList.add('hidden');
