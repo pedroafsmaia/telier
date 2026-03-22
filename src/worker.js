@@ -344,12 +344,12 @@ export default {
       if (method === 'POST') {
         const [u, e] = await requireAuth(request, env);
         if (e) return fail('Não autorizado', 401);
-        const { nome, status, prioridade, dificuldade, horas_decorridas, data } = await request.json();
+        const { nome, status, prioridade, dificuldade, data } = await request.json();
         if (!nome?.trim()) return fail('Nome obrigatório');
         const id = 'tsk_' + uid();
         await env.DB.prepare(
-          'INSERT INTO tarefas (id, projeto_id, nome, status, prioridade, dificuldade, horas_decorridas, data, dono_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)'
-        ).bind(id, projetoId, nome.trim(), status || 'A fazer', prioridade || 'Média', dificuldade || 'Moderada', horas_decorridas || null, data || null, u.uid).run();
+          'INSERT INTO tarefas (id, projeto_id, nome, status, prioridade, dificuldade, data, dono_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?)'
+        ).bind(id, projetoId, nome.trim(), status || 'A fazer', prioridade || 'Média', dificuldade || 'Moderada', data || null, u.uid).run();
         return ok({ id });
       }
     }
@@ -363,11 +363,11 @@ export default {
         const [u, e] = await requireAuth(request, env);
         if (e) return fail('Não autorizado', 401);
         if (!await podeEditarTarefa(env, tarefaId, u.uid, u.papel)) return fail('Sem permissão', 403);
-        const { nome, status, prioridade, dificuldade, horas_decorridas, data } = await request.json();
+        const { nome, status, prioridade, dificuldade, data } = await request.json();
         if (!nome?.trim()) return fail('Nome obrigatório');
         await env.DB.prepare(
-          'UPDATE tarefas SET nome=?, status=?, prioridade=?, dificuldade=?, horas_decorridas=?, data=?, atualizado_em=datetime("now") WHERE id=?'
-        ).bind(nome.trim(), status, prioridade, dificuldade, horas_decorridas || null, data || null, tarefaId).run();
+          'UPDATE tarefas SET nome=?, status=?, prioridade=?, dificuldade=?, data=?, atualizado_em=datetime("now") WHERE id=?'
+        ).bind(nome.trim(), status, prioridade, dificuldade, data || null, tarefaId).run();
         return ok({ ok: true });
       }
 
