@@ -261,6 +261,8 @@ label{font-size:12px;color:var(--text2);display:block;margin-bottom:5px}
 .proj-nome{font-size:24px;font-weight:300;color:var(--text);line-height:1.2;margin-bottom:4px}
 .proj-dono{font-size:12px;color:var(--text3);display:flex;align-items:center;gap:5px}
 .proj-tags{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px}
+.btn-back{background:none;border:none;color:var(--text3);font-size:13px;cursor:pointer;padding:4px 0;margin-bottom:14px;display:inline-flex;align-items:center;gap:6px;transition:color .15s;font-family:inherit}
+.btn-back:hover{color:var(--text)}
 .proj-meta{display:flex;flex-wrap:wrap;gap:16px;margin-bottom:18px}
 .proj-meta-item{display:flex;flex-direction:column;gap:5px}
 .proj-meta-label{font-size:10px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.07em}
@@ -1206,7 +1208,9 @@ async function abrirUsuarioAdmin(usuarioId) {
 // ── PROJETO ──
 async function abrirProjeto(id) {
   window.scrollTo(0, 0);
-  document.getElementById('content').innerHTML = `<div class="loading"><div class="spinner"></div></div>`;
+  const c = document.getElementById('content');
+  c.style.opacity = '0.4';
+  c.style.pointerEvents = 'none';
   try {
     const [projeto, tarefas, decisoes] = await Promise.all([
       req('GET', `/projetos/${id}`),
@@ -1215,10 +1219,16 @@ async function abrirProjeto(id) {
     ]);
     PROJETO = projeto; TAREFAS = tarefas;
     document.title = projeto.nome + ' · Telier';
+    c.style.opacity = '';
+    c.style.pointerEvents = '';
     renderProjeto(projeto, tarefas, decisoes, 'lista');
     VISTA_ATUAL = 'projeto';
     slideContent('right');
-  } catch (e) { document.getElementById('content').innerHTML = `<div style="color:var(--red);padding:24px;font-size:13px">${esc(e.message)}</div>`; }
+  } catch (e) {
+    c.style.opacity = '';
+    c.style.pointerEvents = '';
+    c.innerHTML = `<div style="color:var(--red);padding:24px;font-size:13px">${esc(e.message)}</div>`;
+  }
 }
 
 function renderProjeto(proj, tarefas, decisoes, abaAtiva) {
@@ -1231,13 +1241,11 @@ function renderProjeto(proj, tarefas, decisoes, abaAtiva) {
   const urgente = dias !== null && dias <= 7 && !projetoConcluido(statusProjeto);
   const canEdit = podeEditar(proj);
 
-  setBreadcrumb([
-    { label: 'Projetos', onClick: 'renderDash()' },
-    { label: proj.nome },
-  ]);
+  setBreadcrumb([]);
 
   const c = document.getElementById('content');
   c.innerHTML = `
+    <button class="btn-back" onclick="renderDash()">← Projetos</button>
     <div class="proj-hero" data-status="${esc(statusProjeto)}">
       <div class="proj-hero-top">
         <div class="proj-hero-left">
