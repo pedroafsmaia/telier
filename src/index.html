@@ -428,15 +428,19 @@ tr:hover .td-ações{opacity:1}
 
 /* ── SESSÕES DE TEMPO ── */
 .sessoes-sep { height: 1px; background: var(--border); margin: 32px 0 24px; }
-.sessoes-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+.sessoes-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
 .sessoes-title { font-size: var(--fs-080); font-weight: 500; color: var(--text2); text-transform: uppercase; letter-spacing: .08em; }
-.sessao-item { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--r2); margin-bottom: 8px; overflow: hidden; }
+.sessoes-kpi { display:flex; align-items:center; gap:8px; margin-bottom:10px; padding:8px 10px; border:1px solid var(--border); border-radius:var(--r); background:var(--bg3); }
+.sessoes-kpi-label { font-size: var(--fs-080); color: var(--text3); }
+.sessoes-kpi-val { font-family: var(--ff-mono); font-size: var(--fs-100); color: var(--green); }
+.sessao-item { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--r2); margin-bottom: 6px; overflow: hidden; }
 .sessao-item.ativa { border-color: rgba(62,207,142,.3); }
-.sessao-header { display: flex; align-items: center; gap: 10px; padding: 12px 14px; }
-.sessao-tempo { font-family: var(--ff-mono); font-size: var(--fs-090); color: var(--text2); flex: 1; }
-.sessao-liquido { font-family: var(--ff-mono); font-size: var(--fs-100); font-weight: 500; color: var(--green); }
-.sessao-user { font-size: var(--fs-075); color: var(--text3); }
-.sessao-actions { display: flex; gap: 4px; opacity: 0; transition: opacity .15s; }
+.sessao-header { display: flex; align-items: center; gap: 10px; padding: 9px 12px; }
+.sessao-main { flex: 1; min-width: 0; }
+.sessao-user { font-size: var(--fs-075); color: var(--text3); margin-bottom: 1px; }
+.sessao-tempo { font-family: var(--ff-mono); font-size: var(--fs-080); color: var(--text2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.sessao-liquido { font-family: var(--ff-mono); font-size: var(--fs-100); font-weight: 600; color: var(--green); min-width: 58px; text-align:right; }
+.sessao-actions { display: flex; gap: 3px; opacity: .65; transition: opacity .15s; }
 .sessao-item:hover .sessao-actions { opacity: 1; }
 .intervalos-list { border-top: 1px solid var(--border); padding: 8px 14px 12px; }
 .intervalo-item { display: flex; align-items: center; gap: 8px; padding: 5px 0; border-bottom: 1px solid var(--border); font-size: var(--fs-080); }
@@ -444,7 +448,6 @@ tr:hover .td-ações{opacity:1}
 .intervalo-tipo { color: var(--text2); min-width: 80px; }
 .intervalo-tempo { font-family: 'DM Mono', monospace; color: var(--text3); flex: 1; }
 .intervalo-duracao { font-family: 'DM Mono', monospace; color: var(--orange); }
-.sessoes-total { text-align: right; font-family: var(--ff-mono); font-size: var(--fs-090); color: var(--text2); margin-top: 8px; }
 .sessoes-empty { font-size: var(--fs-090); color: var(--text3); padding: 12px 0; font-style: italic; }
 
 /* ── EXTRAS ── */
@@ -458,12 +461,15 @@ tr:hover .td-ações{opacity:1}
 .colab-list { display: flex; flex-direction: column; gap: 6px; margin-bottom: 12px; }
 .colab-row { display: flex; align-items: center; justify-content: space-between; padding: 7px 12px; background: var(--bg3); border-radius: var(--r); border: 1px solid var(--border); font-size: var(--fs-090); }
 .colab-info { display: flex; align-items: center; gap: 8px; }
-.task-details-panel{margin-top:18px;padding-top:14px;border-top:1px solid var(--border)}
+.task-details-panel{margin-top:16px;padding-top:14px;border-top:1px solid var(--border)}
 .task-details-header{font-size:var(--fs-080);font-weight:500;color:var(--text2);text-transform:uppercase;letter-spacing:.08em;margin-bottom:10px}
 .task-details-add{display:flex;gap:8px;margin-bottom:10px}
 .task-details-list{display:flex;flex-direction:column;gap:6px}
 .task-detail-item{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:8px 10px;background:var(--bg3);border:1px solid var(--border);border-radius:var(--r)}
+.task-detail-left{display:flex;align-items:center;gap:8px;flex:1;min-width:0}
+.task-detail-check{width:15px;height:15px;accent-color:var(--accent);cursor:pointer;flex-shrink:0}
 .task-detail-text{font-size:var(--fs-090);color:var(--text2);line-height:1.4;word-break:break-word}
+.task-detail-item.done .task-detail-text{text-decoration:line-through;color:var(--text3)}
 .colab-del { background: none; border: none; color: var(--text3); cursor: pointer; font-size: 14px; opacity: .5; }
 .colab-del:hover { opacity: 1; color: var(--red); }
 
@@ -2247,7 +2253,12 @@ function listarDetalhesTarefa(tarefaId) {
   try {
     const raw = localStorage.getItem(detalhesTaskKey(tarefaId));
     const arr = raw ? JSON.parse(raw) : [];
-    return Array.isArray(arr) ? arr.filter(v => typeof v === 'string' && v.trim()) : [];
+    if (!Array.isArray(arr)) return [];
+    return arr.map(item => {
+      if (typeof item === 'string') return { text: item.trim(), done: false };
+      if (item && typeof item.text === 'string') return { text: item.text.trim(), done: !!item.done };
+      return null;
+    }).filter(item => item && item.text);
   } catch {
     return [];
   }
@@ -2260,8 +2271,11 @@ function salvarDetalhesTarefa(tarefaId, itens) {
 function htmlDetalhesTarefa(tarefaId) {
   const itens = listarDetalhesTarefa(tarefaId);
   const itensHtml = itens.map((item, idx) => `
-    <div class="task-detail-item">
-      <div class="task-detail-text">${esc(item)}</div>
+    <div class="task-detail-item ${item.done ? 'done' : ''}">
+      <div class="task-detail-left">
+        <input class="task-detail-check" type="checkbox" ${item.done ? 'checked' : ''} onchange="toggleDetalheTarefa('${tarefaId}',${idx},this.checked)">
+        <div class="task-detail-text">${esc(item.text)}</div>
+      </div>
       <button class="btn btn-danger btn-icon btn-sm" onclick="removerDetalheTarefa('${tarefaId}',${idx})" title="Remover detalhe">
         <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M1.5 1.5l9 9M10.5 1.5l-9 9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
       </button>
@@ -2270,7 +2284,7 @@ function htmlDetalhesTarefa(tarefaId) {
   return `
     <div class="task-details-header">Detalhes da tarefa</div>
     <div class="task-details-add">
-      <input id="task-det-input-${tarefaId}" placeholder="Ex: Pendência com fornecedor, material faltando, ponto de atenção...">
+      <input id="task-det-input-${tarefaId}" onkeydown="adicionarDetalheTarefaEnter(event,'${tarefaId}')" placeholder="Ex: Pendência com fornecedor, material faltando, ponto de atenção...">
       <button class="btn btn-primary btn-sm" onclick="adicionarDetalheTarefa('${tarefaId}')">Adicionar</button>
     </div>
     <div class="task-details-list">${itensHtml || '<div class="inline-muted-sm">Nenhum detalhe adicionado ainda.</div>'}</div>`;
@@ -2288,7 +2302,23 @@ function adicionarDetalheTarefa(tarefaId) {
   const txt = input.value.trim();
   if (!txt) return;
   const itens = listarDetalhesTarefa(tarefaId);
-  itens.push(txt);
+  itens.push({ text: txt, done: false });
+  salvarDetalhesTarefa(tarefaId, itens);
+  atualizarDetalhesTarefaUI(tarefaId);
+  const inputNovo = document.getElementById(`task-det-input-${tarefaId}`);
+  if (inputNovo) inputNovo.focus();
+}
+
+function adicionarDetalheTarefaEnter(ev, tarefaId) {
+  if (ev.key !== 'Enter') return;
+  ev.preventDefault();
+  adicionarDetalheTarefa(tarefaId);
+}
+
+function toggleDetalheTarefa(tarefaId, idx, done) {
+  const itens = listarDetalhesTarefa(tarefaId);
+  if (!itens[idx]) return;
+  itens[idx].done = !!done;
   salvarDetalhesTarefa(tarefaId, itens);
   atualizarDetalhesTarefaUI(tarefaId);
 }
@@ -2307,9 +2337,7 @@ async function expandirSessoes(tarefaId) {
   abrirModal(`
     <h2>Registro de tempo</h2>
     <p class="modal-copy">Tarefa: <strong class="inline-note-strong">${esc(nome)}</strong></p>
-    <div class="sessoes-header" style="margin-bottom:10px">
-      <div class="sessoes-title">Registros de tempo</div>
-    </div>
+    <div class="sessoes-kpi"><span class="sessoes-kpi-label">Total líquido</span><span class="sessoes-kpi-val" id="sess-total-${tarefaId}">--</span></div>
     <div id="sess-inner"><div class="loading"><div class="spinner"></div></div></div>
     <div class="task-details-panel" id="task-details-${tarefaId}">${htmlDetalhesTarefa(tarefaId)}</div>
     <div class="modal-footer">
@@ -2481,13 +2509,16 @@ async function criarIntervalo(sessaoId) {
 async function renderSessoesTarefa(tarefaId, containerEl) {
   try {
     const sessoes = await req('GET', `/tarefas/${tarefaId}/tempo`);
+    const totalEl = document.getElementById(`sess-total-${tarefaId}`);
+    const ordenadas = [...sessoes].sort((a,b) => new Date(b.inicio.replace(' ','T')+'Z') - new Date(a.inicio.replace(' ','T')+'Z'));
     if (!sessoes.length) {
+      if (totalEl) totalEl.textContent = '0.00 hr';
       containerEl.innerHTML = `<div class="sessoes-empty">Nenhuma sessão registrada.</div>`;
       return;
     }
 
     let totalH = 0;
-    const html = sessoes.map(s => {
+    const html = ordenadas.map(s => {
       const ativa = !s.fim;
       totalH += parseFloat(s.horas_liquidas || 0);
       const duracaoSeg = ativa
@@ -2513,7 +2544,7 @@ async function renderSessoesTarefa(tarefaId, containerEl) {
       return `
         <div class="sessao-item ${ativa?'ativa':''}">
           <div class="sessao-header">
-            <div>
+            <div class="sessao-main">
               <div class="sessao-user">${esc(s.usuario_nome||'—')}</div>
               <div class="sessao-tempo">${fmtDatetime(s.inicio)} → ${s.fim ? fmtDatetime(s.fim) : '<span class="inline-running">rodando</span>'}</div>
             </div>
@@ -2528,7 +2559,8 @@ async function renderSessoesTarefa(tarefaId, containerEl) {
         </div>`;
     }).join('');
 
-    containerEl.innerHTML = html + `<div class="sessoes-total">Total líquido: ${totalH.toFixed(2)} hr</div>`;
+      if (totalEl) totalEl.textContent = `${totalH.toFixed(2)} hr`;
+      containerEl.innerHTML = html;
 
     // Atualizar sessões ativas
     sessoes.filter(s => !s.fim).forEach(s => {
