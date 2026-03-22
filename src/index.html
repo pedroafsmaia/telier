@@ -604,7 +604,10 @@ async function renderDash() {
     let html = `
       <div class="dash-header">
         <div class="dash-title">Projetos</div>
-        <button class="btn btn-primary" onclick="modalNovoProjeto()">+ Novo projeto</button>
+        <div style="display:flex;gap:8px">
+          ${isAdmin() ? `<button class="btn" onclick="modalNovoColega()">Cadastrar usuário</button>` : ''}
+          <button class="btn btn-primary" onclick="modalNovoProjeto()">+ Novo projeto</button>
+        </div>
       </div>
       <div class="dash-sub">${emAndamento} em andamento · ${projetos.length} total</div>
       <div class="dash-filters">
@@ -1242,13 +1245,14 @@ async function removerColab(tarefaId, usuarioId) {
 
 function modalNovoColega() {
   abrirModal(`
-    <h2>Adicionar colega</h2>
+    <h2>Cadastrar usuário</h2>
+    <p style="font-size:13px;color:var(--text2);margin-bottom:16px">Cria um usuário global do sistema. Depois, adicione esse usuário em cada projeto pelo botão "Adicionar colega".</p>
     <div class="form-row"><label>Nome completo</label><input id="m-nome" placeholder="Ex: Ana Souza"></div>
     <div class="form-row"><label>Usuário</label><input type="text" id="m-email" placeholder="ex: ana_souza" autocomplete="off"></div>
-    <div class="form-row"><label>Senha temporária</label><input type="password" id="m-senha" placeholder="O colega poderá alterar depois"></div>
+    <div class="form-row"><label>Senha</label><input type="password" id="m-senha" placeholder="Defina a senha inicial"></div>
     <div class="modal-footer">
       <button class="btn" onclick="fecharModal()">Cancelar</button>
-      <button class="btn btn-primary" id="btn-criar-col" onclick="criarColega()">Adicionar</button>
+      <button class="btn btn-primary" id="btn-criar-col" onclick="criarColega()">Cadastrar</button>
     </div>`);
 }
 
@@ -1261,7 +1265,7 @@ async function criarColega() {
   try {
     await req('POST', '/usuarios', { nome, usuario_login: usuario_login_novo, senha, papel: 'membro' });
     USUARIOS = [];
-    fecharModal(); toast('Colega adicionado com sucesso');
+    fecharModal(); toast('Usuário cadastrado com sucesso');
   } catch (e) { toast(e.message, 'err'); btnLoading('btn-criar-col', false); }
 }
 
