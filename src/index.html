@@ -420,6 +420,12 @@ tr:hover .td-ações{opacity:1}
     <div class="form-row"><label>Nome completo</label><input id="s-nome" placeholder="Seu nome completo"></div>
     <div class="form-row"><label>Usuário</label><input type="text" id="s-login" placeholder="admin" autocomplete="username"></div>
     <div class="form-row"><label>Senha</label><input type="password" id="s-senha" placeholder="Escolha uma senha forte"></div>
+    <div class="form-row" style="margin-top:-10px;margin-bottom:12px">
+      <label style="display:flex;align-items:center;gap:8px;cursor:pointer;margin:0">
+        <input type="checkbox" id="s-show-pass" onchange="toggleSenhaSetup()" style="width:auto">
+        <span>Mostrar senha</span>
+      </label>
+    </div>
     <button class="btn btn-primary" id="btn-setup" onclick="fazerSetup()">Criar conta</button>
     <div id="setup-err" class="auth-err hidden"></div>
   </div>
@@ -612,6 +618,20 @@ function toggleSenhaLogin() {
   input.type = check.checked ? 'text' : 'password';
 }
 
+function toggleSenhaSetup() {
+  const input = document.getElementById('s-senha');
+  const check = document.getElementById('s-show-pass');
+  if (!input || !check) return;
+  input.type = check.checked ? 'text' : 'password';
+}
+
+function toggleSenhaCadastro() {
+  const input = document.getElementById('r-senha');
+  const check = document.getElementById('r-show-pass');
+  if (!input || !check) return;
+  input.type = check.checked ? 'text' : 'password';
+}
+
 async function fazerLogin() {
   const errEl = document.getElementById('login-err');
   errEl.classList.add('hidden');
@@ -643,6 +663,12 @@ function modalCadastroPublico() {
     <div class="form-row"><label>Nome completo</label><input id="r-nome" placeholder="Ex: Ana Souza"></div>
     <div class="form-row"><label>Usuário</label><input type="text" id="r-login" placeholder="ex: ana_souza" autocomplete="off"></div>
     <div class="form-row"><label>Senha</label><input type="password" id="r-senha" placeholder="Defina sua senha"></div>
+    <div class="form-row" style="margin-top:-10px;margin-bottom:12px">
+      <label style="display:flex;align-items:center;gap:8px;cursor:pointer;margin:0">
+        <input type="checkbox" id="r-show-pass" onchange="toggleSenhaCadastro()" style="width:auto">
+        <span>Mostrar senha</span>
+      </label>
+    </div>
     <div class="modal-footer">
       <button class="btn" onclick="fecharModal()">Cancelar</button>
       <button class="btn btn-primary" id="btn-reg" onclick="fazerCadastroPublico()">Criar conta</button>
