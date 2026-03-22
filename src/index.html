@@ -454,7 +454,7 @@ let FILTRO_STATUS = 'todos';
 let NEEDS_SETUP = false;
 const ADMIN_MODE_KEY = 'ea_admin_mode';
 let ADMIN_MODE = localStorage.getItem(ADMIN_MODE_KEY) || 'admin';
-let ADMIN_TEMPO_FILTRO = { de: '', ate: '' };
+let ADMIN_TEMPO_FILTRO = { de: '', ate: '', usuario_id: '' };
 
 // ── API ──
 async function req(method, path, body) {
@@ -927,9 +927,11 @@ async function abrirCentralAdmin(aba = 'agora') {
     }
 
     if (aba === 'tempo') {
+      const usuarios = await req('GET', '/admin/usuarios');
       const q = new URLSearchParams();
       if (ADMIN_TEMPO_FILTRO.de) q.set('de', ADMIN_TEMPO_FILTRO.de);
       if (ADMIN_TEMPO_FILTRO.ate) q.set('ate', ADMIN_TEMPO_FILTRO.ate);
+      if (ADMIN_TEMPO_FILTRO.usuario_id) q.set('usuario_id', ADMIN_TEMPO_FILTRO.usuario_id);
       const linhas = await req('GET', `/admin/tempo${q.toString() ? `?${q.toString()}` : ''}`);
       const total = linhas.reduce((s, l) => s + (parseFloat(l.horas_liquidas)||0), 0);
       const rows = linhas.map(l => `
@@ -941,6 +943,13 @@ async function abrirCentralAdmin(aba = 'agora') {
         </tr>`).join('');
       body.innerHTML = `
         <div class="admin-tools">
+          <div class="tool-field">
+            <label>Usuário</label>
+            <select id="adm-usuario">
+              <option value="">Todos</option>
+              ${usuarios.map(u => `<option value="${u.id}" ${ADMIN_TEMPO_FILTRO.usuario_id === u.id ? 'selected' : ''}>${esc(u.nome)} (@${esc(u.usuario_login)})</option>`).join('')}
+            </select>
+          </div>
           <div class="tool-field">
             <label>De</label>
             <input type="date" id="adm-de" value="${esc(ADMIN_TEMPO_FILTRO.de)}">
@@ -971,13 +980,14 @@ async function abrirCentralAdmin(aba = 'agora') {
 }
 
 function aplicarFiltroTempoAdmin() {
+  ADMIN_TEMPO_FILTRO.usuario_id = gv('adm-usuario') || '';
   ADMIN_TEMPO_FILTRO.de = gv('adm-de') || '';
   ADMIN_TEMPO_FILTRO.ate = gv('adm-ate') || '';
   abrirCentralAdmin('tempo');
 }
 
 function limparFiltroTempoAdmin() {
-  ADMIN_TEMPO_FILTRO = { de: '', ate: '' };
+  ADMIN_TEMPO_FILTRO = { de: '', ate: '', usuario_id: '' };
   abrirCentralAdmin('tempo');
 }
 
@@ -992,6 +1002,7 @@ async function exportarTempoAdminCSV() {
     const q = new URLSearchParams();
     if (ADMIN_TEMPO_FILTRO.de) q.set('de', ADMIN_TEMPO_FILTRO.de);
     if (ADMIN_TEMPO_FILTRO.ate) q.set('ate', ADMIN_TEMPO_FILTRO.ate);
+    if (ADMIN_TEMPO_FILTRO.usuario_id) q.set('usuario_id', ADMIN_TEMPO_FILTRO.usuario_id);
     const linhas = await req('GET', `/admin/tempo${q.toString() ? `?${q.toString()}` : ''}`);
     const header = ['usuario_nome', 'projeto_nome', 'tarefa_nome', 'horas_liquidas'];
     const out = [header.join(';')];

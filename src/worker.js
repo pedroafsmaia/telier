@@ -395,6 +395,7 @@ export default {
       if (!isAdmin(u)) return fail('Sem permissão', 403);
       const de = url.searchParams.get('de') || null;
       const ate = url.searchParams.get('ate') || null;
+      const usuarioId = url.searchParams.get('usuario_id') || null;
 
       const linhas = await env.DB.prepare(`
         SELECT
@@ -420,11 +421,13 @@ export default {
         JOIN tarefas t ON t.id = st.tarefa_id
         JOIN projetos p ON p.id = t.projeto_id
         WHERE
+          (? IS NULL OR tu.id = ?)
+          AND
           (? IS NULL OR date(st.inicio) >= date(?))
           AND (? IS NULL OR date(st.inicio) <= date(?))
         GROUP BY tu.id, tu.nome, p.id, p.nome, t.id, t.nome
         ORDER BY horas_liquidas DESC
-      `).bind(de, de, ate, ate).all();
+      `).bind(usuarioId, usuarioId, de, de, ate, ate).all();
 
       return ok(linhas.results);
     }
