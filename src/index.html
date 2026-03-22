@@ -982,7 +982,7 @@ async function fazerLogin() {
       localStorage.setItem(ADMIN_MODE_KEY, ADMIN_MODE);
     }
     mostrar('app');
-    carregarColegasAtivos();
+    iniciarPollPresenca();
   } catch (e) {
     errEl.textContent = e.message;
     errEl.classList.remove('hidden');
@@ -3064,7 +3064,7 @@ window.addEventListener('load', async () => {
   aplicarTema(temaSalvo);
   await init();
   await carregarTimersAtivos();
-  iniciarPollPresenca();
+  if (TOKEN) iniciarPollPresenca();
 });
 </script>
 </body>
