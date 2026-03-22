@@ -2386,13 +2386,27 @@ async function exportarTempoProjetoCSV(projetoId, projetoNome) {
 
 // ── PRESENÇA ONLINE ──
 async function carregarColegasAtivos() {
-  try {
-    COLEGAS_ATIVOS = await req('GET', '/tempo/colegas-ativos');
+  if (!TOKEN) {
+    COLEGAS_ATIVOS = [];
     renderPresenceDock();
-  } catch {}
+    return;
+  }
+  try {
+    const data = await req('GET', '/tempo/colegas-ativos');
+    COLEGAS_ATIVOS = Array.isArray(data)
+      ? data
+      : Array.isArray(data?.results)
+        ? data.results
+        : [];
+    renderPresenceDock();
+  } catch {
+    COLEGAS_ATIVOS = [];
+    renderPresenceDock();
+  }
 }
 
 function iniciarPollPresenca() {
+  if (!TOKEN) return;
   if (_presenceTick) clearInterval(_presenceTick);
   _presenceTick = setInterval(carregarColegasAtivos, 30000);
   carregarColegasAtivos();
@@ -2416,7 +2430,9 @@ function renderPresenceDock() {
   if (!PRESENCE_ABERTO) { dock.innerHTML = toggleHtml; return; }
 
   const itemsHtml = COLEGAS_ATIVOS.map(c => {
-    const seg = Math.floor((Date.now() - new Date(c.inicio.replace(' ', 'T') + 'Z').getTime()) / 1000);
+    const inicioIso = String(c.inicio || '').replace(' ', 'T');
+    const inicioMs = Date.parse(inicioIso.endsWith('Z') ? inicioIso : `${inicioIso}Z`);
+    const seg = Number.isFinite(inicioMs) ? Math.floor((Date.now() - inicioMs) / 1000) : 0;
     return `
       <div class="presence-item" onclick="abrirProjeto('${c.projeto_id}')" title="Abrir projeto">
         ${avatar(c.usuario_nome, 'avatar-sm')}
@@ -2440,7 +2456,9 @@ function renderPresenceDock() {
   window._presenceDisplayTick = setInterval(() => {
     if (!PRESENCE_ABERTO) return;
     COLEGAS_ATIVOS.forEach((c, idx) => {
-      const seg = Math.floor((Date.now() - new Date(c.inicio.replace(' ', 'T') + 'Z').getTime()) / 1000);
+      const inicioIso = String(c.inicio || '').replace(' ', 'T');
+      const inicioMs = Date.parse(inicioIso.endsWith('Z') ? inicioIso : `${inicioIso}Z`);
+      const seg = Number.isFinite(inicioMs) ? Math.floor((Date.now() - inicioMs) / 1000) : 0;
       const els = dock.querySelectorAll('.presence-item-tempo');
       if (els[idx]) els[idx].textContent = fmtDuracao(seg);
     });
@@ -3065,6 +3083,14 @@ window.addEventListener('load', async () => {
   await init();
   await carregarTimersAtivos();
   if (TOKEN) iniciarPollPresenca();
+});
+
+window.addEventListener('focus', () => {
+  if (TOKEN) carregarColegasAtivos();
+});
+
+document.addEventListener('visibilitychange', () => {
+  if (!document.hidden && TOKEN) carregarColegasAtivos();
 });
 </script>
 </body>
