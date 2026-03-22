@@ -1,0 +1,1586 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Telier</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:ital,wght@0,400;0,500;1,400&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+/* ── TEMA ESCURO (padrão) ── */
+:root,[data-theme="dark"] {
+  --bg:      #0c0c0e;
+  --bg2:     #131316;
+  --bg3:     #1c1c20;
+  --bg4:     #25252a;
+  --bg5:     #2e2e34;
+  --border:  rgba(255,255,255,.06);
+  --border2: rgba(255,255,255,.10);
+  --border3: rgba(255,255,255,.16);
+  --text:    #e8e8ec;
+  --text2:   #8e8e9e;
+  --text3:   #52525e;
+  --accent:  #5b8af5;
+  --accent2: #3d6fe0;
+  --accent-fg: #fff;
+  --green:   #3ecf8e;
+  --blue:    #4a9eff;
+  --yellow:  #f5c542;
+  --red:     #f25b5b;
+  --orange:  #f0834a;
+  --shadow:  0 4px 16px rgba(0,0,0,.5);
+  --shadow2: 0 8px 32px rgba(0,0,0,.6);
+  --r:       8px;
+  --r2:      12px;
+  --r3:      16px;
+}
+
+/* ── TEMA CLARO ── */
+[data-theme="light"] {
+  --bg:      #f5f5f7;
+  --bg2:     #ffffff;
+  --bg3:     #f0f0f3;
+  --bg4:     #e8e8ed;
+  --bg5:     #dcdce3;
+  --border:  rgba(0,0,0,.07);
+  --border2: rgba(0,0,0,.12);
+  --border3: rgba(0,0,0,.20);
+  --text:    #111114;
+  --text2:   #5a5a6a;
+  --text3:   #9494a4;
+  --accent:  #3a6fe0;
+  --accent2: #2455c0;
+  --accent-fg: #fff;
+  --green:   #1a9e6a;
+  --blue:    #2576d6;
+  --yellow:  #c49010;
+  --red:     #d63c3c;
+  --orange:  #d4622a;
+  --shadow:  0 2px 8px rgba(0,0,0,.08);
+  --shadow2: 0 6px 20px rgba(0,0,0,.12);
+  --r:       8px;
+  --r2:      12px;
+  --r3:      16px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;font-size:14px;line-height:1.6;-webkit-font-smoothing:antialiased}
+.mono{font-family:'DM Mono',monospace}
+.hidden{display:none!important}
+::-webkit-scrollbar{width:5px;height:5px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--bg5);border-radius:3px}
+::-webkit-scrollbar-thumb:hover{background:var(--border3)}
+
+/* ── BOTÕES ── */
+.btn{display:inline-flex;align-items:center;gap:6px;padding:8px 16px;border-radius:var(--r);border:1px solid var(--border2);background:transparent;color:var(--text2);cursor:pointer;font-size:13px;font-family:inherit;transition:all .18s cubic-bezier(.25,.1,.25,1);white-space:nowrap;user-select:none;font-weight:500}
+.btn:hover{background:var(--bg3);color:var(--text);border-color:var(--border3)}
+.btn:active{transform:scale(.98)}
+.btn:disabled{opacity:.4;cursor:not-allowed;pointer-events:none}
+.btn-primary{background:var(--accent);border-color:var(--accent);color:var(--accent-fg)}
+.btn-primary:hover{background:var(--accent2);border-color:var(--accent2);color:#fff}
+.btn-ghost{border-color:transparent}
+.btn-ghost:hover{border-color:var(--border)}
+.btn-danger{border-color:transparent;color:var(--text3)}
+.btn-danger:hover{color:var(--red);border-color:var(--red);background:transparent}
+.btn-sm{padding:4px 10px;font-size:12px}
+.btn-icon{padding:5px 8px}
+.btn-loading{position:relative;color:transparent!important}
+.btn-loading::after{content:'';position:absolute;width:12px;height:12px;border:2px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:spin .6s linear infinite}
+
+/* ── INPUTS ── */
+input,select,textarea{background:var(--bg3);border:1px solid var(--border2);color:var(--text);border-radius:var(--r);font-family:inherit;font-size:13px;padding:9px 12px;width:100%;transition:all .15s;outline:none}
+input:focus,select:focus,textarea:focus{border-color:var(--accent)}
+input::placeholder,textarea::placeholder{color:var(--text3)}
+select option{background:var(--bg3)}
+textarea{resize:vertical;min-height:80px;line-height:1.6}
+label{font-size:12px;color:var(--text2);display:block;margin-bottom:5px}
+
+/* ── TAGS ── */
+.tag{display:inline-flex;align-items:center;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:500;white-space:nowrap;letter-spacing:.01em}
+.tag-blue{background:rgba(74,158,255,.12);color:var(--blue)}
+.tag-green{background:rgba(62,207,142,.1);color:var(--green)}
+.tag-yellow{background:rgba(245,197,66,.1);color:var(--yellow)}
+.tag-red{background:rgba(242,91,91,.1);color:var(--red)}
+.tag-orange{background:rgba(240,131,74,.1);color:var(--orange)}
+.tag-gray{background:var(--bg4);color:var(--text2)}
+.tag-purple{background:rgba(124,106,247,.12);color:var(--accent)}
+
+/* ── AVATAR ── */
+.avatar{width:22px;height:22px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:10px;font-weight:500;flex-shrink:0;font-family:'DM Mono',monospace;text-transform:uppercase}
+.avatar-sm{width:18px;height:18px;font-size:9px}
+.avatar-lg{width:32px;height:32px;font-size:12px}
+
+/* ── MODAL ── */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.75);display:flex;align-items:center;justify-content:center;z-index:1000;backdrop-filter:blur(6px);animation:fadeIn .15s ease;padding:16px}
+.modal{background:var(--bg2);border:1px solid var(--border2);border-radius:var(--r3);padding:32px;width:100%;max-width:500px;max-height:92vh;overflow-y:auto;animation:popIn .22s cubic-bezier(.34,1.56,.64,1);box-shadow:var(--shadow2)}
+.modal-lg{max-width:600px}
+.modal h2{font-size:17px;font-weight:500;margin-bottom:22px;color:var(--text)}
+.modal-footer{display:flex;gap:8px;justify-content:flex-end;margin-top:24px;padding-top:16px;border-top:1px solid var(--border)}
+.form-row{margin-bottom:20px}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.form-sep{height:1px;background:var(--border);margin:16px 0}
+
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+@keyframes slideIn{from{transform:translateX(20px);opacity:0}to{transform:translateX(0);opacity:1}}
+@keyframes popIn{from{transform:scale(.9);opacity:0}to{transform:scale(1);opacity:1}}
+@keyframes slideUp{from{transform:translateY(20px) scale(.98);opacity:0}to{transform:translateY(0) scale(1);opacity:1}}
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}
+
+/* ── TOAST ── */
+#toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(0);background:var(--bg3);border:1px solid var(--border2);color:var(--text);padding:10px 18px;border-radius:var(--r2);font-size:13px;z-index:9999;transition:all .25s;white-space:nowrap;box-shadow:0 8px 24px rgba(0,0,0,.4)}
+#toast.hidden{transform:translateX(-50%) translateY(16px);opacity:0;pointer-events:none}
+#toast.toast-err{border-color:var(--red);color:var(--red)}
+
+/* ── TELA LOGIN ── */
+#page-login,#page-setup{min-height:100vh;display:flex;align-items:center;justify-content:center;background:var(--bg)}
+.auth-box{width:100%;max-width:380px;background:var(--bg2);border:1px solid var(--border2);border-radius:var(--r3);padding:48px;animation:popIn .3s cubic-bezier(.34,1.56,.64,1);box-shadow:var(--shadow2)}
+.auth-wordmark{font-family:'DM Mono',monospace;font-size:10px;color:var(--text3);letter-spacing:.2em;text-transform:uppercase;margin-bottom:10px}
+.auth-title{font-size:24px;font-weight:300;margin-bottom:6px;color:var(--text)}
+.auth-sub{font-size:13px;color:var(--text3);margin-bottom:28px}
+.auth-box .btn-primary{width:100%;justify-content:center;margin-top:4px;height:40px}
+.auth-err{color:var(--red);font-size:12px;margin-top:10px;padding:8px 12px;background:rgba(242,91,91,.08);border-radius:var(--r);border:1px solid rgba(242,91,91,.2)}
+
+/* ── APP LAYOUT ── */
+#page-app{display:flex;flex-direction:column;min-height:100vh}
+
+/* ── TOPBAR ── */
+.topbar{height:56px;border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 32px;gap:12px;position:sticky;top:0;z-index:100;background:color-mix(in srgb,var(--bg) 90%,transparent);backdrop-filter:blur(16px)}
+.topbar-logo{font-family:'DM Mono',monospace;font-size:11px;color:var(--text3);letter-spacing:.14em;text-transform:uppercase;cursor:pointer;transition:color .15s}
+.topbar-logo:hover{color:var(--text2)}
+.topbar-breadcrumb{display:flex;align-items:center;gap:6px;font-size:13px}
+.topbar-crumb{color:var(--text3);cursor:pointer;transition:color .15s;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:200px}
+.topbar-crumb:hover{color:var(--text2)}
+.topbar-crumb.atual{color:var(--text2);cursor:default}
+.topbar-crumb.atual:hover{color:var(--text2)}
+.topbar-sep-crumb{color:var(--text3);font-size:11px;flex-shrink:0}
+.topbar-theme{background:none;border:1px solid var(--border2);color:var(--text2);cursor:pointer;font-size:14px;width:32px;height:32px;border-radius:var(--r);display:flex;align-items:center;justify-content:center;transition:all .15s;flex-shrink:0}
+.topbar-theme:hover{background:var(--bg3);color:var(--text)}
+.topbar-sep{flex:1}
+.topbar-actions{display:flex;align-items:center;gap:8px}
+.topbar-user-name{font-size:13px;color:var(--text2)}
+
+/* ── CONTEÚDO ── */
+.content{flex:1;padding:48px 36px;max-width:1160px;width:100%;margin:0 auto}
+
+/* ── DASHBOARD ── */
+.dash-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+.dash-title{font-size:22px;font-weight:300;color:var(--text)}
+.dash-sub{font-size:13px;color:var(--text3);margin-bottom:24px}
+
+/* FILTROS */
+.dash-filters{display:flex;gap:8px;margin-bottom:24px;flex-wrap:wrap}
+.filter-btn{padding:5px 14px;border-radius:20px;border:1px solid var(--border);background:transparent;color:var(--text2);font-size:12px;font-family:inherit;cursor:pointer;transition:all .15s}
+.filter-btn:hover{border-color:var(--border2);color:var(--text)}
+.filter-btn.ativo{background:var(--bg3);border-color:var(--border3);color:var(--text)}
+
+/* CARDS */
+.cards-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(290px,1fr));gap:14px}
+.proj-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r2);padding:24px;cursor:pointer;transition:all .22s cubic-bezier(.25,.1,.25,1);position:relative;overflow:hidden}
+.proj-card::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;border-radius:3px 0 0 3px}
+.proj-card[data-status="Em andamento"]::before{background:var(--blue)}
+.proj-card[data-status="Aguardando aprovação"]::before{background:var(--yellow)}
+.proj-card[data-status="Concluído"]::before{background:var(--green)}
+.proj-card[data-status="Pausado"]::before{background:var(--text3)}
+.proj-card:hover{border-color:var(--border2);background:var(--bg3);transform:translateY(-3px);box-shadow:var(--shadow2)}
+.proj-card-header{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:14px;gap:8px}
+.proj-card-nome{font-size:15px;font-weight:500;line-height:1.3;flex:1;color:var(--text)}
+.proj-card-edit{opacity:0;transition:opacity .15s;flex-shrink:0}
+.proj-card:hover .proj-card-edit{opacity:1}
+.proj-card-tags{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:12px}
+.proj-card-progress{margin-bottom:10px}
+.proj-progress-nums{font-size:11px;color:var(--text3);font-family:'DM Mono',monospace;margin-bottom:4px}
+.proj-progress-bar{height:3px;background:var(--bg5);border-radius:2px;overflow:hidden}
+.proj-progress-fill{height:100%;border-radius:2px;transition:width .4s}
+.proj-progress-fill.done{background:var(--green)}
+.proj-progress-fill.partial{background:var(--blue)}
+.proj-card-footer{display:flex;align-items:center;justify-content:space-between}
+.proj-card-dono{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--text3)}
+.proj-urgente{font-size:11px;color:var(--red);font-family:'DM Mono',monospace;display:flex;align-items:center;gap:4px}
+.proj-foco-chip{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--accent);margin-top:8px;padding:6px 10px;background:rgba(124,106,247,.07);border-radius:var(--r);border:1px solid rgba(124,106,247,.15)}
+
+/* EMPTY STATE */
+.empty-state{grid-column:1/-1;display:flex;flex-direction:column;align-items:center;padding:56px 24px;color:var(--text3);gap:10px}
+.empty-icon{font-size:36px;opacity:.25}
+.empty-text{font-size:14px}
+.empty-sub{font-size:12px;color:var(--text3);opacity:.7}
+
+/* ── PROJETO DETALHE ── */
+.proj-back{margin-bottom:18px}
+.proj-hero{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r2);padding:32px;margin-bottom:28px;position:relative;overflow:hidden;box-shadow:var(--shadow)}
+.proj-hero::before{content:'';position:absolute;left:0;top:0;bottom:0;width:4px}
+.proj-hero[data-status="Em andamento"]::before{background:var(--blue)}
+.proj-hero[data-status="Aguardando aprovação"]::before{background:var(--yellow)}
+.proj-hero[data-status="Concluído"]::before{background:var(--green)}
+.proj-hero[data-status="Pausado"]::before{background:var(--text3)}
+.proj-hero-top{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:12px;gap:16px}
+.proj-hero-left{flex:1}
+.proj-nome{font-size:24px;font-weight:300;color:var(--text);line-height:1.2;margin-bottom:4px}
+.proj-dono{font-size:12px;color:var(--text3);display:flex;align-items:center;gap:5px}
+.proj-tags{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px}
+.proj-stats{display:flex;align-items:center;gap:16px;margin-bottom:12px;flex-wrap:wrap}
+.proj-stat{display:flex;flex-direction:column;gap:2px}
+.proj-stat-label{font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:.06em}
+.proj-stat-val{font-size:14px;font-weight:500;font-family:'DM Mono',monospace}
+.proj-prog-wrap{flex:1;min-width:120px}
+.proj-prog-bar{height:5px;background:var(--bg5);border-radius:3px;overflow:hidden}
+.proj-prog-fill{height:100%;border-radius:3px;transition:width .4s}
+.proj-prog-fill.done{background:var(--green)}
+.proj-prog-fill.partial{background:var(--blue)}
+.proj-foco-banner{margin-top:14px;padding:10px 14px;background:rgba(124,106,247,.07);border:1px solid rgba(124,106,247,.15);border-radius:var(--r);display:flex;align-items:center;gap:10px}
+.proj-foco-banner .fl{font-size:11px;color:var(--accent);text-transform:uppercase;letter-spacing:.08em;white-space:nowrap;font-weight:500}
+.proj-foco-banner .fn{font-size:14px;color:var(--text);flex:1}
+.proj-foco-empty{margin-top:14px;padding:10px 14px;background:var(--bg3);border:1px dashed var(--border2);border-radius:var(--r);font-size:12px;color:var(--text3)}
+
+/* ── ABAS ── */
+.abas{display:flex;border-bottom:1px solid var(--border);margin-bottom:28px;gap:4px}
+.aba{padding:10px 20px;font-size:13px;font-weight:500;cursor:pointer;color:var(--text3);border:none;border-bottom:2px solid transparent;background:none;font-family:inherit;transition:all .2s;margin-bottom:-1px;letter-spacing:.01em}
+.aba:hover{color:var(--text2)}
+.aba.ativa{color:var(--text);border-bottom-color:var(--accent)}
+
+/* ── LISTA TAREFAS ── */
+.tarefas-toolbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;gap:12px}
+.tarefas-info{font-size:12px;color:var(--text3);font-family:'DM Mono',monospace}
+.table-wrap{overflow-x:auto;border:1px solid var(--border);border-radius:var(--r2)}
+table{width:100%;border-collapse:collapse;min-width:600px}
+th{text-align:left;padding:11px 16px;font-size:11px;font-weight:500;color:var(--text3);text-transform:uppercase;letter-spacing:.07em;border-bottom:1px solid var(--border);white-space:nowrap;background:var(--bg2)}
+td{padding:13px 16px;border-bottom:1px solid var(--border);vertical-align:middle;background:var(--bg2)}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:var(--bg3)}
+.td-nome{font-size:14px;color:var(--text)}
+.td-nome.em-foco{color:var(--accent);font-weight:500}
+.td-nome.concluida{color:var(--text3);text-decoration:line-through}
+.td-ações{display:flex;gap:4px;align-items:center;opacity:0;transition:opacity .15s}
+tr:hover .td-ações{opacity:1}
+.foco-pin{background:none;border:none;cursor:pointer;font-size:16px;padding:3px;border-radius:4px;transition:all .15s;line-height:1;color:var(--text3)}
+.foco-pin:hover{color:var(--yellow);transform:scale(1.2)}
+.foco-pin.ativo{color:var(--yellow)}
+.foco-pin.ativo:hover{color:var(--text3)}
+.horas-wrap{display:flex;align-items:center;gap:4px}
+.horas-inp{width:62px;padding:4px 8px;font-size:12px;font-family:'DM Mono',monospace;text-align:right}
+.horas-unit{font-size:11px;color:var(--text3)}
+.resp-chip{display:flex;align-items:center;gap:5px;font-size:12px;color:var(--text3)}
+
+/* ── MAPA DE FOCO ── */
+.mapa-intro{font-size:13px;color:var(--text3);margin-bottom:16px;padding:10px 14px;background:var(--bg3);border-radius:var(--r);border-left:2px solid var(--accent)}
+.mapa-list{display:flex;flex-direction:column;gap:6px}
+.mapa-item{display:flex;align-items:center;gap:12px;padding:12px 16px;background:var(--bg2);border:1px solid var(--border);border-radius:var(--r2);transition:all .15s}
+.mapa-item:hover{border-color:var(--border2);background:var(--bg3)}
+.mapa-item.is-foco{border-color:rgba(91,138,245,.3);background:rgba(91,138,245,.05)}
+.mapa-rank{font-family:'DM Mono',monospace;font-size:12px;color:var(--text3);min-width:24px}
+.mapa-nome{flex:1;font-size:14px;color:var(--text)}
+.mapa-tags{display:flex;gap:6px;align-items:center}
+
+/* ── RELATÓRIO ── */
+.rel-group{margin-bottom:28px}
+.rel-group-header{display:flex;align-items:center;justify-content:space-between;padding-bottom:8px;border-bottom:1px solid var(--border);margin-bottom:10px}
+.rel-group-title{font-size:11px;font-weight:500;text-transform:uppercase;letter-spacing:.1em;color:var(--text3);display:flex;align-items:center;gap:8px}
+.rel-group-total{font-size:12px;font-family:'DM Mono',monospace;color:var(--green)}
+.rel-item{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--border)}
+.rel-item:last-child{border-bottom:none}
+.rel-nome{flex:1;font-size:14px;color:var(--text)}
+.rel-horas{font-family:'DM Mono',monospace;font-size:12px;color:var(--green)}
+
+/* ── DECISÕES ── */
+.decisoes-sep{height:1px;background:var(--border);margin:32px 0 24px}
+.decisoes-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
+.decisoes-title{font-size:12px;font-weight:500;color:var(--text2);text-transform:uppercase;letter-spacing:.08em}
+.decisao-item{display:flex;gap:14px;padding:12px 0;border-bottom:1px solid var(--border);align-items:flex-start}
+.decisao-item:last-child{border-bottom:none}
+.decisao-data{font-family:'DM Mono',monospace;font-size:11px;color:var(--text3);white-space:nowrap;padding-top:2px;min-width:78px}
+.decisao-corpo{flex:1}
+.decisao-texto{font-size:14px;color:var(--text);line-height:1.6}
+.decisao-autor{font-size:11px;color:var(--text3);margin-top:3px;display:flex;align-items:center;gap:4px}
+.decisao-del{background:none;border:none;color:var(--text3);cursor:pointer;font-size:16px;opacity:.4;line-height:1;padding:2px;flex-shrink:0}
+.decisao-del:hover{opacity:1;color:var(--red)}
+.decisoes-empty{font-size:13px;color:var(--text3);padding:12px 0;font-style:italic}
+
+/* ── PERMISSÕES ── */
+.editor-list{display:flex;flex-direction:column;gap:6px;margin-bottom:12px}
+.editor-row{display:flex;align-items:center;justify-content:space-between;padding:8px 12px;background:var(--bg3);border-radius:var(--r);border:1px solid var(--border)}
+.editor-info{display:flex;align-items:center;gap:8px;font-size:13px}
+.editor-del{background:none;border:none;color:var(--text3);cursor:pointer;font-size:16px;opacity:.5;line-height:1}
+.editor-del:hover{opacity:1;color:var(--red)}
+
+
+/* ── CRONÔMETRO FLUTUANTE ── */
+#timer-dock {
+  position: fixed; bottom: 24px; right: 24px;
+  display: flex; flex-direction: column; gap: 8px;
+  z-index: 500; max-width: 300px;
+}
+.timer-card {
+  background: var(--bg2); border: 1px solid var(--border2);
+  border-radius: var(--r2); padding: 12px 14px;
+  box-shadow: 0 8px 24px rgba(0,0,0,.5);
+  animation: slideUp .2s ease;
+  min-width: 240px;
+}
+.timer-card.ativo { border-color: var(--green); }
+.timer-card-header { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+.timer-card-nome { flex: 1; font-size: 12px; color: var(--text2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.timer-card-proj { font-size: 11px; color: var(--text3); margin-bottom: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.timer-display { font-family: 'DM Mono', monospace; font-size: 22px; font-weight: 500; color: var(--green); letter-spacing: .05em; }
+.timer-actions { display: flex; gap: 6px; margin-top: 10px; }
+.timer-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--green); animation: pulse 1.5s ease infinite; flex-shrink: 0; }
+.timer-dot.pausado { background: var(--text3); animation: none; }
+
+/* ── SESSÕES DE TEMPO ── */
+.sessoes-sep { height: 1px; background: var(--border); margin: 32px 0 24px; }
+.sessoes-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+.sessoes-title { font-size: 11px; font-weight: 500; color: var(--text2); text-transform: uppercase; letter-spacing: .08em; }
+.sessao-item { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--r2); margin-bottom: 8px; overflow: hidden; }
+.sessao-item.ativa { border-color: rgba(62,207,142,.3); }
+.sessao-header { display: flex; align-items: center; gap: 10px; padding: 12px 14px; }
+.sessao-tempo { font-family: 'DM Mono', monospace; font-size: 13px; color: var(--text2); flex: 1; }
+.sessao-liquido { font-family: 'DM Mono', monospace; font-size: 14px; font-weight: 500; color: var(--green); }
+.sessao-user { font-size: 11px; color: var(--text3); }
+.sessao-actions { display: flex; gap: 4px; opacity: 0; transition: opacity .15s; }
+.sessao-item:hover .sessao-actions { opacity: 1; }
+.intervalos-list { border-top: 1px solid var(--border); padding: 8px 14px 12px; }
+.intervalo-item { display: flex; align-items: center; gap: 8px; padding: 5px 0; border-bottom: 1px solid var(--border); font-size: 12px; }
+.intervalo-item:last-child { border-bottom: none; }
+.intervalo-tipo { color: var(--text2); min-width: 80px; }
+.intervalo-tempo { font-family: 'DM Mono', monospace; color: var(--text3); flex: 1; }
+.intervalo-duracao { font-family: 'DM Mono', monospace; color: var(--orange); }
+.sessoes-total { text-align: right; font-family: 'DM Mono', monospace; font-size: 13px; color: var(--text2); margin-top: 8px; }
+.sessoes-empty { font-size: 13px; color: var(--text3); padding: 12px 0; font-style: italic; }
+
+/* ── COLABORADORES TAREFA ── */
+.colab-list { display: flex; flex-direction: column; gap: 6px; margin-bottom: 12px; }
+.colab-row { display: flex; align-items: center; justify-content: space-between; padding: 7px 12px; background: var(--bg3); border-radius: var(--r); border: 1px solid var(--border); font-size: 13px; }
+.colab-info { display: flex; align-items: center; gap: 8px; }
+.colab-del { background: none; border: none; color: var(--text3); cursor: pointer; font-size: 14px; opacity: .5; }
+.colab-del:hover { opacity: 1; color: var(--red); }
+
+.status-sel { font-family: inherit; border-radius: var(--r); cursor: pointer; outline: none; }
+.status-sel:focus { border-color: var(--accent); }
+/* ── LOADING ── */
+.loading{display:flex;align-items:center;justify-content:center;padding:56px;color:var(--text3);gap:10px;font-size:13px}
+.spinner{width:18px;height:18px;border:2px solid var(--bg5);border-top-color:var(--accent);border-radius:50%;animation:spin .65s linear infinite;flex-shrink:0}
+.skeleton{animation:pulse 1.5s ease infinite;background:var(--bg3);border-radius:var(--r);height:14px}
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="page-login" class="hidden">
+  <div class="auth-box">
+    <div class="auth-wordmark">Telier</div>
+    <div class="auth-title">Entrar</div>
+    <div class="auth-sub">Acesse sua conta para continuar</div>
+    <div class="form-row"><label>Usuário</label><input type="text" id="l-login" placeholder="seu_usuario" autocomplete="username"></div>
+    <div class="form-row"><label>Senha</label><input type="password" id="l-senha" placeholder="••••••••" autocomplete="current-password"></div>
+    <button class="btn btn-primary" id="btn-login" onclick="fazerLogin()">Entrar</button>
+    <div id="login-err" class="auth-err hidden"></div>
+  </div>
+</div>
+
+<!-- SETUP INICIAL -->
+<div id="page-setup" class="hidden">
+  <div class="auth-box">
+    <div class="auth-wordmark">Primeiro acesso</div>
+    <div class="auth-title">Criar administrador</div>
+    <div class="auth-sub">Crie a conta principal do sistema. Isso só acontece uma vez.</div>
+    <div class="form-row"><label>Nome completo</label><input id="s-nome" placeholder="Seu nome completo"></div>
+    <div class="form-row"><label>Usuário</label><input type="text" id="s-login" placeholder="admin" autocomplete="username"></div>
+    <div class="form-row"><label>Senha</label><input type="password" id="s-senha" placeholder="Escolha uma senha forte"></div>
+    <button class="btn btn-primary" id="btn-setup" onclick="fazerSetup()">Criar conta</button>
+    <div id="setup-err" class="auth-err hidden"></div>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="page-app" class="hidden">
+  <nav class="topbar">
+    <div class="topbar-logo" onclick="renderDash()" title="Ir para projetos">Telier</div>
+    <div id="topbar-breadcrumb" class="topbar-breadcrumb"></div>
+    <div class="topbar-sep"></div>
+    <div class="topbar-actions">
+      <span class="topbar-user-name" id="topbar-nome"></span>
+      <button class="topbar-theme" id="btn-tema" onclick="alternarTema()" title="Alternar tema">🌙</button>
+      <button class="btn btn-ghost btn-sm" id="btn-add-colega" style="display:none" onclick="modalNovoColega()">+ Colega</button>
+      <button class="btn btn-ghost btn-sm" onclick="fazerLogout()">Sair</button>
+    </div>
+  </nav>
+  <div class="content" id="content">
+    <div class="loading"><div class="spinner"></div> Carregando...</div>
+  </div>
+</div>
+
+<!-- TOAST & MODAIS -->
+<div id="timer-dock"></div>
+<div id="toast" class="hidden"></div>
+<div id="modais"></div>
+
+<script>
+// ── CONFIG ──
+const API = 'SUBSTITUA_PELA_URL_DO_SEU_WORKER';
+let TOKEN = localStorage.getItem('ea_token');
+let EU = JSON.parse(localStorage.getItem('ea_user') || 'null');
+let PROJETO = null;
+let TAREFAS = [];
+let USUARIOS = [];
+let FILTRO_STATUS = 'todos';
+
+// ── API ──
+async function req(method, path, body) {
+  const r = await fetch(API + path, {
+    method,
+    headers: { 'Content-Type': 'application/json', ...(TOKEN ? { Authorization: 'Bearer ' + TOKEN } : {}) },
+    ...(body !== undefined ? { body: JSON.stringify(body) } : {}),
+  });
+  const d = await r.json();
+  if (!r.ok) throw new Error(d.error || 'Erro na requisição');
+  return d;
+}
+
+// ── TOAST ──
+let _toastTimer;
+function toast(msg, tipo = 'ok') {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.className = tipo === 'err' ? 'toast-err' : '';
+  clearTimeout(_toastTimer);
+  _toastTimer = setTimeout(() => el.classList.add('hidden'), 3000);
+}
+
+// ── MODAL ──
+function abrirModal(html, opts = {}) {
+  const id = 'modal_' + Date.now();
+  const overlay = document.createElement('div');
+  overlay.className = 'modal-overlay';
+  overlay.id = id;
+  overlay.innerHTML = `<div class="modal ${opts.lg ? 'modal-lg' : ''}">${html}</div>`;
+  overlay.addEventListener('click', e => { if (e.target === overlay) overlay.remove(); });
+  document.getElementById('modais').appendChild(overlay);
+  setTimeout(() => overlay.querySelector('input:not([type=date]):not([type=number])')?.focus(), 60);
+  return overlay;
+}
+function fecharModal() { document.querySelectorAll('.modal-overlay').forEach(e => e.remove()); }
+
+// ── UTILS ──
+function isAdmin() { return EU?.papel === 'admin'; }
+function souDono(donoId) { return EU?.id === donoId || isAdmin(); }
+function podeEditar(proj) {
+  if (!proj) return false;
+  if (souDono(proj.dono_id)) return true;
+  return (proj.editores || []).some(e => e.usuario_id === EU?.id);
+}
+function esc(s) { return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function iniciais(nome) { return (nome||'?').split(' ').slice(0,2).map(w=>w[0]).join('').toUpperCase(); }
+function avatarCor(nome) {
+  const cores = ['#7c6af7','#4a9eff','#3ecf8e','#f5c542','#f0834a','#f25b5b'];
+  let h = 0; for (const c of nome||'') h = (h * 31 + c.charCodeAt(0)) & 0xffffffff;
+  return cores[Math.abs(h) % cores.length];
+}
+function avatar(nome, size = '') {
+  const cor = avatarCor(nome);
+  return `<div class="avatar ${size}" style="background:${cor}20;color:${cor}">${iniciais(nome)}</div>`;
+}
+function prazoFmt(prazo, curto = false) {
+  if (!prazo) return null;
+  const d = new Date(prazo + 'T00:00:00');
+  if (curto) return d.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' });
+  return d.toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' });
+}
+function diasRestantes(prazo) {
+  if (!prazo) return null;
+  return Math.ceil((new Date(prazo + 'T00:00:00') - new Date()) / 86400000);
+}
+function btnLoading(id, on) {
+  const b = document.getElementById(id);
+  if (!b) return;
+  b.disabled = on;
+  b.classList.toggle('btn-loading', on);
+}
+
+// TAGS
+const ST = { 'Arquivado':'tag-gray', 'Em andamento':'tag-blue','Concluída':'tag-green','Concluído':'tag-green','Bloqueada':'tag-red','A fazer':'tag-gray','Aguardando aprovação':'tag-yellow','Pausado':'tag-gray' };
+const PT = { 'Alta':'tag-red','Média':'tag-yellow','Baixa':'tag-gray' };
+const DT = { 'Simples':'tag-green','Moderada':'tag-orange','Complexa':'tag-red' };
+const FT = { 'Estudo preliminar':'tag-purple','Anteprojeto':'tag-blue','Projeto básico':'tag-orange','Projeto executivo':'tag-red','Em obra':'tag-green' };
+const PO = { 'Alta':0,'Média':1,'Baixa':2 };
+const DO = { 'Complexa':0,'Moderada':1,'Simples':2 };
+
+function tag(t, cls) { return `<span class="tag ${cls||ST[t]||'tag-gray'}">${esc(t)}</span>`; }
+
+// ── INIT ──
+async function init() {
+  if (API === 'SUBSTITUA_PELA_URL_DO_SEU_WORKER') {
+    document.getElementById('content').innerHTML = `<div style="padding:40px;text-align:center;color:var(--text3)"><div style="font-size:32px;margin-bottom:12px;opacity:.3">⚠</div><div style="font-size:13px">Configure a URL do Worker em <code style="color:var(--red)">const API</code> no início do script.<br>Siga as instruções em <strong>INSTRUÇÕES.md</strong>.</div></div>`;
+    document.getElementById('page-app').classList.remove('hidden');
+    return;
+  }
+  try {
+    // Verificar se precisa de setup
+    const setup = await req('GET', '/auth/needs-setup');
+    if (setup.needs_setup) { mostrar('setup'); return; }
+    if (!TOKEN) { mostrar('login'); return; }
+    EU = await req('GET', '/auth/me');
+    localStorage.setItem('ea_user', JSON.stringify(EU));
+    mostrar('app');
+  } catch {
+    TOKEN = null; localStorage.removeItem('ea_token'); localStorage.removeItem('ea_user');
+    mostrar('login');
+  }
+}
+
+function mostrar(tela) {
+  ['login','setup','app'].forEach(t => document.getElementById('page-' + t).classList.toggle('hidden', t !== tela));
+  if (tela === 'app') {
+    document.getElementById('topbar-nome').textContent = EU?.nome || '';
+    if (isAdmin()) document.getElementById('btn-add-colega').style.display = 'inline-flex';
+    renderDash();
+  }
+}
+
+// ── AUTH ──
+async function fazerLogin() {
+  const errEl = document.getElementById('login-err');
+  errEl.classList.add('hidden');
+  btnLoading('btn-login', true);
+  try {
+    const r = await req('POST', '/auth/login', {
+      usuario_login: document.getElementById('l-login').value.trim(),
+      senha: document.getElementById('l-senha').value,
+    });
+    TOKEN = r.token; EU = r.usuario; // r.usuario tem: id, nome, usuario_login, papel
+    localStorage.setItem('ea_token', TOKEN);
+    localStorage.setItem('ea_user', JSON.stringify(EU));
+    mostrar('app');
+  } catch (e) {
+    errEl.textContent = e.message;
+    errEl.classList.remove('hidden');
+    btnLoading('btn-login', false);
+  }
+}
+document.addEventListener('keydown', e => {
+  if (e.key === 'Enter') {
+    if (!document.getElementById('page-login').classList.contains('hidden')) fazerLogin();
+    if (!document.getElementById('page-setup').classList.contains('hidden')) fazerSetup();
+  }
+});
+
+async function fazerSetup() {
+  const errEl = document.getElementById('setup-err');
+  errEl.classList.add('hidden');
+  btnLoading('btn-setup', true);
+  try {
+    await req('POST', '/auth/setup', {
+      nome: document.getElementById('s-nome').value.trim(),
+      usuario_login: document.getElementById('s-login').value.trim(),
+      senha: document.getElementById('s-senha').value,
+    });
+    toast('Conta criada com sucesso!');
+    mostrar('login');
+  } catch (e) {
+    errEl.textContent = e.message;
+    errEl.classList.remove('hidden');
+    btnLoading('btn-setup', false);
+  }
+}
+
+async function fazerLogout() {
+  try { await req('POST', '/auth/logout'); } catch {}
+  TOKEN = null; EU = null;
+  localStorage.removeItem('ea_token'); localStorage.removeItem('ea_user');
+  mostrar('login');
+}
+
+// ── DASHBOARD ──
+async function renderDash() {
+  PROJETO = null;
+  document.title = 'Telier';
+  setBreadcrumb([]);
+  const c = document.getElementById('content');
+  c.innerHTML = `<div class="loading"><div class="spinner"></div> Carregando projetos...</div>`;
+  try {
+    const qs = FILTRO_STATUS !== 'todos' ? `?status=${encodeURIComponent(FILTRO_STATUS)}` : '';
+    const projetos = await req('GET', '/projetos' + qs);
+
+    const emAndamento = projetos.filter(p => !['Concluído','Arquivado'].includes(p.status)).length;
+    const filtros = ['todos','Em andamento','Aguardando aprovação','Pausado','Concluído','Arquivado'];
+
+    let html = `
+      <div class="dash-header">
+        <div class="dash-title">Projetos</div>
+        <button class="btn btn-primary" onclick="modalNovoProjeto()">+ Novo projeto</button>
+      </div>
+      <div class="dash-sub">${emAndamento} em andamento · ${projetos.length} total</div>
+      <div class="dash-filters">
+        ${filtros.map(f => `<button class="filter-btn ${FILTRO_STATUS===f?'ativo':''}" onclick="setFiltro('${esc(f)}')">${f === 'todos' ? 'Todos' : f}</button>`).join('')}
+      </div>
+      <div class="cards-grid">`;
+
+    if (!projetos.length) {
+      html += `<div class="empty-state"><div class="empty-icon">🏗</div><div class="empty-text">Nenhum projeto encontrado</div><div class="empty-sub">${FILTRO_STATUS !== 'todos' ? 'Tente outro filtro' : 'Crie o primeiro projeto'}</div></div>`;
+    }
+
+    projetos.forEach(p => {
+      const total = parseInt(p.total_tarefas) || 0;
+      const conc = parseInt(p.tarefas_concluidas) || 0;
+      const pct = total ? Math.round(conc / total * 100) : 0;
+      const dias = diasRestantes(p.prazo);
+      const urgente = dias !== null && dias <= 7 && p.status !== 'Concluído';
+
+      html += `
+        <div class="proj-card" data-status="${esc(p.status)}" onclick="abrirProjeto('${p.id}')">
+          <div class="proj-card-header">
+            <div class="proj-card-nome">${esc(p.nome)}</div>
+            ${souDono(p.dono_id) ? `<button class="btn btn-ghost btn-icon btn-sm proj-card-edit" onclick="event.stopPropagation();modalEditarProjeto('${p.id}')" title="Editar">✎</button>` : ''}
+          </div>
+          <div class="proj-card-tags">
+            ${tag(p.fase, FT[p.fase])} ${tag(p.status)} ${tag(p.prioridade, PT[p.prioridade])}
+            ${p.prazo ? `<span class="tag ${urgente?'tag-red':'tag-gray'} mono">${prazoFmt(p.prazo, true)}</span>` : ''}
+            ${p.area_m2 ? `<span class="tag tag-gray mono">${p.area_m2.toLocaleString('pt-BR')} m²</span>` : ''}
+          </div>
+          ${total ? `
+          <div class="proj-card-progress">
+            <div class="proj-progress-nums">${conc}/${total} tarefas · ${pct}%</div>
+            <div class="proj-progress-bar"><div class="proj-progress-fill ${pct===100?'done':'partial'}" style="width:${pct}%"></div></div>
+          </div>` : ''}
+          <div class="proj-card-footer">
+            <div class="proj-card-dono">${avatar(p.dono_nome,'avatar-sm')} <span>${esc(p.dono_nome||'—')}</span></div>
+            ${urgente ? `<div class="proj-urgente">⚠ ${dias <= 0 ? 'vencido' : dias + 'd'}</div>` : ''}
+          </div>
+          ${p.minha_tarefa_foco ? `<div class="proj-foco-chip">→ ${esc(p.minha_tarefa_foco)}</div>` : ''}
+        </div>`;
+    });
+
+    c.innerHTML = html + '</div>';
+  } catch (e) { c.innerHTML = `<div style="color:var(--red);padding:24px;font-size:13px">${esc(e.message)}</div>`; }
+}
+
+function setFiltro(f) { FILTRO_STATUS = f; renderDash(); }
+
+// ── PROJETO ──
+async function abrirProjeto(id) {
+  document.getElementById('content').innerHTML = `<div class="loading"><div class="spinner"></div></div>`;
+  try {
+    const [projeto, tarefas, decisoes] = await Promise.all([
+      req('GET', `/projetos/${id}`),
+      req('GET', `/projetos/${id}/tarefas`),
+      req('GET', `/projetos/${id}/decisoes`),
+    ]);
+    PROJETO = projeto; TAREFAS = tarefas;
+    document.title = projeto.nome + ' · Telier';
+    renderProjeto(projeto, tarefas, decisoes, 'lista');
+  } catch (e) { document.getElementById('content').innerHTML = `<div style="color:var(--red);padding:24px;font-size:13px">${esc(e.message)}</div>`; }
+}
+
+function renderProjeto(proj, tarefas, decisoes, abaAtiva) {
+  const total = tarefas.length;
+  const conc = tarefas.filter(t => t.status === 'Concluída').length;
+  const pct = total ? Math.round(conc / total * 100) : 0;
+  const focoMinha = tarefas.find(t => t.foco && t.dono_id === EU?.id);
+  const dias = diasRestantes(proj.prazo);
+  const urgente = dias !== null && dias <= 7 && proj.status !== 'Concluído';
+  const canEdit = podeEditar(proj);
+
+  const c = document.getElementById('content');
+  c.innerHTML = `
+    <div class="proj-hero" data-status="${esc(proj.status)}">
+      <div class="proj-hero-top">
+        <div class="proj-hero-left">
+          <div class="proj-nome">${esc(proj.nome)}</div>
+          <div class="proj-dono">${avatar(proj.dono_nome,'avatar-sm')} <span>${esc(proj.dono_nome||'—')}</span></div>
+        </div>
+        <div style="display:flex;gap:8px;flex-shrink:0">
+          ${canEdit ? `<button class="btn btn-sm" onclick="modalEditarProjeto('${proj.id}')">Editar</button>` : ''}
+          ${souDono(proj.dono_id) ? `<button class="btn btn-sm" onclick="modalPermissoes('${proj.id}')">Permissões</button>` : ''}
+        </div>
+      </div>
+      <div class="proj-tags">
+        ${tag(proj.fase, FT[proj.fase])} ${tag(proj.status)} ${tag(proj.prioridade, PT[proj.prioridade])}
+        ${proj.prazo ? `<span class="tag ${urgente?'tag-red':'tag-gray'} mono">${prazoFmt(proj.prazo)}</span>` : ''}
+      </div>
+      ${proj.area_m2 ? `<div style="margin-bottom:10px"><span class="tag tag-gray mono">${proj.area_m2.toLocaleString('pt-BR')} m²</span></div>` : ''}
+      <div class="proj-stats">
+        <div class="proj-stat">
+          <div class="proj-stat-label">Tarefas</div>
+          <div class="proj-stat-val">${conc}/${total}</div>
+        </div>
+        <div class="proj-stat">
+          <div class="proj-stat-label">Progresso</div>
+          <div class="proj-stat-val">${pct}%</div>
+        </div>
+        ${dias !== null ? `<div class="proj-stat">
+          <div class="proj-stat-label">Prazo</div>
+          <div class="proj-stat-val" style="${urgente?'color:var(--red)':''}">${dias <= 0 ? 'Vencido' : dias + ' dias'}</div>
+        </div>` : ''}
+        <div class="proj-prog-wrap">
+          <div class="proj-prog-bar"><div class="proj-prog-fill ${pct===100?'done':'partial'}" style="width:${pct}%"></div></div>
+        </div>
+      </div>
+      ${focoMinha
+        ? `<div class="proj-foco-banner"><span class="fl">Meu foco</span><span class="fn">${esc(focoMinha.nome)}</span></div>`
+        : `<div class="proj-foco-empty">Nenhuma tarefa em foco — use ★ na lista para definir</div>`}
+    </div>
+    <div class="abas">
+      <button class="aba ${abaAtiva==='lista'?'ativa':''}" onclick="mudarAba('lista')">Lista</button>
+      <button class="aba ${abaAtiva==='mapa'?'ativa':''}" onclick="mudarAba('mapa')">Mapa de Foco</button>
+      <button class="aba ${abaAtiva==='relatorio'?'ativa':''}" onclick="mudarAba('relatorio')">Relatório</button>
+    </div>
+    <div id="aba"></div>
+    <div id="decisoes-sec"></div>
+    <div id="sessoes-sec"></div>`;
+
+  renderAba(abaAtiva, tarefas);
+  renderDecisoes(proj.id, decisoes, canEdit);
+  // Painel de sessões de cronômetro
+  const secEl = document.getElementById('sessoes-sec');
+  if (secEl) {
+    secEl.innerHTML = `
+      <div class="sessoes-sep"></div>
+      <div class="sessoes-header">
+        <div class="sessoes-title">Registros de tempo</div>
+      </div>
+      <div id="sessoes-lista"><div style="color:var(--text3);font-size:13px">Selecione uma tarefa para ver os registros.</div></div>`;
+  }
+}
+
+function mudarAba(aba) {
+  const map = { lista:'Lista', mapa:'Mapa de Foco', relatorio:'Relatório' };
+  document.querySelectorAll('.aba').forEach(b => b.classList.toggle('ativa', b.textContent === map[aba]));
+  renderAba(aba, TAREFAS);
+}
+
+function renderAba(aba, tarefas) {
+  const el = document.getElementById('aba');
+  if (!el) return;
+  TAREFAS = tarefas;
+  if (aba === 'lista') renderLista(el, tarefas);
+  else if (aba === 'mapa') renderMapa(el, tarefas);
+  else renderRelatorio(el, tarefas);
+  // Painel de sessões (só na aba lista)
+  const secEl = document.getElementById('sessoes-sec');
+  if (secEl && aba === 'lista') secEl.style.display = '';
+  else if (secEl) secEl.style.display = 'none';
+}
+
+// ── LISTA ──
+function renderLista(el, tarefas) {
+  const pendentes = tarefas.filter(t => t.status !== 'Concluída');
+  const concluidas = tarefas.filter(t => t.status === 'Concluída');
+  const todas = [...pendentes, ...concluidas];
+
+  const rows = todas.map(t => {
+    const minha = t.dono_id === EU?.id;
+    const canEdit = minha || podeEditar(PROJETO) || isAdmin();
+    const pin = minha
+      ? `<button class="foco-pin ${t.foco?'ativo':''}" onclick="toggleFoco('${t.id}',${!!t.foco})" title="${t.foco?'Remover foco':'Marcar como foco'}">${t.foco?'★':'☆'}</button>`
+      : `<span style="color:var(--text3);font-size:14px;padding:3px">${t.foco?'★':''}</span>`;
+
+    const podeCron = minha || (t.colaboradores_ids || []).includes(EU?.id) || isAdmin();
+    const horas = `<button class="btn btn-ghost btn-icon btn-sm" onclick="iniciarCronometro('${t.id}','${esc(t.nome)}')" title="${podeCron ? 'Iniciar cronômetro' : 'Você não é colaborador desta tarefa'}" style="color:${podeCron ? 'var(--green)' : 'var(--text3)'}">▶</button>`;
+
+    const data = t.data ? prazoFmt(t.data, true) : '—';
+
+    return `<tr onclick="expandirSessoes('${t.id}')" style="cursor:pointer">
+      <td style="width:36px" onclick="event.stopPropagation()">${pin}</td>
+      <td class="td-nome ${t.foco&&minha?'em-foco':''} ${t.status==='Concluída'?'concluida':''}">${esc(t.nome)}</td>
+      <td><div class="resp-chip">${avatar(t.dono_nome,'avatar-sm')} <span>${esc(t.dono_nome||'—')}</span></div></td>
+      <td>${tag(t.dificuldade, DT[t.dificuldade])}</td>
+      <td>${tag(t.prioridade, PT[t.prioridade])}</td>
+      <td onclick="event.stopPropagation()">
+        ${(minha || podeEditar(PROJETO) || isAdmin()) ? `
+          <select class="status-sel" onchange="mudarStatus('${t.id}',this.value)" style="background:transparent;border:none;padding:2px 4px;font-size:11px;cursor:pointer;color:var(--text2)">
+            ${['A fazer','Em andamento','Bloqueada','Concluída'].map(s =>
+              `<option value="${s}" ${s===t.status?'selected':''}>${s}</option>`
+            ).join('')}
+          </select>` : tag(t.status)}
+      </td>
+      <td>${horas}</td>
+      <td><span class="mono" style="font-size:11px;color:var(--text3)">${esc(data)}</span></td>
+      <td><div class="td-ações">
+        ${minha ? `<button class="btn btn-ghost btn-icon btn-sm" onclick="modalColabsTarefa('${t.id}')" title="Colaboradores">👥</button>` : ''}
+        ${canEdit ? `<button class="btn btn-ghost btn-icon btn-sm" onclick="modalEditarTarefa('${t.id}')" title="Editar">✎</button>` : ''}
+        ${canEdit ? `<button class="btn btn-danger btn-icon btn-sm" onclick="deletarTarefa('${t.id}')" title="Excluir">✕</button>` : ''}
+      </div></td>
+    </tr>`;
+  }).join('');
+
+  el.innerHTML = `
+    <div class="tarefas-toolbar">
+      <div class="tarefas-info">${pendentes.length} pendente${pendentes.length!==1?'s':''} · ${concluidas.length} concluída${concluidas.length!==1?'s':''}</div>
+      <button class="btn btn-primary btn-sm" onclick="modalNovaTarefa('${PROJETO?.id}')">+ Nova tarefa</button>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr>
+          <th></th><th>Tarefa</th><th>Responsável</th>
+          <th>Dificuldade</th><th>Prioridade</th><th>Status</th>
+          <th>Tempo</th><th>Data</th><th></th>
+        </tr></thead>
+        <tbody>${rows || `<tr><td colspan="9" style="text-align:center;color:var(--text3);padding:32px;font-style:italic">Nenhuma tarefa ainda — clique em "+ Nova tarefa" para começar</td></tr>`}</tbody>
+      </table>
+    </div>`;
+}
+
+// ── MAPA DE FOCO ──
+function renderMapa(el, tarefas) {
+  const pendentes = [...tarefas.filter(t => t.status !== 'Concluída')]
+    .sort((a,b) => { const p = PO[a.prioridade]-PO[b.prioridade]; return p || DO[a.dificuldade]-DO[b.dificuldade]; });
+
+  if (!pendentes.length) {
+    el.innerHTML = `<div class="empty-state"><div class="empty-icon">✓</div><div class="empty-text">Todas as tarefas concluídas</div></div>`;
+    return;
+  }
+
+  el.innerHTML = `
+    <div class="mapa-intro">Ordenado por prioridade e depois dificuldade — a tarefa #01 é o melhor ponto de partida.</div>
+    <div class="mapa-list">
+      ${pendentes.map((t,i) => `
+        <div class="mapa-item ${t.foco&&t.dono_id===EU?.id?'is-foco':''}">
+          <div class="mapa-rank">${String(i+1).padStart(2,'0')}</div>
+          <div class="mapa-nome">${esc(t.nome)}</div>
+          <div class="mapa-tags">
+            <div class="resp-chip">${avatar(t.dono_nome,'avatar-sm')}</div>
+            ${tag(t.prioridade, PT[t.prioridade])}
+            ${tag(t.dificuldade, DT[t.dificuldade])}
+            ${t.foco&&t.dono_id===EU?.id ? '<span class="tag tag-purple">Meu foco</span>' : ''}
+          </div>
+        </div>`).join('')}
+    </div>`;
+}
+
+// ── RELATÓRIO ──
+async function renderRelatorio(el, tarefas) {
+  el.innerHTML = `<div class="loading"><div class="spinner"></div> Calculando horas...</div>`;
+
+  const grupos = {};
+  tarefas.forEach(t => { (grupos[t.status] = grupos[t.status]||[]).push(t); });
+  const grpOrder = ['Concluída','Em andamento','A fazer','Bloqueada'];
+
+  // Buscar resumo de horas por tarefa (do cronômetro)
+  const resumoMap = {};
+  await Promise.all(tarefas.map(async t => {
+    try {
+      const r = await req('GET', `/tarefas/${t.id}/tempo/resumo`);
+      resumoMap[t.id] = r;
+    } catch { resumoMap[t.id] = []; }
+  }));
+
+  function horasItem(tarefaId) {
+    const resumo = resumoMap[tarefaId] || [];
+    if (!resumo.length) return '';
+    const total = resumo.reduce((s,r) => s + (parseFloat(r.horas_liquidas)||0), 0);
+    const detalhe = resumo.length > 1
+      ? resumo.map(r => `<span style="font-size:11px;color:var(--text3)">${esc(r.usuario_nome)}: ${r.horas_liquidas}hr</span>`).join(' · ')
+      : '';
+    return `<div style="text-align:right">
+      <div class="rel-horas">${total.toFixed(2)} hr</div>
+      ${detalhe ? `<div style="font-size:11px;color:var(--text3);margin-top:2px">${detalhe}</div>` : ''}
+    </div>`;
+  }
+
+  let html = '';
+  grpOrder.forEach(s => {
+    if (!grupos[s]?.length) return;
+    const lista = grupos[s];
+    const totalGrupo = lista.reduce((sum, t) => {
+      const r = resumoMap[t.id] || [];
+      return sum + r.reduce((s2,r2) => s2 + (parseFloat(r2.horas_liquidas)||0), 0);
+    }, 0);
+    html += `<div class="rel-group">
+      <div class="rel-group-header">
+        <div class="rel-group-title">${tag(s)} <span>${lista.length}</span></div>
+        ${totalGrupo > 0 ? `<div class="rel-group-total">${totalGrupo.toFixed(2)} hr</div>` : ''}
+      </div>
+      ${lista.map(t => `
+        <div class="rel-item">
+          <div class="rel-nome">${esc(t.nome)}</div>
+          <div class="resp-chip">${avatar(t.dono_nome,'avatar-sm')}</div>
+          ${horasItem(t.id)}
+        </div>`).join('')}
+    </div>`;
+  });
+
+  el.innerHTML = html || `<div class="empty-state"><div class="empty-icon">📋</div><div class="empty-text">Nenhuma tarefa</div></div>`;
+}
+
+// ── DECISÕES ──
+function renderDecisoes(projetoId, decisoes, canEdit) {
+  const el = document.getElementById('decisoes-sec');
+  if (!el) return;
+  el.innerHTML = `
+    <div class="decisoes-sep"></div>
+    <div class="decisoes-header">
+      <div class="decisoes-title">Decisões e referências</div>
+      ${canEdit ? `<button class="btn btn-sm" onclick="modalNovaDecisao('${projetoId}')">+ Adicionar</button>` : ''}
+    </div>
+    ${decisoes.length ? decisoes.map(d => `
+      <div class="decisao-item">
+        <div class="decisao-data">${d.data||''}</div>
+        <div class="decisao-corpo">
+          <div class="decisao-texto">${esc(d.descricao)}</div>
+          <div class="decisao-autor">${avatar(d.dono_nome,'avatar-sm')} ${esc(d.dono_nome||'—')}</div>
+        </div>
+        ${(souDono(d.dono_id)||canEdit) ? `<button class="decisao-del" onclick="deletarDecisao('${d.id}','${projetoId}')" title="Excluir">✕</button>` : ''}
+      </div>`).join('')
+    : `<div class="decisoes-empty">Nenhuma decisão registrada ainda.</div>`}`;
+}
+
+// ── AÇÕES ──
+
+async function mudarStatus(tarefaId, novoStatus) {
+  try {
+    await req('PATCH', `/tarefas/${tarefaId}`, { status: novoStatus });
+    TAREFAS = TAREFAS.map(t => t.id === tarefaId ? { ...t, status: novoStatus } : t);
+    toast('Status atualizado');
+    // Atualizar hero do projeto se estiver na página
+    if (PROJETO) {
+      const conc = TAREFAS.filter(t => t.status === 'Concluída').length;
+      const pct = TAREFAS.length ? Math.round(conc / TAREFAS.length * 100) : 0;
+      const fill = document.querySelector('.proj-prog-fill');
+      const txt = document.querySelector('.proj-prog-text');
+      if (fill) { fill.style.width = pct + '%'; fill.className = 'proj-prog-fill ' + (pct===100?'done':'partial'); }
+      if (txt) txt.textContent = `${conc}/${TAREFAS.length} concluídas · ${pct}%`;
+    }
+  } catch (e) { toast(e.message, 'err'); }
+}
+
+async function toggleFoco(id, focoAtual) {
+  try {
+    focoAtual ? await req('DELETE', `/tarefas/${id}/foco`) : await req('PUT', `/tarefas/${id}/foco`);
+    await recarregarProjeto();
+  } catch (e) { toast(e.message, 'err'); }
+}
+
+async function deletarTarefa(id) {
+  if (!confirm('Excluir esta tarefa?')) return;
+  try { await req('DELETE', `/tarefas/${id}`); toast('Tarefa excluída'); await recarregarProjeto(); }
+  catch (e) { toast(e.message, 'err'); }
+}
+
+async function deletarDecisao(id, projetoId) {
+  if (!confirm('Excluir esta decisão?')) return;
+  try {
+    await req('DELETE', `/decisoes/${id}`);
+    const decisoes = await req('GET', `/projetos/${projetoId}/decisoes`);
+    renderDecisoes(projetoId, decisoes, podeEditar(PROJETO));
+    toast('Excluído');
+  } catch (e) { toast(e.message, 'err'); }
+}
+
+async function recarregarProjeto(aba) {
+  if (!PROJETO) return;
+  const abaAtiva = aba || document.querySelector('.aba.ativa')?.textContent;
+  const m = { 'Lista':'lista','Mapa de Foco':'mapa','Relatório':'relatorio' };
+  const [proj, tarefas, decisoes] = await Promise.all([
+    req('GET', `/projetos/${PROJETO.id}`),
+    req('GET', `/projetos/${PROJETO.id}/tarefas`),
+    req('GET', `/projetos/${PROJETO.id}/decisoes`),
+  ]);
+  PROJETO = proj; TAREFAS = tarefas;
+  renderProjeto(proj, tarefas, decisoes, m[abaAtiva] || 'lista');
+}
+
+// ── MODAIS ──
+const FASES = ['Estudo preliminar','Anteprojeto','Projeto básico','Projeto executivo','Em obra'];
+const STATUS_PROJ = ['Em andamento','Aguardando aprovação','Pausado','Concluído','Arquivado'];
+const STATUS_TAR = ['A fazer','Em andamento','Bloqueada','Concluída'];
+const PRIORS = ['Alta','Média','Baixa'];
+const DIFS = ['Simples','Moderada','Complexa'];
+
+function sel(id, opts, val) {
+  return `<select id="${id}">${opts.map(o=>`<option ${o===val?'selected':''}>${esc(o)}</option>`).join('')}</select>`;
+}
+function gv(id) { return document.getElementById(id)?.value || ''; }
+
+function modalNovoProjeto() {
+  abrirModal(`
+    <h2>Novo projeto</h2>
+    <div class="form-row"><label>Nome do projeto</label><input id="m-nome" placeholder="Ex: Reforma Bloco B"></div>
+    <div class="form-grid">
+      <div class="form-row"><label>Fase</label>${sel('m-fase',FASES,'Estudo preliminar')}</div>
+      <div class="form-row"><label>Status</label>${sel('m-status',STATUS_PROJ,'Em andamento')}</div>
+      <div class="form-row"><label>Prioridade</label>${sel('m-prior',PRIORS,'Média')}</div>
+      <div class="form-row"><label>Prazo</label><input type="date" id="m-prazo"></div>
+      <div class="form-row"><label>Área (m²)</label><input type="number" id="m-area" min="0" step="0.01" placeholder="Ex: 250.5"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn" onclick="fecharModal()">Cancelar</button>
+      <button class="btn btn-primary" id="btn-criar-proj" onclick="criarProjeto()">Criar projeto</button>
+    </div>`);
+}
+
+async function criarProjeto() {
+  const nome = gv('m-nome').trim();
+  if (!nome) { toast('Nome obrigatório', 'err'); return; }
+  btnLoading('btn-criar-proj', true);
+  try {
+    const areaVal = gv('m-area'); await req('POST', '/projetos', { nome, fase: gv('m-fase'), status: gv('m-status'), prioridade: gv('m-prior'), prazo: gv('m-prazo')||null, area_m2: areaVal ? parseFloat(areaVal) : null });
+    fecharModal(); toast('Projeto criado'); renderDash();
+  } catch (e) { toast(e.message, 'err'); btnLoading('btn-criar-proj', false); }
+}
+
+async function modalEditarProjeto(id) {
+  const p = PROJETO?.id === id ? PROJETO : await req('GET', `/projetos/${id}`);
+  abrirModal(`
+    <h2>Editar projeto</h2>
+    <div class="form-row"><label>Nome do projeto</label><input id="m-nome" value="${esc(p.nome)}"></div>
+    <div class="form-grid">
+      <div class="form-row"><label>Fase</label>${sel('m-fase',FASES,p.fase)}</div>
+      <div class="form-row"><label>Status</label>${sel('m-status',STATUS_PROJ,p.status)}</div>
+      <div class="form-row"><label>Prioridade</label>${sel('m-prior',PRIORS,p.prioridade)}</div>
+      <div class="form-row"><label>Prazo</label><input type="date" id="m-prazo" value="${p.prazo||''}"></div>
+      <div class="form-row"><label>Área (m²)</label><input type="number" id="m-area" min="0" step="0.01" value="${p.area_m2||''}" placeholder="Ex: 250.5"></div>
+    </div>
+    <div class="modal-footer">
+      ${souDono(p.dono_id) ? `<button class="btn btn-danger" onclick="deletarProjeto('${id}')">Excluir</button>` : ''}
+      <button class="btn" onclick="fecharModal()">Cancelar</button>
+      <button class="btn btn-primary" id="btn-salvar-proj" onclick="salvarProjeto('${id}')">Salvar</button>
+    </div>`);
+}
+
+async function salvarProjeto(id) {
+  const nome = gv('m-nome').trim();
+  if (!nome) { toast('Nome obrigatório', 'err'); return; }
+  btnLoading('btn-salvar-proj', true);
+  try {
+    const areaVal2 = gv('m-area'); await req('PUT', `/projetos/${id}`, { nome, fase: gv('m-fase'), status: gv('m-status'), prioridade: gv('m-prior'), prazo: gv('m-prazo')||null, area_m2: areaVal2 ? parseFloat(areaVal2) : null });
+    fecharModal(); toast('Projeto atualizado');
+    if (PROJETO?.id === id) await recarregarProjeto(); else renderDash();
+  } catch (e) { toast(e.message, 'err'); btnLoading('btn-salvar-proj', false); }
+}
+
+async function deletarProjeto(id) {
+  const proj = PROJETO?.id === id ? PROJETO : null;
+  const status = proj?.status || '';
+  if (status !== 'Arquivado') {
+    toast('Arquive o projeto antes de excluí-lo — mude o status para "Arquivado".', 'err');
+    return;
+  }
+  if (!confirm('Atenção: esta ação é permanente e não pode ser desfeita.\n\nExcluir o projeto "' + (proj?.nome || '') + '" e todas as suas tarefas, sessões de tempo e decisões?')) return;
+  try { await req('DELETE', `/projetos/${id}`); fecharModal(); toast('Projeto excluído'); renderDash(); }
+  catch (e) { toast(e.message, 'err'); }
+}
+
+// PERMISSÕES
+async function modalPermissoes(projetoId) {
+  if (!USUARIOS.length) USUARIOS = await req('GET', '/usuarios');
+  const proj = PROJETO?.id === projetoId ? PROJETO : await req('GET', `/projetos/${projetoId}`);
+  const editores = proj.editores || [];
+  const editIds = editores.map(e => e.usuario_id);
+  const disponiveis = USUARIOS.filter(u => u.id !== proj.dono_id && !editIds.includes(u.id));
+
+  const editorRows = editores.map(e => `
+    <div class="editor-row">
+      <div class="editor-info">${avatar(e.nome)} ${esc(e.nome)} <span style="color:var(--text3);font-size:11px">@${esc(e.usuario_login)}</span></div>
+      <button class="editor-del" onclick="removerPerm('${projetoId}','${e.usuario_id}')" title="Remover">✕</button>
+    </div>`).join('') || `<div style="font-size:12px;color:var(--text3)">Nenhum editor adicionado</div>`;
+
+  abrirModal(`
+    <h2>Permissões de edição</h2>
+    <p style="font-size:13px;color:var(--text2);margin-bottom:16px">Todos os membros visualizam este projeto. Adicione editores para que possam criar e modificar tarefas.</p>
+    <div class="form-row"><label>Editores atuais</label><div class="editor-list">${editorRows}</div></div>
+    ${disponiveis.length ? `
+    <div class="form-sep"></div>
+    <div class="form-row"><label>Adicionar editor</label>
+      <div style="display:flex;gap:8px">
+        <select id="m-editor" style="flex:1">${disponiveis.map(u=>`<option value="${u.id}">${esc(u.nome)} (@${esc(u.usuario_login)})</option>`).join('')}</select>
+        <button class="btn btn-sm btn-primary" id="btn-add-perm" onclick="adicionarPerm('${projetoId}')">Adicionar</button>
+      </div>
+    </div>` : `<div style="font-size:12px;color:var(--text3);margin-top:8px">Todos os membros já têm acesso de edição.</div>`}
+    <div class="modal-footer"><button class="btn" onclick="fecharModal()">Fechar</button></div>`, { lg: true });
+}
+
+async function adicionarPerm(projetoId) {
+  const uid = gv('m-editor');
+  if (!uid) return;
+  btnLoading('btn-add-perm', true);
+  try {
+    await req('POST', `/projetos/${projetoId}/permissoes`, { usuario_id: uid });
+    toast('Editor adicionado');
+    fecharModal();
+    if (PROJETO?.id === projetoId) { PROJETO = await req('GET', `/projetos/${projetoId}`); }
+    modalPermissoes(projetoId);
+  } catch (e) { toast(e.message, 'err'); btnLoading('btn-add-perm', false); }
+}
+
+async function removerPerm(projetoId, usuarioId) {
+  try {
+    await req('DELETE', `/projetos/${projetoId}/permissoes/${usuarioId}`);
+    toast('Permissão removida');
+    fecharModal();
+    if (PROJETO?.id === projetoId) { PROJETO = await req('GET', `/projetos/${projetoId}`); }
+    modalPermissoes(projetoId);
+  } catch (e) { toast(e.message, 'err'); }
+}
+
+// TAREFAS
+function modalNovaTarefa(projetoId) {
+  abrirModal(`
+    <h2>Nova tarefa</h2>
+    <div class="form-row"><label>Descrição da tarefa</label><input id="m-nome" placeholder="Ex: Detalhar corte da escada"></div>
+    <div class="form-grid">
+      <div class="form-row"><label>Status</label>${sel('m-status',STATUS_TAR,'A fazer')}</div>
+      <div class="form-row"><label>Prioridade</label>${sel('m-prior',PRIORS,'Média')}</div>
+      <div class="form-row"><label>Dificuldade</label>${sel('m-dific',DIFS,'Moderada')}</div>
+      <div class="form-row"><label>Data</label><input type="date" id="m-data"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn" onclick="fecharModal()">Cancelar</button>
+      <button class="btn btn-primary" id="btn-criar-tar" onclick="criarTarefa('${projetoId}')">Criar tarefa</button>
+    </div>`);
+}
+
+async function criarTarefa(projetoId) {
+  const nome = gv('m-nome').trim();
+  if (!nome) { toast('Nome obrigatório', 'err'); return; }
+  btnLoading('btn-criar-tar', true);
+  try {
+    await req('POST', `/projetos/${projetoId}/tarefas`, { nome, status: gv('m-status'), prioridade: gv('m-prior'), dificuldade: gv('m-dific'), data: gv('m-data')||null });
+    fecharModal(); toast('Tarefa criada'); await recarregarProjeto('lista');
+  } catch (e) { toast(e.message, 'err'); btnLoading('btn-criar-tar', false); }
+}
+
+async function modalEditarTarefa(id) {
+  const t = TAREFAS.find(t => t.id === id);
+  if (!t) return;
+  abrirModal(`
+    <h2>Editar tarefa</h2>
+    <div class="form-row"><label>Descrição</label><input id="m-nome" value="${esc(t.nome)}"></div>
+    <div class="form-grid">
+      <div class="form-row"><label>Status</label>${sel('m-status',STATUS_TAR,t.status)}</div>
+      <div class="form-row"><label>Prioridade</label>${sel('m-prior',PRIORS,t.prioridade)}</div>
+      <div class="form-row"><label>Dificuldade</label>${sel('m-dific',DIFS,t.dificuldade)}</div>
+      <div class="form-row"><label>Data</label><input type="date" id="m-data" value="${t.data||''}"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn" onclick="fecharModal()">Cancelar</button>
+      <button class="btn btn-primary" id="btn-salvar-tar" onclick="salvarTarefa('${id}')">Salvar</button>
+    </div>`);
+}
+
+async function salvarTarefa(id) {
+  const nome = gv('m-nome').trim();
+  if (!nome) { toast('Nome obrigatório', 'err'); return; }
+  btnLoading('btn-salvar-tar', true);
+  try {
+    await req('PUT', `/tarefas/${id}`, { nome, status: gv('m-status'), prioridade: gv('m-prior'), dificuldade: gv('m-dific'), data: gv('m-data')||null });
+    fecharModal(); toast('Tarefa atualizada'); await recarregarProjeto();
+  } catch (e) { toast(e.message, 'err'); btnLoading('btn-salvar-tar', false); }
+}
+
+// DECISÕES
+function modalNovaDecisao(projetoId) {
+  abrirModal(`
+    <h2>Nova decisão ou referência</h2>
+    <div class="form-row"><label>Data</label><input type="date" id="m-data" value="${new Date().toISOString().slice(0,10)}"></div>
+    <div class="form-row"><label>Descrição</label><textarea id="m-desc" placeholder="Decisão tomada, material definido, link de arquivo, norma técnica..."></textarea></div>
+    <div class="modal-footer">
+      <button class="btn" onclick="fecharModal()">Cancelar</button>
+      <button class="btn btn-primary" id="btn-criar-dec" onclick="criarDecisao('${projetoId}')">Salvar</button>
+    </div>`);
+}
+
+async function criarDecisao(projetoId) {
+  const desc = gv('m-desc').trim();
+  if (!desc) { toast('Descrição obrigatória', 'err'); return; }
+  btnLoading('btn-criar-dec', true);
+  try {
+    await req('POST', `/projetos/${projetoId}/decisoes`, { descricao: desc, data: gv('m-data') });
+    fecharModal(); toast('Decisão registrada');
+    const decisoes = await req('GET', `/projetos/${projetoId}/decisoes`);
+    renderDecisoes(projetoId, decisoes, podeEditar(PROJETO));
+  } catch (e) { toast(e.message, 'err'); btnLoading('btn-criar-dec', false); }
+}
+
+// COLEGAS
+
+async function modalColabsTarefa(tarefaId) {
+  if (!USUARIOS.length) USUARIOS = await req('GET', '/usuarios');
+  const tarefa = TAREFAS.find(t => t.id === tarefaId);
+  let colabs = [];
+  try { colabs = await req('GET', `/tarefas/${tarefaId}/colaboradores`); } catch {}
+
+  const colabIds = colabs.map(c => c.id);
+  const disponiveis = USUARIOS.filter(u => u.id !== tarefa?.dono_id && !colabIds.includes(u.id) && u.id !== EU?.id);
+
+  const colabRows = colabs.map(c => `
+    <div class="colab-row">
+      <div class="colab-info">${avatar(c.nome)} <span>${esc(c.nome)}</span> <span style="color:var(--text3);font-size:11px">@${esc(c.usuario_login)}</span></div>
+      <button class="colab-del" onclick="removerColab('${tarefaId}','${c.id}')" title="Remover">✕</button>
+    </div>`).join('') || `<div style="font-size:12px;color:var(--text3)">Nenhum colaborador adicionado</div>`;
+
+  abrirModal(`
+    <h2>Colaboradores da tarefa</h2>
+    <p style="font-size:13px;color:var(--text2);margin-bottom:16px">Colaboradores podem iniciar o cronômetro nesta tarefa. Cada um vê apenas suas próprias sessões.</p>
+    <div class="form-row"><label>Colaboradores atuais</label><div class="colab-list">${colabRows}</div></div>
+    ${disponiveis.length ? `
+    <div class="form-row"><label>Adicionar colaborador</label>
+      <div style="display:flex;gap:8px">
+        <select id="m-colab" style="flex:1">${disponiveis.map(u=>`<option value="${u.id}">${esc(u.nome)} (@${esc(u.usuario_login)})</option>`).join('')}</select>
+        <button class="btn btn-sm btn-primary" id="btn-add-colab" onclick="adicionarColab('${tarefaId}')">Adicionar</button>
+      </div>
+    </div>` : `<div style="font-size:12px;color:var(--text3);margin-top:8px">Todos os membros já são colaboradores.</div>`}
+    <div class="modal-footer"><button class="btn" onclick="fecharModal()">Fechar</button></div>`, { lg: true });
+}
+
+async function adicionarColab(tarefaId) {
+  const uid = gv('m-colab');
+  if (!uid) return;
+  btnLoading('btn-add-colab', true);
+  try {
+    await req('POST', `/tarefas/${tarefaId}/colaboradores`, { usuario_id: uid });
+    toast('Colaborador adicionado');
+    fecharModal();
+    modalColabsTarefa(tarefaId);
+  } catch (e) { toast(e.message,'err'); btnLoading('btn-add-colab', false); }
+}
+
+async function removerColab(tarefaId, usuarioId) {
+  try {
+    await req('DELETE', `/tarefas/${tarefaId}/colaboradores/${usuarioId}`);
+    toast('Colaborador removido');
+    fecharModal();
+    modalColabsTarefa(tarefaId);
+  } catch (e) { toast(e.message,'err'); }
+}
+
+function modalNovoColega() {
+  abrirModal(`
+    <h2>Adicionar colega</h2>
+    <div class="form-row"><label>Nome completo</label><input id="m-nome" placeholder="Ex: Ana Souza"></div>
+    <div class="form-row"><label>Usuário</label><input type="text" id="m-email" placeholder="ex: ana_souza" autocomplete="off"></div>
+    <div class="form-row"><label>Senha temporária</label><input type="password" id="m-senha" placeholder="O colega poderá alterar depois"></div>
+    <div class="modal-footer">
+      <button class="btn" onclick="fecharModal()">Cancelar</button>
+      <button class="btn btn-primary" id="btn-criar-col" onclick="criarColega()">Adicionar</button>
+    </div>`);
+}
+
+async function criarColega() {
+  const nome = gv('m-nome').trim();
+  const usuario_login_novo = gv('m-email').trim();
+  const senha = gv('m-senha');
+  if (!nome||!usuario_login_novo||!senha) { toast('Preencha todos os campos', 'err'); return; }
+  btnLoading('btn-criar-col', true);
+  try {
+    await req('POST', '/usuarios', { nome, usuario_login: usuario_login_novo, senha, papel: 'membro' });
+    USUARIOS = [];
+    fecharModal(); toast('Colega adicionado com sucesso');
+  } catch (e) { toast(e.message, 'err'); btnLoading('btn-criar-col', false); }
+}
+
+
+
+async function expandirSessoes(tarefaId) {
+  const el = document.getElementById('sessoes-lista');
+  if (!el) return;
+  const tarefa = TAREFAS.find(t => t.id === tarefaId);
+  const nome = tarefa?.nome || tarefaId;
+  el.innerHTML = `<div style="color:var(--text3);font-size:12px;margin-bottom:12px">Sessões de: <strong style="color:var(--text2)">${esc(nome)}</strong></div><div id="sess-inner"><div class="loading"><div class="spinner"></div></div></div>`;
+  await renderSessoesTarefa(tarefaId, document.getElementById('sess-inner'));
+}
+
+// ── CRONÔMETRO ──
+let TIMERS = {}; // { sessaoId: { tarefaId, tarefa_nome, projeto_nome, projeto_id, inicio, intervalo } }
+
+function fmtDuracao(segundos) {
+  const h = Math.floor(segundos / 3600);
+  const m = Math.floor((segundos % 3600) / 60);
+  const s = Math.floor(segundos % 60);
+  return h > 0
+    ? `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`
+    : `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+}
+
+function fmtDatetime(iso) {
+  if (!iso) return '—';
+  const d = new Date(iso.replace(' ', 'T') + 'Z');
+  return d.toLocaleDateString('pt-BR') + ' ' + d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+}
+
+function fmtDatetimeInput(iso) {
+  if (!iso) return '';
+  return (iso.replace(' ', 'T') + 'Z').replace('Z','').slice(0,16);
+}
+
+function agora() {
+  return new Date().toISOString().slice(0, 19).replace('T', ' ');
+}
+
+async function carregarTimersAtivos() {
+  try {
+    const ativas = await req('GET', '/tempo/ativas');
+    for (const s of ativas) {
+      if (!TIMERS[s.id]) {
+        TIMERS[s.id] = {
+          tarefaId: s.tarefa_id,
+          tarefa_nome: s.tarefa_nome,
+          projeto_nome: s.projeto_nome,
+          projeto_id: s.projeto_id,
+          inicio: s.inicio,
+        };
+      }
+    }
+    renderTimerDock();
+  } catch {}
+}
+
+async function iniciarCronometro(tarefaId, tarefaNome) {
+  try {
+    const { id, inicio } = await req('POST', `/tarefas/${tarefaId}/tempo`, { inicio: agora() }).catch(e => {
+      if (e.message.includes('permissão')) throw new Error('Você precisa ser colaborador desta tarefa para cronometrar');
+      throw e;
+    });
+    TIMERS[id] = {
+      tarefaId,
+      tarefa_nome: tarefaNome,
+      projeto_nome: PROJETO?.nome || '',
+      projeto_id: PROJETO?.id || '',
+      inicio,
+    };
+    renderTimerDock();
+    toast('Cronômetro iniciado');
+  } catch (e) { toast(e.message, 'err'); }
+}
+
+async function pararCronometro(sessaoId) {
+  try {
+    await req('PUT', `/tempo/${sessaoId}/parar`, { fim: agora() });
+    delete TIMERS[sessaoId];
+    renderTimerDock();
+    toast('Cronômetro parado');
+    // Recarregar se estiver na página do projeto certo
+    if (PROJETO) await recarregarProjeto();
+  } catch (e) { toast(e.message, 'err'); }
+}
+
+function renderTimerDock() {
+  const dock = document.getElementById('timer-dock');
+  if (!dock) return;
+  const ids = Object.keys(TIMERS);
+  if (!ids.length) { dock.innerHTML = ''; return; }
+
+  dock.innerHTML = ids.map(sessaoId => {
+    const t = TIMERS[sessaoId];
+    const segundos = Math.floor((Date.now() - new Date(t.inicio.replace(' ','T') + 'Z').getTime()) / 1000);
+    return `
+      <div class="timer-card ativo" id="tcard-${sessaoId}">
+        <div class="timer-card-proj">${esc(t.projeto_nome)}</div>
+        <div class="timer-card-header">
+          <div class="timer-dot"></div>
+          <div class="timer-card-nome">${esc(t.tarefa_nome)}</div>
+        </div>
+        <div class="timer-display" id="tdisp-${sessaoId}">${fmtDuracao(segundos)}</div>
+        <div class="timer-actions">
+          <button class="btn btn-sm" onclick="modalAdicionarIntervalo('${sessaoId}')">+ Intervalo</button>
+          <button class="btn btn-sm btn-danger" onclick="pararCronometro('${sessaoId}')">■ Parar</button>
+        </div>
+      </div>`;
+  }).join('');
+
+  // Atualizar displays a cada segundo
+  clearInterval(window._timerTick);
+  window._timerTick = setInterval(() => {
+    Object.entries(TIMERS).forEach(([sid, t]) => {
+      const el = document.getElementById('tdisp-' + sid);
+      if (!el) return;
+      const seg = Math.floor((Date.now() - new Date(t.inicio.replace(' ','T') + 'Z').getTime()) / 1000);
+      el.textContent = fmtDuracao(seg);
+    });
+  }, 1000);
+}
+
+function modalAdicionarIntervalo(sessaoId) {
+  abrirModal(`
+    <h2>Adicionar intervalo</h2>
+    <div class="form-row"><label>Tipo</label><input id="m-tipo" placeholder="Ex: Lanche, Reunião, Problema técnico..."></div>
+    <div class="form-grid">
+      <div class="form-row"><label>Início</label><input type="datetime-local" id="m-ini" value="${new Date().toISOString().slice(0,16)}"></div>
+      <div class="form-row"><label>Fim (opcional)</label><input type="datetime-local" id="m-fim"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn" onclick="fecharModal()">Cancelar</button>
+      <button class="btn btn-primary" id="btn-add-int" onclick="criarIntervalo('${sessaoId}')">Adicionar</button>
+    </div>`);
+}
+
+async function criarIntervalo(sessaoId) {
+  const tipo = gv('m-tipo').trim();
+  if (!tipo) { toast('Tipo obrigatório', 'err'); return; }
+  btnLoading('btn-add-int', true);
+  try {
+    const ini = gv('m-ini').replace('T', ' ');
+    const fim = gv('m-fim') ? gv('m-fim').replace('T', ' ') : null;
+    await req('POST', `/tempo/${sessaoId}/intervalos`, { tipo, inicio: ini, fim });
+    fecharModal(); toast('Intervalo adicionado');
+    if (PROJETO) await recarregarProjeto();
+  } catch (e) { toast(e.message, 'err'); btnLoading('btn-add-int', false); }
+}
+
+// ── PAINEL DE SESSÕES (dentro da tarefa) ──
+async function renderSessoesTarefa(tarefaId, containerEl) {
+  try {
+    const sessoes = await req('GET', `/tarefas/${tarefaId}/tempo`);
+    if (!sessoes.length) {
+      containerEl.innerHTML = `<div class="sessoes-empty">Nenhuma sessão registrada.</div>`;
+      return;
+    }
+
+    let totalH = 0;
+    const html = sessoes.map(s => {
+      const ativa = !s.fim;
+      totalH += parseFloat(s.horas_liquidas || 0);
+      const duracaoSeg = ativa
+        ? Math.floor((Date.now() - new Date(s.inicio.replace(' ','T')+'Z').getTime())/1000)
+        : Math.round((parseFloat(s.horas_liquidas)||0) * 3600);
+
+      const intervalosHtml = s.intervalos?.length ? `
+        <div class="intervalos-list">
+          ${s.intervalos.map(iv => {
+            const dur = iv.fim
+              ? Math.round((new Date(iv.fim.replace(' ','T')+'Z') - new Date(iv.inicio.replace(' ','T')+'Z'))/60000)
+              : null;
+            return `<div class="intervalo-item">
+              <div class="intervalo-tipo">${esc(iv.tipo)}</div>
+              <div class="intervalo-tempo">${fmtDatetime(iv.inicio)} → ${iv.fim ? fmtDatetime(iv.fim) : 'aberto'}</div>
+              ${dur !== null ? `<div class="intervalo-duracao">${dur}min</div>` : ''}
+              <button class="btn btn-danger btn-icon btn-sm" onclick="editarIntervalo('${iv.id}')" title="Editar">✎</button>
+              <button class="btn btn-danger btn-icon btn-sm" onclick="deletarIntervalo('${iv.id}','${tarefaId}')" title="Excluir">✕</button>
+            </div>`;
+          }).join('')}
+        </div>` : '';
+
+      return `
+        <div class="sessao-item ${ativa?'ativa':''}">
+          <div class="sessao-header">
+            <div>
+              <div class="sessao-user">${esc(s.usuario_nome||'—')}</div>
+              <div class="sessao-tempo">${fmtDatetime(s.inicio)} → ${s.fim ? fmtDatetime(s.fim) : '<span style="color:var(--green)">rodando</span>'}</div>
+            </div>
+            <div class="sessao-liquido" ${ativa ? `id="sdur-${s.id}"` : ''}>${fmtDuracao(duracaoSeg)}</div>
+            <div class="sessao-actions">
+              <button class="btn btn-ghost btn-icon btn-sm" onclick="editarSessao('${s.id}','${s.inicio}','${s.fim||''}')" title="Editar">✎</button>
+              <button class="btn btn-ghost btn-icon btn-sm" onclick="modalAdicionarIntervalo('${s.id}')" title="+ Intervalo">+</button>
+              <button class="btn btn-danger btn-icon btn-sm" onclick="deletarSessao('${s.id}','${tarefaId}')" title="Excluir">✕</button>
+            </div>
+          </div>
+          ${intervalosHtml}
+        </div>`;
+    }).join('');
+
+    containerEl.innerHTML = html + `<div class="sessoes-total">Total líquido: ${totalH.toFixed(2)} hr</div>`;
+
+    // Atualizar sessões ativas
+    sessoes.filter(s => !s.fim).forEach(s => {
+      setInterval(() => {
+        const el = document.getElementById('sdur-' + s.id);
+        if (!el) return;
+        const seg = Math.floor((Date.now() - new Date(s.inicio.replace(' ','T')+'Z').getTime())/1000);
+        el.textContent = fmtDuracao(seg);
+      }, 1000);
+    });
+  } catch (e) {
+    containerEl.innerHTML = `<div style="color:var(--red);font-size:13px">${esc(e.message)}</div>`;
+  }
+}
+
+async function editarSessao(sessaoId, inicio, fim) {
+  abrirModal(`
+    <h2>Editar sessão</h2>
+    <div class="form-row"><label>Início</label><input type="datetime-local" id="m-ini" value="${fmtDatetimeInput(inicio)}"></div>
+    <div class="form-row"><label>Fim</label><input type="datetime-local" id="m-fim" value="${fmtDatetimeInput(fim)}"></div>
+    <div class="modal-footer">
+      <button class="btn" onclick="fecharModal()">Cancelar</button>
+      <button class="btn btn-primary" id="btn-ed-sess" onclick="salvarSessao('${sessaoId}')">Salvar</button>
+    </div>`);
+}
+
+async function salvarSessao(sessaoId) {
+  btnLoading('btn-ed-sess', true);
+  try {
+    const ini = gv('m-ini').replace('T',' ');
+    const fim = gv('m-fim') ? gv('m-fim').replace('T',' ') : null;
+    await req('PUT', `/tempo/${sessaoId}`, { inicio: ini, fim });
+    fecharModal(); toast('Sessão atualizada');
+    if (PROJETO) await recarregarProjeto();
+  } catch (e) { toast(e.message,'err'); btnLoading('btn-ed-sess', false); }
+}
+
+async function deletarSessao(sessaoId, tarefaId) {
+  if (!confirm('Excluir esta sessão e todos os seus intervalos?')) return;
+  try {
+    await req('DELETE', `/tempo/${sessaoId}`);
+    toast('Sessão excluída');
+    if (PROJETO) await recarregarProjeto();
+  } catch (e) { toast(e.message,'err'); }
+}
+
+async function editarIntervalo(intervaloId) {
+  abrirModal(`
+    <h2>Editar intervalo</h2>
+    <div class="form-row"><label>Tipo</label><input id="m-tipo" placeholder="Lanche, Reunião..."></div>
+    <div class="form-grid">
+      <div class="form-row"><label>Início</label><input type="datetime-local" id="m-ini"></div>
+      <div class="form-row"><label>Fim</label><input type="datetime-local" id="m-fim"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn" onclick="fecharModal()">Cancelar</button>
+      <button class="btn btn-primary" id="btn-ed-int" onclick="salvarIntervalo('${intervaloId}')">Salvar</button>
+    </div>`);
+}
+
+async function salvarIntervalo(id) {
+  btnLoading('btn-ed-int', true);
+  try {
+    await req('PUT', `/intervalos/${id}`, { tipo: gv('m-tipo'), inicio: gv('m-ini').replace('T',' '), fim: gv('m-fim') ? gv('m-fim').replace('T',' ') : null });
+    fecharModal(); toast('Intervalo atualizado');
+    if (PROJETO) await recarregarProjeto();
+  } catch (e) { toast(e.message,'err'); btnLoading('btn-ed-int', false); }
+}
+
+async function deletarIntervalo(id, tarefaId) {
+  if (!confirm('Excluir este intervalo?')) return;
+  try {
+    await req('DELETE', `/intervalos/${id}`);
+    toast('Intervalo excluído');
+    if (PROJETO) await recarregarProjeto();
+  } catch (e) { toast(e.message,'err'); }
+}
+
+
+// ── TEMA ──
+function aplicarTema(tema) {
+  document.documentElement.setAttribute('data-theme', tema);
+  localStorage.setItem('ea_tema', tema);
+  const btn = document.getElementById('btn-tema');
+  if (btn) btn.textContent = tema === 'dark' ? '🌙' : '☀️';
+}
+
+function alternarTema() {
+  const atual = document.documentElement.getAttribute('data-theme') || 'dark';
+  aplicarTema(atual === 'dark' ? 'light' : 'dark');
+}
+
+// ── BREADCRUMB ──
+function setBreadcrumb(partes) {
+  // partes: [{label, onClick?}]  — último é "atual" sem click
+  const el = document.getElementById('topbar-breadcrumb');
+  if (!el) return;
+  if (!partes.length) { el.innerHTML = ''; return; }
+  el.innerHTML = partes.map((p, i) => {
+    const isUltimo = i === partes.length - 1;
+    const cls = isUltimo ? 'topbar-crumb atual' : 'topbar-crumb';
+    const onclick = (!isUltimo && p.onClick) ? `onclick="${p.onClick}"` : '';
+    const sep = i === 0 ? '<span class="topbar-sep-crumb">/</span>' : '';
+    return `${sep}<span class="${cls}" ${onclick} title="${esc(p.label)}">${esc(p.label)}</span>${!isUltimo ? '<span class="topbar-sep-crumb">/</span>' : ''}`;
+  }).join('');
+}
+
+window.addEventListener('load', async () => {
+  // Aplicar tema salvo
+  const temaSalvo = localStorage.getItem('ea_tema') || 'dark';
+  aplicarTema(temaSalvo);
+  await init();
+  await carregarTimersAtivos();
+});
+</script>
+</body>
+</html>
