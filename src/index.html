@@ -261,6 +261,9 @@ label{font-size:12px;color:var(--text2);display:block;margin-bottom:5px}
 .proj-nome{font-size:24px;font-weight:300;color:var(--text);line-height:1.2;margin-bottom:4px}
 .proj-dono{font-size:12px;color:var(--text3);display:flex;align-items:center;gap:5px}
 .proj-tags{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px}
+.proj-meta{display:flex;flex-wrap:wrap;gap:16px;margin-bottom:18px}
+.proj-meta-item{display:flex;flex-direction:column;gap:5px}
+.proj-meta-label{font-size:10px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.07em}
 .proj-stats{display:flex;align-items:center;gap:16px;margin-bottom:12px;flex-wrap:wrap}
 .proj-stat{display:flex;flex-direction:column;gap:2px}
 .proj-stat-label{font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:.06em}
@@ -293,7 +296,7 @@ tr:hover td{background:var(--bg3)}
 .td-nome{font-size:14px;color:var(--text)}
 .td-nome.em-foco{color:var(--accent);font-weight:500}
 .td-nome.concluida{color:var(--text3);text-decoration:line-through}
-.td-ações{display:flex;gap:4px;align-items:center;opacity:0;transition:opacity .15s}
+.td-ações{display:flex;gap:4px;align-items:center;opacity:0.3;transition:opacity .15s}
 tr:hover .td-ações{opacity:1}
 .foco-pin{background:none;border:none;cursor:pointer;font-size:16px;padding:3px;border-radius:4px;transition:all .15s;line-height:1;color:var(--text3)}
 .foco-pin:hover{color:var(--yellow);transform:scale(1.2)}
@@ -602,7 +605,7 @@ const FT = { 'Estudo preliminar':'tag-purple','Anteprojeto':'tag-blue','Projeto 
 const PO = { 'Alta':0,'Média':1,'Baixa':2 };
 const DO = { 'Complexa':0,'Moderada':1,'Simples':2 };
 
-function tag(t, cls) { return `<span class="tag ${cls||ST[t]||'tag-gray'}">${esc(t)}</span>`; }
+function tag(t, cls, lbl) { return `<span class="tag ${cls||ST[t]||'tag-gray'}"${lbl?' title="'+esc(lbl)+'"':''}>${esc(t)}</span>`; }
 function normalizarStatusProjeto(status) {
   if (status === 'Concluída') return 'Concluído';
   if (status === 'Aguardando aprovação') return 'Em revisão'; // backward compat
@@ -912,10 +915,10 @@ function renderCardsDash(projetos) {
           ${souDono(p.dono_id) ? `<button class="btn btn-ghost btn-icon btn-sm proj-card-edit" onclick="event.stopPropagation();modalEditarProjeto('${p.id}')" title="Editar">✎</button>` : ''}
         </div>
         <div class="proj-card-tags">
-          ${tag(p.fase, FT[p.fase])} ${tag(statusProjeto)} ${tag(p.prioridade, PT[p.prioridade])}
-          ${p.prazo ? `<span class="tag ${urgente?'tag-red':'tag-gray'} mono">${prazoFmt(p.prazo, true)}</span>` : ''}
-          ${p.area_m2 ? `<span class="tag tag-gray mono">${p.area_m2.toLocaleString('pt-BR')} m²</span>` : ''}
-          ${timerAtivo ? `<span class="tag tag-green" style="display:inline-flex;align-items:center;gap:4px"><span style="animation:pulse 1.5s ease infinite">●</span> Em progresso</span>` : ''}
+          ${tag(p.fase, FT[p.fase], 'Fase')} ${tag(statusProjeto, null, 'Status')} ${tag(p.prioridade, PT[p.prioridade], 'Prioridade')}
+          ${p.prazo ? `<span class="tag ${urgente?'tag-red':'tag-gray'} mono" title="Prazo">${prazoFmt(p.prazo, true)}</span>` : ''}
+          ${p.area_m2 ? `<span class="tag tag-gray mono" title="Área">${p.area_m2.toLocaleString('pt-BR')} m²</span>` : ''}
+          ${timerAtivo ? `<span class="tag tag-green" style="display:inline-flex;align-items:center;gap:4px" title="Timer ativo"><span style="animation:pulse 1.5s ease infinite">●</span> Em progresso</span>` : ''}
         </div>
         ${total ? `
         <div class="proj-card-progress">
@@ -1216,11 +1219,13 @@ function renderProjeto(proj, tarefas, decisoes, abaAtiva) {
           ${souDono(proj.dono_id) ? `<button class="btn btn-sm" onclick="modalPermissoes('${proj.id}')">Adicionar colaborador</button>` : ''}
         </div>
       </div>
-      <div class="proj-tags">
-        ${tag(proj.fase, FT[proj.fase])} ${tag(statusProjeto)} ${tag(proj.prioridade, PT[proj.prioridade])}
-        ${proj.prazo ? `<span class="tag ${urgente?'tag-red':'tag-gray'} mono">${prazoFmt(proj.prazo)}</span>` : ''}
+      <div class="proj-meta">
+        <div class="proj-meta-item"><span class="proj-meta-label">Fase</span>${tag(proj.fase, FT[proj.fase])}</div>
+        <div class="proj-meta-item"><span class="proj-meta-label">Status</span>${tag(statusProjeto)}</div>
+        <div class="proj-meta-item"><span class="proj-meta-label">Prioridade</span>${tag(proj.prioridade, PT[proj.prioridade])}</div>
+        ${proj.prazo ? `<div class="proj-meta-item"><span class="proj-meta-label">Prazo</span><span class="tag ${urgente?'tag-red':'tag-gray'} mono">${prazoFmt(proj.prazo)}</span></div>` : ''}
+        ${proj.area_m2 ? `<div class="proj-meta-item"><span class="proj-meta-label">Área</span><span class="tag tag-gray mono">${proj.area_m2.toLocaleString('pt-BR')} m²</span></div>` : ''}
       </div>
-      ${proj.area_m2 ? `<div style="margin-bottom:10px"><span class="tag tag-gray mono">${proj.area_m2.toLocaleString('pt-BR')} m²</span></div>` : ''}
       <div class="proj-stats">
         <div class="proj-stat">
           <div class="proj-stat-label">Tarefas</div>
@@ -1265,7 +1270,7 @@ function renderProjeto(proj, tarefas, decisoes, abaAtiva) {
       <div class="sessoes-header">
         <div class="sessoes-title">Registros de tempo</div>
       </div>
-      <div id="sessoes-lista"><div style="color:var(--text3);font-size:13px">Selecione uma tarefa para ver os registros.</div></div>`;
+      <div id="sessoes-lista"><div style="color:var(--text3);font-size:13px">Clique em uma tarefa na lista ao lado para ver e gerenciar seus registros de tempo.</div></div>`;
   }
 }
 
