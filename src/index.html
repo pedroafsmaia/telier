@@ -278,6 +278,13 @@ label{font-size:12px;color:var(--text2);display:block;margin-bottom:5px}
 .grupo-actions{margin-left:auto;display:flex;gap:4px;opacity:0;transition:opacity .15s}
 .grupo-header:hover .grupo-actions{opacity:1}
 .grupo-sem-label{font-size:12px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.08em;margin-bottom:12px;margin-top:4px;opacity:.5}
+.grupo-section{border-radius:var(--r2);padding:8px;margin-left:-8px;transition:background .15s,box-shadow .15s}
+.grupo-section.drag-over{background:rgba(124,106,247,.06);box-shadow:0 0 0 2px var(--accent) inset}
+.proj-card{cursor:grab}
+.proj-card.dragging{opacity:.25;transform:scale(.97);cursor:grabbing}
+.grupo-empty-zone{border:2px dashed var(--border2);border-radius:var(--r2);padding:20px;text-align:center;min-height:72px;display:flex;align-items:center;justify-content:center;margin-bottom:4px;transition:border-color .15s,background .15s}
+.grupo-section.drag-over .grupo-empty-zone{border-color:var(--accent);background:rgba(124,106,247,.06)}
+.grupo-drop-hint{font-size:12px;color:var(--text3)}
 .proj-stats{display:flex;align-items:center;gap:16px;margin-bottom:12px;flex-wrap:wrap}
 .proj-stat{display:flex;flex-direction:column;gap:2px}
 .proj-stat-label{font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:.06em}
@@ -942,13 +949,17 @@ function renderProjetosDash(projetos, grupos) {
 
   let html = '';
 
-  // Render each group that has projects
+  const temGrupos = (grupos || []).length > 0;
+
+  // Render all groups (including empty ones as drop zones)
   for (const grupo of (grupos || [])) {
     const gprojetos = lista.filter(p => p.grupo_id === grupo.id);
-    if (!gprojetos.length) continue;
     const col = isCollapsed(grupo.id);
     html += `
-      <div class="grupo-section" id="gs-${grupo.id}">
+      <div class="grupo-section" id="gs-${grupo.id}"
+        ondragover="dragOver(event,'${grupo.id}')"
+        ondragleave="dragLeave(event)"
+        ondrop="dropProjeto(event,'${grupo.id}')">
         <div class="grupo-header" onclick="toggleGrupo('${grupo.id}')">
           <span class="grupo-toggle ${col ? 'collapsed' : ''}">▼</span>
           <span class="grupo-nome">${esc(grupo.nome)}</span>
@@ -958,15 +969,25 @@ function renderProjetosDash(projetos, grupos) {
             <button class="btn btn-ghost btn-icon btn-sm" onclick="deletarGrupo('${grupo.id}','${esc(grupo.nome)}')" title="Excluir grupo">✕</button>
           </div>
         </div>
-        ${col ? '' : `<div class="cards-grid">${renderCardsDash(gprojetos)}</div>`}
+        ${col ? '' : gprojetos.length
+          ? `<div class="cards-grid">${renderCardsDash(gprojetos)}</div>`
+          : `<div class="grupo-empty-zone"><span class="grupo-drop-hint">Arraste projetos aqui</span></div>`}
       </div>`;
   }
 
-  // Ungrouped projects
+  // Ungrouped projects (also a drop zone when groups exist)
   const semGrupo = lista.filter(p => !p.grupo_id);
-  if (semGrupo.length) {
-    if ((grupos || []).length > 0) {
-      html += `<div class="grupo-section"><div class="grupo-sem-label">Sem grupo</div><div class="cards-grid">${renderCardsDash(semGrupo)}</div></div>`;
+  if (semGrupo.length || temGrupos) {
+    if (temGrupos) {
+      html += `<div class="grupo-section"
+        ondragover="dragOver(event,null)"
+        ondragleave="dragLeave(event)"
+        ondrop="dropProjeto(event,null)">
+        <div class="grupo-sem-label">Sem grupo</div>
+        ${semGrupo.length
+          ? `<div class="cards-grid">${renderCardsDash(semGrupo)}</div>`
+          : `<div class="grupo-empty-zone"><span class="grupo-drop-hint">Arraste projetos aqui para desagrupar</span></div>`}
+      </div>`;
     } else {
       html += `<div class="cards-grid">${renderCardsDash(semGrupo)}</div>`;
     }
@@ -985,7 +1006,11 @@ function renderCardsDash(projetos) {
     const urgente = dias !== null && dias <= 7 && !projetoConcluido(statusProjeto);
     const timerAtivo = _ativasDash && _ativasDash.some(a => a.projeto_id === p.id);
     return `
-      <div class="proj-card" data-status="${esc(statusProjeto)}" onclick="abrirProjeto('${p.id}')">
+      <div class="proj-card" data-status="${esc(statusProjeto)}"
+        draggable="true"
+        ondragstart="dragProjeto(event,'${p.id}')"
+        ondragend="dragProjetoEnd(event)"
+        onclick="if(!_dragJustEnded)abrirProjeto('${p.id}')">
         <div class="proj-card-header">
           <div class="proj-card-nome">${esc(p.nome)}</div>
           ${souDono(p.dono_id) ? `<button class="btn btn-ghost btn-icon btn-sm proj-card-edit" onclick="event.stopPropagation();modalEditarProjeto('${p.id}')" title="Editar">✎</button>` : ''}
@@ -1019,6 +1044,55 @@ function filtrarProjetosBusca(v) {
 }
 
 function setFiltro(f) { FILTRO_STATUS = f; renderDash(); }
+
+// ── DRAG & DROP DE PROJETOS ──
+let _dragProjetoId = null;
+let _dragJustEnded = false;
+
+function dragProjeto(e, projetoId) {
+  _dragProjetoId = projetoId;
+  e.dataTransfer.effectAllowed = 'move';
+  setTimeout(() => e.target.closest('.proj-card')?.classList.add('dragging'), 0);
+}
+
+function dragProjetoEnd(e) {
+  _dragJustEnded = true;
+  setTimeout(() => { _dragJustEnded = false; }, 80);
+  document.querySelectorAll('.proj-card.dragging').forEach(el => el.classList.remove('dragging'));
+  document.querySelectorAll('.grupo-section.drag-over').forEach(el => el.classList.remove('drag-over'));
+}
+
+function dragOver(e, grupoId) {
+  e.preventDefault();
+  e.dataTransfer.dropEffect = 'move';
+  e.currentTarget.classList.add('drag-over');
+}
+
+function dragLeave(e) {
+  if (!e.currentTarget.contains(e.relatedTarget)) {
+    e.currentTarget.classList.remove('drag-over');
+  }
+}
+
+async function dropProjeto(e, grupoId) {
+  e.preventDefault();
+  e.currentTarget.classList.remove('drag-over');
+  const projetoId = _dragProjetoId;
+  if (!projetoId) return;
+  const proj = _projsDash.find(p => p.id === projetoId);
+  if (!proj) return;
+  const grupoAtual = proj.grupo_id || null;
+  const grupoAlvo = grupoId || null;
+  if (grupoAtual === grupoAlvo) return;
+  try {
+    await req('PATCH', `/projetos/${projetoId}`, { grupo_id: grupoAlvo });
+    _projsDash = _projsDash.map(p => p.id === projetoId ? { ...p, grupo_id: grupoAlvo } : p);
+    const grid = document.getElementById('cards-grid-dash');
+    if (grid) grid.innerHTML = renderProjetosDash(_projsDash, _gruposDash);
+    const nomeGrupo = grupoAlvo ? (_gruposDash.find(g => g.id === grupoAlvo)?.nome || 'grupo') : null;
+    toast(nomeGrupo ? `Movido para "${nomeGrupo}"` : 'Removido do grupo');
+  } catch (err) { toast(err.message, 'err'); }
+}
 
 function toggleGrupo(id) {
   const collapsed = JSON.parse(localStorage.getItem('telier_grupos_collapsed') || '[]');

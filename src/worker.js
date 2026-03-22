@@ -589,6 +589,18 @@ export default {
     if (matchProjeto) {
       const projetoId = matchProjeto[1];
 
+      if (method === 'PATCH') {
+        const [u, e] = await requireAuth(request, env);
+        if (e) return fail('Não autorizado', 401);
+        if (!await podeEditarProjeto(env, projetoId, u.uid, u.papel)) return fail('Sem permissão', 403);
+        const body = await request.json();
+        if ('grupo_id' in body) {
+          await env.DB.prepare('UPDATE projetos SET grupo_id = ? WHERE id = ?')
+            .bind(body.grupo_id || null, projetoId).run();
+        }
+        return ok({ ok: true });
+      }
+
       if (method === 'GET') {
         const [u, e] = await requireAuth(request, env);
         if (e) return fail('Não autorizado', 401);
