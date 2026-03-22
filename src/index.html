@@ -400,7 +400,6 @@ tr:hover .td-ações{opacity:1}
     <div class="topbar-actions">
       <span class="topbar-user-name" id="topbar-nome"></span>
       <button class="topbar-theme" id="btn-tema" onclick="alternarTema()" title="Alternar tema">🌙</button>
-      <button class="btn btn-ghost btn-sm" id="btn-add-colega" style="display:none" onclick="modalNovoColega()">+ Colega</button>
       <button class="btn btn-ghost btn-sm" onclick="fazerLogout()">Sair</button>
     </div>
   </nav>
@@ -531,7 +530,6 @@ function mostrar(tela) {
   ['login','setup','app'].forEach(t => document.getElementById('page-' + t).classList.toggle('hidden', t !== tela));
   if (tela === 'app') {
     document.getElementById('topbar-nome').textContent = EU?.nome || '';
-    if (isAdmin()) document.getElementById('btn-add-colega').style.display = 'inline-flex';
     renderDash();
   }
 }
@@ -689,7 +687,7 @@ function renderProjeto(proj, tarefas, decisoes, abaAtiva) {
         </div>
         <div style="display:flex;gap:8px;flex-shrink:0">
           ${canEdit ? `<button class="btn btn-sm" onclick="modalEditarProjeto('${proj.id}')">Editar</button>` : ''}
-          ${souDono(proj.dono_id) ? `<button class="btn btn-sm" onclick="modalPermissoes('${proj.id}')">Permissões</button>` : ''}
+          ${souDono(proj.dono_id) ? `<button class="btn btn-sm" onclick="modalPermissoes('${proj.id}')">Adicionar colega</button>` : ''}
         </div>
       </div>
       <div class="proj-tags">
@@ -1071,20 +1069,20 @@ async function modalPermissoes(projetoId) {
     <div class="editor-row">
       <div class="editor-info">${avatar(e.nome)} ${esc(e.nome)} <span style="color:var(--text3);font-size:11px">@${esc(e.usuario_login)}</span></div>
       <button class="editor-del" onclick="removerPerm('${projetoId}','${e.usuario_id}')" title="Remover">✕</button>
-    </div>`).join('') || `<div style="font-size:12px;color:var(--text3)">Nenhum editor adicionado</div>`;
+    </div>`).join('') || `<div style="font-size:12px;color:var(--text3)">Nenhum colega adicionado</div>`;
 
   abrirModal(`
-    <h2>Permissões de edição</h2>
-    <p style="font-size:13px;color:var(--text2);margin-bottom:16px">Todos os membros visualizam este projeto. Adicione editores para que possam criar e modificar tarefas.</p>
-    <div class="form-row"><label>Editores atuais</label><div class="editor-list">${editorRows}</div></div>
+    <h2>Colegas do projeto</h2>
+    <p style="font-size:13px;color:var(--text2);margin-bottom:16px">Selecione usuários já registrados para colaborar neste projeto com acesso de edição.</p>
+    <div class="form-row"><label>Colegas com acesso</label><div class="editor-list">${editorRows}</div></div>
     ${disponiveis.length ? `
     <div class="form-sep"></div>
-    <div class="form-row"><label>Adicionar editor</label>
+    <div class="form-row"><label>Adicionar colega (usuários registrados)</label>
       <div style="display:flex;gap:8px">
         <select id="m-editor" style="flex:1">${disponiveis.map(u=>`<option value="${u.id}">${esc(u.nome)} (@${esc(u.usuario_login)})</option>`).join('')}</select>
         <button class="btn btn-sm btn-primary" id="btn-add-perm" onclick="adicionarPerm('${projetoId}')">Adicionar</button>
       </div>
-    </div>` : `<div style="font-size:12px;color:var(--text3);margin-top:8px">Todos os membros já têm acesso de edição.</div>`}
+    </div>` : `<div style="font-size:12px;color:var(--text3);margin-top:8px">Todos os usuários cadastrados já foram adicionados.</div>`}
     <div class="modal-footer"><button class="btn" onclick="fecharModal()">Fechar</button></div>`, { lg: true });
 }
 
@@ -1094,7 +1092,7 @@ async function adicionarPerm(projetoId) {
   btnLoading('btn-add-perm', true);
   try {
     await req('POST', `/projetos/${projetoId}/permissoes`, { usuario_id: uid });
-    toast('Editor adicionado');
+    toast('Colega adicionado ao projeto');
     fecharModal();
     if (PROJETO?.id === projetoId) { PROJETO = await req('GET', `/projetos/${projetoId}`); }
     modalPermissoes(projetoId);
@@ -1104,7 +1102,7 @@ async function adicionarPerm(projetoId) {
 async function removerPerm(projetoId, usuarioId) {
   try {
     await req('DELETE', `/projetos/${projetoId}/permissoes/${usuarioId}`);
-    toast('Permissão removida');
+    toast('Colega removido do projeto');
     fecharModal();
     if (PROJETO?.id === projetoId) { PROJETO = await req('GET', `/projetos/${projetoId}`); }
     modalPermissoes(projetoId);
