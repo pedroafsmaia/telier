@@ -28,6 +28,9 @@
   --yellow:  #f5c542;
   --red:     #f25b5b;
   --orange:  #f0834a;
+  --gray:    #52525e;
+  --sky:     #7dbeff;
+  --cyan:    #2dd4c8;
   --shadow:  0 4px 16px rgba(0,0,0,.5);
   --shadow2: 0 8px 32px rgba(0,0,0,.6);
   --r:       8px;
@@ -56,6 +59,9 @@
   --yellow:  #c49010;
   --red:     #d63c3c;
   --orange:  #d4622a;
+  --gray:    #9494a4;
+  --sky:     #4d9fe8;
+  --cyan:    #0da89f;
   --shadow:  0 2px 8px rgba(0,0,0,.08);
   --shadow2: 0 6px 20px rgba(0,0,0,.12);
   --r:       8px;
@@ -105,6 +111,8 @@ label{font-size:12px;color:var(--text2);display:block;margin-bottom:5px}
 .tag-orange{background:rgba(240,131,74,.1);color:var(--orange)}
 .tag-gray{background:var(--bg4);color:var(--text2)}
 .tag-purple{background:rgba(124,106,247,.12);color:var(--accent)}
+.tag-sky{background:rgba(125,190,255,.12);color:var(--sky)}
+.tag-cyan{background:rgba(45,212,200,.1);color:var(--cyan)}
 
 /* ── AVATAR ── */
 .avatar{width:22px;height:22px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:10px;font-weight:500;flex-shrink:0;font-family:'DM Mono',monospace;text-transform:uppercase}
@@ -200,6 +208,10 @@ label{font-size:12px;color:var(--text2);display:block;margin-bottom:5px}
 .filter-btn{padding:5px 14px;border-radius:20px;border:1px solid var(--border);background:transparent;color:var(--text2);font-size:12px;font-family:inherit;cursor:pointer;transition:all .15s}
 .filter-btn:hover{border-color:var(--border2);color:var(--text)}
 .filter-btn.ativo{background:var(--bg3);border-color:var(--border3);color:var(--text)}
+.search-dash{padding:5px 12px;border-radius:20px;border:1px solid var(--border);background:transparent;color:var(--text);font-size:12px;font-family:inherit;outline:none;width:160px;transition:all .15s}
+.search-dash:hover{border-color:var(--border2)}
+.search-dash:focus{border-color:var(--accent)}
+.search-dash::placeholder{color:var(--text3)}
 
 /* CARDS */
 .cards-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(290px,1fr));gap:14px}
@@ -207,7 +219,7 @@ label{font-size:12px;color:var(--text2);display:block;margin-bottom:5px}
 .proj-card::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;border-radius:3px 0 0 3px}
 .proj-card[data-status="Em andamento"]::before{background:var(--blue)}
 .proj-card[data-status="A fazer"]::before{background:var(--gray)}
-.proj-card[data-status="Aguardando aprovação"]::before{background:var(--yellow)}
+.proj-card[data-status="Em revisão"]::before{background:var(--yellow)}
 .proj-card[data-status="Concluído"]::before{background:var(--green)}
 .proj-card[data-status="Pausado"]::before{background:var(--text3)}
 .proj-card:hover{border-color:var(--border2);background:var(--bg3);transform:translateY(-3px);box-shadow:var(--shadow2)}
@@ -224,7 +236,9 @@ label{font-size:12px;color:var(--text2);display:block;margin-bottom:5px}
 .proj-progress-fill.partial{background:var(--blue)}
 .proj-card-footer{display:flex;align-items:center;justify-content:space-between}
 .proj-card-dono{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--text3)}
-.proj-urgente{font-size:11px;color:var(--red);font-family:'DM Mono',monospace;display:flex;align-items:center;gap:4px}
+.proj-urgente{font-size:11px;font-family:'DM Mono',monospace;display:flex;align-items:center;gap:4px}
+.proj-urgente.overdue{color:var(--red)}
+.proj-urgente.warning{color:var(--yellow)}
 .proj-foco-chip{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--accent);margin-top:8px;padding:6px 10px;background:rgba(124,106,247,.07);border-radius:var(--r);border:1px solid rgba(124,106,247,.15)}
 
 /* EMPTY STATE */
@@ -239,7 +253,7 @@ label{font-size:12px;color:var(--text2);display:block;margin-bottom:5px}
 .proj-hero::before{content:'';position:absolute;left:0;top:0;bottom:0;width:4px}
 .proj-hero[data-status="Em andamento"]::before{background:var(--blue)}
 .proj-hero[data-status="A fazer"]::before{background:var(--gray)}
-.proj-hero[data-status="Aguardando aprovação"]::before{background:var(--yellow)}
+.proj-hero[data-status="Em revisão"]::before{background:var(--yellow)}
 .proj-hero[data-status="Concluído"]::before{background:var(--green)}
 .proj-hero[data-status="Pausado"]::before{background:var(--text3)}
 .proj-hero-top{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:12px;gap:16px}
@@ -375,6 +389,13 @@ tr:hover .td-ações{opacity:1}
 .sessoes-total { text-align: right; font-family: 'DM Mono', monospace; font-size: 13px; color: var(--text2); margin-top: 8px; }
 .sessoes-empty { font-size: 13px; color: var(--text3); padding: 12px 0; font-style: italic; }
 
+/* ── EXTRAS ── */
+.btn-danger-solid{background:var(--red);border-color:var(--red);color:#fff}
+.btn-danger-solid:hover{background:#d94f4f;border-color:#d94f4f}
+.timer-card.timer-longo{border-color:var(--yellow)}
+.timer-display.timer-alerta{color:var(--yellow)!important}
+.timer-aviso{font-size:11px;color:var(--yellow);margin-top:4px}
+
 /* ── COLABORADORES TAREFA ── */
 .colab-list { display: flex; flex-direction: column; gap: 6px; margin-bottom: 12px; }
 .colab-row { display: flex; align-items: center; justify-content: space-between; padding: 7px 12px; background: var(--bg3); border-radius: var(--r); border: 1px solid var(--border); font-size: 13px; }
@@ -469,6 +490,12 @@ let NEEDS_SETUP = false;
 const ADMIN_MODE_KEY = 'ea_admin_mode';
 let ADMIN_MODE = localStorage.getItem(ADMIN_MODE_KEY) || 'admin';
 let ADMIN_TEMPO_FILTRO = { de: '', ate: '', usuario_id: '' };
+let RELATORIO_CACHE = null; // { projetoId, ts, resumoMap }
+let BUSCA_DASH = '';
+let _projsDash = [];
+let _ativasDash = [];
+let FILTRO_RESP_TAR = '';
+const TIMER_AVISO_HORAS = 4;
 
 // ── API ──
 async function req(method, path, body) {
@@ -500,9 +527,33 @@ function abrirModal(html, opts = {}) {
   overlay.id = id;
   overlay.innerHTML = `<div class="modal ${opts.lg ? 'modal-lg' : ''}">${html}</div>`;
   overlay.addEventListener('click', e => { if (e.target === overlay) overlay.remove(); });
+  const onKey = e => { if (e.key === 'Escape') { overlay.remove(); document.removeEventListener('keydown', onKey); } };
+  document.addEventListener('keydown', onKey);
+  overlay.addEventListener('remove', () => document.removeEventListener('keydown', onKey));
   document.getElementById('modais').appendChild(overlay);
   setTimeout(() => overlay.querySelector('input:not([type=date]):not([type=number])')?.focus(), 60);
   return overlay;
+}
+
+function confirmar(mensagem, onConfirm, opts = {}) {
+  const titulo = opts.titulo || 'Confirmar';
+  const btnTexto = opts.btnTexto || 'Confirmar';
+  const btnCls = opts.danger ? 'btn-danger-solid' : 'btn-primary';
+  const overlay = document.createElement('div');
+  overlay.className = 'modal-overlay';
+  overlay.innerHTML = `<div class="modal" style="max-width:400px">
+    <h2 style="margin-bottom:10px">${esc(titulo)}</h2>
+    <p style="font-size:13px;color:var(--text2);line-height:1.6;margin-bottom:24px">${esc(mensagem)}</p>
+    <div class="modal-footer">
+      <button class="btn" id="confirm-cancel">Cancelar</button>
+      <button class="btn ${btnCls}" id="confirm-ok">${esc(btnTexto)}</button>
+    </div></div>`;
+  overlay.addEventListener('click', e => { if (e.target === overlay) overlay.remove(); });
+  const onKey = e => { if (e.key === 'Escape') { overlay.remove(); document.removeEventListener('keydown', onKey); } };
+  document.addEventListener('keydown', onKey);
+  overlay.querySelector('#confirm-cancel').addEventListener('click', () => { overlay.remove(); document.removeEventListener('keydown', onKey); });
+  overlay.querySelector('#confirm-ok').addEventListener('click', () => { overlay.remove(); document.removeEventListener('keydown', onKey); onConfirm(); });
+  document.getElementById('modais').appendChild(overlay);
 }
 function fecharModal() { document.querySelectorAll('.modal-overlay').forEach(e => e.remove()); }
 
@@ -544,16 +595,18 @@ function btnLoading(id, on) {
 }
 
 // TAGS
-const ST = { 'Arquivado':'tag-gray', 'Em andamento':'tag-blue','Concluída':'tag-green','Concluído':'tag-green','Bloqueada':'tag-red','A fazer':'tag-gray','Aguardando aprovação':'tag-yellow','Pausado':'tag-gray' };
+const ST = { 'Arquivado':'tag-gray', 'Em andamento':'tag-blue','Concluída':'tag-green','Concluído':'tag-green','Bloqueada':'tag-red','A fazer':'tag-gray','Em revisão':'tag-yellow','Pausado':'tag-gray' };
 const PT = { 'Alta':'tag-orange','Média':'tag-yellow','Baixa':'tag-gray' };
-const DT = { 'Simples':'tag-green','Moderada':'tag-orange','Complexa':'tag-purple' };
-const FT = { 'Estudo preliminar':'tag-purple','Anteprojeto':'tag-blue','Projeto básico':'tag-orange','Projeto executivo':'tag-red','Em obra':'tag-green' };
+const DT = { 'Simples':'tag-green','Moderada':'tag-blue','Complexa':'tag-purple' };
+const FT = { 'Estudo preliminar':'tag-purple','Anteprojeto':'tag-blue','Projeto básico':'tag-sky','Projeto executivo':'tag-cyan','Em obra':'tag-green' };
 const PO = { 'Alta':0,'Média':1,'Baixa':2 };
 const DO = { 'Complexa':0,'Moderada':1,'Simples':2 };
 
 function tag(t, cls) { return `<span class="tag ${cls||ST[t]||'tag-gray'}">${esc(t)}</span>`; }
 function normalizarStatusProjeto(status) {
-  return status === 'Concluída' ? 'Concluído' : status;
+  if (status === 'Concluída') return 'Concluído';
+  if (status === 'Aguardando aprovação') return 'Em revisão'; // backward compat
+  return status;
 }
 function projetoConcluido(status) {
   const s = normalizarStatusProjeto(status);
@@ -582,6 +635,7 @@ async function init() {
 }
 
 function mostrar(tela) {
+  window.scrollTo(0, 0);
   ['login','setup','app'].forEach(t => document.getElementById('page-' + t).classList.toggle('hidden', t !== tela));
   const setupBtn = document.getElementById('btn-admin-setup');
   if (setupBtn) setupBtn.style.display = (tela === 'login' && NEEDS_SETUP) ? 'inline-flex' : 'none';
@@ -668,7 +722,7 @@ async function fazerLogin() {
 function modalCadastroPublico() {
   abrirModal(`
     <h2>Criar minha conta</h2>
-    <p style="font-size:13px;color:var(--text2);margin-bottom:16px">Crie seu usuário para acessar o sistema. Depois você pode criar projetos e convidar colegas.</p>
+    <p style="font-size:13px;color:var(--text2);margin-bottom:16px">Crie seu usuário para acessar o sistema. Depois você pode criar projetos e convidar colaboradores.</p>
     <div class="form-row"><label>Nome completo</label><input id="r-nome" placeholder="Ex: Ana Souza"></div>
     <div class="form-row"><label>Usuário</label><input type="text" id="r-login" placeholder="ex: ana_souza" autocomplete="off"></div>
     <div class="form-row"><label>Senha</label><input type="password" id="r-senha" placeholder="Defina sua senha"></div>
@@ -793,7 +847,9 @@ function renderInicioDia(projetos, ativas) {
 
 // ── DASHBOARD ──
 async function renderDash() {
+  window.scrollTo(0, 0);
   PROJETO = null;
+  FILTRO_RESP_TAR = '';
   document.title = 'Telier';
   setBreadcrumb([]);
   const c = document.getElementById('content');
@@ -808,8 +864,10 @@ async function renderDash() {
       req('GET', `/tempo/ativas${isAdminRole() && ADMIN_MODE === 'normal' ? '?as_member=1' : ''}`).catch(() => []),
     ]);
 
+    _projsDash = projetos;
+    _ativasDash = ativas;
     const emAndamento = projetos.filter(p => !['Concluído','Arquivado'].includes(normalizarStatusProjeto(p.status))).length;
-    const filtros = ['todos','A fazer','Em andamento','Aguardando aprovação','Pausado','Concluído','Arquivado'];
+    const filtros = ['todos','Em andamento','A fazer','Em revisão','Pausado','Concluído','Arquivado'];
 
     let html = `
       <div class="dash-header">
@@ -823,48 +881,60 @@ async function renderDash() {
       <div class="dash-sub">${emAndamento} em andamento · ${projetos.length} total</div>
       ${renderInicioDia(projetos, ativas)}
       <div class="dash-filters">
-        ${filtros.map(f => `<button class="filter-btn ${FILTRO_STATUS===f?'ativo':''}" onclick="setFiltro('${esc(f)}')">${f === 'todos' ? 'Todos' : f}</button>`).join('')}
+        <input type="search" class="search-dash" id="busca-dash" placeholder="Buscar projeto..." value="${esc(BUSCA_DASH)}" oninput="filtrarProjetosBusca(this.value)">
+        ${filtros.map(f => { const label = { 'todos':'Todos' }[f] || f; return `<button class="filter-btn ${FILTRO_STATUS===f?'ativo':''}" onclick="setFiltro('${esc(f)}')">${label}</button>`; }).join('')}
       </div>
-      <div class="cards-grid">`;
+      <div class="cards-grid" id="cards-grid-dash">`;
 
-    if (!projetos.length) {
-      html += `<div class="empty-state"><div class="empty-icon">🏗</div><div class="empty-text">Nenhum projeto encontrado</div><div class="empty-sub">${FILTRO_STATUS !== 'todos' ? 'Tente outro filtro' : 'Crie o primeiro projeto'}</div></div>`;
-    }
-
-    projetos.forEach(p => {
-      const statusProjeto = normalizarStatusProjeto(p.status);
-      const total = parseInt(p.total_tarefas) || 0;
-      const conc = parseInt(p.tarefas_concluidas) || 0;
-      const pct = total ? Math.round(conc / total * 100) : 0;
-      const dias = diasRestantes(p.prazo);
-      const urgente = dias !== null && dias <= 7 && !projetoConcluido(statusProjeto);
-
-      html += `
-        <div class="proj-card" data-status="${esc(statusProjeto)}" onclick="abrirProjeto('${p.id}')">
-          <div class="proj-card-header">
-            <div class="proj-card-nome">${esc(p.nome)}</div>
-            ${souDono(p.dono_id) ? `<button class="btn btn-ghost btn-icon btn-sm proj-card-edit" onclick="event.stopPropagation();modalEditarProjeto('${p.id}')" title="Editar">✎</button>` : ''}
-          </div>
-          <div class="proj-card-tags">
-            ${tag(p.fase, FT[p.fase])} ${tag(statusProjeto)} ${tag(p.prioridade, PT[p.prioridade])}
-            ${p.prazo ? `<span class="tag ${urgente?'tag-red':'tag-gray'} mono">${prazoFmt(p.prazo, true)}</span>` : ''}
-            ${p.area_m2 ? `<span class="tag tag-gray mono">${p.area_m2.toLocaleString('pt-BR')} m²</span>` : ''}
-          </div>
-          ${total ? `
-          <div class="proj-card-progress">
-            <div class="proj-progress-nums">${conc}/${total} tarefas · ${pct}%</div>
-            <div class="proj-progress-bar"><div class="proj-progress-fill ${pct===100?'done':'partial'}" style="width:${pct}%"></div></div>
-          </div>` : ''}
-          <div class="proj-card-footer">
-            <div class="proj-card-dono">${avatar(p.dono_nome,'avatar-sm')} <span>${esc(p.dono_nome||'—')}</span></div>
-            ${urgente ? `<div class="proj-urgente">⚠ ${dias <= 0 ? 'vencido' : dias + 'd'}</div>` : ''}
-          </div>
-          ${p.minha_tarefa_foco ? `<div class="proj-foco-chip">→ ${esc(p.minha_tarefa_foco)}</div>` : ''}
-        </div>`;
-    });
-
-    c.innerHTML = html + '</div>';
+    html += renderCardsDash(projetos) + '</div>';
+    c.innerHTML = html;
   } catch (e) { c.innerHTML = `<div style="color:var(--red);padding:24px;font-size:13px">${esc(e.message)}</div>`; }
+}
+
+function renderCardsDash(projetos) {
+  const busca = BUSCA_DASH.toLowerCase().trim();
+  const lista = busca ? projetos.filter(p => p.nome.toLowerCase().includes(busca)) : projetos;
+  if (!lista.length) {
+    return `<div class="empty-state"><div class="empty-icon" aria-hidden="true">🏗</div><div class="empty-text">Nenhum projeto encontrado</div><div class="empty-sub">${busca ? 'Tente outro termo de busca' : FILTRO_STATUS !== 'todos' ? 'Tente outro filtro' : 'Crie o primeiro projeto'}</div></div>`;
+  }
+  return lista.map(p => {
+    const statusProjeto = normalizarStatusProjeto(p.status);
+    const total = parseInt(p.total_tarefas) || 0;
+    const conc = parseInt(p.tarefas_concluidas) || 0;
+    const pct = total ? Math.round(conc / total * 100) : 0;
+    const dias = diasRestantes(p.prazo);
+    const urgente = dias !== null && dias <= 7 && !projetoConcluido(statusProjeto);
+    const timerAtivo = _ativasDash && _ativasDash.some(a => a.projeto_id === p.id);
+    return `
+      <div class="proj-card" data-status="${esc(statusProjeto)}" onclick="abrirProjeto('${p.id}')">
+        <div class="proj-card-header">
+          <div class="proj-card-nome">${esc(p.nome)}</div>
+          ${souDono(p.dono_id) ? `<button class="btn btn-ghost btn-icon btn-sm proj-card-edit" onclick="event.stopPropagation();modalEditarProjeto('${p.id}')" title="Editar">✎</button>` : ''}
+        </div>
+        <div class="proj-card-tags">
+          ${tag(p.fase, FT[p.fase])} ${tag(statusProjeto)} ${tag(p.prioridade, PT[p.prioridade])}
+          ${p.prazo ? `<span class="tag ${urgente?'tag-red':'tag-gray'} mono">${prazoFmt(p.prazo, true)}</span>` : ''}
+          ${p.area_m2 ? `<span class="tag tag-gray mono">${p.area_m2.toLocaleString('pt-BR')} m²</span>` : ''}
+          ${timerAtivo ? `<span class="tag tag-green" style="display:inline-flex;align-items:center;gap:4px"><span style="animation:pulse 1.5s ease infinite">●</span> Em progresso</span>` : ''}
+        </div>
+        ${total ? `
+        <div class="proj-card-progress">
+          <div class="proj-progress-nums">${conc}/${total} tarefas · ${pct}%</div>
+          <div class="proj-progress-bar"><div class="proj-progress-fill ${pct===100?'done':'partial'}" style="width:${pct}%"></div></div>
+        </div>` : ''}
+        <div class="proj-card-footer">
+          <div class="proj-card-dono">${avatar(p.dono_nome,'avatar-sm')} <span>${esc(p.dono_nome||'—')}</span></div>
+          ${urgente ? `<div class="proj-urgente ${dias <= 0 ? 'overdue' : 'warning'}">⚠ ${dias <= 0 ? 'vencido' : dias + 'd'}</div>` : ''}
+        </div>
+        ${p.minha_tarefa_foco ? `<div class="proj-foco-chip">→ ${esc(p.minha_tarefa_foco)}</div>` : ''}
+      </div>`;
+  }).join('');
+}
+
+function filtrarProjetosBusca(v) {
+  BUSCA_DASH = v;
+  const grid = document.getElementById('cards-grid-dash');
+  if (grid) grid.innerHTML = renderCardsDash(_projsDash);
 }
 
 function setFiltro(f) { FILTRO_STATUS = f; renderDash(); }
@@ -972,7 +1042,7 @@ async function abrirCentralAdmin(aba = 'agora') {
       body.innerHTML = `
         <div class="table-wrap">
           <table>
-            <thead><tr><th>Projeto</th><th>Dono</th><th>Status</th><th>Progresso</th><th>Horas</th><th></th></tr></thead>
+            <thead><tr><th>Projeto</th><th>Origem</th><th>Status</th><th>Progresso</th><th>Horas</th><th></th></tr></thead>
             <tbody>${rows || `<tr><td colspan="6" style="padding:18px;color:var(--text3)">Nenhum projeto.</td></tr>`}</tbody>
           </table>
         </div>`;
@@ -1109,6 +1179,7 @@ async function abrirUsuarioAdmin(usuarioId) {
 
 // ── PROJETO ──
 async function abrirProjeto(id) {
+  window.scrollTo(0, 0);
   document.getElementById('content').innerHTML = `<div class="loading"><div class="spinner"></div></div>`;
   try {
     const [projeto, tarefas, decisoes] = await Promise.all([
@@ -1142,7 +1213,7 @@ function renderProjeto(proj, tarefas, decisoes, abaAtiva) {
         </div>
         <div style="display:flex;gap:8px;flex-shrink:0">
           ${canEdit ? `<button class="btn btn-sm" onclick="modalEditarProjeto('${proj.id}')">Editar</button>` : ''}
-          ${souDono(proj.dono_id) ? `<button class="btn btn-sm" onclick="modalPermissoes('${proj.id}')">Adicionar colega</button>` : ''}
+          ${souDono(proj.dono_id) ? `<button class="btn btn-sm" onclick="modalPermissoes('${proj.id}')">Adicionar colaborador</button>` : ''}
         </div>
       </div>
       <div class="proj-tags">
@@ -1161,7 +1232,11 @@ function renderProjeto(proj, tarefas, decisoes, abaAtiva) {
         </div>
         ${dias !== null ? `<div class="proj-stat">
           <div class="proj-stat-label">Prazo</div>
-          <div class="proj-stat-val" style="${urgente?'color:var(--red)':''}">${dias <= 0 ? 'Vencido' : dias + ' dias'}</div>
+          <div class="proj-stat-val" style="${dias <= 0 ? 'color:var(--red)' : urgente ? 'color:var(--yellow)' : ''}">${dias <= 0 ? 'Vencido' : dias + ' dias'}</div>
+        </div>` : ''}
+        ${proj.total_horas > 0 ? `<div class="proj-stat">
+          <div class="proj-stat-label">Horas</div>
+          <div class="proj-stat-val">${parseFloat(proj.total_horas).toFixed(1)}h</div>
         </div>` : ''}
         <div class="proj-prog-wrap">
           <div class="proj-prog-bar"><div class="proj-prog-fill ${pct===100?'done':'partial'}" style="width:${pct}%"></div></div>
@@ -1217,7 +1292,19 @@ function renderAba(aba, tarefas) {
 function renderLista(el, tarefas) {
   const pendentes = tarefas.filter(t => t.status !== 'Concluída');
   const concluidas = tarefas.filter(t => t.status === 'Concluída');
-  const todas = [...pendentes, ...concluidas];
+
+  // Filtro por responsável
+  const responsaveis = [...new Map(tarefas.map(t => [t.dono_id, { id: t.dono_id, nome: t.dono_nome }])).values()];
+  const todasFiltradas = FILTRO_RESP_TAR
+    ? tarefas.filter(t => t.dono_id === FILTRO_RESP_TAR)
+    : tarefas;
+  const pendFilt = todasFiltradas.filter(t => t.status !== 'Concluída');
+  const concFilt = todasFiltradas.filter(t => t.status === 'Concluída');
+  const todas = [...pendFilt, ...concFilt];
+
+  // Mapa de timers ativos por tarefa
+  const timerAtivoPorTarefa = {};
+  Object.entries(TIMERS).forEach(([sid, timer]) => { timerAtivoPorTarefa[timer.tarefaId] = sid; });
 
   const rows = todas.map(t => {
     const minha = t.dono_id === EU?.id;
@@ -1227,7 +1314,12 @@ function renderLista(el, tarefas) {
       : `<span style="color:var(--text3);font-size:14px;padding:3px">${t.foco?'★':''}</span>`;
 
     const podeCron = minha || (t.colaboradores_ids || []).includes(EU?.id) || isAdmin();
-    const horas = `<button class="btn btn-ghost btn-icon btn-sm" onclick="iniciarCronometro('${t.id}','${esc(t.nome)}')" title="${podeCron ? 'Iniciar cronômetro' : 'Você não é colaborador desta tarefa'}" style="color:${podeCron ? 'var(--green)' : 'var(--text3)'}">▶</button>`;
+    const sessaoAtiva = timerAtivoPorTarefa[t.id];
+    const horas = sessaoAtiva
+      ? `<button class="btn btn-sm btn-danger" onclick="pararCronometro('${sessaoAtiva}')" title="Parar cronômetro">■ Parar</button>`
+      : podeCron
+        ? `<button class="btn btn-ghost btn-icon btn-sm" onclick="iniciarCronometro('${t.id}','${esc(t.nome)}')" title="Iniciar cronômetro" style="color:var(--green)">▶</button>`
+        : `<button class="btn btn-ghost btn-icon btn-sm" disabled title="Você não é colaborador desta tarefa" style="opacity:.3">▶</button>`;
 
     const data = t.data ? prazoFmt(t.data, true) : '—';
 
@@ -1235,11 +1327,11 @@ function renderLista(el, tarefas) {
       <td style="width:36px" onclick="event.stopPropagation()">${pin}</td>
       <td class="td-nome ${t.foco&&minha?'em-foco':''} ${t.status==='Concluída'?'concluida':''}">${esc(t.nome)}</td>
       <td><div class="resp-chip">${avatar(t.dono_nome,'avatar-sm')} <span>${esc(t.dono_nome||'—')}</span></div></td>
-      <td>${tag(t.dificuldade, DT[t.dificuldade])}</td>
+      <td>${tag(t.complexidade, DT[t.complexidade])}</td>
       <td>${tag(t.prioridade, PT[t.prioridade])}</td>
       <td onclick="event.stopPropagation()">
         ${(minha || podeEditar(PROJETO) || isAdmin()) ? `
-          <select class="status-sel" onchange="mudarStatus('${t.id}',this.value)" style="background:transparent;border:none;padding:2px 4px;font-size:11px;cursor:pointer;color:var(--text2)">
+          <select class="status-sel" onchange="mudarStatus('${t.id}',this.value,this)" style="background:transparent;border:none;padding:2px 4px;font-size:11px;cursor:pointer;color:var(--text2)">
             ${['A fazer','Em andamento','Bloqueada','Concluída'].map(s =>
               `<option value="${s}" ${s===t.status?'selected':''}>${s}</option>`
             ).join('')}
@@ -1257,14 +1349,20 @@ function renderLista(el, tarefas) {
 
   el.innerHTML = `
     <div class="tarefas-toolbar">
-      <div class="tarefas-info">${pendentes.length} pendente${pendentes.length!==1?'s':''} · ${concluidas.length} concluída${concluidas.length!==1?'s':''}</div>
+      <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+        <div class="tarefas-info">${pendFilt.length} pendente${pendFilt.length!==1?'s':''} · ${concFilt.length} concluída${concFilt.length!==1?'s':''}</div>
+        ${responsaveis.length > 1 ? `<select style="font-size:12px;padding:3px 8px;background:var(--bg3);border:1px solid var(--border2);border-radius:var(--r);color:var(--text2)" onchange="FILTRO_RESP_TAR=this.value;renderLista(document.getElementById('aba'),TAREFAS)">
+          <option value="">Todas as origens</option>
+          ${responsaveis.map(r => `<option value="${r.id}" ${FILTRO_RESP_TAR===r.id?'selected':''}>${esc(r.nome)}</option>`).join('')}
+        </select>` : ''}
+      </div>
       <button class="btn btn-primary btn-sm" onclick="modalNovaTarefa('${PROJETO?.id}')">+ Nova tarefa</button>
     </div>
     <div class="table-wrap">
       <table>
         <thead><tr>
-          <th></th><th>Tarefa</th><th>Responsável</th>
-          <th>Dificuldade</th><th>Prioridade</th><th>Status</th>
+          <th></th><th>Tarefa</th><th>Origem</th>
+          <th>Complexidade</th><th>Prioridade</th><th>Status</th>
           <th>Tempo</th><th>Data</th><th></th>
         </tr></thead>
         <tbody>${rows || `<tr><td colspan="9" style="text-align:center;color:var(--text3);padding:32px;font-style:italic">Nenhuma tarefa ainda — clique em "+ Nova tarefa" para começar</td></tr>`}</tbody>
@@ -1275,15 +1373,15 @@ function renderLista(el, tarefas) {
 // ── MAPA DE FOCO ──
 function renderMapa(el, tarefas) {
   const pendentes = [...tarefas.filter(t => t.status !== 'Concluída')]
-    .sort((a,b) => { const p = PO[a.prioridade]-PO[b.prioridade]; return p || DO[a.dificuldade]-DO[b.dificuldade]; });
+    .sort((a,b) => { const p = PO[a.prioridade]-PO[b.prioridade]; return p || DO[a.complexidade]-DO[b.complexidade]; });
 
   if (!pendentes.length) {
-    el.innerHTML = `<div class="empty-state"><div class="empty-icon">✓</div><div class="empty-text">Todas as tarefas concluídas</div></div>`;
+    el.innerHTML = `<div class="empty-state"><div class="empty-icon" aria-hidden="true">✓</div><div class="empty-text">Todas as tarefas concluídas</div></div>`;
     return;
   }
 
   el.innerHTML = `
-    <div class="mapa-intro">Ordenado por prioridade e depois dificuldade — a tarefa #01 é o melhor ponto de partida.</div>
+    <div class="mapa-intro">Ordenado por prioridade e depois complexidade — a tarefa #01 é o melhor ponto de partida.</div>
     <div class="mapa-list">
       ${pendentes.map((t,i) => `
         <div class="mapa-item ${t.foco&&t.dono_id===EU?.id?'is-foco':''}">
@@ -1292,7 +1390,7 @@ function renderMapa(el, tarefas) {
           <div class="mapa-tags">
             <div class="resp-chip">${avatar(t.dono_nome,'avatar-sm')}</div>
             ${tag(t.prioridade, PT[t.prioridade])}
-            ${tag(t.dificuldade, DT[t.dificuldade])}
+            ${tag(t.complexidade, DT[t.complexidade])}
             ${t.foco&&t.dono_id===EU?.id ? '<span class="tag tag-purple">Meu foco</span>' : ''}
           </div>
         </div>`).join('')}
@@ -1301,20 +1399,27 @@ function renderMapa(el, tarefas) {
 
 // ── RELATÓRIO ──
 async function renderRelatorio(el, tarefas) {
-  el.innerHTML = `<div class="loading"><div class="spinner"></div> Calculando horas...</div>`;
+  const projetoId = PROJETO?.id;
+
+  // Usar cache se válido (mesmo projeto, menos de 30s)
+  let resumoMap;
+  if (RELATORIO_CACHE && RELATORIO_CACHE.projetoId === projetoId && (Date.now() - RELATORIO_CACHE.ts) < 30000) {
+    resumoMap = RELATORIO_CACHE.resumoMap;
+  } else {
+    el.innerHTML = `<div class="loading"><div class="spinner"></div> Calculando horas...</div>`;
+    resumoMap = {};
+    await Promise.all(tarefas.map(async t => {
+      try {
+        const r = await req('GET', `/tarefas/${t.id}/tempo/resumo`);
+        resumoMap[t.id] = r;
+      } catch { resumoMap[t.id] = []; }
+    }));
+    RELATORIO_CACHE = { projetoId, ts: Date.now(), resumoMap };
+  }
 
   const grupos = {};
   tarefas.forEach(t => { (grupos[t.status] = grupos[t.status]||[]).push(t); });
-  const grpOrder = ['Concluída','Em andamento','A fazer','Bloqueada'];
-
-  // Buscar resumo de horas por tarefa (do cronômetro)
-  const resumoMap = {};
-  await Promise.all(tarefas.map(async t => {
-    try {
-      const r = await req('GET', `/tarefas/${t.id}/tempo/resumo`);
-      resumoMap[t.id] = r;
-    } catch { resumoMap[t.id] = []; }
-  }));
+  const grpOrder = ['Em andamento','Bloqueada','A fazer','Concluída'];
 
   function horasItem(tarefaId) {
     const resumo = resumoMap[tarefaId] || [];
@@ -1351,7 +1456,7 @@ async function renderRelatorio(el, tarefas) {
     </div>`;
   });
 
-  el.innerHTML = html || `<div class="empty-state"><div class="empty-icon">📋</div><div class="empty-text">Nenhuma tarefa</div></div>`;
+  el.innerHTML = html || `<div class="empty-state"><div class="empty-icon" aria-hidden="true">📋</div><div class="empty-text">Nenhuma tarefa</div></div>`;
 }
 
 // ── DECISÕES ──
@@ -1371,17 +1476,20 @@ function renderDecisoes(projetoId, decisoes, canEdit) {
           <div class="decisao-texto">${esc(d.descricao)}</div>
           <div class="decisao-autor">${avatar(d.dono_nome,'avatar-sm')} ${esc(d.dono_nome||'—')}</div>
         </div>
-        ${(souDono(d.dono_id)||canEdit) ? `<button class="decisao-del" onclick="deletarDecisao('${d.id}','${projetoId}')" title="Excluir">✕</button>` : ''}
+        ${(souDono(d.dono_id)||canEdit) ? `<div style="display:flex;gap:4px;flex-shrink:0"><button class="decisao-del" onclick="modalEditarDecisao('${d.id}','${projetoId}',\`${d.descricao.replace(/`/g,'&#96;')}\`,'${d.data||''}')" title="Editar" style="color:var(--text2)">✎</button><button class="decisao-del" onclick="deletarDecisao('${d.id}','${projetoId}')" title="Excluir">✕</button></div>` : ''}
       </div>`).join('')
     : `<div class="decisoes-empty">Nenhuma decisão registrada ainda.</div>`}`;
 }
 
 // ── AÇÕES ──
 
-async function mudarStatus(tarefaId, novoStatus) {
+async function mudarStatus(tarefaId, novoStatus, selEl) {
+  const statusAnterior = TAREFAS.find(t => t.id === tarefaId)?.status;
+  if (selEl) { selEl.disabled = true; selEl.style.opacity = '0.5'; }
   try {
     await req('PATCH', `/tarefas/${tarefaId}`, { status: novoStatus });
     TAREFAS = TAREFAS.map(t => t.id === tarefaId ? { ...t, status: novoStatus } : t);
+    RELATORIO_CACHE = null;
     toast('Status atualizado');
     // Atualizar hero do projeto se estiver na página
     if (PROJETO) {
@@ -1392,7 +1500,12 @@ async function mudarStatus(tarefaId, novoStatus) {
       if (fill) { fill.style.width = pct + '%'; fill.className = 'proj-prog-fill ' + (pct===100?'done':'partial'); }
       if (txt) txt.textContent = `${conc}/${TAREFAS.length} concluídas · ${pct}%`;
     }
-  } catch (e) { toast(e.message, 'err'); }
+  } catch (e) {
+    toast(e.message, 'err');
+    if (selEl && statusAnterior) selEl.value = statusAnterior;
+  } finally {
+    if (selEl) { selEl.disabled = false; selEl.style.opacity = ''; }
+  }
 }
 
 async function toggleFoco(id, focoAtual) {
@@ -1403,19 +1516,46 @@ async function toggleFoco(id, focoAtual) {
 }
 
 async function deletarTarefa(id) {
-  if (!confirm('Excluir esta tarefa?')) return;
-  try { await req('DELETE', `/tarefas/${id}`); toast('Tarefa excluída'); await recarregarProjeto(); }
-  catch (e) { toast(e.message, 'err'); }
+  confirmar('Excluir esta tarefa? Esta ação não pode ser desfeita.', async () => {
+    try { await req('DELETE', `/tarefas/${id}`); toast('Tarefa excluída'); await recarregarProjeto(); }
+    catch (e) { toast(e.message, 'err'); }
+  }, { titulo: 'Excluir tarefa', btnTexto: 'Excluir', danger: true });
+}
+
+function modalEditarDecisao(id, projetoId, descricaoAtual, dataAtual) {
+  abrirModal(`
+    <h2>Editar decisão</h2>
+    <div class="form-row"><label>Data</label><input type="date" id="m-dec-data" value="${dataAtual}"></div>
+    <div class="form-row"><label>Descrição</label><textarea id="m-dec-desc" rows="4" style="width:100%;resize:vertical">${esc(descricaoAtual)}</textarea></div>
+    <div class="modal-footer">
+      <button class="btn" onclick="fecharModal()">Cancelar</button>
+      <button class="btn btn-primary" id="btn-salvar-dec" onclick="salvarDecisaoEditada('${id}','${projetoId}')">Salvar</button>
+    </div>`);
+}
+
+async function salvarDecisaoEditada(id, projetoId) {
+  const descricao = document.getElementById('m-dec-desc').value.trim();
+  const data = document.getElementById('m-dec-data').value;
+  if (!descricao) { toast('Descrição obrigatória', 'err'); return; }
+  btnLoading('btn-salvar-dec', true);
+  try {
+    await req('PUT', `/decisoes/${id}`, { descricao, data });
+    fecharModal();
+    toast('Decisão atualizada');
+    const decisoes = await req('GET', `/projetos/${projetoId}/decisoes`);
+    renderDecisoes(projetoId, decisoes, podeEditar(PROJETO));
+  } catch (e) { toast(e.message, 'err'); btnLoading('btn-salvar-dec', false); }
 }
 
 async function deletarDecisao(id, projetoId) {
-  if (!confirm('Excluir esta decisão?')) return;
-  try {
-    await req('DELETE', `/decisoes/${id}`);
-    const decisoes = await req('GET', `/projetos/${projetoId}/decisoes`);
-    renderDecisoes(projetoId, decisoes, podeEditar(PROJETO));
-    toast('Excluído');
-  } catch (e) { toast(e.message, 'err'); }
+  confirmar('Excluir esta decisão? Esta ação não pode ser desfeita.', async () => {
+    try {
+      await req('DELETE', `/decisoes/${id}`);
+      const decisoes = await req('GET', `/projetos/${projetoId}/decisoes`);
+      renderDecisoes(projetoId, decisoes, podeEditar(PROJETO));
+      toast('Excluído');
+    } catch (e) { toast(e.message, 'err'); }
+  }, { titulo: 'Excluir decisão', btnTexto: 'Excluir', danger: true });
 }
 
 async function recarregarProjeto(aba) {
@@ -1433,7 +1573,7 @@ async function recarregarProjeto(aba) {
 
 // ── MODAIS ──
 const FASES = ['Estudo preliminar','Anteprojeto','Projeto básico','Projeto executivo','Em obra'];
-const STATUS_PROJ = ['A fazer','Em andamento','Aguardando aprovação','Pausado','Concluído','Arquivado'];
+const STATUS_PROJ = ['A fazer','Em andamento','Em revisão','Pausado','Concluído','Arquivado'];
 const STATUS_TAR = ['A fazer','Em andamento','Bloqueada','Concluída'];
 const PRIORS = ['Alta','Média','Baixa'];
 const DIFS = ['Simples','Moderada','Complexa'];
@@ -1507,9 +1647,10 @@ async function deletarProjeto(id) {
     toast('Arquive o projeto antes de excluí-lo — mude o status para "Arquivado".', 'err');
     return;
   }
-  if (!confirm('Atenção: esta ação é permanente e não pode ser desfeita.\n\nExcluir o projeto "' + (proj?.nome || '') + '" e todas as suas tarefas, sessões de tempo e decisões?')) return;
-  try { await req('DELETE', `/projetos/${id}`); fecharModal(); toast('Projeto excluído'); renderDash(); }
-  catch (e) { toast(e.message, 'err'); }
+  confirmar(`Excluir o projeto "${proj?.nome || ''}" e todas as suas tarefas, sessões de tempo e decisões? Esta ação é permanente.`, async () => {
+    try { await req('DELETE', `/projetos/${id}`); fecharModal(); toast('Projeto excluído'); renderDash(); }
+    catch (e) { toast(e.message, 'err'); }
+  }, { titulo: 'Excluir projeto', btnTexto: 'Excluir', danger: true });
 }
 
 // PERMISSÕES
@@ -1524,15 +1665,15 @@ async function modalPermissoes(projetoId) {
     <div class="editor-row">
       <div class="editor-info">${avatar(e.nome)} ${esc(e.nome)} <span style="color:var(--text3);font-size:11px">@${esc(e.usuario_login)}</span></div>
       <button class="editor-del" onclick="removerPerm('${projetoId}','${e.usuario_id}')" title="Remover">✕</button>
-    </div>`).join('') || `<div style="font-size:12px;color:var(--text3)">Nenhum colega adicionado</div>`;
+    </div>`).join('') || `<div style="font-size:12px;color:var(--text3)">Nenhum colaborador adicionado</div>`;
 
   abrirModal(`
-    <h2>Colegas do projeto</h2>
+    <h2>Colaboradores do projeto</h2>
     <p style="font-size:13px;color:var(--text2);margin-bottom:16px">Selecione usuários já registrados para colaborar neste projeto com acesso de edição.</p>
-    <div class="form-row"><label>Colegas com acesso</label><div class="editor-list">${editorRows}</div></div>
+    <div class="form-row"><label>Colaboradores com acesso</label><div class="editor-list">${editorRows}</div></div>
     ${disponiveis.length ? `
     <div class="form-sep"></div>
-    <div class="form-row"><label>Adicionar colega (usuários registrados)</label>
+    <div class="form-row"><label>Adicionar colaborador (usuários registrados)</label>
       <div style="display:flex;gap:8px">
         <select id="m-editor" style="flex:1">${disponiveis.map(u=>`<option value="${u.id}">${esc(u.nome)} (@${esc(u.usuario_login)})</option>`).join('')}</select>
         <button class="btn btn-sm btn-primary" id="btn-add-perm" onclick="adicionarPerm('${projetoId}')">Adicionar</button>
@@ -1547,7 +1688,7 @@ async function adicionarPerm(projetoId) {
   btnLoading('btn-add-perm', true);
   try {
     await req('POST', `/projetos/${projetoId}/permissoes`, { usuario_id: uid });
-    toast('Colega adicionado ao projeto');
+    toast('Colaborador adicionado ao projeto');
     fecharModal();
     if (PROJETO?.id === projetoId) { PROJETO = await req('GET', `/projetos/${projetoId}`); }
     modalPermissoes(projetoId);
@@ -1555,13 +1696,15 @@ async function adicionarPerm(projetoId) {
 }
 
 async function removerPerm(projetoId, usuarioId) {
-  try {
-    await req('DELETE', `/projetos/${projetoId}/permissoes/${usuarioId}`);
-    toast('Colega removido do projeto');
-    fecharModal();
-    if (PROJETO?.id === projetoId) { PROJETO = await req('GET', `/projetos/${projetoId}`); }
-    modalPermissoes(projetoId);
-  } catch (e) { toast(e.message, 'err'); }
+  confirmar('Remover este colaborador do projeto? Ele perderá o acesso de edição.', async () => {
+    try {
+      await req('DELETE', `/projetos/${projetoId}/permissoes/${usuarioId}`);
+      toast('Colaborador removido do projeto');
+      fecharModal();
+      if (PROJETO?.id === projetoId) { PROJETO = await req('GET', `/projetos/${projetoId}`); }
+      modalPermissoes(projetoId);
+    } catch (e) { toast(e.message, 'err'); }
+  }, { titulo: 'Remover colaborador', btnTexto: 'Remover', danger: true });
 }
 
 // TAREFAS
@@ -1572,7 +1715,7 @@ function modalNovaTarefa(projetoId) {
     <div class="form-grid">
       <div class="form-row"><label>Status</label>${sel('m-status',STATUS_TAR,'A fazer')}</div>
       <div class="form-row"><label>Prioridade</label>${sel('m-prior',PRIORS,'Média')}</div>
-      <div class="form-row"><label>Dificuldade</label>${sel('m-dific',DIFS,'Moderada')}</div>
+      <div class="form-row"><label>Complexidade</label>${sel('m-dific',DIFS,'Moderada')}</div>
       <div class="form-row"><label>Data</label><input type="date" id="m-data"></div>
     </div>
     <div class="modal-footer">
@@ -1586,7 +1729,7 @@ async function criarTarefa(projetoId) {
   if (!nome) { toast('Nome obrigatório', 'err'); return; }
   btnLoading('btn-criar-tar', true);
   try {
-    await req('POST', `/projetos/${projetoId}/tarefas`, { nome, status: gv('m-status'), prioridade: gv('m-prior'), dificuldade: gv('m-dific'), data: gv('m-data')||null });
+    await req('POST', `/projetos/${projetoId}/tarefas`, { nome, status: gv('m-status'), prioridade: gv('m-prior'), complexidade: gv('m-dific'), data: gv('m-data')||null });
     fecharModal(); toast('Tarefa criada'); await recarregarProjeto('lista');
   } catch (e) { toast(e.message, 'err'); btnLoading('btn-criar-tar', false); }
 }
@@ -1600,7 +1743,7 @@ async function modalEditarTarefa(id) {
     <div class="form-grid">
       <div class="form-row"><label>Status</label>${sel('m-status',STATUS_TAR,t.status)}</div>
       <div class="form-row"><label>Prioridade</label>${sel('m-prior',PRIORS,t.prioridade)}</div>
-      <div class="form-row"><label>Dificuldade</label>${sel('m-dific',DIFS,t.dificuldade)}</div>
+      <div class="form-row"><label>Complexidade</label>${sel('m-dific',DIFS,t.complexidade||t.dificuldade)}</div>
       <div class="form-row"><label>Data</label><input type="date" id="m-data" value="${t.data||''}"></div>
     </div>
     <div class="modal-footer">
@@ -1614,7 +1757,7 @@ async function salvarTarefa(id) {
   if (!nome) { toast('Nome obrigatório', 'err'); return; }
   btnLoading('btn-salvar-tar', true);
   try {
-    await req('PUT', `/tarefas/${id}`, { nome, status: gv('m-status'), prioridade: gv('m-prior'), dificuldade: gv('m-dific'), data: gv('m-data')||null });
+    await req('PUT', `/tarefas/${id}`, { nome, status: gv('m-status'), prioridade: gv('m-prior'), complexidade: gv('m-dific'), data: gv('m-data')||null });
     fecharModal(); toast('Tarefa atualizada'); await recarregarProjeto();
   } catch (e) { toast(e.message, 'err'); btnLoading('btn-salvar-tar', false); }
 }
@@ -1687,12 +1830,14 @@ async function adicionarColab(tarefaId) {
 }
 
 async function removerColab(tarefaId, usuarioId) {
-  try {
-    await req('DELETE', `/tarefas/${tarefaId}/colaboradores/${usuarioId}`);
-    toast('Colaborador removido');
-    fecharModal();
-    modalColabsTarefa(tarefaId);
-  } catch (e) { toast(e.message,'err'); }
+  confirmar('Remover este colaborador da tarefa? Ele não poderá mais iniciar o cronômetro nesta tarefa.', async () => {
+    try {
+      await req('DELETE', `/tarefas/${tarefaId}/colaboradores/${usuarioId}`);
+      toast('Colaborador removido');
+      fecharModal();
+      modalColabsTarefa(tarefaId);
+    } catch (e) { toast(e.message,'err'); }
+  }, { titulo: 'Remover colaborador', btnTexto: 'Remover', danger: true });
 }
 
 function modalNovoColega() {
@@ -1752,7 +1897,7 @@ function modalNovoColega_legacy() {
     <div class="form-row"><label>Senha</label><input type="password" id="m-senha" placeholder="Defina a senha inicial"></div>
     <div class="modal-footer">
       <button class="btn" onclick="fecharModal()">Cancelar</button>
-      <button class="btn btn-primary" id="btn-criar-col" onclick="criarColega()">Cadastrar</button>
+      <button class="btn btn-primary" id="btn-criar-col" onclick="criarColega()">Cadastrar admin</button>
     </div>`);
 }
 
@@ -1849,6 +1994,7 @@ async function pararCronometro(sessaoId) {
     delete TIMERS[sessaoId];
     renderTimerDock();
     toast('Cronômetro parado');
+    RELATORIO_CACHE = null;
     // Recarregar se estiver na página do projeto certo
     if (PROJETO) await recarregarProjeto();
   } catch (e) { toast(e.message, 'err'); }
@@ -1863,14 +2009,17 @@ function renderTimerDock() {
   dock.innerHTML = ids.map(sessaoId => {
     const t = TIMERS[sessaoId];
     const segundos = Math.floor((Date.now() - new Date(t.inicio.replace(' ','T') + 'Z').getTime()) / 1000);
+    const horas = segundos / 3600;
+    const longo = horas >= TIMER_AVISO_HORAS;
     return `
-      <div class="timer-card ativo" id="tcard-${sessaoId}">
+      <div class="timer-card ativo${longo ? ' timer-longo' : ''}" id="tcard-${sessaoId}">
         <div class="timer-card-proj">${esc(t.projeto_nome)}</div>
         <div class="timer-card-header">
           <div class="timer-dot"></div>
           <div class="timer-card-nome">${esc(t.tarefa_nome)}</div>
         </div>
-        <div class="timer-display" id="tdisp-${sessaoId}">${fmtDuracao(segundos)}</div>
+        <div class="timer-display${longo ? ' timer-alerta' : ''}" id="tdisp-${sessaoId}">${fmtDuracao(segundos)}</div>
+        ${longo ? `<div class="timer-aviso">⚠ Timer rodando há mais de ${Math.floor(horas)}h</div>` : ''}
         <div class="timer-actions">
           <button class="btn btn-sm" onclick="modalAdicionarIntervalo('${sessaoId}')">+ Intervalo</button>
           <button class="btn btn-sm btn-danger" onclick="pararCronometro('${sessaoId}')">■ Parar</button>
@@ -1886,6 +2035,11 @@ function renderTimerDock() {
       if (!el) return;
       const seg = Math.floor((Date.now() - new Date(t.inicio.replace(' ','T') + 'Z').getTime()) / 1000);
       el.textContent = fmtDuracao(seg);
+      const card = document.getElementById('tcard-' + sid);
+      if (card && seg / 3600 >= TIMER_AVISO_HORAS) {
+        card.classList.add('timer-longo');
+        el.classList.add('timer-alerta');
+      }
     });
   }, 1000);
 }
@@ -1996,23 +2150,27 @@ async function editarSessao(sessaoId, inicio, fim) {
 }
 
 async function salvarSessao(sessaoId) {
+  const ini = gv('m-ini');
+  const fimVal = gv('m-fim');
+  if (fimVal && fimVal < ini) { toast('O horário de fim deve ser após o início', 'err'); return; }
   btnLoading('btn-ed-sess', true);
   try {
-    const ini = gv('m-ini').replace('T',' ');
-    const fim = gv('m-fim') ? gv('m-fim').replace('T',' ') : null;
-    await req('PUT', `/tempo/${sessaoId}`, { inicio: ini, fim });
+    const fim = fimVal ? fimVal.replace('T',' ') : null;
+    await req('PUT', `/tempo/${sessaoId}`, { inicio: ini.replace('T',' '), fim });
     fecharModal(); toast('Sessão atualizada');
+    RELATORIO_CACHE = null;
     if (PROJETO) await recarregarProjeto();
   } catch (e) { toast(e.message,'err'); btnLoading('btn-ed-sess', false); }
 }
 
 async function deletarSessao(sessaoId, tarefaId) {
-  if (!confirm('Excluir esta sessão e todos os seus intervalos?')) return;
-  try {
-    await req('DELETE', `/tempo/${sessaoId}`);
-    toast('Sessão excluída');
-    if (PROJETO) await recarregarProjeto();
-  } catch (e) { toast(e.message,'err'); }
+  confirmar('Excluir esta sessão e todos os seus intervalos? Esta ação não pode ser desfeita.', async () => {
+    try {
+      await req('DELETE', `/tempo/${sessaoId}`);
+      toast('Sessão excluída');
+      if (PROJETO) await recarregarProjeto();
+    } catch (e) { toast(e.message,'err'); }
+  }, { titulo: 'Excluir sessão', btnTexto: 'Excluir', danger: true });
 }
 
 async function editarIntervalo(intervaloId) {
@@ -2039,12 +2197,13 @@ async function salvarIntervalo(id) {
 }
 
 async function deletarIntervalo(id, tarefaId) {
-  if (!confirm('Excluir este intervalo?')) return;
-  try {
-    await req('DELETE', `/intervalos/${id}`);
-    toast('Intervalo excluído');
-    if (PROJETO) await recarregarProjeto();
-  } catch (e) { toast(e.message,'err'); }
+  confirmar('Excluir este intervalo? Esta ação não pode ser desfeita.', async () => {
+    try {
+      await req('DELETE', `/intervalos/${id}`);
+      toast('Intervalo excluído');
+      if (PROJETO) await recarregarProjeto();
+    } catch (e) { toast(e.message,'err'); }
+  }, { titulo: 'Excluir intervalo', btnTexto: 'Excluir', danger: true });
 }
 
 

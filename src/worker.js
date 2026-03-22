@@ -66,13 +66,15 @@ async function requireAuth(request, env) {
 
 function isAdmin(u) { return u?.papel === 'admin'; }
 
-const STATUS_PROJ_VALIDOS = ['A fazer', 'Em andamento', 'Aguardando aprovação', 'Pausado', 'Concluído', 'Arquivado'];
+const STATUS_PROJ_VALIDOS = ['A fazer', 'Em andamento', 'Em revisão', 'Pausado', 'Concluído', 'Arquivado'];
 const STATUS_PROJ_VALIDOS_SET = new Set(STATUS_PROJ_VALIDOS);
 
 function normalizarStatusProjeto(status) {
   if (!status) return status;
   const s = String(status).trim();
   if (s === 'Concluída') return 'Concluído';
+  // Backward compat: old records stored before rename
+  if (s === 'Aguardando aprovação') return 'Em revisão';
   return s;
 }
 
@@ -308,7 +310,7 @@ export default {
       `).bind(usuarioId, usuarioId, usuarioId).all();
 
       const tarefas = await env.DB.prepare(`
-        SELECT DISTINCT t.id, t.nome, t.status, t.prioridade, t.dificuldade,
+        SELECT DISTINCT t.id, t.nome, t.status, t.prioridade, t.dificuldade, t.dificuldade AS complexidade,
           p.id as projeto_id, p.nome as projeto_nome,
           CASE WHEN t.dono_id = ? THEN 'dono' ELSE 'colaborador' END as papel_na_tarefa
         FROM tarefas t
@@ -490,7 +492,7 @@ export default {
           AND (? IS NULL OR p.status = ?)
         GROUP BY p.id
         ORDER BY
-          CASE p.status WHEN 'A fazer' THEN 0 WHEN 'Em andamento' THEN 1 WHEN 'Aguardando aprovação' THEN 2 WHEN 'Pausado' THEN 3 WHEN 'Concluído' THEN 4 WHEN 'Concluída' THEN 4 ELSE 5 END,
+          CASE p.status WHEN 'A fazer' THEN 0 WHEN 'Em andamento' THEN 1 WHEN 'Em revisão' THEN 2 WHEN 'Pausado' THEN 3 WHEN 'Concluído' THEN 4 WHEN 'Concluída' THEN 4 ELSE 5 END,
           CASE p.prioridade WHEN 'Alta' THEN 0 WHEN 'Média' THEN 1 ELSE 2 END,
           p.prazo ASC NULLS LAST,
           p.atualizado_em DESC
@@ -524,11 +526,24 @@ export default {
           'SELECT p.*, pu.nome as dono_nome FROM projetos p LEFT JOIN usuarios pu ON pu.id = p.dono_id WHERE p.id = ?'
         ).bind(projetoId).first();
         if (!projeto) return fail('Projeto não encontrado', 404);
-        const perms = await env.DB.prepare(
-          'SELECT pp.usuario_id, u.nome, u.login as usuario_login FROM permissoes_projeto pp JOIN usuarios u ON u.id = pp.usuario_id WHERE pp.projeto_id = ?'
-        ).bind(projetoId).all();
+        const [perms, horasRow] = await Promise.all([
+          env.DB.prepare(
+            'SELECT pp.usuario_id, u.nome, u.login as usuario_login FROM permissoes_projeto pp JOIN usuarios u ON u.id = pp.usuario_id WHERE pp.projeto_id = ?'
+          ).bind(projetoId).all(),
+          env.DB.prepare(`
+            SELECT ROUND(COALESCE(SUM(
+              (CASE WHEN st.fim IS NULL THEN (julianday('now') - julianday(st.inicio)) * 24
+               ELSE (julianday(st.fim) - julianday(st.inicio)) * 24 END)
+              - COALESCE((SELECT SUM(CASE WHEN i.fim IS NULL THEN 0 ELSE (julianday(i.fim) - julianday(i.inicio)) * 24 END)
+                          FROM intervalos i WHERE i.sessao_id = st.id), 0)
+            ), 0), 2) as total_horas
+            FROM sessoes_tempo st
+            INNER JOIN tarefas t ON t.id = st.tarefa_id
+            WHERE t.projeto_id = ?
+          `).bind(projetoId).first(),
+        ]);
         const podeEditar = await podeEditarProjeto(env, projetoId, u.uid, u.papel);
-        return ok({ ...projeto, editores: perms.results, pode_editar: podeEditar });
+        return ok({ ...projeto, editores: perms.results, pode_editar: podeEditar, total_horas: horasRow?.total_horas ?? 0 });
       }
 
       if (method === 'PUT') {
@@ -601,7 +616,7 @@ export default {
         const [u, e] = await requireAuth(request, env);
         if (e) return fail('Não autorizado', 401);
         const tarefas = await env.DB.prepare(
-          `SELECT t.*, tu.nome as dono_nome,
+          `SELECT t.*, t.dificuldade AS complexidade, tu.nome as dono_nome,
            CASE WHEN t.dono_id = ? THEN 1 ELSE 0 END as minha_tarefa
            FROM tarefas t LEFT JOIN usuarios tu ON tu.id = t.dono_id
            WHERE t.projeto_id = ?
@@ -615,12 +630,13 @@ export default {
       if (method === 'POST') {
         const [u, e] = await requireAuth(request, env);
         if (e) return fail('Não autorizado', 401);
-        const { nome, status, prioridade, dificuldade, data } = await request.json();
+        const { nome, status, prioridade, complexidade, dificuldade, data } = await request.json();
+        const complexidadeVal = complexidade || dificuldade || 'Moderada'; // accept both for compat
         if (!nome?.trim()) return fail('Nome obrigatório');
         const id = 'tsk_' + uid();
         await env.DB.prepare(
           'INSERT INTO tarefas (id, projeto_id, nome, status, prioridade, dificuldade, data, dono_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?)'
-        ).bind(id, projetoId, nome.trim(), status || 'A fazer', prioridade || 'Média', dificuldade || 'Moderada', data || null, u.uid).run();
+        ).bind(id, projetoId, nome.trim(), status || 'A fazer', prioridade || 'Média', complexidadeVal, data || null, u.uid).run();
         return ok({ id });
       }
     }
@@ -634,11 +650,12 @@ export default {
         const [u, e] = await requireAuth(request, env);
         if (e) return fail('Não autorizado', 401);
         if (!await podeEditarTarefa(env, tarefaId, u.uid, u.papel)) return fail('Sem permissão', 403);
-        const { nome, status, prioridade, dificuldade, data } = await request.json();
+        const { nome, status, prioridade, complexidade, dificuldade, data } = await request.json();
+        const complexidadeVal = complexidade || dificuldade || 'Moderada';
         if (!nome?.trim()) return fail('Nome obrigatório');
         await env.DB.prepare(
           'UPDATE tarefas SET nome=?, status=?, prioridade=?, dificuldade=?, data=?, atualizado_em=datetime("now") WHERE id=?'
-        ).bind(nome.trim(), status, prioridade, dificuldade, data || null, tarefaId).run();
+        ).bind(nome.trim(), status, prioridade, complexidadeVal, data || null, tarefaId).run();
         return ok({ ok: true });
       }
 
@@ -734,6 +751,19 @@ export default {
       if (!d) return fail('Não encontrado', 404);
       if (d.dono_id !== u.uid && !await podeEditarProjeto(env, d.projeto_id, u.uid, u.papel)) return fail('Sem permissão', 403);
       await env.DB.prepare('DELETE FROM decisoes WHERE id = ?').bind(matchDecisao[1]).run();
+      return ok({ ok: true });
+    }
+
+    if (matchDecisao && method === 'PUT') {
+      const [u, e] = await requireAuth(request, env);
+      if (e) return fail('Não autorizado', 401);
+      const d = await env.DB.prepare('SELECT dono_id, projeto_id FROM decisoes WHERE id = ?').bind(matchDecisao[1]).first();
+      if (!d) return fail('Não encontrado', 404);
+      if (d.dono_id !== u.uid && !await podeEditarProjeto(env, d.projeto_id, u.uid, u.papel)) return fail('Sem permissão', 403);
+      const { descricao, data } = await request.json();
+      if (!descricao?.trim()) return fail('Descrição obrigatória', 400);
+      await env.DB.prepare('UPDATE decisoes SET descricao = ?, data = ? WHERE id = ?')
+        .bind(descricao.trim(), data || null, matchDecisao[1]).run();
       return ok({ ok: true });
     }
 
