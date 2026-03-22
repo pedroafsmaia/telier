@@ -457,6 +457,123 @@ tr:hover .td-ações{opacity:1}
 .timer-display.timer-alerta{color:var(--yellow)!important}
 .timer-aviso{font-size:var(--fs-075);color:var(--yellow);margin-top:4px}
 
+/* ── QUICK-ADD ── */
+.quick-add-form { margin-bottom: 6px; }
+.quick-add-input {
+  width: 100%;
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid var(--border2);
+  border-radius: 0;
+  padding: 9px 4px;
+  font-size: var(--fs-090);
+  color: var(--text);
+  transition: border-color .15s;
+}
+.quick-add-input:focus { outline: none; border-bottom-color: var(--accent); }
+.quick-add-input::placeholder { color: var(--text3); }
+.qa-sel {
+  padding: 3px 8px;
+  font-size: var(--fs-075);
+  width: auto;
+  border-radius: var(--r);
+  height: 28px;
+}
+
+/* ── BUSCA DE TAREFA ── */
+.search-tarefa {
+  padding: 4px 10px;
+  border-radius: 20px;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text);
+  font-size: var(--fs-080);
+  font-family: inherit;
+  outline: none;
+  width: 160px;
+  transition: all .15s;
+}
+.search-tarefa:hover { border-color: var(--border2); }
+.search-tarefa:focus { border-color: var(--accent); width: 220px; }
+.search-tarefa::placeholder { color: var(--text3); }
+
+/* ── INDICADOR TIMER ── */
+.proj-card-timer-dot {
+  width: 7px; height: 7px;
+  border-radius: 50%;
+  background: var(--green);
+  animation: pulse 1.5s ease infinite;
+  flex-shrink: 0;
+  display: inline-block;
+}
+
+/* ── DISTRIBUIÇÃO DE HORAS ── */
+.proj-horas-dist {
+  display: flex; flex-wrap: wrap; gap: 12px;
+  margin-top: 10px; padding-top: 10px;
+  border-top: 1px solid var(--border);
+  font-size: var(--fs-080); color: var(--text2);
+}
+.proj-horas-dist-item { display: flex; align-items: center; gap: 5px; }
+.proj-horas-dist-item strong { color: var(--green); font-family: var(--ff-mono); }
+
+/* ── PAINEL DE PRESENÇA ── */
+#presence-dock {
+  position: fixed; bottom: 24px; left: 24px;
+  z-index: 490; display: flex; flex-direction: column;
+  align-items: flex-start; gap: 0;
+}
+.presence-toggle {
+  display: flex; align-items: center; gap: 8px;
+  padding: 8px 12px; background: var(--bg2);
+  border: 1px solid var(--border2); border-radius: var(--r2);
+  cursor: pointer; font-family: var(--ff-sans); font-size: var(--fs-080);
+  color: var(--text2); box-shadow: 0 4px 16px rgba(0,0,0,.3);
+  transition: all .15s; user-select: none;
+}
+.presence-toggle:hover { background: var(--bg3); color: var(--text); }
+.presence-toggle-avatars { display: flex; align-items: center; }
+.presence-toggle-avatars .avatar { margin-left: -6px; border: 2px solid var(--bg2); }
+.presence-toggle-avatars .avatar:first-child { margin-left: 0; }
+.presence-count { font-weight: 500; color: var(--text); }
+.presence-panel {
+  background: var(--bg2); border: 1px solid var(--border2);
+  border-radius: var(--r2); box-shadow: 0 8px 28px rgba(0,0,0,.4);
+  min-width: 240px; max-width: 300px; overflow: hidden;
+  margin-bottom: 8px; animation: slideUp .18s ease;
+}
+.presence-panel-header {
+  padding: 10px 14px 8px; font-size: var(--fs-075);
+  font-weight: 600; text-transform: uppercase; letter-spacing: .08em;
+  color: var(--text3); border-bottom: 1px solid var(--border);
+}
+.presence-item {
+  display: flex; align-items: center; gap: 10px;
+  padding: 9px 14px; border-bottom: 1px solid var(--border);
+  cursor: pointer; transition: background .12s;
+}
+.presence-item:last-child { border-bottom: none; }
+.presence-item:hover { background: var(--bg3); }
+.presence-item-info { flex: 1; min-width: 0; }
+.presence-item-nome {
+  font-size: var(--fs-090); color: var(--text); font-weight: 500;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.presence-item-tarefa {
+  font-size: var(--fs-075); color: var(--text3); margin-top: 1px;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.presence-item-projeto { font-size: var(--fs-075); color: var(--text3); opacity: .7; }
+.presence-item-tempo {
+  font-family: var(--ff-mono); font-size: var(--fs-075);
+  color: var(--green); flex-shrink: 0;
+}
+.presence-online-dot {
+  width: 7px; height: 7px; border-radius: 50%;
+  background: var(--green); animation: pulse 2s ease infinite; flex-shrink: 0;
+}
+.content > .startday-wrap:first-child { margin-top: 0; }
+
 /* ── COLABORADORES TAREFA ── */
 .colab-list { display: flex; flex-direction: column; gap: 6px; margin-bottom: 12px; }
 .colab-row { display: flex; align-items: center; justify-content: space-between; padding: 7px 12px; background: var(--bg3); border-radius: var(--r); border: 1px solid var(--border); font-size: var(--fs-090); }
@@ -605,6 +722,7 @@ tr:hover .td-ações{opacity:1}
 </div>
 
 <!-- TOAST & MODAIS -->
+<div id="presence-dock"></div>
 <div id="timer-dock"></div>
 <div id="toast" class="hidden"></div>
 <div id="modais"></div>
@@ -629,6 +747,10 @@ let _projsDash = [];
 let _ativasDash = [];
 let _gruposDash = [];
 let FILTRO_RESP_TAR = '';
+let BUSCA_TAREFA = '';
+let COLEGAS_ATIVOS = [];
+let PRESENCE_ABERTO = false;
+let _presenceTick = null;
 const TIMER_AVISO_HORAS = 4;
 
 // ── API ──
@@ -860,6 +982,7 @@ async function fazerLogin() {
       localStorage.setItem(ADMIN_MODE_KEY, ADMIN_MODE);
     }
     mostrar('app');
+    carregarColegasAtivos();
   } catch (e) {
     errEl.textContent = e.message;
     errEl.classList.remove('hidden');
@@ -904,9 +1027,37 @@ async function fazerCadastroPublico() {
   }
 }
 document.addEventListener('keydown', e => {
+  const emInput = ['INPUT','TEXTAREA','SELECT'].includes(document.activeElement?.tagName);
+
   if (e.key === 'Enter') {
     if (!document.getElementById('page-login').classList.contains('hidden')) fazerLogin();
     if (!document.getElementById('page-setup').classList.contains('hidden')) fazerSetup();
+  }
+
+  if (!emInput && !document.querySelector('.modal-overlay')) {
+    // N — nova tarefa (dentro de projeto, aba lista)
+    if (e.key === 'n' || e.key === 'N') {
+      if (PROJETO && document.getElementById('aba')) {
+        e.preventDefault();
+        modalNovaTarefa(PROJETO.id);
+      }
+    }
+    // P — novo projeto (no dashboard)
+    if (e.key === 'p' || e.key === 'P') {
+      if (!PROJETO && document.getElementById('cards-grid-dash')) {
+        e.preventDefault();
+        modalNovoProjeto();
+      }
+    }
+    // / — focar busca no dashboard
+    if (e.key === '/') {
+      const busca = document.getElementById('busca-dash');
+      if (busca) { e.preventDefault(); busca.focus(); busca.select(); }
+    }
+    // G — ir para dashboard
+    if (e.key === 'g' || e.key === 'G') {
+      if (PROJETO) { e.preventDefault(); renderDash(); }
+    }
   }
 });
 
@@ -930,6 +1081,16 @@ async function fazerSetup() {
 }
 
 async function fazerLogout() {
+  const timersAtivos = Object.keys(TIMERS).length;
+  if (timersAtivos > 0) {
+    const plural = timersAtivos === 1 ? '1 cronômetro ativo' : `${timersAtivos} cronômetros ativos`;
+    if (!confirm(`Você tem ${plural}. Os cronômetros continuarão rodando no servidor. Deseja sair mesmo assim?`)) return;
+  }
+  if (_presenceTick) clearInterval(_presenceTick);
+  if (window._presenceDisplayTick) clearInterval(window._presenceDisplayTick);
+  COLEGAS_ATIVOS = []; PRESENCE_ABERTO = false;
+  const pd = document.getElementById('presence-dock');
+  if (pd) pd.innerHTML = '';
   try { await req('POST', '/auth/logout'); } catch {}
   TOKEN = null; EU = null;
   localStorage.removeItem('ea_token'); localStorage.removeItem('ea_user');
@@ -998,6 +1159,7 @@ async function renderDash() {
   window.scrollTo(0, 0);
   PROJETO = null;
   FILTRO_RESP_TAR = '';
+  BUSCA_TAREFA = '';
   document.title = 'Telier';
   setBreadcrumb([]);
   const c = document.getElementById('content');
@@ -1020,8 +1182,9 @@ async function renderDash() {
     const filtros = ['todos','Em andamento','A fazer','Em revisão','Pausado','Concluído','Arquivado'];
 
     let html = `
-      <div class="dash-header">
-        <div class="dash-title">Projetos</div>
+      ${renderInicioDia(projetos, ativas)}
+      <div class="dash-header" style="margin-top:28px">
+        <div class="dash-title">Projetos <span style="font-size:var(--fs-090);color:var(--text3);font-weight:400">${emAndamento} em andamento · ${projetos.length} total</span></div>
         <div style="display:flex;gap:8px">
           ${isAdmin() ? `<button class="btn" onclick="abrirCentralAdmin()">Central admin</button>` : ''}
           ${isAdmin() ? `<button class="btn" onclick="modalNovoColega()">Cadastrar admin</button>` : ''}
@@ -1029,8 +1192,6 @@ async function renderDash() {
           <button class="btn btn-primary" onclick="modalNovoProjeto()">+ Novo projeto</button>
         </div>
       </div>
-      <div class="dash-sub">${emAndamento} em andamento · ${projetos.length} total</div>
-      ${renderInicioDia(projetos, ativas)}
       <div class="dash-filters">
         <input type="search" class="search-dash" id="busca-dash" placeholder="Buscar projeto..." value="${esc(BUSCA_DASH)}" oninput="filtrarProjetosBusca(this.value)">
         ${filtros.map(f => { const label = { 'todos':'Todos' }[f] || f; return `<button class="filter-btn ${FILTRO_STATUS===f?'ativo':''}" onclick="setFiltro('${esc(f)}')">${label}</button>`; }).join('')}
@@ -1502,17 +1663,20 @@ async function abrirProjeto(id) {
   const c = document.getElementById('content');
   c.style.opacity = '0.4';
   c.style.pointerEvents = 'none';
+  BUSCA_TAREFA = '';
   try {
-    const [projeto, tarefas, decisoes] = await Promise.all([
+    const [projeto, tarefas, decisoes, resumoHoras] = await Promise.all([
       req('GET', `/projetos/${id}`),
       req('GET', `/projetos/${id}/tarefas`),
       req('GET', `/projetos/${id}/decisoes`),
+      req('GET', `/projetos/${id}/horas-por-usuario`).catch(() => []),
     ]);
     PROJETO = projeto; TAREFAS = tarefas;
     document.title = projeto.nome + ' · Telier';
     c.style.opacity = '';
     c.style.pointerEvents = '';
-    renderProjeto(projeto, tarefas, decisoes, 'lista');
+    const abaSalva = localStorage.getItem(`telier_aba_${id}`) || 'lista';
+    renderProjeto(projeto, tarefas, decisoes, abaSalva, resumoHoras);
     VISTA_ATUAL = 'projeto';
     slideContent('right');
   } catch (e) {
@@ -1522,7 +1686,7 @@ async function abrirProjeto(id) {
   }
 }
 
-function renderProjeto(proj, tarefas, decisoes, abaAtiva) {
+function renderProjeto(proj, tarefas, decisoes, abaAtiva, resumoHoras = []) {
   const statusProjeto = normalizarStatusProjeto(proj.status);
   const total = tarefas.length;
   const conc = tarefas.filter(t => t.status === 'Concluída').length;
@@ -1545,6 +1709,7 @@ function renderProjeto(proj, tarefas, decisoes, abaAtiva) {
         <div style="display:flex;gap:8px;flex-shrink:0">
           ${canEdit ? `<button class="btn btn-sm" onclick="modalEditarProjeto('${proj.id}')">Editar</button>` : ''}
           ${souDono(proj.dono_id) ? `<button class="btn btn-sm" onclick="modalPermissoes('${proj.id}')">Adicionar colaborador</button>` : ''}
+          ${proj.total_horas > 0 ? `<button class="btn btn-sm" onclick="exportarTempoProjetoCSV('${proj.id}','${esc(proj.nome)}')">↓ CSV</button>` : ''}
         </div>
       </div>
       <div class="proj-meta">
@@ -1575,6 +1740,12 @@ function renderProjeto(proj, tarefas, decisoes, abaAtiva) {
           <div class="proj-prog-bar"><div class="proj-prog-fill ${pct===100?'done':'partial'}" style="width:${pct}%"></div></div>
         </div>
       </div>
+      ${resumoHoras?.length > 1 ? `
+        <div class="proj-horas-dist">
+          ${resumoHoras.map(r =>
+            `<span class="proj-horas-dist-item">${avatar(r.usuario_nome,'avatar-sm')} ${esc(r.usuario_nome)}: <strong>${r.horas}h</strong></span>`
+          ).join('')}
+        </div>` : ''}
       ${focoMinha
         ? `<div class="proj-foco-banner"><span class="fl">Meu foco</span><span class="fn">${esc(focoMinha.nome)}</span></div>`
         : `<div class="proj-foco-empty">Nenhuma tarefa em foco — use ★ na lista para definir</div>`}
@@ -1594,6 +1765,7 @@ function renderProjeto(proj, tarefas, decisoes, abaAtiva) {
 function mudarAba(aba) {
   document.querySelectorAll('.aba').forEach(b => b.classList.toggle('ativa', b.dataset.aba === aba));
   renderAba(aba, TAREFAS);
+  if (PROJETO?.id) localStorage.setItem(`telier_aba_${PROJETO.id}`, aba);
 }
 
 function renderAba(aba, tarefas) {
@@ -1615,8 +1787,14 @@ function renderLista(el, tarefas) {
   const todasFiltradas = FILTRO_RESP_TAR
     ? tarefas.filter(t => t.dono_id === FILTRO_RESP_TAR)
     : tarefas;
-  const pendFilt = todasFiltradas.filter(t => t.status !== 'Concluída');
-  const concFilt = todasFiltradas.filter(t => t.status === 'Concluída');
+  
+  // Filtro por busca de tarefa
+  const tarefasFiltradas = BUSCA_TAREFA
+    ? todasFiltradas.filter(t => t.nome.toLowerCase().includes(BUSCA_TAREFA.toLowerCase()))
+    : todasFiltradas;
+  
+  const pendFilt = tarefasFiltradas.filter(t => t.status !== 'Concluída');
+  const concFilt = tarefasFiltradas.filter(t => t.status === 'Concluída');
   const todas = [...pendFilt, ...concFilt];
 
   // Mapa de timers ativos por tarefa
@@ -1669,6 +1847,7 @@ function renderLista(el, tarefas) {
     <div class="tarefas-toolbar">
       <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
         <div class="tarefas-info">${pendFilt.length} pendente${pendFilt.length!==1?'s':''} · ${concFilt.length} concluída${concFilt.length!==1?'s':''}</div>
+        <input type="search" class="search-tarefa" placeholder="Buscar tarefa..." value="${esc(BUSCA_TAREFA)}" oninput="filtrarTarefasBusca(this.value)">
         ${responsaveis.length > 1 ? `<select class="resp-filter" onchange="FILTRO_RESP_TAR=this.value;renderLista(document.getElementById('aba'),TAREFAS)">
           <option value="">Todas as origens</option>
           ${responsaveis.map(r => `<option value="${r.id}" ${FILTRO_RESP_TAR===r.id?'selected':''}>${esc(r.nome)}</option>`).join('')}
@@ -1676,6 +1855,31 @@ function renderLista(el, tarefas) {
       </div>
       <button class="btn btn-primary btn-sm" onclick="modalNovaTarefa('${PROJETO?.id}')">+ Nova tarefa</button>
     </div>
+    <form class="quick-add-form" onsubmit="quickAddTarefa(event,'${PROJETO?.id}')">
+      <input
+        type="text"
+        id="quick-add-input"
+        class="quick-add-input"
+        placeholder="Adicionar tarefa — pressione Enter para criar com defaults"
+        autocomplete="off"
+      >
+      <div id="quick-add-step2" style="display:none;align-items:center;gap:8px;padding:6px 0;flex-wrap:wrap">
+        <span style="font-size:var(--fs-075);color:var(--text3)">Prioridade:</span>
+        <select id="qa-prioridade" class="qa-sel" onkeydown="if(event.key==='Escape')quickAddCancelar()">
+          <option>Alta</option>
+          <option selected>Média</option>
+          <option>Baixa</option>
+        </select>
+        <span style="font-size:var(--fs-075);color:var(--text3)">Complexidade:</span>
+        <select id="qa-complexidade" class="qa-sel" onkeydown="if(event.key==='Enter'){event.preventDefault();quickAddConfirmar('${PROJETO?.id}')}else if(event.key==='Escape')quickAddCancelar()">
+          <option>Simples</option>
+          <option selected>Moderada</option>
+          <option>Complexa</option>
+        </select>
+        <button type="button" class="btn btn-primary btn-sm" onclick="quickAddConfirmar('${PROJETO?.id}')">✓ Criar</button>
+        <button type="button" class="btn btn-ghost btn-sm" onclick="quickAddCancelar()">✕</button>
+      </div>
+    </form>
     <div class="table-wrap">
       <table>
         <thead><tr>
@@ -1879,13 +2083,14 @@ async function deletarDecisao(id, projetoId) {
 async function recarregarProjeto(aba) {
   if (!PROJETO) return;
   const abaAtiva = aba || document.querySelector('.aba.ativa')?.dataset.aba || 'lista';
-  const [proj, tarefas, decisoes] = await Promise.all([
+  const [proj, tarefas, decisoes, resumoHoras] = await Promise.all([
     req('GET', `/projetos/${PROJETO.id}`),
     req('GET', `/projetos/${PROJETO.id}/tarefas`),
     req('GET', `/projetos/${PROJETO.id}/decisoes`),
+    req('GET', `/projetos/${PROJETO.id}/horas-por-usuario`).catch(() => []),
   ]);
   PROJETO = proj; TAREFAS = tarefas;
-  renderProjeto(proj, tarefas, decisoes, abaAtiva);
+  renderProjeto(proj, tarefas, decisoes, abaAtiva, resumoHoras);
 }
 
 // ── MODAIS ──
@@ -2089,6 +2294,179 @@ async function salvarTarefa(id) {
     await req('PUT', `/tarefas/${id}`, { nome, status: gv('m-status'), prioridade: gv('m-prior'), complexidade: gv('m-dific'), data: gv('m-data')||null });
     fecharModal(); toast('Tarefa atualizada'); await recarregarProjeto();
   } catch (e) { toast(e.message, 'err'); btnLoading('btn-salvar-tar', false); }
+}
+
+// ── QUICK-ADD ──
+let _quickAddNome = '';
+let _quickAddStep = 0;
+
+function quickAddMostrarStep2() {
+  const wrap = document.getElementById('quick-add-step2');
+  if (wrap) wrap.style.display = 'flex';
+  const sel = document.getElementById('qa-prioridade');
+  if (sel) sel.focus();
+}
+
+function quickAddCancelar() {
+  _quickAddNome = '';
+  _quickAddStep = 0;
+  const input = document.getElementById('quick-add-input');
+  if (input) { input.value = ''; input.disabled = false; input.focus(); }
+  const wrap = document.getElementById('quick-add-step2');
+  if (wrap) wrap.style.display = 'none';
+}
+
+async function quickAddConfirmar(projetoId) {
+  const prioridade = document.getElementById('qa-prioridade')?.value || 'Média';
+  const complexidade = document.getElementById('qa-complexidade')?.value || 'Moderada';
+  const input = document.getElementById('quick-add-input');
+  input.disabled = true;
+  try {
+    await req('POST', `/projetos/${projetoId}/tarefas`, {
+      nome: _quickAddNome,
+      status: 'A fazer',
+      prioridade,
+      dificuldade: complexidade,
+    });
+    quickAddCancelar();
+    toast('Tarefa criada');
+    await recarregarProjeto('lista');
+  } catch (err) {
+    toast(err.message, 'err');
+    input.disabled = false;
+    input.focus();
+  }
+}
+
+async function quickAddTarefa(e, projetoId) {
+  e.preventDefault();
+  const input = document.getElementById('quick-add-input');
+  const nome = input?.value.trim();
+  if (!nome || !projetoId) return;
+  _quickAddNome = nome;
+  input.disabled = true;
+  quickAddMostrarStep2();
+}
+
+// ── BUSCA DE TAREFA ──
+function filtrarTarefasBusca(v) {
+  BUSCA_TAREFA = v;
+  renderLista(document.getElementById('aba'), TAREFAS);
+}
+
+// ── EXPORTAÇÃO CSV ──
+async function exportarTempoProjetoCSV(projetoId, projetoNome) {
+  try {
+    toast('Gerando CSV...');
+    const tarefas = await req('GET', `/projetos/${projetoId}/tarefas`);
+    const linhas = [['Tarefa','Origem','Início','Fim','Horas líquidas','Intervalos']];
+    for (const t of tarefas) {
+      const sessoes = await req('GET', `/tarefas/${t.id}/tempo`);
+      for (const s of sessoes) {
+        const intervalosStr = (s.intervalos || [])
+          .map(i => `${i.tipo}(${i.inicio}→${i.fim || 'aberto'})`).join('; ');
+        linhas.push([
+          csvEsc(t.nome), csvEsc(s.usuario_nome || ''),
+          csvEsc(s.inicio || ''), csvEsc(s.fim || ''),
+          String(s.horas_liquidas || 0), csvEsc(intervalosStr),
+        ]);
+      }
+    }
+    const csv = linhas.map(r => r.join(',')).join('\n');
+    const blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `telier_${projetoNome.replace(/\s+/g,'_')}_tempo.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+    toast('CSV exportado');
+  } catch (err) { toast(err.message, 'err'); }
+}
+
+// ── PRESENÇA ONLINE ──
+async function carregarColegasAtivos() {
+  try {
+    COLEGAS_ATIVOS = await req('GET', '/tempo/colegas-ativos');
+    renderPresenceDock();
+  } catch {}
+}
+
+function iniciarPollPresenca() {
+  if (_presenceTick) clearInterval(_presenceTick);
+  _presenceTick = setInterval(carregarColegasAtivos, 30000);
+  carregarColegasAtivos();
+}
+
+function renderPresenceDock() {
+  const dock = document.getElementById('presence-dock');
+  if (!dock) return;
+  if (!COLEGAS_ATIVOS.length) { dock.innerHTML = ''; return; }
+
+  const avatarsHtml = COLEGAS_ATIVOS.slice(0, 3)
+    .map(c => avatar(c.usuario_nome, 'avatar-sm')).join('');
+
+  const toggleHtml = `
+    <button class="presence-toggle" onclick="togglePresencePanel()" title="Colegas online agora">
+      <div class="presence-online-dot"></div>
+      <div class="presence-toggle-avatars">${avatarsHtml}</div>
+      <span class="presence-count">${COLEGAS_ATIVOS.length} online</span>
+    </button>`;
+
+  if (!PRESENCE_ABERTO) { dock.innerHTML = toggleHtml; return; }
+
+  const itemsHtml = COLEGAS_ATIVOS.map(c => {
+    const seg = Math.floor((Date.now() - new Date(c.inicio.replace(' ', 'T') + 'Z').getTime()) / 1000);
+    return `
+      <div class="presence-item" onclick="abrirProjeto('${c.projeto_id}')" title="Abrir projeto">
+        ${avatar(c.usuario_nome, 'avatar-sm')}
+        <div class="presence-item-info">
+          <div class="presence-item-nome">${esc(c.usuario_nome)}</div>
+          <div class="presence-item-tarefa">${esc(c.tarefa_nome)}</div>
+          <div class="presence-item-projeto">${esc(c.projeto_nome)}</div>
+        </div>
+        <div class="presence-item-tempo">${fmtDuracao(seg)}</div>
+      </div>`;
+  }).join('');
+
+  dock.innerHTML = `
+    <div class="presence-panel">
+      <div class="presence-panel-header">Online agora</div>
+      ${itemsHtml}
+    </div>
+    ${toggleHtml}`;
+
+  clearInterval(window._presenceDisplayTick);
+  window._presenceDisplayTick = setInterval(() => {
+    if (!PRESENCE_ABERTO) return;
+    COLEGAS_ATIVOS.forEach((c, idx) => {
+      const seg = Math.floor((Date.now() - new Date(c.inicio.replace(' ', 'T') + 'Z').getTime()) / 1000);
+      const els = dock.querySelectorAll('.presence-item-tempo');
+      if (els[idx]) els[idx].textContent = fmtDuracao(seg);
+    });
+  }, 1000);
+}
+
+function togglePresencePanel() {
+  PRESENCE_ABERTO = !PRESENCE_ABERTO;
+  renderPresenceDock();
+  if (PRESENCE_ABERTO) {
+    setTimeout(() => {
+      document.addEventListener('click', fecharPresencePanelFora, { once: true, capture: true });
+    }, 10);
+  }
+}
+
+function fecharPresencePanelFora(e) {
+  const dock = document.getElementById('presence-dock');
+  if (dock && !dock.contains(e.target)) {
+    PRESENCE_ABERTO = false;
+    renderPresenceDock();
+  } else if (PRESENCE_ABERTO) {
+    setTimeout(() => {
+      document.addEventListener('click', fecharPresencePanelFora, { once: true, capture: true });
+    }, 10);
+  }
 }
 
 // DECISÕES
@@ -2418,6 +2796,7 @@ async function iniciarCronometro(tarefaId, tarefaNome) {
     renderTimerDock();
     atualizarTempoListaVisivel();
     toast('Cronômetro iniciado');
+    carregarColegasAtivos();
   } catch (e) { toast(e.message, 'err'); }
 }
 
@@ -2429,6 +2808,7 @@ async function pararCronometro(sessaoId) {
     atualizarTempoListaVisivel();
     toast('Cronômetro parado');
     RELATORIO_CACHE = null;
+    carregarColegasAtivos();
     // Recarregar se estiver na página do projeto certo
     if (PROJETO) await recarregarProjeto();
   } catch (e) { toast(e.message, 'err'); }
@@ -2684,6 +3064,7 @@ window.addEventListener('load', async () => {
   aplicarTema(temaSalvo);
   await init();
   await carregarTimersAtivos();
+  iniciarPollPresenca();
 });
 </script>
 </body>
