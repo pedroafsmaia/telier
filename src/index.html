@@ -751,6 +751,7 @@ let BUSCA_TAREFA = '';
 let COLEGAS_ATIVOS = [];
 let PRESENCE_ABERTO = false;
 let _presenceTick = null;
+let _presenceHintShown = false;
 const TIMER_AVISO_HORAS = 4;
 
 // ── API ──
@@ -1089,6 +1090,7 @@ async function fazerLogout() {
   if (_presenceTick) clearInterval(_presenceTick);
   if (window._presenceDisplayTick) clearInterval(window._presenceDisplayTick);
   COLEGAS_ATIVOS = []; PRESENCE_ABERTO = false;
+  _presenceHintShown = false;
   const pd = document.getElementById('presence-dock');
   if (pd) pd.innerHTML = '';
   try { await req('POST', '/auth/logout'); } catch {}
@@ -1709,7 +1711,7 @@ function renderProjeto(proj, tarefas, decisoes, abaAtiva, resumoHoras = []) {
         <div style="display:flex;gap:8px;flex-shrink:0">
           ${canEdit ? `<button class="btn btn-sm" onclick="modalEditarProjeto('${proj.id}')">Editar</button>` : ''}
           ${souDono(proj.dono_id) ? `<button class="btn btn-sm" onclick="modalPermissoes('${proj.id}')">Adicionar colaborador</button>` : ''}
-          ${proj.total_horas > 0 ? `<button class="btn btn-sm" onclick="exportarTempoProjetoCSV('${proj.id}','${esc(proj.nome)}')">↓ CSV</button>` : ''}
+          ${proj.total_horas > 0 ? `<button class="btn btn-sm" onclick="exportarTempoProjetoCSV('${proj.id}')">↓ CSV</button>` : ''}
         </div>
       </div>
       <div class="proj-meta">
@@ -2355,9 +2357,10 @@ function filtrarTarefasBusca(v) {
 }
 
 // ── EXPORTAÇÃO CSV ──
-async function exportarTempoProjetoCSV(projetoId, projetoNome) {
+async function exportarTempoProjetoCSV(projetoId) {
   try {
     toast('Gerando CSV...');
+    const projetoNome = PROJETO?.nome || 'projeto';
     const tarefas = await req('GET', `/projetos/${projetoId}/tarefas`);
     const linhas = [['Tarefa','Origem','Início','Fim','Horas líquidas','Intervalos']];
     for (const t of tarefas) {
@@ -2388,6 +2391,7 @@ async function exportarTempoProjetoCSV(projetoId, projetoNome) {
 async function carregarColegasAtivos() {
   if (!TOKEN) {
     COLEGAS_ATIVOS = [];
+    _presenceHintShown = false;
     renderPresenceDock();
     return;
   }
@@ -2398,6 +2402,11 @@ async function carregarColegasAtivos() {
       : Array.isArray(data?.results)
         ? data.results
         : [];
+    if (!COLEGAS_ATIVOS.length && !_presenceHintShown) {
+      _presenceHintShown = true;
+      toast('Nenhum colega online agora');
+    }
+    if (COLEGAS_ATIVOS.length) _presenceHintShown = false;
     renderPresenceDock();
   } catch {
     COLEGAS_ATIVOS = [];
@@ -2415,7 +2424,11 @@ function iniciarPollPresenca() {
 function renderPresenceDock() {
   const dock = document.getElementById('presence-dock');
   if (!dock) return;
-  if (!COLEGAS_ATIVOS.length) { dock.innerHTML = ''; return; }
+  if (!COLEGAS_ATIVOS.length) {
+    clearInterval(window._presenceDisplayTick);
+    dock.innerHTML = '';
+    return;
+  }
 
   const avatarsHtml = COLEGAS_ATIVOS.slice(0, 3)
     .map(c => avatar(c.usuario_nome, 'avatar-sm')).join('');

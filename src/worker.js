@@ -1076,6 +1076,17 @@ export default {
       const [u, e] = await requireAuth(request, env);
       if (e) return fail('Não autorizado', 401);
       const projetoId = matchHorasProjeto[1];
+
+      const proj = await env.DB.prepare('SELECT id, dono_id FROM projetos WHERE id = ?').bind(projetoId).first();
+      if (!proj) return fail('Não encontrado', 404);
+
+      if (!isAdmin(u) && proj.dono_id !== u.uid) {
+        const permissao = await env.DB.prepare(
+          'SELECT 1 as ok FROM permissoes_projeto WHERE projeto_id = ? AND usuario_id = ? LIMIT 1'
+        ).bind(projetoId, u.uid).first();
+        if (!permissao) return fail('Sem permissão', 403);
+      }
+
       const resumo = await env.DB.prepare(`
         SELECT tu.nome as usuario_nome,
           ROUND(SUM(
