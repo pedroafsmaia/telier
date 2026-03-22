@@ -55,14 +55,14 @@ Decisões de UX foram tomadas pensando nesse perfil: entrada rápida, uma tarefa
 - `id` TEXT PK
 - `nome` TEXT — nome de exibição
 - `login` TEXT UNIQUE — nome de usuário para autenticação (armazena onde outros sistemas usariam email)
-- `senha_hash` TEXT — PBKDF2 com salt (100k iterações)
+- `senha_hash` TEXT — senha armazenada em texto puro (modo local atual)
 - `papel` TEXT — `admin` ou `membro`
 
 **projetos**
 - `id` TEXT PK (prefixo `prj_`)
 - `nome`, `fase`, `status`, `prioridade`, `prazo`, `area_m2`
 - `dono_id` — FK usuarios
-- Status possíveis: `Em andamento`, `Aguardando aprovação`, `Pausado`, `Concluído`, `Arquivado`
+- Status possíveis: `A fazer`, `Em andamento`, `Aguardando aprovação`, `Pausado`, `Concluído`, `Arquivado`
 - Fase: `Estudo preliminar`, `Anteprojeto`, `Projeto básico`, `Projeto executivo`, `Em obra`
 - **Projetos só podem ser excluídos após serem arquivados**
 
@@ -131,7 +131,7 @@ Cada usuário vê apenas suas próprias sessões de cronômetro. Admin vê as se
 - Lista de projetos com filtro por status
 - Card de projeto com: nome, fase, status, prioridade, prazo, área m², progresso de tarefas, dono, minha tarefa em foco
 - Indicador visual de urgência para projetos com prazo em ≤7 dias
-- Filtros: Todos, Em andamento, Aguardando aprovação, Pausado, Concluído, Arquivado
+- Filtros: Todos, A fazer, Em andamento, Aguardando aprovação, Pausado, Concluído, Arquivado
 
 ### Projeto
 - Cabeçalho com: nome, dono, fase, status, prioridade, prazo, área m², barra de progresso, dias restantes
@@ -182,7 +182,7 @@ Cada usuário vê apenas suas próprias sessões de cronômetro. Admin vê as se
 ## Autenticação
 
 - Login por `usuario_login` + `senha` (sem email)
-- Hash PBKDF2 com salt aleatório (100k iterações SHA-256)
+- Senha armazenada em texto puro no campo `senha_hash` (modo local)
 - Tokens de sessão com 128 bits, expiração em 30 dias
 - Tela de setup automática na primeira vez (detecta ausência de admin)
 - CORS restrito ao domínio configurado em `ALLOWED_ORIGIN` (env var do Worker)

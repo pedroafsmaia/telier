@@ -206,6 +206,7 @@ label{font-size:12px;color:var(--text2);display:block;margin-bottom:5px}
 .proj-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r2);padding:24px;cursor:pointer;transition:all .22s cubic-bezier(.25,.1,.25,1);position:relative;overflow:hidden}
 .proj-card::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;border-radius:3px 0 0 3px}
 .proj-card[data-status="Em andamento"]::before{background:var(--blue)}
+.proj-card[data-status="A fazer"]::before{background:var(--gray)}
 .proj-card[data-status="Aguardando aprovação"]::before{background:var(--yellow)}
 .proj-card[data-status="Concluído"]::before{background:var(--green)}
 .proj-card[data-status="Pausado"]::before{background:var(--text3)}
@@ -237,6 +238,7 @@ label{font-size:12px;color:var(--text2);display:block;margin-bottom:5px}
 .proj-hero{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r2);padding:32px;margin-bottom:28px;position:relative;overflow:hidden;box-shadow:var(--shadow)}
 .proj-hero::before{content:'';position:absolute;left:0;top:0;bottom:0;width:4px}
 .proj-hero[data-status="Em andamento"]::before{background:var(--blue)}
+.proj-hero[data-status="A fazer"]::before{background:var(--gray)}
 .proj-hero[data-status="Aguardando aprovação"]::before{background:var(--yellow)}
 .proj-hero[data-status="Concluído"]::before{background:var(--green)}
 .proj-hero[data-status="Pausado"]::before{background:var(--text3)}
@@ -543,13 +545,20 @@ function btnLoading(id, on) {
 
 // TAGS
 const ST = { 'Arquivado':'tag-gray', 'Em andamento':'tag-blue','Concluída':'tag-green','Concluído':'tag-green','Bloqueada':'tag-red','A fazer':'tag-gray','Aguardando aprovação':'tag-yellow','Pausado':'tag-gray' };
-const PT = { 'Alta':'tag-red','Média':'tag-yellow','Baixa':'tag-gray' };
-const DT = { 'Simples':'tag-green','Moderada':'tag-orange','Complexa':'tag-red' };
+const PT = { 'Alta':'tag-orange','Média':'tag-yellow','Baixa':'tag-gray' };
+const DT = { 'Simples':'tag-green','Moderada':'tag-orange','Complexa':'tag-purple' };
 const FT = { 'Estudo preliminar':'tag-purple','Anteprojeto':'tag-blue','Projeto básico':'tag-orange','Projeto executivo':'tag-red','Em obra':'tag-green' };
 const PO = { 'Alta':0,'Média':1,'Baixa':2 };
 const DO = { 'Complexa':0,'Moderada':1,'Simples':2 };
 
 function tag(t, cls) { return `<span class="tag ${cls||ST[t]||'tag-gray'}">${esc(t)}</span>`; }
+function normalizarStatusProjeto(status) {
+  return status === 'Concluída' ? 'Concluído' : status;
+}
+function projetoConcluido(status) {
+  const s = normalizarStatusProjeto(status);
+  return s === 'Concluído';
+}
 
 // ── INIT ──
 async function init() {
@@ -731,7 +740,7 @@ function renderInicioDia(projetos, ativas) {
   const focoProjeto = projetos.find(p => p.minha_tarefa_foco);
   const urgentes = projetos.filter(p => {
     const dias = diasRestantes(p.prazo);
-    return dias !== null && dias <= 7 && !['Concluído', 'Arquivado'].includes(p.status);
+    return dias !== null && dias <= 7 && ![ 'Concluído', 'Arquivado' ].includes(normalizarStatusProjeto(p.status));
   }).sort((a, b) => (a.prazo || '9999-12-31').localeCompare(b.prazo || '9999-12-31'));
   const proximoUrgente = urgentes[0] || null;
   const ativo = ativas[0] || null;
@@ -799,8 +808,8 @@ async function renderDash() {
       req('GET', `/tempo/ativas${isAdminRole() && ADMIN_MODE === 'normal' ? '?as_member=1' : ''}`).catch(() => []),
     ]);
 
-    const emAndamento = projetos.filter(p => !['Concluído','Arquivado'].includes(p.status)).length;
-    const filtros = ['todos','Em andamento','Aguardando aprovação','Pausado','Concluído','Arquivado'];
+    const emAndamento = projetos.filter(p => !['Concluído','Arquivado'].includes(normalizarStatusProjeto(p.status))).length;
+    const filtros = ['todos','A fazer','Em andamento','Aguardando aprovação','Pausado','Concluído','Arquivado'];
 
     let html = `
       <div class="dash-header">
@@ -823,20 +832,21 @@ async function renderDash() {
     }
 
     projetos.forEach(p => {
+      const statusProjeto = normalizarStatusProjeto(p.status);
       const total = parseInt(p.total_tarefas) || 0;
       const conc = parseInt(p.tarefas_concluidas) || 0;
       const pct = total ? Math.round(conc / total * 100) : 0;
       const dias = diasRestantes(p.prazo);
-      const urgente = dias !== null && dias <= 7 && p.status !== 'Concluído';
+      const urgente = dias !== null && dias <= 7 && !projetoConcluido(statusProjeto);
 
       html += `
-        <div class="proj-card" data-status="${esc(p.status)}" onclick="abrirProjeto('${p.id}')">
+        <div class="proj-card" data-status="${esc(statusProjeto)}" onclick="abrirProjeto('${p.id}')">
           <div class="proj-card-header">
             <div class="proj-card-nome">${esc(p.nome)}</div>
             ${souDono(p.dono_id) ? `<button class="btn btn-ghost btn-icon btn-sm proj-card-edit" onclick="event.stopPropagation();modalEditarProjeto('${p.id}')" title="Editar">✎</button>` : ''}
           </div>
           <div class="proj-card-tags">
-            ${tag(p.fase, FT[p.fase])} ${tag(p.status)} ${tag(p.prioridade, PT[p.prioridade])}
+            ${tag(p.fase, FT[p.fase])} ${tag(statusProjeto)} ${tag(p.prioridade, PT[p.prioridade])}
             ${p.prazo ? `<span class="tag ${urgente?'tag-red':'tag-gray'} mono">${prazoFmt(p.prazo, true)}</span>` : ''}
             ${p.area_m2 ? `<span class="tag tag-gray mono">${p.area_m2.toLocaleString('pt-BR')} m²</span>` : ''}
           </div>
@@ -1113,17 +1123,18 @@ async function abrirProjeto(id) {
 }
 
 function renderProjeto(proj, tarefas, decisoes, abaAtiva) {
+  const statusProjeto = normalizarStatusProjeto(proj.status);
   const total = tarefas.length;
   const conc = tarefas.filter(t => t.status === 'Concluída').length;
   const pct = total ? Math.round(conc / total * 100) : 0;
   const focoMinha = tarefas.find(t => t.foco && t.dono_id === EU?.id);
   const dias = diasRestantes(proj.prazo);
-  const urgente = dias !== null && dias <= 7 && proj.status !== 'Concluído';
+  const urgente = dias !== null && dias <= 7 && !projetoConcluido(statusProjeto);
   const canEdit = podeEditar(proj);
 
   const c = document.getElementById('content');
   c.innerHTML = `
-    <div class="proj-hero" data-status="${esc(proj.status)}">
+    <div class="proj-hero" data-status="${esc(statusProjeto)}">
       <div class="proj-hero-top">
         <div class="proj-hero-left">
           <div class="proj-nome">${esc(proj.nome)}</div>
@@ -1135,7 +1146,7 @@ function renderProjeto(proj, tarefas, decisoes, abaAtiva) {
         </div>
       </div>
       <div class="proj-tags">
-        ${tag(proj.fase, FT[proj.fase])} ${tag(proj.status)} ${tag(proj.prioridade, PT[proj.prioridade])}
+        ${tag(proj.fase, FT[proj.fase])} ${tag(statusProjeto)} ${tag(proj.prioridade, PT[proj.prioridade])}
         ${proj.prazo ? `<span class="tag ${urgente?'tag-red':'tag-gray'} mono">${prazoFmt(proj.prazo)}</span>` : ''}
       </div>
       ${proj.area_m2 ? `<div style="margin-bottom:10px"><span class="tag tag-gray mono">${proj.area_m2.toLocaleString('pt-BR')} m²</span></div>` : ''}
@@ -1422,7 +1433,7 @@ async function recarregarProjeto(aba) {
 
 // ── MODAIS ──
 const FASES = ['Estudo preliminar','Anteprojeto','Projeto básico','Projeto executivo','Em obra'];
-const STATUS_PROJ = ['Em andamento','Aguardando aprovação','Pausado','Concluído','Arquivado'];
+const STATUS_PROJ = ['A fazer','Em andamento','Aguardando aprovação','Pausado','Concluído','Arquivado'];
 const STATUS_TAR = ['A fazer','Em andamento','Bloqueada','Concluída'];
 const PRIORS = ['Alta','Média','Baixa'];
 const DIFS = ['Simples','Moderada','Complexa'];
@@ -1438,7 +1449,7 @@ function modalNovoProjeto() {
     <div class="form-row"><label>Nome do projeto</label><input id="m-nome" placeholder="Ex: Reforma Bloco B"></div>
     <div class="form-grid">
       <div class="form-row"><label>Fase</label>${sel('m-fase',FASES,'Estudo preliminar')}</div>
-      <div class="form-row"><label>Status</label>${sel('m-status',STATUS_PROJ,'Em andamento')}</div>
+      <div class="form-row"><label>Status</label>${sel('m-status',STATUS_PROJ,'A fazer')}</div>
       <div class="form-row"><label>Prioridade</label>${sel('m-prior',PRIORS,'Média')}</div>
       <div class="form-row"><label>Prazo</label><input type="date" id="m-prazo"></div>
       <div class="form-row"><label>Área (m²)</label><input type="number" id="m-area" min="0" step="0.01" placeholder="Ex: 250.5"></div>

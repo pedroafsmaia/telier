@@ -18,7 +18,7 @@ function getCors(request, env) {
   const allowedOrigin = (origin === allowed || isLocalhost) ? origin : allowed;
   return {
     'Access-Control-Allow-Origin': allowedOrigin,
-    'Access-Control-Allow-Methods': 'GET,POST,PUT,DELETE,OPTIONS',
+    'Access-Control-Allow-Methods': 'GET,POST,PUT,PATCH,DELETE,OPTIONS',
     'Access-Control-Allow-Headers': 'Content-Type,Authorization',
     'Vary': 'Origin',
   };
@@ -65,6 +65,16 @@ async function requireAuth(request, env) {
 }
 
 function isAdmin(u) { return u?.papel === 'admin'; }
+
+const STATUS_PROJ_VALIDOS = ['A fazer', 'Em andamento', 'Aguardando aprovação', 'Pausado', 'Concluído', 'Arquivado'];
+const STATUS_PROJ_VALIDOS_SET = new Set(STATUS_PROJ_VALIDOS);
+
+function normalizarStatusProjeto(status) {
+  if (!status) return status;
+  const s = String(status).trim();
+  if (s === 'Concluída') return 'Concluído';
+  return s;
+}
 
 async function podeEditarProjeto(env, projetoId, usuarioId, papel) {
   if (papel === 'admin') return true;
@@ -453,7 +463,9 @@ export default {
       if (e) return fail('Não autorizado', 401);
 
       // C1: filtro de status via binding parametrizado — sem interpolação de string
-      const statusFiltro = url.searchParams.get('status') || null;
+      const statusFiltroRaw = url.searchParams.get('status') || null;
+      const statusFiltro = statusFiltroRaw ? normalizarStatusProjeto(statusFiltroRaw) : null;
+      if (statusFiltro && !STATUS_PROJ_VALIDOS_SET.has(statusFiltro)) return fail('Status de projeto inválido', 400);
       const asMember = url.searchParams.get('as_member') === '1';
       const adminScope = (isAdmin(u) && !asMember) ? 1 : 0;
       // Filtra: projetos do usuário (dono) OU compartilhados com ele (permissoes_projeto)
@@ -478,7 +490,7 @@ export default {
           AND (? IS NULL OR p.status = ?)
         GROUP BY p.id
         ORDER BY
-          CASE p.status WHEN 'Em andamento' THEN 0 WHEN 'Aguardando aprovação' THEN 1 WHEN 'Pausado' THEN 2 ELSE 3 END,
+          CASE p.status WHEN 'A fazer' THEN 0 WHEN 'Em andamento' THEN 1 WHEN 'Aguardando aprovação' THEN 2 WHEN 'Pausado' THEN 3 WHEN 'Concluído' THEN 4 WHEN 'Concluída' THEN 4 ELSE 5 END,
           CASE p.prioridade WHEN 'Alta' THEN 0 WHEN 'Média' THEN 1 ELSE 2 END,
           p.prazo ASC NULLS LAST,
           p.atualizado_em DESC
@@ -491,10 +503,12 @@ export default {
       if (e) return fail('Não autorizado', 401);
       const { nome, fase, status, prioridade, prazo, area_m2 } = await request.json();
       if (!nome?.trim()) return fail('Nome obrigatório');
+      const statusProjeto = normalizarStatusProjeto(status || 'A fazer');
+      if (!STATUS_PROJ_VALIDOS_SET.has(statusProjeto)) return fail('Status de projeto inválido', 400);
       const id = 'prj_' + uid();
       await env.DB.prepare(
         'INSERT INTO projetos (id, nome, fase, status, prioridade, prazo, area_m2, dono_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?)'
-      ).bind(id, nome.trim(), fase || 'Estudo preliminar', status || 'Em andamento', prioridade || 'Média', prazo || null, area_m2 || null, u.uid).run();
+      ).bind(id, nome.trim(), fase || 'Estudo preliminar', statusProjeto, prioridade || 'Média', prazo || null, area_m2 || null, u.uid).run();
       return ok({ id });
     }
 
@@ -523,9 +537,11 @@ export default {
         if (!await podeEditarProjeto(env, projetoId, u.uid, u.papel)) return fail('Sem permissão', 403);
         const { nome, fase, status, prioridade, prazo, area_m2 } = await request.json();
         if (!nome?.trim()) return fail('Nome obrigatório');
+        const statusProjeto = normalizarStatusProjeto(status);
+        if (!STATUS_PROJ_VALIDOS_SET.has(statusProjeto)) return fail('Status de projeto inválido', 400);
         await env.DB.prepare(
           'UPDATE projetos SET nome=?, fase=?, status=?, prioridade=?, prazo=?, area_m2=?, atualizado_em=datetime("now") WHERE id=?'
-        ).bind(nome.trim(), fase, status, prioridade, prazo || null, area_m2 || null, projetoId).run();
+        ).bind(nome.trim(), fase, statusProjeto, prioridade, prazo || null, area_m2 || null, projetoId).run();
         return ok({ ok: true });
       }
 
