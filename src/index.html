@@ -191,6 +191,9 @@ label{font-size:12px;color:var(--text2);display:block;margin-bottom:5px}
 .admin-kpi-label{font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:.06em}
 .admin-kpi-val{font-size:20px;color:var(--text);font-family:'DM Mono',monospace;margin-top:4px}
 .admin-note{font-size:12px;color:var(--text3)}
+.admin-tools{display:flex;gap:8px;align-items:end;flex-wrap:wrap;margin-bottom:10px}
+.admin-tools .tool-field{display:flex;flex-direction:column;gap:4px}
+.admin-tools label{font-size:11px;color:var(--text3);margin:0}
 
 /* FILTROS */
 .dash-filters{display:flex;gap:8px;margin-bottom:24px;flex-wrap:wrap}
@@ -451,6 +454,7 @@ let FILTRO_STATUS = 'todos';
 let NEEDS_SETUP = false;
 const ADMIN_MODE_KEY = 'ea_admin_mode';
 let ADMIN_MODE = localStorage.getItem(ADMIN_MODE_KEY) || 'admin';
+let ADMIN_TEMPO_FILTRO = { de: '', ate: '' };
 
 // ── API ──
 async function req(method, path, body) {
@@ -923,7 +927,10 @@ async function abrirCentralAdmin(aba = 'agora') {
     }
 
     if (aba === 'tempo') {
-      const linhas = await req('GET', '/admin/tempo');
+      const q = new URLSearchParams();
+      if (ADMIN_TEMPO_FILTRO.de) q.set('de', ADMIN_TEMPO_FILTRO.de);
+      if (ADMIN_TEMPO_FILTRO.ate) q.set('ate', ADMIN_TEMPO_FILTRO.ate);
+      const linhas = await req('GET', `/admin/tempo${q.toString() ? `?${q.toString()}` : ''}`);
       const total = linhas.reduce((s, l) => s + (parseFloat(l.horas_liquidas)||0), 0);
       const rows = linhas.map(l => `
         <tr>
@@ -933,6 +940,19 @@ async function abrirCentralAdmin(aba = 'agora') {
           <td class="mono">${Number(l.horas_liquidas||0).toFixed(2)}h</td>
         </tr>`).join('');
       body.innerHTML = `
+        <div class="admin-tools">
+          <div class="tool-field">
+            <label>De</label>
+            <input type="date" id="adm-de" value="${esc(ADMIN_TEMPO_FILTRO.de)}">
+          </div>
+          <div class="tool-field">
+            <label>Até</label>
+            <input type="date" id="adm-ate" value="${esc(ADMIN_TEMPO_FILTRO.ate)}">
+          </div>
+          <button class="btn btn-sm" onclick="aplicarFiltroTempoAdmin()">Aplicar</button>
+          <button class="btn btn-sm" onclick="limparFiltroTempoAdmin()">Limpar</button>
+          <button class="btn btn-sm btn-primary" onclick="exportarTempoAdminCSV()">Exportar CSV</button>
+        </div>
         <div class="admin-grid" style="margin-bottom:10px">
           <div class="admin-kpi"><div class="admin-kpi-label">Horas líquidas registradas</div><div class="admin-kpi-val">${total.toFixed(2)}h</div></div>
           <div class="admin-kpi"><div class="admin-kpi-label">Itens de tempo</div><div class="admin-kpi-val">${linhas.length}</div></div>
@@ -947,6 +967,56 @@ async function abrirCentralAdmin(aba = 'agora') {
     }
   } catch (e) {
     body.innerHTML = `<div style="color:var(--red);padding:16px">${esc(e.message)}</div>`;
+  }
+}
+
+function aplicarFiltroTempoAdmin() {
+  ADMIN_TEMPO_FILTRO.de = gv('adm-de') || '';
+  ADMIN_TEMPO_FILTRO.ate = gv('adm-ate') || '';
+  abrirCentralAdmin('tempo');
+}
+
+function limparFiltroTempoAdmin() {
+  ADMIN_TEMPO_FILTRO = { de: '', ate: '' };
+  abrirCentralAdmin('tempo');
+}
+
+function csvEsc(v) {
+  const s = String(v ?? '');
+  if (/[",\n;]/.test(s)) return '"' + s.replace(/"/g, '""') + '"';
+  return s;
+}
+
+async function exportarTempoAdminCSV() {
+  try {
+    const q = new URLSearchParams();
+    if (ADMIN_TEMPO_FILTRO.de) q.set('de', ADMIN_TEMPO_FILTRO.de);
+    if (ADMIN_TEMPO_FILTRO.ate) q.set('ate', ADMIN_TEMPO_FILTRO.ate);
+    const linhas = await req('GET', `/admin/tempo${q.toString() ? `?${q.toString()}` : ''}`);
+    const header = ['usuario_nome', 'projeto_nome', 'tarefa_nome', 'horas_liquidas'];
+    const out = [header.join(';')];
+    linhas.forEach(l => {
+      out.push([
+        csvEsc(l.usuario_nome),
+        csvEsc(l.projeto_nome),
+        csvEsc(l.tarefa_nome),
+        csvEsc(Number(l.horas_liquidas || 0).toFixed(2)),
+      ].join(';'));
+    });
+    const blob = new Blob([out.join('\n')], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    const deTag = ADMIN_TEMPO_FILTRO.de || 'inicio';
+    const ateTag = ADMIN_TEMPO_FILTRO.ate || 'hoje';
+    a.href = url;
+    a.download = `telier_tempo_${deTag}_${ateTag}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+    toast('CSV exportado');
+  } catch (e) {
+    toast(e.message, 'err');
   }
 }
 
