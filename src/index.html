@@ -429,7 +429,7 @@ tr:hover .td-ações{opacity:1}
 /* ── SESSÕES DE TEMPO ── */
 .sessoes-sep { height: 1px; background: var(--border); margin: 32px 0 24px; }
 .sessoes-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
-.sessoes-title { font-size: var(--fs-075); font-weight: 500; color: var(--text2); text-transform: uppercase; letter-spacing: .08em; }
+.sessoes-title { font-size: var(--fs-080); font-weight: 500; color: var(--text2); text-transform: uppercase; letter-spacing: .08em; }
 .sessao-item { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--r2); margin-bottom: 8px; overflow: hidden; }
 .sessao-item.ativa { border-color: rgba(62,207,142,.3); }
 .sessao-header { display: flex; align-items: center; gap: 10px; padding: 12px 14px; }
@@ -458,6 +458,12 @@ tr:hover .td-ações{opacity:1}
 .colab-list { display: flex; flex-direction: column; gap: 6px; margin-bottom: 12px; }
 .colab-row { display: flex; align-items: center; justify-content: space-between; padding: 7px 12px; background: var(--bg3); border-radius: var(--r); border: 1px solid var(--border); font-size: var(--fs-090); }
 .colab-info { display: flex; align-items: center; gap: 8px; }
+.task-details-panel{margin-top:18px;padding-top:14px;border-top:1px solid var(--border)}
+.task-details-header{font-size:var(--fs-080);font-weight:500;color:var(--text2);text-transform:uppercase;letter-spacing:.08em;margin-bottom:10px}
+.task-details-add{display:flex;gap:8px;margin-bottom:10px}
+.task-details-list{display:flex;flex-direction:column;gap:6px}
+.task-detail-item{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:8px 10px;background:var(--bg3);border:1px solid var(--border);border-radius:var(--r)}
+.task-detail-text{font-size:var(--fs-090);color:var(--text2);line-height:1.4;word-break:break-word}
 .colab-del { background: none; border: none; color: var(--text3); cursor: pointer; font-size: 14px; opacity: .5; }
 .colab-del:hover { opacity: 1; color: var(--red); }
 
@@ -1568,31 +1574,19 @@ function renderProjeto(proj, tarefas, decisoes, abaAtiva) {
         : `<div class="proj-foco-empty">Nenhuma tarefa em foco — use ★ na lista para definir</div>`}
     </div>
     <div class="abas">
-      <button class="aba ${abaAtiva==='lista'?'ativa':''}" onclick="mudarAba('lista')">Lista</button>
-      <button class="aba ${abaAtiva==='mapa'?'ativa':''}" onclick="mudarAba('mapa')">Mapa de Foco</button>
-      <button class="aba ${abaAtiva==='relatorio'?'ativa':''}" onclick="mudarAba('relatorio')">Relatório</button>
+      <button class="aba ${abaAtiva==='lista'?'ativa':''}" data-aba="lista" onclick="mudarAba('lista')">Lista de tarefas</button>
+      <button class="aba ${abaAtiva==='mapa'?'ativa':''}" data-aba="mapa" onclick="mudarAba('mapa')">Mapa de Foco</button>
+      <button class="aba ${abaAtiva==='relatorio'?'ativa':''}" data-aba="relatorio" onclick="mudarAba('relatorio')">Relatório</button>
     </div>
     <div id="aba"></div>
-    <div id="decisoes-sec"></div>
-    <div id="sessoes-sec"></div>`;
+    <div id="decisoes-sec"></div>`;
 
   renderAba(abaAtiva, tarefas);
   renderDecisoes(proj.id, decisoes, canEdit);
-  // Painel de sessões de cronômetro
-  const secEl = document.getElementById('sessoes-sec');
-  if (secEl) {
-    secEl.innerHTML = `
-      <div class="sessoes-sep"></div>
-      <div class="sessoes-header">
-        <div class="sessoes-title">Registros de tempo</div>
-      </div>
-      <div id="sessoes-lista"><div class="text-sm text-muted">Clique em uma tarefa na lista ao lado para ver e gerenciar seus registros de tempo.</div></div>`;
-  }
 }
 
 function mudarAba(aba) {
-  const map = { lista:'Lista', mapa:'Mapa de Foco', relatorio:'Relatório' };
-  document.querySelectorAll('.aba').forEach(b => b.classList.toggle('ativa', b.textContent === map[aba]));
+  document.querySelectorAll('.aba').forEach(b => b.classList.toggle('ativa', b.dataset.aba === aba));
   renderAba(aba, TAREFAS);
 }
 
@@ -1603,10 +1597,6 @@ function renderAba(aba, tarefas) {
   if (aba === 'lista') renderLista(el, tarefas);
   else if (aba === 'mapa') renderMapa(el, tarefas);
   else renderRelatorio(el, tarefas);
-  // Painel de sessões (só na aba lista)
-  const secEl = document.getElementById('sessoes-sec');
-  if (secEl && aba === 'lista') secEl.style.display = '';
-  else if (secEl) secEl.style.display = 'none';
 }
 
 // ── LISTA ──
@@ -1881,15 +1871,14 @@ async function deletarDecisao(id, projetoId) {
 
 async function recarregarProjeto(aba) {
   if (!PROJETO) return;
-  const abaAtiva = aba || document.querySelector('.aba.ativa')?.textContent;
-  const m = { 'Lista':'lista','Mapa de Foco':'mapa','Relatório':'relatorio' };
+  const abaAtiva = aba || document.querySelector('.aba.ativa')?.dataset.aba || 'lista';
   const [proj, tarefas, decisoes] = await Promise.all([
     req('GET', `/projetos/${PROJETO.id}`),
     req('GET', `/projetos/${PROJETO.id}/tarefas`),
     req('GET', `/projetos/${PROJETO.id}/decisoes`),
   ]);
   PROJETO = proj; TAREFAS = tarefas;
-  renderProjeto(proj, tarefas, decisoes, m[abaAtiva] || 'lista');
+  renderProjeto(proj, tarefas, decisoes, abaAtiva);
 }
 
 // ── MODAIS ──
@@ -2249,12 +2238,84 @@ async function criarColega() {
 
 
 
-async function expandirSessoes(tarefaId) {
-  const el = document.getElementById('sessoes-lista');
+function detalhesTaskKey(tarefaId) {
+  return `telier_tarefa_detalhes_${tarefaId}`;
+}
+
+function listarDetalhesTarefa(tarefaId) {
+  try {
+    const raw = localStorage.getItem(detalhesTaskKey(tarefaId));
+    const arr = raw ? JSON.parse(raw) : [];
+    return Array.isArray(arr) ? arr.filter(v => typeof v === 'string' && v.trim()) : [];
+  } catch {
+    return [];
+  }
+}
+
+function salvarDetalhesTarefa(tarefaId, itens) {
+  localStorage.setItem(detalhesTaskKey(tarefaId), JSON.stringify(itens));
+}
+
+function htmlDetalhesTarefa(tarefaId) {
+  const itens = listarDetalhesTarefa(tarefaId);
+  const itensHtml = itens.map((item, idx) => `
+    <div class="task-detail-item">
+      <div class="task-detail-text">${esc(item)}</div>
+      <button class="btn btn-danger btn-icon btn-sm" onclick="removerDetalheTarefa('${tarefaId}',${idx})" title="Remover detalhe">
+        <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M1.5 1.5l9 9M10.5 1.5l-9 9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+      </button>
+    </div>`).join('');
+
+  return `
+    <div class="task-details-header">Detalhes da tarefa</div>
+    <div class="task-details-add">
+      <input id="task-det-input-${tarefaId}" placeholder="Ex: Pendência com fornecedor, material faltando, ponto de atenção...">
+      <button class="btn btn-primary btn-sm" onclick="adicionarDetalheTarefa('${tarefaId}')">Adicionar</button>
+    </div>
+    <div class="task-details-list">${itensHtml || '<div class="inline-muted-sm">Nenhum detalhe adicionado ainda.</div>'}</div>`;
+}
+
+function atualizarDetalhesTarefaUI(tarefaId) {
+  const el = document.getElementById(`task-details-${tarefaId}`);
   if (!el) return;
+  el.innerHTML = htmlDetalhesTarefa(tarefaId);
+}
+
+function adicionarDetalheTarefa(tarefaId) {
+  const input = document.getElementById(`task-det-input-${tarefaId}`);
+  if (!input) return;
+  const txt = input.value.trim();
+  if (!txt) return;
+  const itens = listarDetalhesTarefa(tarefaId);
+  itens.push(txt);
+  salvarDetalhesTarefa(tarefaId, itens);
+  atualizarDetalhesTarefaUI(tarefaId);
+}
+
+function removerDetalheTarefa(tarefaId, idx) {
+  const itens = listarDetalhesTarefa(tarefaId);
+  itens.splice(idx, 1);
+  salvarDetalhesTarefa(tarefaId, itens);
+  atualizarDetalhesTarefaUI(tarefaId);
+}
+
+async function expandirSessoes(tarefaId) {
   const tarefa = TAREFAS.find(t => t.id === tarefaId);
   const nome = tarefa?.nome || tarefaId;
-  el.innerHTML = `<div class="inline-muted-sm" style="margin-bottom:12px">Sessões de: <strong class="inline-note-strong">${esc(nome)}</strong></div><div id="sess-inner"><div class="loading"><div class="spinner"></div></div></div>`;
+
+  abrirModal(`
+    <h2>Registro de tempo</h2>
+    <p class="modal-copy">Tarefa: <strong class="inline-note-strong">${esc(nome)}</strong></p>
+    <div class="sessoes-header" style="margin-bottom:10px">
+      <div class="sessoes-title">Registros de tempo</div>
+    </div>
+    <div id="sess-inner"><div class="loading"><div class="spinner"></div></div></div>
+    <div class="task-details-panel" id="task-details-${tarefaId}">${htmlDetalhesTarefa(tarefaId)}</div>
+    <div class="modal-footer">
+      <button class="btn" onclick="fecharModal()">Fechar</button>
+    </div>
+  `, { lg: true });
+
   await renderSessoesTarefa(tarefaId, document.getElementById('sess-inner'));
 }
 
@@ -2300,7 +2361,16 @@ async function carregarTimersAtivos() {
       }
     }
     renderTimerDock();
+    atualizarTempoListaVisivel();
   } catch {}
+}
+
+function atualizarTempoListaVisivel() {
+  const abaEl = document.getElementById('aba');
+  if (!abaEl || !PROJETO) return;
+  const abaAtiva = document.querySelector('.aba.ativa')?.dataset.aba;
+  if (abaAtiva !== 'lista') return;
+  renderLista(abaEl, TAREFAS);
 }
 
 async function iniciarCronometro(tarefaId, tarefaNome) {
@@ -2317,6 +2387,7 @@ async function iniciarCronometro(tarefaId, tarefaNome) {
       inicio,
     };
     renderTimerDock();
+    atualizarTempoListaVisivel();
     toast('Cronômetro iniciado');
   } catch (e) { toast(e.message, 'err'); }
 }
@@ -2326,6 +2397,7 @@ async function pararCronometro(sessaoId) {
     await req('PUT', `/tempo/${sessaoId}/parar`, { fim: agora() });
     delete TIMERS[sessaoId];
     renderTimerDock();
+    atualizarTempoListaVisivel();
     toast('Cronômetro parado');
     RELATORIO_CACHE = null;
     // Recarregar se estiver na página do projeto certo
