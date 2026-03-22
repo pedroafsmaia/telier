@@ -1048,6 +1048,58 @@ export default {
       return ok(ativas.results);
     }
 
+    // GET /tempo/colegas-ativos — sessões ativas de outros usuários (exceto o próprio)
+    if (path === '/tempo/colegas-ativos' && method === 'GET') {
+      const [u, e] = await requireAuth(request, env);
+      if (e) return fail('Não autorizado', 401);
+      const colegas = await env.DB.prepare(`
+        SELECT st.id, st.inicio, st.usuario_id,
+          tu.nome as usuario_nome,
+          t.nome as tarefa_nome,
+          p.nome as projeto_nome,
+          p.id as projeto_id
+        FROM sessoes_tempo st
+        JOIN usuarios tu ON tu.id = st.usuario_id
+        JOIN tarefas t ON t.id = st.tarefa_id
+        JOIN projetos p ON p.id = t.projeto_id
+        WHERE st.fim IS NULL AND st.usuario_id != ?
+        ORDER BY st.inicio ASC
+      `).bind(u.uid).all();
+      return ok(colegas.results);
+    }
+
+    // ── PROJETO: HORAS POR USUÁRIO ──
+
+    // GET /projetos/:id/horas-por-usuario — distribuição de horas por pessoa no projeto
+    const matchHorasProjeto = path.match(/^\/projetos\/(prj_\w+)\/horas-por-usuario$/);
+    if (matchHorasProjeto && method === 'GET') {
+      const [u, e] = await requireAuth(request, env);
+      if (e) return fail('Não autorizado', 401);
+      const projetoId = matchHorasProjeto[1];
+      const resumo = await env.DB.prepare(`
+        SELECT tu.nome as usuario_nome,
+          ROUND(SUM(
+            (CASE WHEN st.fim IS NULL
+              THEN (julianday('now') - julianday(st.inicio)) * 24
+              ELSE (julianday(st.fim) - julianday(st.inicio)) * 24
+            END)
+            - COALESCE((
+              SELECT SUM(CASE WHEN i.fim IS NULL THEN 0
+                ELSE (julianday(i.fim) - julianday(i.inicio)) * 24
+              END) FROM intervalos i WHERE i.sessao_id = st.id
+            ), 0)
+          ), 2) as horas
+        FROM sessoes_tempo st
+        JOIN tarefas t ON t.id = st.tarefa_id
+        LEFT JOIN usuarios tu ON tu.id = st.usuario_id
+        WHERE t.projeto_id = ?
+        GROUP BY st.usuario_id, tu.nome
+        HAVING horas > 0
+        ORDER BY horas DESC
+      `).bind(projetoId).all();
+      return ok(resumo.results);
+    }
+
     // ── INTERVALOS ──
 
     // POST /tempo/:id/intervalos — adicionar intervalo a uma sessão
