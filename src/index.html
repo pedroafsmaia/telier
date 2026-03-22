@@ -383,6 +383,8 @@ tr:hover .td-ações{opacity:1}
     <div class="form-row"><label>Usuário</label><input type="text" id="l-login" placeholder="seu_usuario" autocomplete="username"></div>
     <div class="form-row"><label>Senha</label><input type="password" id="l-senha" placeholder="••••••••" autocomplete="current-password"></div>
     <button class="btn btn-primary" id="btn-login" onclick="fazerLogin()">Entrar</button>
+    <button class="btn" style="width:100%;justify-content:center;margin-top:8px" onclick="modalCadastroPublico()">Criar minha conta</button>
+    <button class="btn btn-ghost" id="btn-admin-setup" style="width:100%;justify-content:center;margin-top:8px;display:none" onclick="mostrar('setup')">Criar administrador inicial</button>
     <div id="login-err" class="auth-err hidden"></div>
   </div>
 </div>
@@ -432,6 +434,7 @@ let PROJETO = null;
 let TAREFAS = [];
 let USUARIOS = [];
 let FILTRO_STATUS = 'todos';
+let NEEDS_SETUP = false;
 
 // ── API ──
 async function req(method, path, body) {
@@ -523,9 +526,9 @@ async function init() {
     return;
   }
   try {
-    // Verificar se precisa de setup
-    const setup = await req('GET', '/auth/needs-setup');
-    if (setup.needs_setup) { mostrar('setup'); return; }
+    // Setup de admin é opcional e não bloqueia cadastro/login de usuários.
+    const setup = await req('GET', '/auth/needs-setup').catch(() => ({ needs_setup: false }));
+    NEEDS_SETUP = !!setup.needs_setup;
     if (!TOKEN) { mostrar('login'); return; }
     EU = await req('GET', '/auth/me');
     localStorage.setItem('ea_user', JSON.stringify(EU));
@@ -538,6 +541,8 @@ async function init() {
 
 function mostrar(tela) {
   ['login','setup','app'].forEach(t => document.getElementById('page-' + t).classList.toggle('hidden', t !== tela));
+  const setupBtn = document.getElementById('btn-admin-setup');
+  if (setupBtn) setupBtn.style.display = (tela === 'login' && NEEDS_SETUP) ? 'inline-flex' : 'none';
   if (tela === 'app') {
     document.getElementById('topbar-nome').textContent = EU?.nome || '';
     renderDash();
@@ -562,6 +567,37 @@ async function fazerLogin() {
     errEl.textContent = e.message;
     errEl.classList.remove('hidden');
     btnLoading('btn-login', false);
+  }
+}
+
+function modalCadastroPublico() {
+  abrirModal(`
+    <h2>Criar minha conta</h2>
+    <p style="font-size:13px;color:var(--text2);margin-bottom:16px">Crie seu usuário para acessar o sistema. Depois você pode criar projetos e convidar colegas.</p>
+    <div class="form-row"><label>Nome completo</label><input id="r-nome" placeholder="Ex: Ana Souza"></div>
+    <div class="form-row"><label>Usuário</label><input type="text" id="r-login" placeholder="ex: ana_souza" autocomplete="off"></div>
+    <div class="form-row"><label>Senha</label><input type="password" id="r-senha" placeholder="Defina sua senha"></div>
+    <div class="modal-footer">
+      <button class="btn" onclick="fecharModal()">Cancelar</button>
+      <button class="btn btn-primary" id="btn-reg" onclick="fazerCadastroPublico()">Criar conta</button>
+    </div>`);
+}
+
+async function fazerCadastroPublico() {
+  const nome = gv('r-nome').trim();
+  const usuario_login = gv('r-login').trim();
+  const senha = gv('r-senha');
+  if (!nome || !usuario_login || !senha) { toast('Preencha todos os campos', 'err'); return; }
+  btnLoading('btn-reg', true);
+  try {
+    await req('POST', '/auth/register', { nome, usuario_login, senha });
+    fecharModal();
+    toast('Conta criada. Faça login para continuar.');
+    document.getElementById('l-login').value = usuario_login;
+    document.getElementById('l-senha').focus();
+  } catch (e) {
+    toast(e.message, 'err');
+    btnLoading('btn-reg', false);
   }
 }
 document.addEventListener('keydown', e => {

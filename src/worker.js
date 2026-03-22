@@ -138,6 +138,21 @@ export default {
       return ok({ needs_setup: !existing });
     }
 
+    // ── AUTO CADASTRO (USUÁRIO COMUM) ──
+    if (path === '/auth/register' && method === 'POST') {
+      const { nome, usuario_login, senha } = await request.json();
+      if (!nome || !usuario_login || !senha) return fail('Preencha todos os campos');
+      const login = usuario_login.toLowerCase().trim().replace(/\s+/g, '_');
+      const existing = await env.DB.prepare('SELECT id FROM usuarios WHERE login = ?').bind(login).first();
+      if (existing) return fail('Nome de usuário já existe');
+      const senhaSalva = await hashSenha(senha);
+      const id = 'usr_' + uid();
+      await env.DB.prepare(
+        'INSERT INTO usuarios (id, nome, login, senha_hash, papel) VALUES (?, ?, ?, ?, "membro")'
+      ).bind(id, nome.trim(), login, senhaSalva).run();
+      return ok({ ok: true, id, usuario_login: login, papel: 'membro' });
+    }
+
     // ── LOGIN por usuario_login ──
     if (path === '/auth/login' && method === 'POST') {
       const { usuario_login, senha } = await request.json();
