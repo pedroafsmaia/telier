@@ -1,7 +1,7 @@
 // worker.js — Cloudflare Worker v5
 // Correções aplicadas:
 //   C1 — SQL injection removido: GET /projetos usa binding parametrizado
-//   C2 — Hashing de senha substituído: SHA-256 → PBKDF2 com salt
+//   C2 — Senhas em texto puro (modo local)
 //   C3 — CORS restrito ao domínio do Pages (configurar ALLOWED_ORIGIN nas env vars)
 //   C4 — Email normalizado no setup (toLowerCase + trim)
 //   C5 — Stack trace não exposto em produção
@@ -33,40 +33,14 @@ function err(msg, status = 400, cors = {}) {
   return json({ error: msg }, status, cors);
 }
 
-// ── HASHING PBKDF2 COM SALT (C2) ──
-// Substitui SHA-256 simples por PBKDF2 com salt aleatório e 100k iterações
+// ── SENHAS EM TEXTO PURO (C2) ──
+// Modo local: mantém senha legível no banco para facilitar gestão manual.
 async function hashSenha(senha) {
-  const salt = crypto.getRandomValues(new Uint8Array(16));
-  const keyMaterial = await crypto.subtle.importKey(
-    'raw', new TextEncoder().encode(senha), 'PBKDF2', false, ['deriveBits']
-  );
-  const hash = await crypto.subtle.deriveBits(
-    { name: 'PBKDF2', salt, iterations: 100000, hash: 'SHA-256' },
-    keyMaterial, 256
-  );
-  const saltHex = Array.from(salt).map(b => b.toString(16).padStart(2, '0')).join('');
-  const hashHex = Array.from(new Uint8Array(hash)).map(b => b.toString(16).padStart(2, '0')).join('');
-  return `pbkdf2:${saltHex}:${hashHex}`;
+  return String(senha);
 }
 
 async function verificarSenha(senha, stored) {
-  // Suporte ao hash legado SHA-256 (sem prefixo) para migração gradual
-  if (!stored.startsWith('pbkdf2:')) {
-    const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(senha));
-    const legacyHash = Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('');
-    return legacyHash === stored;
-  }
-  const [, saltHex, hashHex] = stored.split(':');
-  const salt = new Uint8Array(saltHex.match(/.{2}/g).map(h => parseInt(h, 16)));
-  const keyMaterial = await crypto.subtle.importKey(
-    'raw', new TextEncoder().encode(senha), 'PBKDF2', false, ['deriveBits']
-  );
-  const hash = await crypto.subtle.deriveBits(
-    { name: 'PBKDF2', salt, iterations: 100000, hash: 'SHA-256' },
-    keyMaterial, 256
-  );
-  const computedHex = Array.from(new Uint8Array(hash)).map(b => b.toString(16).padStart(2, '0')).join('');
-  return computedHex === hashHex;
+  return String(senha) === String(stored || '');
 }
 
 // ── TOKEN COM 128 BITS (C6) ──
