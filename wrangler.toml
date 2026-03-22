@@ -1,0 +1,16 @@
+# wrangler.toml — configuração do Cloudflare Worker
+# Substitua os valores SEU_* pelos seus dados reais
+
+name = "telier-api"
+main = "src/worker.js"
+compatibility_date = "2024-01-01"
+workers_dev = true
+pages_build_output_dir = "src"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "telier-db"
+database_id = "4ea87f58-e284-4fef-847c-93de662b43f4"
+
+[vars]
+ALLOWED_ORIGIN = "https://telier.pages.dev"
