@@ -422,7 +422,7 @@ tr:hover .td-ações{opacity:1}
 <!-- APP -->
 <div id="page-app" class="hidden">
   <nav class="topbar">
-    <div class="topbar-logo" onclick="renderDash()" title="Ir para projetos">Telier</div>
+    <div class="topbar-logo" onclick="goHome()" title="Ir para início">Telier</div>
     <div id="topbar-breadcrumb" class="topbar-breadcrumb"></div>
     <div class="topbar-sep"></div>
     <div class="topbar-actions">
@@ -567,8 +567,12 @@ function mostrar(tela) {
   if (tela === 'app') {
     document.getElementById('topbar-nome').textContent = EU?.nome || '';
     syncAdminModeUI();
-    renderDash();
+    isAdmin() ? abrirCentralAdmin() : renderDash();
   }
+}
+
+function goHome() {
+  isAdmin() ? abrirCentralAdmin() : renderDash();
 }
 
 function syncAdminModeUI() {
@@ -591,7 +595,7 @@ function alternarPerfilAdmin() {
   localStorage.setItem(ADMIN_MODE_KEY, ADMIN_MODE);
   syncAdminModeUI();
   toast(ADMIN_MODE === 'admin' ? 'Modo admin ativado' : 'Modo normal ativado');
-  renderDash();
+  isAdmin() ? abrirCentralAdmin() : renderDash();
 }
 
 // ── AUTH ──
