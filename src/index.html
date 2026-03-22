@@ -494,6 +494,7 @@ const ADMIN_MODE_KEY = 'ea_admin_mode';
 let ADMIN_MODE = localStorage.getItem(ADMIN_MODE_KEY) || 'admin';
 let ADMIN_TEMPO_FILTRO = { de: '', ate: '', usuario_id: '' };
 let RELATORIO_CACHE = null; // { projetoId, ts, resumoMap }
+let VISTA_ATUAL = 'dash';
 let BUSCA_DASH = '';
 let _projsDash = [];
 let _ativasDash = [];
@@ -650,7 +651,21 @@ function mostrar(tela) {
 }
 
 function goHome() {
-  isAdmin() ? abrirCentralAdmin() : renderDash();
+  renderDash();
+}
+
+function slideContent(direction) {
+  const c = document.getElementById('content');
+  if (!c) return;
+  const x = direction === 'right' ? '28px' : '-28px';
+  c.style.transition = 'none';
+  c.style.transform = `translateX(${x})`;
+  c.style.opacity = '0';
+  requestAnimationFrame(() => requestAnimationFrame(() => {
+    c.style.transition = 'transform .26s cubic-bezier(.25,.46,.45,.94), opacity .2s ease';
+    c.style.transform = 'translateX(0)';
+    c.style.opacity = '1';
+  }));
 }
 
 function syncAdminModeUI() {
@@ -890,7 +905,10 @@ async function renderDash() {
       <div class="cards-grid" id="cards-grid-dash">`;
 
     html += renderCardsDash(projetos) + '</div>';
+    const slide = VISTA_ATUAL === 'projeto';
+    VISTA_ATUAL = 'dash';
     c.innerHTML = html;
+    if (slide) slideContent('left');
   } catch (e) { c.innerHTML = `<div style="color:var(--red);padding:24px;font-size:13px">${esc(e.message)}</div>`; }
 }
 
@@ -1193,6 +1211,8 @@ async function abrirProjeto(id) {
     PROJETO = projeto; TAREFAS = tarefas;
     document.title = projeto.nome + ' · Telier';
     renderProjeto(projeto, tarefas, decisoes, 'lista');
+    VISTA_ATUAL = 'projeto';
+    slideContent('right');
   } catch (e) { document.getElementById('content').innerHTML = `<div style="color:var(--red);padding:24px;font-size:13px">${esc(e.message)}</div>`; }
 }
 
