@@ -209,6 +209,21 @@ export default {
       return ok({ id, nome, usuario_login: login, papel });
     }
 
+    const matchUsuarioPapel = path.match(/^\/usuarios\/(usr_\w+)\/papel$/);
+    if (matchUsuarioPapel && method === 'PUT') {
+      const [u, e] = await requireAuth(request, env);
+      if (e) return fail('Não autorizado', 401);
+      if (!isAdmin(u)) return fail('Sem permissão', 403);
+      const usuarioId = matchUsuarioPapel[1];
+      const { papel } = await request.json();
+      if (!['admin', 'membro'].includes(papel)) return fail('Papel inválido');
+      const alvo = await env.DB.prepare('SELECT id, papel FROM usuarios WHERE id = ?').bind(usuarioId).first();
+      if (!alvo) return fail('Usuário não encontrado', 404);
+      if (alvo.id === u.uid && papel !== 'admin') return fail('Você não pode remover seu próprio papel admin');
+      await env.DB.prepare('UPDATE usuarios SET papel = ? WHERE id = ?').bind(papel, usuarioId).run();
+      return ok({ ok: true, id: usuarioId, papel });
+    }
+
     // ── PROJETOS ──
     if (path === '/projetos' && method === 'GET') {
       const [u, e] = await requireAuth(request, env);
@@ -216,6 +231,8 @@ export default {
 
       // C1: filtro de status via binding parametrizado — sem interpolação de string
       const statusFiltro = url.searchParams.get('status') || null;
+      const asMember = url.searchParams.get('as_member') === '1';
+      const adminScope = (isAdmin(u) && !asMember) ? 1 : 0;
       // Filtra: projetos do usuário (dono) OU compartilhados com ele (permissoes_projeto)
       // Admin vê todos
       const projetos = await env.DB.prepare(`
@@ -242,7 +259,7 @@ export default {
           CASE p.prioridade WHEN 'Alta' THEN 0 WHEN 'Média' THEN 1 ELSE 2 END,
           p.prazo ASC NULLS LAST,
           p.atualizado_em DESC
-      `).bind(u.uid, isAdmin(u) ? 1 : 0, u.uid, u.uid, statusFiltro, statusFiltro).all();
+      `).bind(u.uid, adminScope, u.uid, u.uid, statusFiltro, statusFiltro).all();
       return ok(projetos.results);
     }
 
@@ -664,15 +681,19 @@ export default {
     if (path === '/tempo/ativas' && method === 'GET') {
       const [u, e] = await requireAuth(request, env);
       if (e) return fail('Não autorizado', 401);
+      const asMember = url.searchParams.get('as_member') === '1';
+      const adminScope = (isAdmin(u) && !asMember) ? 1 : 0;
       const ativas = await env.DB.prepare(`
         SELECT st.id, st.tarefa_id, st.inicio,
-          t.nome as tarefa_nome, p.nome as projeto_nome, p.id as projeto_id
+          t.nome as tarefa_nome, p.nome as projeto_nome, p.id as projeto_id,
+          tu.nome as usuario_nome, tu.login as usuario_login, st.usuario_id
         FROM sessoes_tempo st
         JOIN tarefas t ON t.id = st.tarefa_id
         JOIN projetos p ON p.id = t.projeto_id
-        WHERE st.usuario_id = ? AND st.fim IS NULL
+        JOIN usuarios tu ON tu.id = st.usuario_id
+        WHERE (? = 1 OR st.usuario_id = ?) AND st.fim IS NULL
         ORDER BY st.inicio ASC
-      `).bind(u.uid).all();
+      `).bind(adminScope, u.uid).all();
       return ok(ativas.results);
     }
 

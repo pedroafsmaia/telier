@@ -411,6 +411,7 @@ tr:hover .td-ações{opacity:1}
     <div class="topbar-sep"></div>
     <div class="topbar-actions">
       <span class="topbar-user-name" id="topbar-nome"></span>
+      <button class="btn btn-ghost btn-sm" id="btn-admin-toggle" style="display:none" onclick="alternarPerfilAdmin()">Perfil: Admin</button>
       <button class="topbar-theme" id="btn-tema" onclick="alternarTema()" title="Alternar tema">🌙</button>
       <button class="btn btn-ghost btn-sm" onclick="fazerLogout()">Sair</button>
     </div>
@@ -435,6 +436,8 @@ let TAREFAS = [];
 let USUARIOS = [];
 let FILTRO_STATUS = 'todos';
 let NEEDS_SETUP = false;
+const ADMIN_MODE_KEY = 'ea_admin_mode';
+let ADMIN_MODE = localStorage.getItem(ADMIN_MODE_KEY) || 'admin';
 
 // ── API ──
 async function req(method, path, body) {
@@ -473,7 +476,8 @@ function abrirModal(html, opts = {}) {
 function fecharModal() { document.querySelectorAll('.modal-overlay').forEach(e => e.remove()); }
 
 // ── UTILS ──
-function isAdmin() { return EU?.papel === 'admin'; }
+function isAdminRole() { return EU?.papel === 'admin'; }
+function isAdmin() { return isAdminRole() && ADMIN_MODE === 'admin'; }
 function souDono(donoId) { return EU?.id === donoId || isAdmin(); }
 function podeEditar(proj) {
   if (!proj) return false;
@@ -545,8 +549,32 @@ function mostrar(tela) {
   if (setupBtn) setupBtn.style.display = (tela === 'login' && NEEDS_SETUP) ? 'inline-flex' : 'none';
   if (tela === 'app') {
     document.getElementById('topbar-nome').textContent = EU?.nome || '';
+    syncAdminModeUI();
     renderDash();
   }
+}
+
+function syncAdminModeUI() {
+  const btn = document.getElementById('btn-admin-toggle');
+  if (!btn) return;
+  if (!isAdminRole()) {
+    btn.style.display = 'none';
+    return;
+  }
+  btn.style.display = 'inline-flex';
+  btn.textContent = ADMIN_MODE === 'admin' ? 'Perfil: Admin' : 'Perfil: Normal';
+  btn.title = ADMIN_MODE === 'admin'
+    ? 'Clique para usar o sistema como usuário normal'
+    : 'Clique para voltar ao perfil admin';
+}
+
+function alternarPerfilAdmin() {
+  if (!isAdminRole()) return;
+  ADMIN_MODE = ADMIN_MODE === 'admin' ? 'normal' : 'admin';
+  localStorage.setItem(ADMIN_MODE_KEY, ADMIN_MODE);
+  syncAdminModeUI();
+  toast(ADMIN_MODE === 'admin' ? 'Modo admin ativado' : 'Modo normal ativado');
+  renderDash();
 }
 
 // ── AUTH ──
@@ -562,6 +590,10 @@ async function fazerLogin() {
     TOKEN = r.token; EU = r.usuario; // r.usuario tem: id, nome, usuario_login, papel
     localStorage.setItem('ea_token', TOKEN);
     localStorage.setItem('ea_user', JSON.stringify(EU));
+    if (!isAdminRole()) {
+      ADMIN_MODE = 'normal';
+      localStorage.setItem(ADMIN_MODE_KEY, ADMIN_MODE);
+    }
     mostrar('app');
   } catch (e) {
     errEl.textContent = e.message;
@@ -630,6 +662,8 @@ async function fazerLogout() {
   try { await req('POST', '/auth/logout'); } catch {}
   TOKEN = null; EU = null;
   localStorage.removeItem('ea_token'); localStorage.removeItem('ea_user');
+  localStorage.removeItem(ADMIN_MODE_KEY);
+  ADMIN_MODE = 'admin';
   mostrar('login');
 }
 
@@ -696,10 +730,13 @@ async function renderDash() {
   const c = document.getElementById('content');
   c.innerHTML = `<div class="loading"><div class="spinner"></div> Carregando projetos...</div>`;
   try {
-    const qs = FILTRO_STATUS !== 'todos' ? `?status=${encodeURIComponent(FILTRO_STATUS)}` : '';
+    const params = new URLSearchParams();
+    if (FILTRO_STATUS !== 'todos') params.set('status', FILTRO_STATUS);
+    if (isAdminRole() && ADMIN_MODE === 'normal') params.set('as_member', '1');
+    const qs = params.toString() ? `?${params.toString()}` : '';
     const [projetos, ativas] = await Promise.all([
       req('GET', '/projetos' + qs),
-      req('GET', '/tempo/ativas').catch(() => []),
+      req('GET', `/tempo/ativas${isAdminRole() && ADMIN_MODE === 'normal' ? '?as_member=1' : ''}`).catch(() => []),
     ]);
 
     const emAndamento = projetos.filter(p => !['Concluído','Arquivado'].includes(p.status)).length;
@@ -709,7 +746,7 @@ async function renderDash() {
       <div class="dash-header">
         <div class="dash-title">Projetos</div>
         <div style="display:flex;gap:8px">
-          ${isAdmin() ? `<button class="btn" onclick="modalNovoColega()">Cadastrar usuário</button>` : ''}
+          ${isAdmin() ? `<button class="btn" onclick="modalNovoColega()">Cadastrar admin</button>` : ''}
           <button class="btn btn-primary" onclick="modalNovoProjeto()">+ Novo projeto</button>
         </div>
       </div>
@@ -1349,6 +1386,54 @@ async function removerColab(tarefaId, usuarioId) {
 }
 
 function modalNovoColega() {
+  if (!isAdmin()) {
+    toast('Disponível apenas no perfil admin', 'err');
+    return;
+  }
+  if (!USUARIOS.length) {
+    toast('Carregando usuários...');
+  }
+  req('GET', '/usuarios').then(lista => {
+    USUARIOS = lista;
+    const candidatos = USUARIOS.filter(u => u.papel !== 'admin');
+    if (!candidatos.length) {
+      abrirModal(`
+        <h2>Cadastrar admin</h2>
+        <p style="font-size:13px;color:var(--text2)">Todos os usuários registrados já possuem cargo de admin.</p>
+        <div class="modal-footer"><button class="btn" onclick="fecharModal()">Fechar</button></div>`);
+      return;
+    }
+
+    abrirModal(`
+      <h2>Cadastrar admin</h2>
+      <p style="font-size:13px;color:var(--text2);margin-bottom:16px">Selecione um usuário já registrado para atribuir cargo de admin.</p>
+      <div class="form-row"><label>Usuário registrado</label>
+        <select id="m-admin" style="width:100%">${candidatos.map(u => `<option value="${u.id}">${esc(u.nome)} (@${esc(u.usuario_login)})</option>`).join('')}</select>
+      </div>
+      <div class="modal-footer">
+        <button class="btn" onclick="fecharModal()">Cancelar</button>
+        <button class="btn btn-primary" id="btn-prom-admin" onclick="promoverAdmin()">Atribuir admin</button>
+      </div>`);
+  }).catch(e => toast(e.message, 'err'));
+}
+
+async function promoverAdmin() {
+  const uid = gv('m-admin');
+  if (!uid) return;
+  btnLoading('btn-prom-admin', true);
+  try {
+    await req('PUT', `/usuarios/${uid}/papel`, { papel: 'admin' });
+    USUARIOS = [];
+    fecharModal();
+    toast('Cargo de admin atribuído com sucesso');
+  } catch (e) {
+    toast(e.message, 'err');
+    btnLoading('btn-prom-admin', false);
+  }
+}
+
+/* Fluxo antigo de criação de usuário foi substituído por promoção de usuários cadastrados para admin. */
+function modalNovoColega_legacy() {
   abrirModal(`
     <h2>Cadastrar usuário</h2>
     <p style="font-size:13px;color:var(--text2);margin-bottom:16px">Cria um usuário global do sistema. Depois, adicione esse usuário em cada projeto pelo botão "Adicionar colega".</p>
