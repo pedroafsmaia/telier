@@ -103,3 +103,15 @@ CREATE TABLE IF NOT EXISTS decisoes (
   FOREIGN KEY (projeto_id) REFERENCES projetos(id) ON DELETE CASCADE,
   FOREIGN KEY (dono_id) REFERENCES usuarios(id)
 );
+
+-- ── MIGRAÇÃO v5 → v6: Grupos de projetos ──
+-- Execute no console D1 em ordem:
+-- 1. CREATE TABLE IF NOT EXISTS grupos_projetos (
+--      id TEXT PRIMARY KEY,
+--      nome TEXT NOT NULL,
+--      dono_id TEXT NOT NULL,
+--      ordem INTEGER DEFAULT 0,
+--      criado_em TEXT DEFAULT (datetime('now')),
+--      FOREIGN KEY (dono_id) REFERENCES usuarios(id)
+--    );
+-- 2. ALTER TABLE projetos ADD COLUMN grupo_id TEXT REFERENCES grupos_projetos(id) ON DELETE SET NULL;

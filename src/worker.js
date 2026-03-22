@@ -475,6 +475,7 @@ export default {
       const projetos = await env.DB.prepare(`
         SELECT p.*,
           pu.nome as dono_nome,
+          p.grupo_id, g.nome as grupo_nome,
           COUNT(DISTINCT t.id) as total_tarefas,
           SUM(CASE WHEN t.status = 'Concluída' THEN 1 ELSE 0 END) as tarefas_concluidas,
           (
@@ -484,6 +485,7 @@ export default {
           ) as minha_tarefa_foco
         FROM projetos p
         LEFT JOIN usuarios pu ON pu.id = p.dono_id
+        LEFT JOIN grupos_projetos g ON g.id = p.grupo_id
         LEFT JOIN tarefas t ON t.projeto_id = p.id
         WHERE
           (? = 1 OR p.dono_id = ? OR EXISTS (
@@ -503,15 +505,83 @@ export default {
     if (path === '/projetos' && method === 'POST') {
       const [u, e] = await requireAuth(request, env);
       if (e) return fail('Não autorizado', 401);
-      const { nome, fase, status, prioridade, prazo, area_m2 } = await request.json();
+      const { nome, fase, status, prioridade, prazo, area_m2, grupo_id } = await request.json();
       if (!nome?.trim()) return fail('Nome obrigatório');
       const statusProjeto = normalizarStatusProjeto(status || 'A fazer');
       if (!STATUS_PROJ_VALIDOS_SET.has(statusProjeto)) return fail('Status de projeto inválido', 400);
       const id = 'prj_' + uid();
       await env.DB.prepare(
-        'INSERT INTO projetos (id, nome, fase, status, prioridade, prazo, area_m2, dono_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?)'
-      ).bind(id, nome.trim(), fase || 'Estudo preliminar', statusProjeto, prioridade || 'Média', prazo || null, area_m2 || null, u.uid).run();
+        'INSERT INTO projetos (id, nome, fase, status, prioridade, prazo, area_m2, dono_id, grupo_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)'
+      ).bind(id, nome.trim(), fase || 'Estudo preliminar', statusProjeto, prioridade || 'Média', prazo || null, area_m2 || null, u.uid, grupo_id || null).run();
       return ok({ id });
+    }
+
+    // ── GRUPOS DE PROJETOS ──
+    if (path === '/grupos' && method === 'GET') {
+      const [u, e] = await requireAuth(request, env);
+      if (e) return fail('Não autorizado', 401);
+      const asMember = url.searchParams.get('as_member') === '1';
+      const adminAll = isAdmin(u) && !asMember;
+      let grupos;
+      if (adminAll) {
+        grupos = await env.DB.prepare(
+          `SELECT g.*, pu.nome as dono_nome FROM grupos_projetos g
+           LEFT JOIN usuarios pu ON pu.id = g.dono_id
+           ORDER BY g.ordem ASC, g.nome ASC`
+        ).all();
+      } else {
+        grupos = await env.DB.prepare(
+          `SELECT g.*, pu.nome as dono_nome FROM grupos_projetos g
+           LEFT JOIN usuarios pu ON pu.id = g.dono_id
+           WHERE g.dono_id = ? OR EXISTS (
+             SELECT 1 FROM projetos p WHERE p.grupo_id = g.id AND (
+               p.dono_id = ? OR EXISTS (
+                 SELECT 1 FROM permissoes_projeto pp WHERE pp.projeto_id = p.id AND pp.usuario_id = ?
+               )
+             )
+           )
+           ORDER BY g.ordem ASC, g.nome ASC`
+        ).bind(u.uid, u.uid, u.uid).all();
+      }
+      return ok(grupos.results);
+    }
+
+    if (path === '/grupos' && method === 'POST') {
+      const [u, e] = await requireAuth(request, env);
+      if (e) return fail('Não autorizado', 401);
+      const { nome } = await request.json();
+      if (!nome?.trim()) return fail('Nome obrigatório');
+      const id = 'grp_' + uid();
+      await env.DB.prepare(
+        'INSERT INTO grupos_projetos (id, nome, dono_id) VALUES (?, ?, ?)'
+      ).bind(id, nome.trim(), u.uid).run();
+      return ok({ id, nome: nome.trim() });
+    }
+
+    const matchGrupo = path.match(/^\/grupos\/(grp_\w+)$/);
+    if (matchGrupo) {
+      const grupoId = matchGrupo[1];
+      const [u, e] = await requireAuth(request, env);
+      if (e) return fail('Não autorizado', 401);
+      const grupo = await env.DB.prepare('SELECT * FROM grupos_projetos WHERE id = ?').bind(grupoId).first();
+      if (!grupo) return fail('Grupo não encontrado', 404);
+      const podeGerenciar = grupo.dono_id === u.uid || isAdmin(u);
+
+      if (method === 'PUT') {
+        if (!podeGerenciar) return fail('Sem permissão', 403);
+        const { nome } = await request.json();
+        if (!nome?.trim()) return fail('Nome obrigatório');
+        await env.DB.prepare('UPDATE grupos_projetos SET nome = ? WHERE id = ?').bind(nome.trim(), grupoId).run();
+        return ok({ ok: true });
+      }
+
+      if (method === 'DELETE') {
+        if (!podeGerenciar) return fail('Sem permissão', 403);
+        // Ungroup all projects in this group
+        await env.DB.prepare('UPDATE projetos SET grupo_id = NULL WHERE grupo_id = ?').bind(grupoId).run();
+        await env.DB.prepare('DELETE FROM grupos_projetos WHERE id = ?').bind(grupoId).run();
+        return ok({ ok: true });
+      }
     }
 
     const matchProjeto = path.match(/^\/projetos\/(prj_\w+)$/);
@@ -550,13 +620,13 @@ export default {
         const [u, e] = await requireAuth(request, env);
         if (e) return fail('Não autorizado', 401);
         if (!await podeEditarProjeto(env, projetoId, u.uid, u.papel)) return fail('Sem permissão', 403);
-        const { nome, fase, status, prioridade, prazo, area_m2 } = await request.json();
+        const { nome, fase, status, prioridade, prazo, area_m2, grupo_id } = await request.json();
         if (!nome?.trim()) return fail('Nome obrigatório');
         const statusProjeto = normalizarStatusProjeto(status);
         if (!STATUS_PROJ_VALIDOS_SET.has(statusProjeto)) return fail('Status de projeto inválido', 400);
         await env.DB.prepare(
-          'UPDATE projetos SET nome=?, fase=?, status=?, prioridade=?, prazo=?, area_m2=?, atualizado_em=datetime("now") WHERE id=?'
-        ).bind(nome.trim(), fase, statusProjeto, prioridade, prazo || null, area_m2 || null, projetoId).run();
+          'UPDATE projetos SET nome=?, fase=?, status=?, prioridade=?, prazo=?, area_m2=?, grupo_id=?, atualizado_em=datetime("now") WHERE id=?'
+        ).bind(nome.trim(), fase, statusProjeto, prioridade, prazo || null, area_m2 || null, grupo_id || null, projetoId).run();
         return ok({ ok: true });
       }
 

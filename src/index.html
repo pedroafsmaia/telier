@@ -269,6 +269,15 @@ label{font-size:12px;color:var(--text2);display:block;margin-bottom:5px}
 .card-meta{display:flex;flex-wrap:wrap;gap:8px 14px;margin-bottom:10px}
 .card-meta-item{display:flex;flex-direction:column;gap:3px}
 .card-meta-label{font-size:9px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.06em}
+.grupo-section{margin-bottom:28px}
+.grupo-header{display:flex;align-items:center;gap:10px;margin-bottom:12px;cursor:pointer;user-select:none}
+.grupo-toggle{font-size:11px;color:var(--text3);transition:transform .2s;display:inline-block;width:16px}
+.grupo-toggle.collapsed{transform:rotate(-90deg)}
+.grupo-nome{font-size:12px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.08em}
+.grupo-count{font-size:11px;color:var(--text3);background:var(--bg3);border-radius:10px;padding:1px 7px}
+.grupo-actions{margin-left:auto;display:flex;gap:4px;opacity:0;transition:opacity .15s}
+.grupo-header:hover .grupo-actions{opacity:1}
+.grupo-sem-label{font-size:12px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.08em;margin-bottom:12px;margin-top:4px;opacity:.5}
 .proj-stats{display:flex;align-items:center;gap:16px;margin-bottom:12px;flex-wrap:wrap}
 .proj-stat{display:flex;flex-direction:column;gap:2px}
 .proj-stat-label{font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:.06em}
@@ -503,6 +512,7 @@ let VISTA_ATUAL = 'dash';
 let BUSCA_DASH = '';
 let _projsDash = [];
 let _ativasDash = [];
+let _gruposDash = [];
 let FILTRO_RESP_TAR = '';
 const TIMER_AVISO_HORAS = 4;
 
@@ -882,13 +892,15 @@ async function renderDash() {
     if (FILTRO_STATUS !== 'todos') params.set('status', FILTRO_STATUS);
     if (isAdminRole() && ADMIN_MODE === 'normal') params.set('as_member', '1');
     const qs = params.toString() ? `?${params.toString()}` : '';
-    const [projetos, ativas] = await Promise.all([
+    const [projetos, ativas, grupos] = await Promise.all([
       req('GET', '/projetos' + qs),
       req('GET', `/tempo/ativas${isAdminRole() && ADMIN_MODE === 'normal' ? '?as_member=1' : ''}`).catch(() => []),
+      req('GET', `/grupos${isAdminRole() && ADMIN_MODE === 'normal' ? '?as_member=1' : ''}`).catch(() => []),
     ]);
 
     _projsDash = projetos;
     _ativasDash = ativas;
+    _gruposDash = grupos;
     const emAndamento = projetos.filter(p => !['Concluído','Arquivado'].includes(normalizarStatusProjeto(p.status))).length;
     const filtros = ['todos','Em andamento','A fazer','Em revisão','Pausado','Concluído','Arquivado'];
 
@@ -898,6 +910,7 @@ async function renderDash() {
         <div style="display:flex;gap:8px">
           ${isAdmin() ? `<button class="btn" onclick="abrirCentralAdmin()">Central admin</button>` : ''}
           ${isAdmin() ? `<button class="btn" onclick="modalNovoColega()">Cadastrar admin</button>` : ''}
+          <button class="btn" onclick="modalNovoGrupo()">+ Grupo</button>
           <button class="btn btn-primary" onclick="modalNovoProjeto()">+ Novo projeto</button>
         </div>
       </div>
@@ -907,9 +920,9 @@ async function renderDash() {
         <input type="search" class="search-dash" id="busca-dash" placeholder="Buscar projeto..." value="${esc(BUSCA_DASH)}" oninput="filtrarProjetosBusca(this.value)">
         ${filtros.map(f => { const label = { 'todos':'Todos' }[f] || f; return `<button class="filter-btn ${FILTRO_STATUS===f?'ativo':''}" onclick="setFiltro('${esc(f)}')">${label}</button>`; }).join('')}
       </div>
-      <div class="cards-grid" id="cards-grid-dash">`;
+      <div id="cards-grid-dash">`;
 
-    html += renderCardsDash(projetos) + '</div>';
+    html += renderProjetosDash(projetos, grupos) + '</div>';
     const slide = VISTA_ATUAL === 'projeto';
     VISTA_ATUAL = 'dash';
     c.innerHTML = html;
@@ -917,13 +930,53 @@ async function renderDash() {
   } catch (e) { c.innerHTML = `<div style="color:var(--red);padding:24px;font-size:13px">${esc(e.message)}</div>`; }
 }
 
-function renderCardsDash(projetos) {
+function renderProjetosDash(projetos, grupos) {
   const busca = BUSCA_DASH.toLowerCase().trim();
   const lista = busca ? projetos.filter(p => p.nome.toLowerCase().includes(busca)) : projetos;
   if (!lista.length) {
     return `<div class="empty-state"><div class="empty-icon" aria-hidden="true">🏗</div><div class="empty-text">Nenhum projeto encontrado</div><div class="empty-sub">${busca ? 'Tente outro termo de busca' : FILTRO_STATUS !== 'todos' ? 'Tente outro filtro' : 'Crie o primeiro projeto'}</div></div>`;
   }
-  return lista.map(p => {
+
+  const collapsed = JSON.parse(localStorage.getItem('telier_grupos_collapsed') || '[]');
+  const isCollapsed = id => collapsed.includes(id);
+
+  let html = '';
+
+  // Render each group that has projects
+  for (const grupo of (grupos || [])) {
+    const gprojetos = lista.filter(p => p.grupo_id === grupo.id);
+    if (!gprojetos.length) continue;
+    const col = isCollapsed(grupo.id);
+    html += `
+      <div class="grupo-section" id="gs-${grupo.id}">
+        <div class="grupo-header" onclick="toggleGrupo('${grupo.id}')">
+          <span class="grupo-toggle ${col ? 'collapsed' : ''}">▼</span>
+          <span class="grupo-nome">${esc(grupo.nome)}</span>
+          <span class="grupo-count">${gprojetos.length}</span>
+          <div class="grupo-actions" onclick="event.stopPropagation()">
+            <button class="btn btn-ghost btn-icon btn-sm" onclick="modalRenomearGrupo('${grupo.id}','${esc(grupo.nome)}')" title="Renomear">✎</button>
+            <button class="btn btn-ghost btn-icon btn-sm" onclick="deletarGrupo('${grupo.id}','${esc(grupo.nome)}')" title="Excluir grupo">✕</button>
+          </div>
+        </div>
+        ${col ? '' : `<div class="cards-grid">${renderCardsDash(gprojetos)}</div>`}
+      </div>`;
+  }
+
+  // Ungrouped projects
+  const semGrupo = lista.filter(p => !p.grupo_id);
+  if (semGrupo.length) {
+    if ((grupos || []).length > 0) {
+      html += `<div class="grupo-section"><div class="grupo-sem-label">Sem grupo</div><div class="cards-grid">${renderCardsDash(semGrupo)}</div></div>`;
+    } else {
+      html += `<div class="cards-grid">${renderCardsDash(semGrupo)}</div>`;
+    }
+  }
+
+  return html || `<div class="empty-state"><div class="empty-icon" aria-hidden="true">🏗</div><div class="empty-text">Nenhum projeto encontrado</div></div>`;
+}
+
+function renderCardsDash(projetos) {
+  return projetos.map(p => {
     const statusProjeto = normalizarStatusProjeto(p.status);
     const total = parseInt(p.total_tarefas) || 0;
     const conc = parseInt(p.tarefas_concluidas) || 0;
@@ -962,10 +1015,66 @@ function renderCardsDash(projetos) {
 function filtrarProjetosBusca(v) {
   BUSCA_DASH = v;
   const grid = document.getElementById('cards-grid-dash');
-  if (grid) grid.innerHTML = renderCardsDash(_projsDash);
+  if (grid) grid.innerHTML = renderProjetosDash(_projsDash, _gruposDash);
 }
 
 function setFiltro(f) { FILTRO_STATUS = f; renderDash(); }
+
+function toggleGrupo(id) {
+  const collapsed = JSON.parse(localStorage.getItem('telier_grupos_collapsed') || '[]');
+  const idx = collapsed.indexOf(id);
+  if (idx >= 0) collapsed.splice(idx, 1); else collapsed.push(id);
+  localStorage.setItem('telier_grupos_collapsed', JSON.stringify(collapsed));
+  const grid = document.getElementById('cards-grid-dash');
+  if (grid) grid.innerHTML = renderProjetosDash(_projsDash, _gruposDash);
+}
+
+function modalNovoGrupo() {
+  abrirModal(`
+    <h2>Novo grupo</h2>
+    <div class="form-row"><label>Nome do grupo</label><input id="m-grupo-nome" placeholder="Ex: Campus Universitário"></div>
+    <div class="modal-footer">
+      <button class="btn" onclick="fecharModal()">Cancelar</button>
+      <button class="btn btn-primary" id="btn-criar-grupo" onclick="criarGrupo()">Criar grupo</button>
+    </div>`);
+}
+
+async function criarGrupo() {
+  const nome = gv('m-grupo-nome').trim();
+  if (!nome) { toast('Nome obrigatório', 'err'); return; }
+  btnLoading('btn-criar-grupo', true);
+  try {
+    await req('POST', '/grupos', { nome });
+    fecharModal(); toast('Grupo criado'); renderDash();
+  } catch (e) { toast(e.message, 'err'); btnLoading('btn-criar-grupo', false); }
+}
+
+function modalRenomearGrupo(id, nomeAtual) {
+  abrirModal(`
+    <h2>Renomear grupo</h2>
+    <div class="form-row"><label>Nome</label><input id="m-grupo-nome" value="${esc(nomeAtual)}"></div>
+    <div class="modal-footer">
+      <button class="btn" onclick="fecharModal()">Cancelar</button>
+      <button class="btn btn-primary" id="btn-salvar-grupo" onclick="renomearGrupo('${id}')">Salvar</button>
+    </div>`);
+}
+
+async function renomearGrupo(id) {
+  const nome = gv('m-grupo-nome').trim();
+  if (!nome) { toast('Nome obrigatório', 'err'); return; }
+  btnLoading('btn-salvar-grupo', true);
+  try {
+    await req('PUT', `/grupos/${id}`, { nome });
+    fecharModal(); toast('Grupo renomeado'); renderDash();
+  } catch (e) { toast(e.message, 'err'); btnLoading('btn-salvar-grupo', false); }
+}
+
+function deletarGrupo(id, nome) {
+  confirmar(`Excluir o grupo "${nome}"? Os projetos dentro dele não serão excluídos, apenas desagrupados.`, async () => {
+    try { await req('DELETE', `/grupos/${id}`); toast('Grupo excluído'); renderDash(); }
+    catch (e) { toast(e.message, 'err'); }
+  }, { titulo: 'Excluir grupo', btnTexto: 'Excluir', danger: true });
+}
 
 // ── CENTRAL ADMIN ──
 function tempoDesde(inicio) {
@@ -1637,6 +1746,12 @@ function modalNovoProjeto() {
       <div class="form-row"><label>Prazo</label><input type="date" id="m-prazo"></div>
       <div class="form-row"><label>Área (m²)</label><input type="number" id="m-area" min="0" step="0.01" placeholder="Ex: 250.5"></div>
     </div>
+    <div class="form-row"><label>Grupo <span style="color:var(--text3)">(opcional)</span></label>
+      <select id="m-grupo">
+        <option value="">— Sem grupo —</option>
+        ${_gruposDash.map(g => `<option value="${g.id}">${esc(g.nome)}</option>`).join('')}
+      </select>
+    </div>
     <div class="modal-footer">
       <button class="btn" onclick="fecharModal()">Cancelar</button>
       <button class="btn btn-primary" id="btn-criar-proj" onclick="criarProjeto()">Criar projeto</button>
@@ -1648,7 +1763,7 @@ async function criarProjeto() {
   if (!nome) { toast('Nome obrigatório', 'err'); return; }
   btnLoading('btn-criar-proj', true);
   try {
-    const areaVal = gv('m-area'); await req('POST', '/projetos', { nome, fase: gv('m-fase'), status: gv('m-status'), prioridade: gv('m-prior'), prazo: gv('m-prazo')||null, area_m2: areaVal ? parseFloat(areaVal) : null });
+    const areaVal = gv('m-area'); await req('POST', '/projetos', { nome, fase: gv('m-fase'), status: gv('m-status'), prioridade: gv('m-prior'), prazo: gv('m-prazo')||null, area_m2: areaVal ? parseFloat(areaVal) : null, grupo_id: gv('m-grupo') || null });
     fecharModal(); toast('Projeto criado'); renderDash();
   } catch (e) { toast(e.message, 'err'); btnLoading('btn-criar-proj', false); }
 }
@@ -1665,6 +1780,12 @@ async function modalEditarProjeto(id) {
       <div class="form-row"><label>Prazo</label><input type="date" id="m-prazo" value="${p.prazo||''}"></div>
       <div class="form-row"><label>Área (m²)</label><input type="number" id="m-area" min="0" step="0.01" value="${p.area_m2||''}" placeholder="Ex: 250.5"></div>
     </div>
+    <div class="form-row"><label>Grupo <span style="color:var(--text3)">(opcional)</span></label>
+      <select id="m-grupo">
+        <option value="">— Sem grupo —</option>
+        ${_gruposDash.map(g => `<option value="${g.id}" ${g.id === p.grupo_id ? 'selected' : ''}>${esc(g.nome)}</option>`).join('')}
+      </select>
+    </div>
     <div class="modal-footer">
       ${souDono(p.dono_id) ? `<button class="btn btn-danger" onclick="deletarProjeto('${id}')">Excluir</button>` : ''}
       <button class="btn" onclick="fecharModal()">Cancelar</button>
@@ -1677,7 +1798,7 @@ async function salvarProjeto(id) {
   if (!nome) { toast('Nome obrigatório', 'err'); return; }
   btnLoading('btn-salvar-proj', true);
   try {
-    const areaVal2 = gv('m-area'); await req('PUT', `/projetos/${id}`, { nome, fase: gv('m-fase'), status: gv('m-status'), prioridade: gv('m-prior'), prazo: gv('m-prazo')||null, area_m2: areaVal2 ? parseFloat(areaVal2) : null });
+    const areaVal2 = gv('m-area'); await req('PUT', `/projetos/${id}`, { nome, fase: gv('m-fase'), status: gv('m-status'), prioridade: gv('m-prior'), prazo: gv('m-prazo')||null, area_m2: areaVal2 ? parseFloat(areaVal2) : null, grupo_id: gv('m-grupo') || null });
     fecharModal(); toast('Projeto atualizado');
     if (PROJETO?.id === id) await recarregarProjeto(); else renderDash();
   } catch (e) { toast(e.message, 'err'); btnLoading('btn-salvar-proj', false); }
