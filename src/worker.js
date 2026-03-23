@@ -80,13 +80,38 @@ function normalizarStatusProjeto(status) {
 
 async function podeEditarProjeto(env, projetoId, usuarioId, papel) {
   if (papel === 'admin') return true;
-  const proj = await env.DB.prepare('SELECT dono_id FROM projetos WHERE id = ?').bind(projetoId).first();
+  const proj = await env.DB.prepare('SELECT dono_id, grupo_id FROM projetos WHERE id = ?').bind(projetoId).first();
   if (!proj) return false;
   if (proj.dono_id === usuarioId) return true;
   const perm = await env.DB.prepare(
     'SELECT 1 FROM permissoes_projeto WHERE projeto_id = ? AND usuario_id = ?'
   ).bind(projetoId, usuarioId).first();
-  return !!perm;
+  if (perm) return true;
+  if (proj.grupo_id) {
+    const gperm = await env.DB.prepare(
+      'SELECT 1 FROM permissoes_grupo WHERE grupo_id = ? AND usuario_id = ?'
+    ).bind(proj.grupo_id, usuarioId).first();
+    if (gperm) return true;
+  }
+  return false;
+}
+
+let _grupoSchemaReady = false;
+async function ensureGrupoSchema(env) {
+  if (_grupoSchemaReady) return;
+  await env.DB.prepare(`
+    CREATE TABLE IF NOT EXISTS permissoes_grupo (
+      grupo_id TEXT NOT NULL,
+      usuario_id TEXT NOT NULL,
+      criado_em TEXT DEFAULT (datetime('now')),
+      PRIMARY KEY (grupo_id, usuario_id),
+      FOREIGN KEY (grupo_id) REFERENCES grupos_projetos(id) ON DELETE CASCADE,
+      FOREIGN KEY (usuario_id) REFERENCES usuarios(id) ON DELETE CASCADE
+    )
+  `).run();
+  try { await env.DB.prepare('ALTER TABLE grupos_projetos ADD COLUMN descricao TEXT').run(); } catch {}
+  try { await env.DB.prepare('ALTER TABLE grupos_projetos ADD COLUMN status TEXT DEFAULT "Ativo"').run(); } catch {}
+  _grupoSchemaReady = true;
 }
 
 async function podeEditarTarefa(env, tarefaId, usuarioId, papel) {
@@ -128,6 +153,7 @@ export default {
     const fail = (msg, status = 400) => err(msg, status, cors);
 
     try {
+    await ensureGrupoSchema(env);
 
     // ── SETUP ──
     if (path === '/auth/setup' && method === 'POST') {
@@ -490,6 +516,8 @@ export default {
         WHERE
           (? = 1 OR p.dono_id = ? OR EXISTS (
             SELECT 1 FROM permissoes_projeto pp WHERE pp.projeto_id = p.id AND pp.usuario_id = ?
+          ) OR EXISTS (
+            SELECT 1 FROM permissoes_grupo pg WHERE pg.grupo_id = p.grupo_id AND pg.usuario_id = ?
           ))
           AND (? IS NULL OR p.status = ?)
         GROUP BY p.id
@@ -498,7 +526,7 @@ export default {
           CASE p.prioridade WHEN 'Alta' THEN 0 WHEN 'Média' THEN 1 ELSE 2 END,
           p.prazo ASC NULLS LAST,
           p.atualizado_em DESC
-      `).bind(u.uid, adminScope, u.uid, u.uid, statusFiltro, statusFiltro).all();
+      `).bind(u.uid, adminScope, u.uid, u.uid, u.uid, statusFiltro, statusFiltro).all();
       return ok(projetos.results);
     }
 
@@ -513,6 +541,14 @@ export default {
       await env.DB.prepare(
         'INSERT INTO projetos (id, nome, fase, status, prioridade, prazo, area_m2, dono_id, grupo_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)'
       ).bind(id, nome.trim(), fase || 'Estudo preliminar', statusProjeto, prioridade || 'Média', prazo || null, area_m2 || null, u.uid, grupo_id || null).run();
+      if (grupo_id) {
+        await env.DB.prepare(`
+          INSERT OR IGNORE INTO permissoes_projeto (projeto_id, usuario_id)
+          SELECT ?, pg.usuario_id
+          FROM permissoes_grupo pg
+          WHERE pg.grupo_id = ?
+        `).bind(id, grupo_id).run();
+      }
       return ok({ id });
     }
 
@@ -522,98 +558,114 @@ export default {
       if (e) return fail('Não autorizado', 401);
       const asMember = url.searchParams.get('as_member') === '1';
       const adminAll = isAdmin(u) && !asMember;
+      const grupoFiltro = (url.searchParams.get('grupo_id') || '').trim();
       let grupos;
       if (adminAll) {
         grupos = await env.DB.prepare(
-          `SELECT g.*, pu.nome as dono_nome,
-            (
-              SELECT COUNT(*)
-              FROM projetos p
-              WHERE p.grupo_id = g.id
-            ) as total_projetos,
-            (
-              SELECT ROUND(COALESCE(SUM(COALESCE(p.area_m2, 0)), 0), 2)
-              FROM projetos p
-              WHERE p.grupo_id = g.id
-            ) as area_total_m2,
-            (
-              SELECT ROUND(COALESCE(SUM(
-                (CASE WHEN st.fim IS NULL
-                  THEN (julianday('now') - julianday(st.inicio)) * 24
-                  ELSE (julianday(st.fim) - julianday(st.inicio)) * 24
-                END)
-                - COALESCE((
-                  SELECT SUM(CASE WHEN i.fim IS NULL THEN 0
-                    ELSE (julianday(i.fim) - julianday(i.inicio)) * 24
-                  END)
-                  FROM intervalos i
-                  WHERE i.sessao_id = st.id
-                ), 0)
-              ), 0), 2)
-              FROM sessoes_tempo st
-              JOIN tarefas t ON t.id = st.tarefa_id
-              JOIN projetos p ON p.id = t.projeto_id
-              WHERE p.grupo_id = g.id
-            ) as total_horas
+          `WITH proj AS (
+             SELECT p.grupo_id,
+               COUNT(*) as total_projetos,
+               SUM(COALESCE(p.area_m2, 0)) as area_total_m2,
+               SUM(CASE WHEN p.status = 'Concluído' THEN 1 ELSE 0 END) as projetos_concluidos,
+               SUM(CASE WHEN p.prazo IS NOT NULL AND date(p.prazo) < date('now') AND p.status NOT IN ('Concluído','Arquivado') THEN 1 ELSE 0 END) as projetos_atrasados
+             FROM projetos p
+             GROUP BY p.grupo_id
+           ),
+           hrs AS (
+             SELECT p.grupo_id,
+               ROUND(COALESCE(SUM(
+                 (CASE WHEN st.fim IS NULL THEN (julianday('now') - julianday(st.inicio)) * 24
+                  ELSE (julianday(st.fim) - julianday(st.inicio)) * 24 END)
+                 - COALESCE((
+                   SELECT SUM(CASE WHEN i.fim IS NULL THEN 0 ELSE (julianday(i.fim) - julianday(i.inicio)) * 24 END)
+                   FROM intervalos i WHERE i.sessao_id = st.id
+                 ), 0)
+               ), 0), 2) as total_horas
+             FROM sessoes_tempo st
+             JOIN tarefas t ON t.id = st.tarefa_id
+             JOIN projetos p ON p.id = t.projeto_id
+             GROUP BY p.grupo_id
+           ),
+           ativos AS (
+             SELECT p.grupo_id, COUNT(DISTINCT p.id) as projetos_ativos
+             FROM sessoes_tempo st
+             JOIN tarefas t ON t.id = st.tarefa_id
+             JOIN projetos p ON p.id = t.projeto_id
+             WHERE st.fim IS NULL
+             GROUP BY p.grupo_id
+           )
+           SELECT g.*, pu.nome as dono_nome,
+             COALESCE(proj.total_projetos, 0) as total_projetos,
+             ROUND(COALESCE(proj.area_total_m2, 0), 2) as area_total_m2,
+             COALESCE(hrs.total_horas, 0) as total_horas,
+             COALESCE(proj.projetos_concluidos, 0) as projetos_concluidos,
+             COALESCE(proj.projetos_atrasados, 0) as projetos_atrasados,
+             COALESCE(ativos.projetos_ativos, 0) as projetos_ativos
            FROM grupos_projetos g
            LEFT JOIN usuarios pu ON pu.id = g.dono_id
+           LEFT JOIN proj ON proj.grupo_id = g.id
+           LEFT JOIN hrs ON hrs.grupo_id = g.id
+           LEFT JOIN ativos ON ativos.grupo_id = g.id
+           WHERE (? = '' OR g.id = ?)
            ORDER BY g.ordem ASC, g.nome ASC`
-        ).all();
+        ).bind(grupoFiltro, grupoFiltro).all();
       } else {
         grupos = await env.DB.prepare(
-          `SELECT g.*, pu.nome as dono_nome,
-            (
-              SELECT COUNT(*)
-              FROM projetos p2
-              WHERE p2.grupo_id = g.id AND (
-                p2.dono_id = ? OR EXISTS (
-                  SELECT 1 FROM permissoes_projeto pp2 WHERE pp2.projeto_id = p2.id AND pp2.usuario_id = ?
-                )
-              )
-            ) as total_projetos,
-            (
-              SELECT ROUND(COALESCE(SUM(COALESCE(p2.area_m2, 0)), 0), 2)
-              FROM projetos p2
-              WHERE p2.grupo_id = g.id AND (
-                p2.dono_id = ? OR EXISTS (
-                  SELECT 1 FROM permissoes_projeto pp2 WHERE pp2.projeto_id = p2.id AND pp2.usuario_id = ?
-                )
-              )
-            ) as area_total_m2,
-            (
-              SELECT ROUND(COALESCE(SUM(
-                (CASE WHEN st.fim IS NULL
-                  THEN (julianday('now') - julianday(st.inicio)) * 24
-                  ELSE (julianday(st.fim) - julianday(st.inicio)) * 24
-                END)
-                - COALESCE((
-                  SELECT SUM(CASE WHEN i.fim IS NULL THEN 0
-                    ELSE (julianday(i.fim) - julianday(i.inicio)) * 24
-                  END)
-                  FROM intervalos i
-                  WHERE i.sessao_id = st.id
-                ), 0)
-              ), 0), 2)
-              FROM sessoes_tempo st
-              JOIN tarefas t ON t.id = st.tarefa_id
-              JOIN projetos p3 ON p3.id = t.projeto_id
-              WHERE p3.grupo_id = g.id AND (
-                p3.dono_id = ? OR EXISTS (
-                  SELECT 1 FROM permissoes_projeto pp3 WHERE pp3.projeto_id = p3.id AND pp3.usuario_id = ?
-                )
-              )
-            ) as total_horas
+          `WITH ap AS (
+             SELECT p.*
+             FROM projetos p
+             WHERE p.dono_id = ?
+               OR EXISTS (SELECT 1 FROM permissoes_projeto pp WHERE pp.projeto_id = p.id AND pp.usuario_id = ?)
+               OR (p.grupo_id IS NOT NULL AND EXISTS (SELECT 1 FROM permissoes_grupo pg WHERE pg.grupo_id = p.grupo_id AND pg.usuario_id = ?))
+           ),
+           proj AS (
+             SELECT grupo_id,
+               COUNT(*) as total_projetos,
+               SUM(COALESCE(area_m2, 0)) as area_total_m2,
+               SUM(CASE WHEN status = 'Concluído' THEN 1 ELSE 0 END) as projetos_concluidos,
+               SUM(CASE WHEN prazo IS NOT NULL AND date(prazo) < date('now') AND status NOT IN ('Concluído','Arquivado') THEN 1 ELSE 0 END) as projetos_atrasados
+             FROM ap
+             GROUP BY grupo_id
+           ),
+           hrs AS (
+             SELECT ap.grupo_id,
+               ROUND(COALESCE(SUM(
+                 (CASE WHEN st.fim IS NULL THEN (julianday('now') - julianday(st.inicio)) * 24
+                  ELSE (julianday(st.fim) - julianday(st.inicio)) * 24 END)
+                 - COALESCE((
+                   SELECT SUM(CASE WHEN i.fim IS NULL THEN 0 ELSE (julianday(i.fim) - julianday(i.inicio)) * 24 END)
+                   FROM intervalos i WHERE i.sessao_id = st.id
+                 ), 0)
+               ), 0), 2) as total_horas
+             FROM sessoes_tempo st
+             JOIN tarefas t ON t.id = st.tarefa_id
+             JOIN ap ON ap.id = t.projeto_id
+             GROUP BY ap.grupo_id
+           ),
+           ativos AS (
+             SELECT ap.grupo_id, COUNT(DISTINCT ap.id) as projetos_ativos
+             FROM sessoes_tempo st
+             JOIN tarefas t ON t.id = st.tarefa_id
+             JOIN ap ON ap.id = t.projeto_id
+             WHERE st.fim IS NULL
+             GROUP BY ap.grupo_id
+           )
+           SELECT g.*, pu.nome as dono_nome,
+             COALESCE(proj.total_projetos, 0) as total_projetos,
+             ROUND(COALESCE(proj.area_total_m2, 0), 2) as area_total_m2,
+             COALESCE(hrs.total_horas, 0) as total_horas,
+             COALESCE(proj.projetos_concluidos, 0) as projetos_concluidos,
+             COALESCE(proj.projetos_atrasados, 0) as projetos_atrasados,
+             COALESCE(ativos.projetos_ativos, 0) as projetos_ativos
            FROM grupos_projetos g
            LEFT JOIN usuarios pu ON pu.id = g.dono_id
-           WHERE g.dono_id = ? OR EXISTS (
-             SELECT 1 FROM projetos p WHERE p.grupo_id = g.id AND (
-               p.dono_id = ? OR EXISTS (
-                 SELECT 1 FROM permissoes_projeto pp WHERE pp.projeto_id = p.id AND pp.usuario_id = ?
-               )
-             )
-           )
+           LEFT JOIN proj ON proj.grupo_id = g.id
+           LEFT JOIN hrs ON hrs.grupo_id = g.id
+           LEFT JOIN ativos ON ativos.grupo_id = g.id
+           WHERE (g.dono_id = ? OR EXISTS (SELECT 1 FROM ap WHERE ap.grupo_id = g.id) OR EXISTS (SELECT 1 FROM permissoes_grupo pg WHERE pg.grupo_id = g.id AND pg.usuario_id = ?))
+             AND (? = '' OR g.id = ?)
            ORDER BY g.ordem ASC, g.nome ASC`
-        ).bind(u.uid, u.uid, u.uid, u.uid, u.uid, u.uid, u.uid, u.uid, u.uid).all();
+        ).bind(u.uid, u.uid, u.uid, u.uid, u.uid, grupoFiltro, grupoFiltro).all();
       }
       return ok(grupos.results);
     }
@@ -621,13 +673,15 @@ export default {
     if (path === '/grupos' && method === 'POST') {
       const [u, e] = await requireAuth(request, env);
       if (e) return fail('Não autorizado', 401);
-      const { nome } = await request.json();
+      const { nome, status, descricao } = await request.json();
       if (!nome?.trim()) return fail('Nome obrigatório');
       const id = 'grp_' + uid();
+      const ordemRow = await env.DB.prepare('SELECT COALESCE(MAX(ordem), 0) as max_ordem FROM grupos_projetos').first();
+      const ordem = (ordemRow?.max_ordem || 0) + 1;
       await env.DB.prepare(
-        'INSERT INTO grupos_projetos (id, nome, dono_id) VALUES (?, ?, ?)'
-      ).bind(id, nome.trim(), u.uid).run();
-      return ok({ id, nome: nome.trim() });
+        'INSERT INTO grupos_projetos (id, nome, dono_id, ordem, status, descricao) VALUES (?, ?, ?, ?, ?, ?)'
+      ).bind(id, nome.trim(), u.uid, ordem, status || 'Ativo', descricao || null).run();
+      return ok({ id, nome: nome.trim(), ordem, status: status || 'Ativo', descricao: descricao || null });
     }
 
     const matchGrupo = path.match(/^\/grupos\/(grp_\w+)$/);
@@ -647,9 +701,12 @@ export default {
              p.dono_id = ? OR EXISTS (
                SELECT 1 FROM permissoes_projeto pp WHERE pp.projeto_id = p.id AND pp.usuario_id = ?
              )
+            OR EXISTS (
+              SELECT 1 FROM permissoes_grupo pg WHERE pg.grupo_id = p.grupo_id AND pg.usuario_id = ?
+            )
            )
            LIMIT 1`
-        ).bind(grupoId, u.uid, u.uid).first());
+        ).bind(grupoId, u.uid, u.uid, u.uid).first());
         if (!podeVer) return fail('Sem permissão', 403);
 
         const resumo = await env.DB.prepare(
@@ -661,6 +718,9 @@ export default {
                 ? = 1 OR p2.dono_id = ? OR EXISTS (
                   SELECT 1 FROM permissoes_projeto pp2 WHERE pp2.projeto_id = p2.id AND pp2.usuario_id = ?
                 )
+                OR EXISTS (
+                  SELECT 1 FROM permissoes_grupo pg2 WHERE pg2.grupo_id = p2.grupo_id AND pg2.usuario_id = ?
+                )
               )
             ) as total_projetos,
             (
@@ -669,6 +729,9 @@ export default {
               WHERE p2.grupo_id = ? AND (
                 ? = 1 OR p2.dono_id = ? OR EXISTS (
                   SELECT 1 FROM permissoes_projeto pp2 WHERE pp2.projeto_id = p2.id AND pp2.usuario_id = ?
+                )
+                OR EXISTS (
+                  SELECT 1 FROM permissoes_grupo pg2 WHERE pg2.grupo_id = p2.grupo_id AND pg2.usuario_id = ?
                 )
               )
             ) as area_total_m2,
@@ -693,22 +756,92 @@ export default {
                 ? = 1 OR p3.dono_id = ? OR EXISTS (
                   SELECT 1 FROM permissoes_projeto pp3 WHERE pp3.projeto_id = p3.id AND pp3.usuario_id = ?
                 )
+                OR EXISTS (
+                  SELECT 1 FROM permissoes_grupo pg3 WHERE pg3.grupo_id = p3.grupo_id AND pg3.usuario_id = ?
+                )
               )
-            ) as total_horas`
+            ) as total_horas,
+            (
+              SELECT COUNT(*)
+              FROM projetos p4
+              WHERE p4.grupo_id = ? AND p4.status = 'Concluído' AND (
+                ? = 1 OR p4.dono_id = ? OR EXISTS (
+                  SELECT 1 FROM permissoes_projeto pp4 WHERE pp4.projeto_id = p4.id AND pp4.usuario_id = ?
+                )
+                OR EXISTS (
+                  SELECT 1 FROM permissoes_grupo pg4 WHERE pg4.grupo_id = p4.grupo_id AND pg4.usuario_id = ?
+                )
+              )
+            ) as projetos_concluidos,
+            (
+              SELECT COUNT(*)
+              FROM projetos p5
+              WHERE p5.grupo_id = ?
+                AND p5.prazo IS NOT NULL
+                AND date(p5.prazo) < date('now')
+                AND p5.status NOT IN ('Concluído','Arquivado')
+                AND (
+                  ? = 1 OR p5.dono_id = ? OR EXISTS (
+                    SELECT 1 FROM permissoes_projeto pp5 WHERE pp5.projeto_id = p5.id AND pp5.usuario_id = ?
+                  )
+                  OR EXISTS (
+                    SELECT 1 FROM permissoes_grupo pg5 WHERE pg5.grupo_id = p5.grupo_id AND pg5.usuario_id = ?
+                  )
+                )
+            ) as projetos_atrasados,
+            (
+              SELECT COUNT(DISTINCT p6.id)
+              FROM sessoes_tempo st6
+              JOIN tarefas t6 ON t6.id = st6.tarefa_id
+              JOIN projetos p6 ON p6.id = t6.projeto_id
+              WHERE p6.grupo_id = ?
+                AND st6.fim IS NULL
+                AND (
+                  ? = 1 OR p6.dono_id = ? OR EXISTS (
+                    SELECT 1 FROM permissoes_projeto pp6 WHERE pp6.projeto_id = p6.id AND pp6.usuario_id = ?
+                  )
+                  OR EXISTS (
+                    SELECT 1 FROM permissoes_grupo pg6 WHERE pg6.grupo_id = p6.grupo_id AND pg6.usuario_id = ?
+                  )
+                )
+            ) as projetos_ativos`
         ).bind(
-          grupoId, isAdmin(u) ? 1 : 0, u.uid, u.uid,
-          grupoId, isAdmin(u) ? 1 : 0, u.uid, u.uid,
-          grupoId, isAdmin(u) ? 1 : 0, u.uid, u.uid,
+          grupoId, isAdmin(u) ? 1 : 0, u.uid, u.uid, u.uid,
+          grupoId, isAdmin(u) ? 1 : 0, u.uid, u.uid, u.uid,
+          grupoId, isAdmin(u) ? 1 : 0, u.uid, u.uid, u.uid,
+          grupoId, isAdmin(u) ? 1 : 0, u.uid, u.uid, u.uid,
+          grupoId, isAdmin(u) ? 1 : 0, u.uid, u.uid, u.uid,
+          grupoId, isAdmin(u) ? 1 : 0, u.uid, u.uid, u.uid,
         ).first();
 
-        return ok({ ...grupo, ...resumo, pode_gerenciar: podeGerenciar });
+        const permissoes = await env.DB.prepare(
+          'SELECT pg.usuario_id, u.nome, u.login as usuario_login FROM permissoes_grupo pg JOIN usuarios u ON u.id = pg.usuario_id WHERE pg.grupo_id = ? ORDER BY u.nome'
+        ).bind(grupoId).all();
+
+        return ok({ ...grupo, ...resumo, pode_gerenciar: podeGerenciar, colaboradores: permissoes.results });
       }
 
       if (method === 'PUT') {
         if (!podeGerenciar) return fail('Sem permissão', 403);
-        const { nome } = await request.json();
+        const { nome, status, descricao } = await request.json();
         if (!nome?.trim()) return fail('Nome obrigatório');
-        await env.DB.prepare('UPDATE grupos_projetos SET nome = ? WHERE id = ?').bind(nome.trim(), grupoId).run();
+        await env.DB.prepare('UPDATE grupos_projetos SET nome = ?, status = ?, descricao = ? WHERE id = ?').bind(nome.trim(), status || 'Ativo', descricao || null, grupoId).run();
+        return ok({ ok: true });
+      }
+
+      if (method === 'PATCH') {
+        if (!podeGerenciar) return fail('Sem permissão', 403);
+        const body = await request.json();
+        if (typeof body.ordem === 'number') {
+          await env.DB.prepare('UPDATE grupos_projetos SET ordem = ? WHERE id = ?').bind(body.ordem, grupoId).run();
+        }
+        if (body.action === 'ungroup_all') {
+          await env.DB.prepare('UPDATE projetos SET grupo_id = NULL WHERE grupo_id = ?').bind(grupoId).run();
+        }
+        if (body.action === 'move_all_to') {
+          const destino = body.destino_grupo_id || null;
+          await env.DB.prepare('UPDATE projetos SET grupo_id = ? WHERE grupo_id = ?').bind(destino, grupoId).run();
+        }
         return ok({ ok: true });
       }
 
@@ -719,6 +852,42 @@ export default {
         await env.DB.prepare('DELETE FROM grupos_projetos WHERE id = ?').bind(grupoId).run();
         return ok({ ok: true });
       }
+    }
+
+    const matchGrupoPerms = path.match(/^\/grupos\/(grp_\w+)\/permissoes$/);
+    if (matchGrupoPerms && method === 'POST') {
+      const grupoId = matchGrupoPerms[1];
+      const [u, e] = await requireAuth(request, env);
+      if (e) return fail('Não autorizado', 401);
+      const grupo = await env.DB.prepare('SELECT dono_id FROM grupos_projetos WHERE id = ?').bind(grupoId).first();
+      if (!grupo) return fail('Grupo não encontrado', 404);
+      if (grupo.dono_id !== u.uid && !isAdmin(u)) return fail('Sem permissão', 403);
+      const { usuario_id } = await request.json();
+      if (!usuario_id) return fail('Usuário obrigatório');
+      await env.DB.prepare('INSERT OR REPLACE INTO permissoes_grupo (grupo_id, usuario_id) VALUES (?, ?)').bind(grupoId, usuario_id).run();
+      await env.DB.prepare(`
+        INSERT OR IGNORE INTO permissoes_projeto (projeto_id, usuario_id)
+        SELECT p.id, ? FROM projetos p WHERE p.grupo_id = ?
+      `).bind(usuario_id, grupoId).run();
+      return ok({ ok: true });
+    }
+
+    const matchGrupoPerm = path.match(/^\/grupos\/(grp_\w+)\/permissoes\/(usr_\w+)$/);
+    if (matchGrupoPerm && method === 'DELETE') {
+      const [, grupoId, usuarioId] = matchGrupoPerm;
+      const [u, e] = await requireAuth(request, env);
+      if (e) return fail('Não autorizado', 401);
+      const grupo = await env.DB.prepare('SELECT dono_id FROM grupos_projetos WHERE id = ?').bind(grupoId).first();
+      if (!grupo) return fail('Grupo não encontrado', 404);
+      if (grupo.dono_id !== u.uid && !isAdmin(u)) return fail('Sem permissão', 403);
+      await env.DB.prepare('DELETE FROM permissoes_grupo WHERE grupo_id = ? AND usuario_id = ?').bind(grupoId, usuarioId).run();
+      await env.DB.prepare(`
+        DELETE FROM permissoes_projeto
+        WHERE usuario_id = ? AND projeto_id IN (
+          SELECT p.id FROM projetos p WHERE p.grupo_id = ?
+        )
+      `).bind(usuarioId, grupoId).run();
+      return ok({ ok: true });
     }
 
     const matchProjeto = path.match(/^\/projetos\/(prj_\w+)$/);

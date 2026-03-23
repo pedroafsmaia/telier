@@ -313,6 +313,7 @@ label{font-size:var(--fs-080);color:var(--text2);display:block;margin-bottom:5px
 .grupo-kpi{font-size:var(--fs-075);color:var(--text2);background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:2px 8px}
 .grupo-actions{margin-left:auto;display:flex;gap:4px;opacity:0;transition:opacity .15s}
 .grupo-header:hover .grupo-actions{opacity:1}
+.grupo-section.dragging{opacity:.45}
 .grupo-sem-label{font-size:var(--fs-080);font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.08em;margin-bottom:12px;margin-top:4px;opacity:.5}
 .grupo-section{border-radius:var(--r2);padding:8px;margin-left:-8px;transition:background .15s,box-shadow .15s}
 .grupo-section.drag-over{background:rgba(124,106,247,.06);box-shadow:0 0 0 2px var(--accent) inset}
@@ -750,6 +751,7 @@ let _ativasDash = [];
 let _gruposDash = [];
 let FILTRO_RESP_TAR = '';
 let BUSCA_TAREFA = '';
+let FILTRO_GRUPO_DASH = 'todos';
 let COLEGAS_ATIVOS = [];
 let PRESENCE_ABERTO = false;
 let _presenceTick = null;
@@ -1198,6 +1200,11 @@ async function renderDash() {
       </div>
       <div class="dash-filters">
         <input type="search" class="search-dash" id="busca-dash" placeholder="Buscar projeto..." value="${esc(BUSCA_DASH)}" oninput="filtrarProjetosBusca(this.value)">
+        <select class="resp-filter" onchange="filtrarGrupoDash(this.value)">
+          <option value="todos" ${FILTRO_GRUPO_DASH==='todos'?'selected':''}>Todos os grupos</option>
+          <option value="sem" ${FILTRO_GRUPO_DASH==='sem'?'selected':''}>Sem grupo</option>
+          ${grupos.map(g => `<option value="${g.id}" ${FILTRO_GRUPO_DASH===g.id?'selected':''}>${esc(g.nome)}</option>`).join('')}
+        </select>
         ${filtros.map(f => { const label = { 'todos':'Todos' }[f] || f; return `<button class="filter-btn ${FILTRO_STATUS===f?'ativo':''}" onclick="setFiltro('${esc(f)}')">${label}</button>`; }).join('')}
       </div>
       <div id="cards-grid-dash">`;
@@ -1212,7 +1219,9 @@ async function renderDash() {
 
 function renderProjetosDash(projetos, grupos) {
   const busca = BUSCA_DASH.toLowerCase().trim();
-  const lista = busca ? projetos.filter(p => p.nome.toLowerCase().includes(busca)) : projetos;
+  let lista = busca ? projetos.filter(p => p.nome.toLowerCase().includes(busca)) : projetos;
+  if (FILTRO_GRUPO_DASH === 'sem') lista = lista.filter(p => !p.grupo_id);
+  else if (FILTRO_GRUPO_DASH !== 'todos') lista = lista.filter(p => p.grupo_id === FILTRO_GRUPO_DASH);
   if (!lista.length) {
     return `<div class="empty-state"><div class="empty-icon" aria-hidden="true"><svg width="36" height="36" viewBox="0 0 24 24" fill="none"><path d="M3 18h18" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><path d="M7 18V9.5h4V18M13 18V6h4v12" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><path d="M8 7.5l2-2 2 2M14 4l2-2 2 2" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></div><div class="empty-text">Nenhum projeto encontrado</div><div class="empty-sub">${busca ? 'Tente outro termo de busca' : FILTRO_STATUS !== 'todos' ? 'Tente outro filtro' : 'Crie o primeiro projeto'}</div></div>`;
   }
@@ -1230,8 +1239,15 @@ function renderProjetosDash(projetos, grupos) {
     const col = isCollapsed(grupo.id);
     const areaGrupo = Number(grupo.area_total_m2 || 0);
     const horasGrupo = Number(grupo.total_horas || 0);
+    const concluidos = Number(grupo.projetos_concluidos || 0);
+    const atrasados = Number(grupo.projetos_atrasados || 0);
+    const ativos = Number(grupo.projetos_ativos || 0);
+    const pctConcl = gprojetos.length ? Math.round((concluidos / gprojetos.length) * 100) : 0;
     html += `
       <div class="grupo-section" id="gs-${grupo.id}"
+        draggable="true"
+        ondragstart="dragGrupo(event,'${grupo.id}')"
+        ondragend="dragGrupoEnd(event)"
         ondragover="dragOver(event,'${grupo.id}')"
         ondragleave="dragLeave(event)"
         ondrop="dropProjeto(event,'${grupo.id}')">
@@ -1240,8 +1256,12 @@ function renderProjetosDash(projetos, grupos) {
           <span class="grupo-nome">${esc(grupo.nome)}</span>
           <span class="grupo-count">${gprojetos.length}</span>
           <div class="grupo-kpis">
+            <span class="grupo-kpi">${esc(grupo.status || 'Ativo')}</span>
             <span class="grupo-kpi mono">${areaGrupo.toLocaleString('pt-BR', { minimumFractionDigits: 0, maximumFractionDigits: 2 })} m²</span>
             <span class="grupo-kpi mono">${horasGrupo.toFixed(2)}h</span>
+            <span class="grupo-kpi">${pctConcl}% concluído</span>
+            ${atrasados ? `<span class="grupo-kpi" style="color:var(--red)">${atrasados} atrasado${atrasados===1?'':'s'}</span>` : ''}
+            ${ativos ? `<span class="grupo-kpi" style="color:var(--green)">${ativos} ativo${ativos===1?'':'s'}</span>` : ''}
           </div>
           <div class="grupo-actions" onclick="event.stopPropagation()">
             <button class="btn btn-ghost btn-icon btn-sm" onclick="modalEditarGrupo('${grupo.id}')" title="Configurar grupo"><svg width="13" height="13" viewBox="0 0 13 13" fill="none"><path d="M2 9.5V11h1.5l5.5-5.5-1.5-1.5L2 9.5zM10.85 2.65a1 1 0 0 0-1.42 0l-.79.79 1.42 1.42.79-.79a1 1 0 0 0 0-1.42z" fill="currentColor"/></svg></button>
@@ -1250,7 +1270,7 @@ function renderProjetosDash(projetos, grupos) {
         </div>
         ${col ? '' : gprojetos.length
           ? `<div class="cards-grid">${renderCardsDash(gprojetos)}</div>`
-          : `<div class="grupo-empty-zone"><span class="grupo-drop-hint">Arraste projetos aqui</span></div>`}
+          : `<div class="grupo-empty-zone" style="flex-direction:column;gap:10px"><span class="grupo-drop-hint">Arraste projetos aqui</span><button class="btn btn-sm" onclick="event.stopPropagation();modalNovoProjeto('${grupo.id}')">+ Criar projeto neste grupo</button></div>`}
       </div>`;
   }
 
@@ -1322,11 +1342,18 @@ function filtrarProjetosBusca(v) {
   if (grid) grid.innerHTML = renderProjetosDash(_projsDash, _gruposDash);
 }
 
+function filtrarGrupoDash(v) {
+  FILTRO_GRUPO_DASH = v || 'todos';
+  const grid = document.getElementById('cards-grid-dash');
+  if (grid) grid.innerHTML = renderProjetosDash(_projsDash, _gruposDash);
+}
+
 function setFiltro(f) { FILTRO_STATUS = f; renderDash(); }
 
 // ── DRAG & DROP DE PROJETOS ──
 let _dragProjetoId = null;
 let _dragJustEnded = false;
+let _dragGrupoId = null;
 
 function dragProjeto(e, projetoId) {
   _dragProjetoId = projetoId;
@@ -1337,8 +1364,20 @@ function dragProjeto(e, projetoId) {
 function dragProjetoEnd(e) {
   _dragJustEnded = true;
   setTimeout(() => { _dragJustEnded = false; }, 80);
+  _dragProjetoId = null;
   document.querySelectorAll('.proj-card.dragging').forEach(el => el.classList.remove('dragging'));
   document.querySelectorAll('.grupo-section.drag-over').forEach(el => el.classList.remove('drag-over'));
+}
+
+function dragGrupo(e, grupoId) {
+  _dragGrupoId = grupoId;
+  e.dataTransfer.effectAllowed = 'move';
+  setTimeout(() => e.target.closest('.grupo-section')?.classList.add('dragging'), 0);
+}
+
+function dragGrupoEnd(e) {
+  _dragGrupoId = null;
+  document.querySelectorAll('.grupo-section.dragging').forEach(el => el.classList.remove('dragging'));
 }
 
 function dragOver(e, grupoId) {
@@ -1356,6 +1395,28 @@ function dragLeave(e) {
 async function dropProjeto(e, grupoId) {
   e.preventDefault();
   e.currentTarget.classList.remove('drag-over');
+  if (_dragGrupoId && _dragGrupoId !== grupoId) {
+    try {
+      const idxAlvo = _gruposDash.findIndex(g => g.id === grupoId);
+      const idxOrig = _gruposDash.findIndex(g => g.id === _dragGrupoId);
+      if (idxAlvo >= 0 && idxOrig >= 0) {
+        const nova = [..._gruposDash];
+        const [movido] = nova.splice(idxOrig, 1);
+        nova.splice(idxAlvo, 0, movido);
+        _gruposDash = nova;
+        await Promise.all(_gruposDash.map((g, i) => req('PATCH', `/grupos/${g.id}`, { ordem: i + 1 })));
+        const grid2 = document.getElementById('cards-grid-dash');
+        if (grid2) grid2.innerHTML = renderProjetosDash(_projsDash, _gruposDash);
+        toast('Ordem dos grupos atualizada');
+      }
+    } catch (err) {
+      toast(err.message, 'err');
+    } finally {
+      _dragGrupoId = null;
+    }
+    return;
+  }
+
   const projetoId = _dragProjetoId;
   if (!projetoId) return;
   const proj = _projsDash.find(p => p.id === projetoId);
@@ -1371,6 +1432,7 @@ async function dropProjeto(e, grupoId) {
     const nomeGrupo = grupoAlvo ? (_gruposDash.find(g => g.id === grupoAlvo)?.nome || 'grupo') : null;
     toast(nomeGrupo ? `Movido para "${nomeGrupo}"` : 'Removido do grupo');
   } catch (err) { toast(err.message, 'err'); }
+  finally { _dragProjetoId = null; }
 }
 
 function toggleGrupo(id) {
@@ -1386,6 +1448,10 @@ function modalNovoGrupo() {
   abrirModal(`
     <h2>Novo grupo</h2>
     <div class="form-row"><label>Nome do grupo</label><input id="m-grupo-nome" placeholder="Ex: Campus Universitário"></div>
+    <div class="form-grid">
+      <div class="form-row"><label>Status</label>${sel('m-grupo-status',['Ativo','Pausado','Arquivado'],'Ativo')}</div>
+      <div class="form-row"><label>Descrição</label><input id="m-grupo-desc" placeholder="Opcional"></div>
+    </div>
     <div class="modal-footer">
       <button class="btn" onclick="fecharModal()">Cancelar</button>
       <button class="btn btn-primary" id="btn-criar-grupo" onclick="criarGrupo()">Criar grupo</button>
@@ -1397,24 +1463,52 @@ async function criarGrupo() {
   if (!nome) { toast('Nome obrigatório', 'err'); return; }
   btnLoading('btn-criar-grupo', true);
   try {
-    await req('POST', '/grupos', { nome });
+    await req('POST', '/grupos', { nome, status: gv('m-grupo-status'), descricao: gv('m-grupo-desc') || null });
     fecharModal(); toast('Grupo criado'); renderDash();
   } catch (e) { toast(e.message, 'err'); btnLoading('btn-criar-grupo', false); }
 }
 
 async function modalEditarGrupo(id) {
-  const g = _gruposDash.find(x => x.id === id) || await req('GET', `/grupos/${id}`);
+  if (!USUARIOS.length) USUARIOS = await req('GET', '/usuarios');
+  const g = await req('GET', `/grupos/${id}`);
   const area = Number(g.area_total_m2 || 0);
   const horas = Number(g.total_horas || 0);
   const totalProjetos = Number(g.total_projetos || 0);
+  const colaboradores = g.colaboradores || [];
+  const colabIds = colaboradores.map(c => c.usuario_id);
+  const disponiveis = USUARIOS.filter(u => u.id !== g.dono_id && !colabIds.includes(u.id));
   abrirModal(`
     <h2>Configurar grupo</h2>
     <div class="form-row"><label>Nome do grupo</label><input id="m-grupo-nome" value="${esc(g.nome || '')}"></div>
+    <div class="form-grid">
+      <div class="form-row"><label>Status</label>${sel('m-grupo-status',['Ativo','Pausado','Arquivado'], g.status || 'Ativo')}</div>
+      <div class="form-row"><label>Descrição</label><input id="m-grupo-desc" value="${esc(g.descricao || '')}" placeholder="Opcional"></div>
+    </div>
     <div class="form-grid">
       <div class="form-row"><label>Projetos no grupo</label><input value="${totalProjetos}" disabled></div>
       <div class="form-row"><label>Área total (m²)</label><input value="${area.toLocaleString('pt-BR', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}" disabled></div>
       <div class="form-row"><label>Horas totais</label><input value="${horas.toFixed(2)}h" disabled></div>
       <div class="form-row"><label>Origem dos totais</label><input value="Soma automática dos projetos" disabled></div>
+    </div>
+    <div class="form-row"><label>Colaboradores do grupo</label>
+      <div class="editor-list">
+        ${colaboradores.map(c => `
+          <div class="editor-row">
+            <div class="editor-info">${avatar(c.nome)} ${esc(c.nome)} <span class="inline-user-handle">@${esc(c.usuario_login)}</span></div>
+            <button class="editor-del" onclick="removerPermGrupo('${id}','${c.usuario_id}')" title="Remover"><svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M1.5 1.5l9 9M10.5 1.5l-9 9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></button>
+          </div>`).join('') || '<div class="inline-muted-sm">Nenhum colaborador no grupo</div>'}
+      </div>
+    </div>
+    ${disponiveis.length ? `<div class="form-row"><label>Adicionar colaborador</label>
+      <div style="display:flex;gap:8px">
+        <select id="m-grupo-colab" style="flex:1">${disponiveis.map(u => `<option value="${u.id}">${esc(u.nome)} (@${esc(u.usuario_login)})</option>`).join('')}</select>
+        <button class="btn btn-sm btn-primary" onclick="adicionarPermGrupo('${id}')">Adicionar</button>
+      </div>
+    </div>` : ''}
+    <div class="form-sep"></div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px">
+      <button class="btn btn-sm" onclick="acaoGrupo('${id}','ungroup_all')">Desagrupar todos os projetos</button>
+      <button class="btn btn-sm" onclick="modalMoverTodosGrupo('${id}')">Mover todos para outro grupo</button>
     </div>
     <div class="modal-footer">
       ${(g.pode_gerenciar || souDono(g.dono_id) || isAdmin()) ? `<button class="btn btn-danger" onclick="deletarGrupo('${id}','${esc(g.nome)}')">Excluir</button>` : ''}
@@ -1428,9 +1522,49 @@ async function salvarGrupo(id) {
   if (!nome) { toast('Nome obrigatório', 'err'); return; }
   btnLoading('btn-salvar-grupo', true);
   try {
-    await req('PUT', `/grupos/${id}`, { nome });
+    await req('PUT', `/grupos/${id}`, { nome, status: gv('m-grupo-status'), descricao: gv('m-grupo-desc') || null });
     fecharModal(); toast('Grupo atualizado'); renderDash();
   } catch (e) { toast(e.message, 'err'); btnLoading('btn-salvar-grupo', false); }
+}
+
+async function adicionarPermGrupo(grupoId) {
+  const usuario_id = gv('m-grupo-colab');
+  if (!usuario_id) return;
+  try {
+    await req('POST', `/grupos/${grupoId}/permissoes`, { usuario_id });
+    toast('Colaborador adicionado ao grupo');
+    modalEditarGrupo(grupoId);
+  } catch (e) { toast(e.message, 'err'); }
+}
+
+async function removerPermGrupo(grupoId, usuarioId) {
+  try {
+    await req('DELETE', `/grupos/${grupoId}/permissoes/${usuarioId}`);
+    toast('Colaborador removido do grupo');
+    modalEditarGrupo(grupoId);
+  } catch (e) { toast(e.message, 'err'); }
+}
+
+async function acaoGrupo(grupoId, action, destino = null) {
+  try {
+    await req('PATCH', `/grupos/${grupoId}`, { action, destino_grupo_id: destino });
+    toast('Ação aplicada no grupo');
+    renderDash();
+  } catch (e) { toast(e.message, 'err'); }
+}
+
+function modalMoverTodosGrupo(grupoId) {
+  const opts = _gruposDash.filter(g => g.id !== grupoId);
+  if (!opts.length) { toast('Crie outro grupo para mover os projetos', 'err'); return; }
+  abrirModal(`
+    <h2>Mover projetos do grupo</h2>
+    <div class="form-row"><label>Destino</label>
+      <select id="m-grupo-destino">${opts.map(g => `<option value="${g.id}">${esc(g.nome)}</option>`).join('')}</select>
+    </div>
+    <div class="modal-footer">
+      <button class="btn" onclick="fecharModal();modalEditarGrupo('${grupoId}')">Cancelar</button>
+      <button class="btn btn-primary" onclick="fecharModal();acaoGrupo('${grupoId}','move_all_to',gv('m-grupo-destino'))">Mover</button>
+    </div>`);
 }
 
 function deletarGrupo(id, nome) {
@@ -2126,7 +2260,7 @@ function sel(id, opts, val) {
 }
 function gv(id) { return document.getElementById(id)?.value || ''; }
 
-function modalNovoProjeto() {
+function modalNovoProjeto(preselectGrupoId = '') {
   abrirModal(`
     <h2>Novo projeto</h2>
     <div class="form-row"><label>Nome do projeto</label><input id="m-nome" placeholder="Ex: Reforma Bloco B"></div>
@@ -2140,7 +2274,7 @@ function modalNovoProjeto() {
     <div class="form-row"><label>Grupo <span style="color:var(--text3)">(opcional)</span></label>
       <select id="m-grupo">
         <option value="">— Sem grupo —</option>
-        ${_gruposDash.map(g => `<option value="${g.id}">${esc(g.nome)}</option>`).join('')}
+        ${_gruposDash.map(g => `<option value="${g.id}" ${g.id===preselectGrupoId?'selected':''}>${esc(g.nome)}</option>`).join('')}
       </select>
     </div>
     <div class="modal-footer">
