@@ -650,6 +650,11 @@ tr:hover .td-ações{opacity:1}
 .modal-block-summary::after{content:'+';font-size:var(--fs-100);color:var(--text3)}
 .modal-block[open] .modal-block-summary::after{content:'−';color:var(--text2)}
 .modal-block-body{padding:0 14px 14px}
+.modal-section{margin-top:14px;padding:14px;border:1px solid var(--border);border-radius:var(--r2);background:var(--bg3)}
+.modal-section-title{font-size:var(--fs-075);color:var(--text3);text-transform:uppercase;letter-spacing:.08em;margin-bottom:10px}
+.field-hint{font-size:var(--fs-075);color:var(--text3);margin-top:4px;line-height:1.35}
+.prazo-hint{font-size:var(--fs-075);color:var(--text3);margin-top:6px}
+.modal-footer-sticky{position:sticky;bottom:-32px;margin:24px -32px -32px;padding:14px 32px;background:color-mix(in srgb,var(--bg2) 90%, transparent);backdrop-filter:blur(6px);border-top:1px solid var(--border);z-index:2}
 .inline-note{font-size:var(--fs-080);color:var(--text3)}
 .inline-note-strong{color:var(--text2)}
 .api-empty{padding:40px;text-align:center;color:var(--text3)}
@@ -879,8 +884,8 @@ async function carregarTemplatesTarefa(force = false) {
 
 // TAGS
 const ST = { 'Arquivado':'tag-gray', 'Em andamento':'tag-blue','Concluída':'tag-green','Concluído':'tag-green','Bloqueada':'tag-red','A fazer':'tag-gray','Em revisão':'tag-yellow','Pausado':'tag-gray' };
-const PT = { 'Alta':'tag-orange','Média':'tag-yellow','Baixa':'tag-gray' };
-const DT = { 'Simples':'tag-green','Moderada':'tag-blue','Complexa':'tag-purple' };
+const PT = { 'Alta':'tag-orange','Média':'tag-yellow','Baixa':'tag-green' };
+const DT = { 'Simples':'tag-green','Moderada':'tag-yellow','Complexa':'tag-orange' };
 const FT = { 'Estudo preliminar':'tag-purple','Anteprojeto':'tag-blue','Projeto básico':'tag-sky','Projeto executivo':'tag-cyan','Em obra':'tag-green' };
 const PO = { 'Alta':0,'Média':1,'Baixa':2 };
 const DO = { 'Complexa':0,'Moderada':1,'Simples':2 };
@@ -2404,6 +2409,13 @@ function sel(id, opts, val) {
 }
 function gv(id) { return document.getElementById(id)?.value || ''; }
 
+function atualizarPrazoHint() {
+  const el = document.getElementById('m-data-hint');
+  if (!el) return;
+  const data = gv('m-data');
+  el.textContent = data ? `Prazo definido: ${prazoFmt(data)}` : 'Sem prazo definido';
+}
+
 function modalNovoProjeto(preselectGrupoId = '') {
   abrirModal(`
     <h2>Novo projeto</h2>
@@ -2550,29 +2562,41 @@ async function modalNovaTarefa(projetoId) {
   const templates = await carregarTemplatesTarefa();
   abrirModal(`
     <h2>Nova tarefa</h2>
-    <div class="modal-hint">Campos desta janela afetam apenas a tarefa, sem alterar dados da janela de projeto.</div>
-    <div class="form-row"><label>Template <span style="color:var(--text3)">(opcional)</span></label>
-      <div style="display:flex;gap:8px;align-items:center">
-        <select id="m-template" style="flex:1">
-          <option value="">— Sem template —</option>
-          ${templates.map(tpl => `<option value="${tpl.id}">${esc(tpl.nome)}</option>`).join('')}
-        </select>
-        <button class="btn btn-sm" type="button" onclick="aplicarTemplateNoModal()">Aplicar</button>
+    <div class="modal-hint">Esta janela altera apenas a tarefa.</div>
+    <details class="modal-block">
+      <summary class="modal-block-summary">Template (opcional)</summary>
+      <div class="modal-block-body">
+        <div class="form-row" style="margin-top:10px"><label>Selecionar template</label>
+          <div style="display:flex;gap:8px;align-items:center">
+            <select id="m-template" style="flex:1">
+              <option value="">— Sem template —</option>
+              ${templates.map(tpl => `<option value="${tpl.id}">${esc(tpl.nome)}</option>`).join('')}
+            </select>
+            <button class="btn btn-ghost btn-sm" type="button" onclick="aplicarTemplateNoModal()">Aplicar</button>
+          </div>
+        </div>
+      </div>
+    </details>
+    <div class="modal-section">
+      <div class="modal-section-title">Detalhes da tarefa</div>
+      <div class="form-row"><label>Título da tarefa</label><input id="m-nome" placeholder="Ex: Detalhar corte da escada"></div>
+      <div class="form-row" style="margin-bottom:0"><label>Descrição detalhada</label><textarea id="m-desc" placeholder="Contexto e orientações para execução"></textarea></div>
+    </div>
+    <div class="modal-section">
+      <div class="modal-section-title">Planejamento</div>
+      <div class="form-grid">
+        <div class="form-row"><label>Status</label>${sel('m-status',STATUS_TAR,'A fazer')}</div>
+        <div class="form-row"><label>Prioridade</label>${sel('m-prior',PRIORS,'Média')}</div>
+        <div class="form-row"><label>Complexidade</label>${sel('m-dific',DIFS,'Moderada')}<div class="field-hint">Use a mesma escala da prioridade: Simples (baixa), Moderada (média), Complexa (alta).</div></div>
+        <div class="form-row"><label>Prazo da tarefa</label><input type="date" id="m-data" oninput="atualizarPrazoHint()"><div id="m-data-hint" class="prazo-hint"></div></div>
       </div>
     </div>
-    <div class="form-row"><label>Descrição da tarefa</label><input id="m-nome" placeholder="Ex: Detalhar corte da escada"></div>
-    <div class="form-row"><label>Descrição detalhada</label><textarea id="m-desc" placeholder="Contexto e orientações para execução"></textarea></div>
-    <div class="form-grid">
-      <div class="form-row"><label>Status</label>${sel('m-status',STATUS_TAR,'A fazer')}</div>
-      <div class="form-row"><label>Prioridade</label>${sel('m-prior',PRIORS,'Média')}</div>
-      <div class="form-row"><label>Complexidade</label>${sel('m-dific',DIFS,'Moderada')}</div>
-      <div class="form-row"><label>Prazo da tarefa</label><input type="date" id="m-data"></div>
-    </div>
-    <div class="modal-footer">
+    <div class="modal-footer modal-footer-sticky">
       ${isAdmin() ? `<button class="btn" type="button" onclick="salvarTemplateAdminDaTarefaModal()">Salvar como template admin</button>` : ''}
       <button class="btn" onclick="fecharModal()">Cancelar</button>
       <button class="btn btn-primary" id="btn-criar-tar" onclick="criarTarefa('${projetoId}')">Criar tarefa</button>
     </div>`);
+  atualizarPrazoHint();
 }
 
 function aplicarTemplateNoModal() {
@@ -2637,29 +2661,41 @@ async function modalEditarTarefa(id) {
   const templates = await carregarTemplatesTarefa();
   abrirModal(`
     <h2>Editar tarefa</h2>
-    <div class="modal-hint">Campos desta janela afetam apenas a tarefa, sem alterar dados da janela de projeto.</div>
-    <div class="form-row"><label>Template <span style="color:var(--text3)">(opcional)</span></label>
-      <div style="display:flex;gap:8px;align-items:center">
-        <select id="m-template" style="flex:1">
-          <option value="">— Sem template —</option>
-          ${templates.map(tpl => `<option value="${tpl.id}">${esc(tpl.nome)}</option>`).join('')}
-        </select>
-        <button class="btn btn-sm" type="button" onclick="aplicarTemplateNoModal()">Aplicar</button>
+    <div class="modal-hint">Esta janela altera apenas a tarefa.</div>
+    <details class="modal-block">
+      <summary class="modal-block-summary">Template (opcional)</summary>
+      <div class="modal-block-body">
+        <div class="form-row" style="margin-top:10px"><label>Selecionar template</label>
+          <div style="display:flex;gap:8px;align-items:center">
+            <select id="m-template" style="flex:1">
+              <option value="">— Sem template —</option>
+              ${templates.map(tpl => `<option value="${tpl.id}">${esc(tpl.nome)}</option>`).join('')}
+            </select>
+            <button class="btn btn-ghost btn-sm" type="button" onclick="aplicarTemplateNoModal()">Aplicar</button>
+          </div>
+        </div>
+      </div>
+    </details>
+    <div class="modal-section">
+      <div class="modal-section-title">Detalhes da tarefa</div>
+      <div class="form-row"><label>Título da tarefa</label><input id="m-nome" value="${esc(t.nome)}"></div>
+      <div class="form-row" style="margin-bottom:0"><label>Descrição detalhada</label><textarea id="m-desc">${esc(t.descricao || '')}</textarea></div>
+    </div>
+    <div class="modal-section">
+      <div class="modal-section-title">Planejamento</div>
+      <div class="form-grid">
+        <div class="form-row"><label>Status</label>${sel('m-status',STATUS_TAR,t.status)}</div>
+        <div class="form-row"><label>Prioridade</label>${sel('m-prior',PRIORS,t.prioridade)}</div>
+        <div class="form-row"><label>Complexidade</label>${sel('m-dific',DIFS,t.complexidade||t.dificuldade)}<div class="field-hint">Use a mesma escala da prioridade: Simples (baixa), Moderada (média), Complexa (alta).</div></div>
+        <div class="form-row"><label>Prazo da tarefa</label><input type="date" id="m-data" value="${t.data||''}" oninput="atualizarPrazoHint()"><div id="m-data-hint" class="prazo-hint"></div></div>
       </div>
     </div>
-    <div class="form-row"><label>Descrição</label><input id="m-nome" value="${esc(t.nome)}"></div>
-    <div class="form-row"><label>Descrição detalhada</label><textarea id="m-desc">${esc(t.descricao || '')}</textarea></div>
-    <div class="form-grid">
-      <div class="form-row"><label>Status</label>${sel('m-status',STATUS_TAR,t.status)}</div>
-      <div class="form-row"><label>Prioridade</label>${sel('m-prior',PRIORS,t.prioridade)}</div>
-      <div class="form-row"><label>Complexidade</label>${sel('m-dific',DIFS,t.complexidade||t.dificuldade)}</div>
-      <div class="form-row"><label>Prazo da tarefa</label><input type="date" id="m-data" value="${t.data||''}"></div>
-    </div>
-    <div class="modal-footer">
+    <div class="modal-footer modal-footer-sticky">
       ${isAdmin() ? `<button class="btn" type="button" onclick="salvarTemplateAdminDaTarefaModal()">Salvar como template admin</button>` : ''}
       <button class="btn" onclick="fecharModal()">Cancelar</button>
       <button class="btn btn-primary" id="btn-salvar-tar" onclick="salvarTarefa('${id}')">Salvar</button>
     </div>`);
+  atualizarPrazoHint();
 }
 
 async function salvarTarefa(id) {
