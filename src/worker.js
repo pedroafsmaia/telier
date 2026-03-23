@@ -325,7 +325,7 @@ async function ensureUserSecuritySchema(env) {
     )
   `).run();
   try { await env.DB.prepare('ALTER TABLE usuarios ADD COLUMN deve_trocar_senha INTEGER NOT NULL DEFAULT 0').run(); } catch {}
-  try { await env.DB.prepare('ALTER TABLE sessoes ADD COLUMN criado_em TEXT DEFAULT (datetime("now"))').run(); } catch {}
+  try { await env.DB.prepare('ALTER TABLE sessoes ADD COLUMN criado_em TEXT DEFAULT NULL').run(); } catch {}
   try { await env.DB.prepare('CREATE INDEX IF NOT EXISTS idx_sessoes_expira_em ON sessoes(expira_em)').run(); } catch {}
   try { await env.DB.prepare('CREATE INDEX IF NOT EXISTS idx_sessoes_usuario ON sessoes(usuario_id)').run(); } catch {}
   try { await env.DB.prepare('CREATE INDEX IF NOT EXISTS idx_permissoes_projeto_usuario ON permissoes_projeto(usuario_id)').run(); } catch {}
