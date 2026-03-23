@@ -822,7 +822,27 @@ body.has-presence #timer-dock {
   :root {
     --fs-500: 1.25rem;
     --fs-600: 1.375rem;
+    --glass-blur: blur(8px) saturate(120%);
+    --glass-shadow: 0 10px 22px rgba(0,0,0,.18);
+    --glass-shadow-soft: 0 4px 14px rgba(0,0,0,.12);
   }
+
+  body { background-attachment: scroll; }
+  .topbar,
+  .dash-toolbar,
+  .startday-wrap,
+  .modal,
+  .auth-box,
+  .notif-panel,
+  .btn,
+  .topbar-theme,
+  .topbar-bell,
+  .resp-filter {
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+  }
+  .proj-card:hover,
+  .btn:hover { transform: none; }
 
   .topbar { padding: 0 16px; }
   .content { padding: 28px 18px; }
@@ -860,6 +880,15 @@ body.has-presence #timer-dock {
   .topbar-actions{gap:6px}
   .topbar-actions .btn{height:31px;padding:0 10px}
   .topbar-theme,.topbar-bell{width:31px;height:31px;border-radius:9px}
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  *, *::before, *::after {
+    animation-duration: .01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: .01ms !important;
+  }
 }
 
 /* ── TIPOGRAFIA UTILITÁRIA ── */
@@ -1291,6 +1320,15 @@ function fecharPainelNotificacoes() {
   overlay.classList.remove('aberto');
 }
 
+function fecharOverlayModal(overlay) {
+  if (!overlay) return;
+  if (overlay._onKeydown) {
+    document.removeEventListener('keydown', overlay._onKeydown);
+    overlay._onKeydown = null;
+  }
+  overlay.remove();
+}
+
 // ── MODAL ──
 function abrirModal(html, opts = {}) {
   const id = 'modal_' + Date.now();
@@ -1299,10 +1337,10 @@ function abrirModal(html, opts = {}) {
   overlay.id = id;
   overlay.innerHTML = `<div class="modal ${opts.lg ? 'modal-lg' : ''}">${html}</div>`;
   if (!opts.locked) {
-    overlay.addEventListener('click', e => { if (e.target === overlay) overlay.remove(); });
-    const onKey = e => { if (e.key === 'Escape') { overlay.remove(); document.removeEventListener('keydown', onKey); } };
+    overlay.addEventListener('click', e => { if (e.target === overlay) fecharOverlayModal(overlay); });
+    const onKey = e => { if (e.key === 'Escape') fecharOverlayModal(overlay); };
+    overlay._onKeydown = onKey;
     document.addEventListener('keydown', onKey);
-    overlay.addEventListener('remove', () => document.removeEventListener('keydown', onKey));
   }
   document.getElementById('modais').appendChild(overlay);
   setTimeout(() => overlay.querySelector('input:not([type=date]):not([type=number])')?.focus(), 60);
@@ -1322,14 +1360,15 @@ function confirmar(mensagem, onConfirm, opts = {}) {
       <button class="btn" id="confirm-cancel">Cancelar</button>
       <button class="btn ${btnCls}" id="confirm-ok">${esc(btnTexto)}</button>
     </div></div>`;
-  overlay.addEventListener('click', e => { if (e.target === overlay) overlay.remove(); });
-  const onKey = e => { if (e.key === 'Escape') { overlay.remove(); document.removeEventListener('keydown', onKey); } };
+  overlay.addEventListener('click', e => { if (e.target === overlay) fecharOverlayModal(overlay); });
+  const onKey = e => { if (e.key === 'Escape') fecharOverlayModal(overlay); };
+  overlay._onKeydown = onKey;
   document.addEventListener('keydown', onKey);
-  overlay.querySelector('#confirm-cancel').addEventListener('click', () => { overlay.remove(); document.removeEventListener('keydown', onKey); });
-  overlay.querySelector('#confirm-ok').addEventListener('click', () => { overlay.remove(); document.removeEventListener('keydown', onKey); onConfirm(); });
+  overlay.querySelector('#confirm-cancel').addEventListener('click', () => fecharOverlayModal(overlay));
+  overlay.querySelector('#confirm-ok').addEventListener('click', () => { fecharOverlayModal(overlay); onConfirm(); });
   document.getElementById('modais').appendChild(overlay);
 }
-function fecharModal() { document.querySelectorAll('.modal-overlay').forEach(e => e.remove()); }
+function fecharModal() { document.querySelectorAll('.modal-overlay').forEach(fecharOverlayModal); }
 
 // ── UTILS ──
 function isAdminRole() { return EU?.papel === 'admin'; }
@@ -4077,6 +4116,13 @@ async function expandirSessoes(tarefaId) {
 
 // ── CRONÔMETRO ──
 let TIMERS = {}; // { sessaoId: { tarefaId, tarefa_nome, projeto_nome, projeto_id, inicio, intervalo } }
+const SESSAO_TICKS = new Map();
+
+function limparTicksSessao(tarefaId) {
+  const ids = SESSAO_TICKS.get(tarefaId) || [];
+  ids.forEach(clearInterval);
+  SESSAO_TICKS.delete(tarefaId);
+}
 
 function fmtDuracao(segundos) {
   const h = Math.floor(segundos / 3600);
@@ -4243,6 +4289,7 @@ async function criarIntervalo(sessaoId) {
 
 // ── PAINEL DE SESSÕES (dentro da tarefa) ──
 async function renderSessoesTarefa(tarefaId, containerEl) {
+  limparTicksSessao(tarefaId);
   try {
     const sessoes = await req('GET', `/tarefas/${tarefaId}/tempo`);
     const totalEl = document.getElementById(`sess-total-${tarefaId}`);
@@ -4299,14 +4346,20 @@ async function renderSessoesTarefa(tarefaId, containerEl) {
       containerEl.innerHTML = html;
 
     // Atualizar sessões ativas
+    const intervalIds = [];
     sessoes.filter(s => !s.fim).forEach(s => {
-      setInterval(() => {
+      const tickId = setInterval(() => {
         const el = document.getElementById('sdur-' + s.id);
-        if (!el) return;
+        if (!el || !document.body.contains(el)) {
+          clearInterval(tickId);
+          return;
+        }
         const seg = Math.floor((Date.now() - new Date(s.inicio.replace(' ','T')+'Z').getTime())/1000);
         el.textContent = fmtDuracao(seg);
       }, 1000);
+      intervalIds.push(tickId);
     });
+    if (intervalIds.length) SESSAO_TICKS.set(tarefaId, intervalIds);
   } catch (e) {
     containerEl.innerHTML = `<div class="text-danger text-sm">${esc(e.message)}</div>`;
   }
