@@ -175,3 +175,9 @@ CREATE TABLE IF NOT EXISTS decisoes (
 );
 
 -- Schema atualizado inclui grupos/permissões e índices necessários.
+
+CREATE INDEX IF NOT EXISTS idx_tarefas_projeto   ON tarefas(projeto_id);
+CREATE INDEX IF NOT EXISTS idx_sessoes_tarefa    ON sessoes_tempo(tarefa_id);
+CREATE INDEX IF NOT EXISTS idx_sessoes_fim       ON sessoes_tempo(fim);
+CREATE INDEX IF NOT EXISTS idx_intervalos_sessao ON intervalos(sessao_id);
+CREATE INDEX IF NOT EXISTS idx_colab_tarefa      ON colaboradores_tarefa(tarefa_id);

@@ -479,6 +479,18 @@ async function podeCronometrar(env, tarefaId, usuarioId, papel) {
   return !!colab;
 }
 
+async function ensureIndexes(env) {
+  if (env._idxReady) return;
+  await env.DB.batch([
+    env.DB.prepare('CREATE INDEX IF NOT EXISTS idx_tarefas_projeto   ON tarefas(projeto_id)'),
+    env.DB.prepare('CREATE INDEX IF NOT EXISTS idx_sessoes_tarefa    ON sessoes_tempo(tarefa_id)'),
+    env.DB.prepare('CREATE INDEX IF NOT EXISTS idx_sessoes_fim       ON sessoes_tempo(fim)'),
+    env.DB.prepare('CREATE INDEX IF NOT EXISTS idx_intervalos_sessao ON intervalos(sessao_id)'),
+    env.DB.prepare('CREATE INDEX IF NOT EXISTS idx_colab_tarefa      ON colaboradores_tarefa(tarefa_id)'),
+  ]);
+  env._idxReady = true;
+}
+
 export default {
   async fetch(request, env) {
     const startedAt = Date.now();
@@ -497,6 +509,7 @@ export default {
 
     try {
     await ensureUserSecuritySchema(env);
+    await ensureIndexes(env);
     if (env.AUTO_SCHEMA_SYNC === '1') {
       await ensureGrupoSchema(env);
       await ensureTaskSchema(env);

@@ -147,6 +147,10 @@ label{font-size:var(--fs-080);color:var(--text2);display:block;margin-bottom:5px
 .avatar{width:22px;height:22px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:var(--fs-075);font-weight:500;flex-shrink:0;font-family:var(--ff-mono);text-transform:uppercase}
 .avatar-sm{width:18px;height:18px;font-size:0.625rem}
 .avatar-lg{width:32px;height:32px;font-size:var(--fs-080)}
+.colabs-stack { display:flex; align-items:center; }
+.colabs-stack .avatar { margin-left:-5px; border:2px solid var(--bg2); }
+.colabs-stack .avatar:first-child { margin-left:0; }
+.colabs-stack-more { font-size:var(--fs-075); color:var(--text3); margin-left:4px; }
 
 /* ── MODAL ── */
 .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.75);display:flex;align-items:center;justify-content:center;z-index:1000;backdrop-filter:blur(6px);animation:fadeIn .15s ease;padding:16px}
@@ -234,7 +238,7 @@ label{font-size:var(--fs-080);color:var(--text2);display:block;margin-bottom:5px
 .startday-toggle:hover{color:var(--text2);border-color:var(--border3)}
 .startday-wrap.collapsed{padding-bottom:12px}
 .startday-wrap.collapsed .startday-grid{display:none}
-.startday-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:10px}
+.startday-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(240px,100%),1fr));gap:10px}
 .startday-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r2);padding:14px;display:flex;flex-direction:column;gap:8px;min-height:132px}
 .startday-card h4{font-size:var(--fs-090);color:var(--text2);font-weight:500}
 .startday-main{font-size:var(--fs-100);color:var(--text);line-height:1.35}
@@ -281,6 +285,12 @@ label{font-size:var(--fs-080);color:var(--text2);display:block;margin-bottom:5px
 .proj-card.shared{border-color:rgba(125,190,255,.3)}
 [data-theme="light"] .proj-card{box-shadow:0 1px 3px rgba(0,0,0,.07),0 0 0 1px rgba(0,0,0,.05);border-color:transparent}
 [data-theme="light"] .proj-card:hover{box-shadow:0 4px 14px rgba(0,0,0,.10),0 0 0 1px rgba(0,0,0,.06);border-color:transparent}
+tr[data-status="Em andamento"] { border-left:2px solid var(--blue); }
+tr[data-status="Bloqueada"]    { border-left:2px solid var(--red); }
+tr[data-status="Concluída"]    { border-left:2px solid var(--green); opacity:.75; }
+.task-card[data-status="Em andamento"] { border-left:3px solid var(--blue); }
+.task-card[data-status="Bloqueada"]    { border-left:3px solid var(--red); }
+.task-card[data-status="Concluída"]    { border-left:3px solid var(--green); }
 [data-theme="light"] .startday-card{box-shadow:0 1px 3px rgba(0,0,0,.06),0 0 0 1px rgba(0,0,0,.04);border-color:transparent}
 [data-theme="light"] .modal{box-shadow:0 8px 32px rgba(0,0,0,.14),0 0 0 1px rgba(0,0,0,.06)}
 .proj-card-header{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:14px;gap:8px}
@@ -378,8 +388,9 @@ label{font-size:var(--fs-080);color:var(--text2);display:block;margin-bottom:5px
 .proj-foco-empty{margin-top:14px;padding:10px 14px;background:var(--bg3);border:1px dashed var(--border2);border-radius:var(--r);font-size:var(--fs-080);color:var(--text3)}
 
 /* ── ABAS ── */
-.abas{display:flex;border-bottom:1px solid var(--border);margin-bottom:28px;gap:4px}
-.aba{padding:10px 20px;font-size:var(--fs-090);font-weight:500;cursor:pointer;color:var(--text3);border:none;border-bottom:2px solid transparent;background:none;font-family:inherit;transition:all .2s;margin-bottom:-1px;letter-spacing:.01em}
+.abas{display:flex;border-bottom:1px solid var(--border);margin-bottom:28px;gap:4px;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;flex-wrap:nowrap;padding-bottom:2px}
+.abas::-webkit-scrollbar{display:none}
+.aba{padding:10px 20px;font-size:var(--fs-090);font-weight:500;cursor:pointer;color:var(--text3);border:none;border-bottom:2px solid transparent;background:none;font-family:inherit;transition:all .2s;margin-bottom:-1px;letter-spacing:.01em;white-space:nowrap;flex-shrink:0}
 .aba:hover{color:var(--text2)}
 .aba.ativa{color:var(--text);border-bottom-color:var(--accent)}
 
@@ -652,6 +663,26 @@ tr:hover .td-ações{opacity:1}
   width: 7px; height: 7px; border-radius: 50%;
   background: var(--green); animation: pulse 2s ease infinite; flex-shrink: 0;
 }
+#timer-dock, #presence-dock {
+  bottom: max(16px, env(safe-area-inset-bottom));
+}
+body.has-presence #timer-dock {
+  bottom: max(70px, calc(env(safe-area-inset-bottom) + 54px));
+}
+.topbar-presence-chip {
+  display:flex; align-items:center; gap:5px; background:none;
+  border:1px solid var(--border2); border-radius:999px;
+  padding:3px 8px 3px 6px; cursor:pointer; transition:all .15s;
+}
+.topbar-presence-chip:hover { background:var(--bg3); }
+.topbar-presence-count { font-size:var(--fs-075); color:var(--text2); font-weight:500; }
+.topbar-presence-avatars { display:flex; }
+.topbar-presence-avatars .avatar { margin-left:-4px; border:2px solid var(--bg); }
+.topbar-presence-avatars .avatar:first-child { margin-left:0; }
+.presence-live-dot {
+  width:6px; height:6px; border-radius:50%;
+  background:var(--green); flex-shrink:0;
+}
 .content > .startday-wrap:first-child { margin-top: 0; }
 
 /* ── COLABORADORES TAREFA ── */
@@ -832,6 +863,7 @@ tr:hover .td-ações{opacity:1}
     <div id="topbar-breadcrumb" class="topbar-breadcrumb"></div>
     <div class="topbar-sep"></div>
     <div class="topbar-actions">
+      <div id="topbar-presence" style="display:none"></div>
       <span class="topbar-user-name" id="topbar-nome"></span>
       <button class="btn btn-ghost btn-sm" id="btn-admin-toggle" style="display:none" onclick="alternarPerfilAdmin()">Visão admin</button>
       <button class="topbar-bell" id="btn-notifs" onclick="abrirNotificacoes()" title="Notificações" style="display:none">
@@ -1899,11 +1931,15 @@ function renderCardsDash(projetos) {
   }).join('');
 }
 
+let _buscaDashTick;
 function filtrarProjetosBusca(v) {
-  BUSCA_DASH = v;
-  salvarFiltrosDash();
-  const grid = document.getElementById('cards-grid-dash');
-  if (grid) grid.innerHTML = renderProjetosDash(_projsDash, _gruposDash);
+  clearTimeout(_buscaDashTick);
+  _buscaDashTick = setTimeout(() => {
+    BUSCA_DASH = v;
+    salvarFiltrosDash();
+    const grid = document.getElementById('cards-grid-dash');
+    if (grid) grid.innerHTML = renderProjetosDash(_projsDash, _gruposDash);
+  }, 180);
 }
 
 function filtrarGrupoDash(v) {
@@ -2559,8 +2595,7 @@ async function abrirUsuarioAdmin(usuarioId) {
 }
 
 // ── PROJETO ──
-async function abrirProjeto(id) {
-  window.scrollTo(0, 0);
+async function abrirProjeto(id) {  window.scrollTo(0, 0);
   const c = document.getElementById('content');
   c.style.opacity = '0.4';
   c.style.pointerEvents = 'none';
@@ -2577,14 +2612,19 @@ async function abrirProjeto(id) {
     c.style.opacity = '';
     c.style.pointerEvents = '';
     const abaSalva = localStorage.getItem(`telier_aba_${id}`) || 'lista';
+    slideContent('right');
     renderProjeto(projeto, tarefas, decisoes, abaSalva, resumoHoras);
     VISTA_ATUAL = 'projeto';
-    slideContent('right');
   } catch (e) {
     c.style.opacity = '';
     c.style.pointerEvents = '';
     c.innerHTML = `<div class="error-block">${esc(e.message)}</div>`;
   }
+}
+
+function voltarDash() {
+  slideContent('left');
+  renderDash();
 }
 
 function renderProjeto(proj, tarefas, decisoes, abaAtiva, resumoHoras = []) {
@@ -2593,19 +2633,32 @@ function renderProjeto(proj, tarefas, decisoes, abaAtiva, resumoHoras = []) {
   const conc = tarefas.filter(t => t.status === 'Concluída').length;
   const pct = total ? Math.round(conc / total * 100) : 0;
   const focoMinha = tarefas.find(t => t.foco && t.dono_id === EU?.id);
+  const focoSessaoAtiva = focoMinha
+    ? Object.entries(TIMERS).find(([, t]) => t.tarefaId === focoMinha.id)
+    : null;
+  const focoBtnHtml = focoMinha
+    ? (focoSessaoAtiva
+        ? `<button class="btn btn-sm btn-danger"
+             onclick="pararCronometro('${focoSessaoAtiva[0]}')">■ Parar</button>`
+        : `<button class="btn btn-sm btn-primary"
+             onclick="iniciarCronometro('${focoMinha.id}','${esc(focoMinha.nome)}')">▶ Iniciar</button>`)
+    : '';
   const dias = diasRestantes(proj.prazo);
   const urgente = dias !== null && dias <= 7 && !projetoConcluido(statusProjeto);
   const canEdit = podeEditar(proj);
   const compartilhado = Number(proj.compartilhado_comigo) === 1;
 
   setBreadcrumb([
-    { label: 'Projetos', onClick: 'renderDash()' },
+    { label: 'Projetos', onClick: 'voltarDash()' },
+    ...(proj.grupo_nome
+      ? [{ label: proj.grupo_nome, onClick: 'voltarDash()' }]
+      : []),
     { label: proj.nome },
   ]);
 
   const c = document.getElementById('content');
   c.innerHTML = `
-    <button class="btn-back" onclick="renderDash()">← Voltar para projetos</button>
+    <button class="btn-back" onclick="voltarDash()">← Voltar para projetos</button>
     <div class="proj-hero" data-status="${esc(statusProjeto)}">
       <div class="proj-hero-top">
         <div class="proj-hero-left">
@@ -2655,7 +2708,7 @@ function renderProjeto(proj, tarefas, decisoes, abaAtiva, resumoHoras = []) {
           ).join('')}
         </div>` : ''}
       ${focoMinha
-        ? `<div class="proj-foco-banner"><span class="fl">Meu foco</span><span class="fn">${esc(focoMinha.nome)}</span></div>`
+        ? `<div class="proj-foco-banner"><span class="fl">Meu foco</span><span class="fn">${esc(focoMinha.nome)}</span>${focoBtnHtml}</div>`
         : `<div class="proj-foco-empty">Nenhuma tarefa em foco — use ★ na lista para definir</div>`}
     </div>
     <div class="abas">
@@ -2686,6 +2739,18 @@ function renderAba(aba, tarefas) {
 }
 
 // ── LISTA ──
+function renderColabsStack(ids = [], max = 3) {
+  const visible = ids.slice(0, max);
+  const extra = ids.length - max;
+  const html = visible.map(id => {
+    const u = USUARIOS.find(u => u.id === id);
+    return u ? avatar(u.nome, 'avatar-sm') : '';
+  }).join('');
+  return `<div class="colabs-stack">${html}${
+    extra > 0 ? `<span class="colabs-stack-more">+${extra}</span>` : ''
+  }</div>`;
+}
+
 function renderLista(el, tarefas) {
   const pendentes = tarefas.filter(t => t.status !== 'Concluída');
   const concluidas = tarefas.filter(t => t.status === 'Concluída');
@@ -2726,12 +2791,12 @@ function renderLista(el, tarefas) {
 
     const data = t.data ? prazoFmt(t.data, true) : '—';
 
-    return `<tr>
+    return `<tr data-status="${esc(t.status)}">
       <td style="width:36px" onclick="event.stopPropagation()">${pin}</td>
       <td class="td-nome ${t.foco&&minha?'em-foco':''} ${t.status==='Concluída'?'concluida':''}">
         <div class="td-nome-main">${esc(t.nome)}</div>
       </td>
-      <td><div class="resp-chip">${avatar(t.dono_nome,'avatar-sm')} <span>${esc(t.dono_nome||'—')}</span></div></td>
+      <td><div class="resp-chip">${avatar(t.dono_nome,'avatar-sm')} <span>${esc(t.dono_nome||'—')}</span></div>${t.colaboradores_ids?.length ? renderColabsStack(t.colaboradores_ids) : ''}</td>
       <td>${tag(t.complexidade, DT[t.complexidade])}</td>
       <td>${tag(t.prioridade, PT[t.prioridade])}</td>
       <td onclick="event.stopPropagation()">
@@ -2817,13 +2882,14 @@ function renderLista(el, tarefas) {
               ).join('')}
             </select>`
           : `<span class="tag" style="font-size:var(--fs-075)">${escHtml(t.status)}</span>`;
-        return `<div class="task-card ${t.status==='Concluída'?'concluida':''}">
+        return `<div class="task-card ${t.status==='Concluída'?'concluida':''}" data-status="${esc(t.status)}">
           <div class="task-card-header">
             <div class="task-card-title ${t.foco&&minha?'em-foco':''} ${t.status==='Concluída'?'concluida':''}">${esc(t.nome)}</div>
             ${minha ? `<button class="task-card-foco ${t.foco?'ativo':''} " onclick="toggleFoco('${t.id}',${!!t.foco}); event.stopPropagation()" title="${t.foco?'Remover foco':'Marcar como foco'}">${t.foco?'★':'☆'}</button>` : ''}
           </div>
           <div class="task-card-meta">
             <div class="task-card-chip">${avatar(t.dono_nome,'avatar-sm')} <span>${esc(t.dono_nome||'—')}</span></div>
+            ${t.colaboradores_ids?.length ? renderColabsStack(t.colaboradores_ids) : ''}
             ${tag(t.complexidade, DT[t.complexidade])}
             ${tag(t.prioridade, PT[t.prioridade])}
             <span class="task-card-chip" style="margin-left:auto;color:var(--text3);border:none;background:transparent">${esc(data)}</span>
@@ -3426,9 +3492,13 @@ async function quickAddTarefa(e, projetoId) {
 }
 
 // ── BUSCA DE TAREFA ──
-function filtrarTarefasBusca(v) {
-  BUSCA_TAREFA = v;
-  renderLista(document.getElementById('aba'), TAREFAS);
+let _buscaTarefaTick;
+function filtrarTarefasBusca(value) {
+  clearTimeout(_buscaTarefaTick);
+  _buscaTarefaTick = setTimeout(() => {
+    BUSCA_TAREFA = value;
+    renderLista(document.getElementById('aba'), TAREFAS);
+  }, 180);
 }
 
 // ── EXPORTAÇÃO CSV ──
@@ -3499,6 +3569,7 @@ function iniciarPollPresenca() {
 function renderPresenceDock() {
   const dock = document.getElementById('presence-dock');
   if (!dock) return;
+  document.body.classList.toggle('has-presence', COLEGAS_ATIVOS.length > 0);
   if (!COLEGAS_ATIVOS.length) {
     clearInterval(window._presenceDisplayTick);
     dock.innerHTML = '';
