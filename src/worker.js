@@ -114,6 +114,35 @@ async function ensureGrupoSchema(env) {
   _grupoSchemaReady = true;
 }
 
+let _taskSchemaReady = false;
+async function ensureTaskSchema(env) {
+  if (_taskSchemaReady) return;
+  try { await env.DB.prepare('ALTER TABLE tarefas ADD COLUMN descricao TEXT').run(); } catch {}
+  try { await env.DB.prepare('ALTER TABLE tarefas ADD COLUMN estimativa_horas REAL').run(); } catch {}
+  try { await env.DB.prepare('ALTER TABLE tarefas ADD COLUMN criterios_pronto TEXT').run(); } catch {}
+  try { await env.DB.prepare('ALTER TABLE tarefas ADD COLUMN contexto_execucao TEXT').run(); } catch {}
+
+  await env.DB.prepare(`
+    CREATE TABLE IF NOT EXISTS templates_tarefa (
+      id TEXT PRIMARY KEY,
+      nome TEXT NOT NULL,
+      status TEXT NOT NULL DEFAULT 'A fazer',
+      prioridade TEXT NOT NULL DEFAULT 'Média',
+      dificuldade TEXT NOT NULL DEFAULT 'Moderada',
+      descricao TEXT,
+      estimativa_horas REAL,
+      criterios_pronto TEXT,
+      contexto_execucao TEXT,
+      criado_por TEXT NOT NULL,
+      ativo INTEGER NOT NULL DEFAULT 1,
+      criado_em TEXT DEFAULT (datetime('now')),
+      atualizado_em TEXT DEFAULT (datetime('now')),
+      FOREIGN KEY (criado_por) REFERENCES usuarios(id)
+    )
+  `).run();
+  _taskSchemaReady = true;
+}
+
 async function podeEditarTarefa(env, tarefaId, usuarioId, papel) {
   if (papel === 'admin') return true;
   const t = await env.DB.prepare('SELECT dono_id, projeto_id FROM tarefas WHERE id = ?').bind(tarefaId).first();
@@ -154,6 +183,7 @@ export default {
 
     try {
     await ensureGrupoSchema(env);
+    await ensureTaskSchema(env);
 
     // ── SETUP ──
     if (path === '/auth/setup' && method === 'POST') {
@@ -994,6 +1024,109 @@ export default {
       return ok({ ok: true });
     }
 
+    // ── TEMPLATES DE TAREFA ──
+    if (path === '/templates-tarefa' && method === 'GET') {
+      const [u, e] = await requireAuth(request, env);
+      if (e) return fail('Não autorizado', 401);
+      const templates = await env.DB.prepare(`
+        SELECT tt.id, tt.nome, tt.status, tt.prioridade, tt.dificuldade,
+          tt.descricao, tt.estimativa_horas, tt.criterios_pronto, tt.contexto_execucao,
+          tt.criado_por, tu.nome as criado_por_nome,
+          tt.criado_em, tt.atualizado_em
+        FROM templates_tarefa tt
+        LEFT JOIN usuarios tu ON tu.id = tt.criado_por
+        WHERE tt.ativo = 1
+        ORDER BY tt.nome ASC
+      `).all();
+      return ok(templates.results);
+    }
+
+    if (path === '/templates-tarefa' && method === 'POST') {
+      const [u, e] = await requireAuth(request, env);
+      if (e) return fail('Não autorizado', 401);
+      if (!isAdmin(u)) return fail('Somente admin pode criar templates', 403);
+      const {
+        nome,
+        status,
+        prioridade,
+        dificuldade,
+        descricao,
+        estimativa_horas,
+        criterios_pronto,
+        contexto_execucao,
+      } = await request.json();
+      if (!nome?.trim()) return fail('Nome obrigatório');
+      const id = 'tpl_' + uid();
+      await env.DB.prepare(`
+        INSERT INTO templates_tarefa (
+          id, nome, status, prioridade, dificuldade,
+          descricao, estimativa_horas, criterios_pronto, contexto_execucao, criado_por
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      `).bind(
+        id,
+        nome.trim(),
+        status || 'A fazer',
+        prioridade || 'Média',
+        dificuldade || 'Moderada',
+        descricao?.trim() || null,
+        estimativa_horas ?? null,
+        criterios_pronto?.trim() || null,
+        contexto_execucao?.trim() || null,
+        u.uid
+      ).run();
+      return ok({ id });
+    }
+
+    const matchTemplate = path.match(/^\/templates-tarefa\/(tpl_\w+)$/);
+    if (matchTemplate && method === 'PUT') {
+      const [u, e] = await requireAuth(request, env);
+      if (e) return fail('Não autorizado', 401);
+      if (!isAdmin(u)) return fail('Somente admin pode editar templates', 403);
+      const templateId = matchTemplate[1];
+      const {
+        nome,
+        status,
+        prioridade,
+        dificuldade,
+        descricao,
+        estimativa_horas,
+        criterios_pronto,
+        contexto_execucao,
+      } = await request.json();
+      if (!nome?.trim()) return fail('Nome obrigatório');
+      const t = await env.DB.prepare('SELECT id FROM templates_tarefa WHERE id = ? AND ativo = 1').bind(templateId).first();
+      if (!t) return fail('Template não encontrado', 404);
+      await env.DB.prepare(`
+        UPDATE templates_tarefa
+        SET nome=?, status=?, prioridade=?, dificuldade=?,
+            descricao=?, estimativa_horas=?, criterios_pronto=?, contexto_execucao=?,
+            atualizado_em=datetime('now')
+        WHERE id=?
+      `).bind(
+        nome.trim(),
+        status || 'A fazer',
+        prioridade || 'Média',
+        dificuldade || 'Moderada',
+        descricao?.trim() || null,
+        estimativa_horas ?? null,
+        criterios_pronto?.trim() || null,
+        contexto_execucao?.trim() || null,
+        templateId
+      ).run();
+      return ok({ ok: true });
+    }
+
+    if (matchTemplate && method === 'DELETE') {
+      const [u, e] = await requireAuth(request, env);
+      if (e) return fail('Não autorizado', 401);
+      if (!isAdmin(u)) return fail('Somente admin pode remover templates', 403);
+      const templateId = matchTemplate[1];
+      await env.DB.prepare(
+        'UPDATE templates_tarefa SET ativo = 0, atualizado_em = datetime(\'now\') WHERE id = ?'
+      ).bind(templateId).run();
+      return ok({ ok: true });
+    }
+
     // ── TAREFAS ──
     const matchTarefasProj = path.match(/^\/projetos\/(prj_\w+)\/tarefas$/);
 
@@ -1018,13 +1151,51 @@ export default {
       if (method === 'POST') {
         const [u, e] = await requireAuth(request, env);
         if (e) return fail('Não autorizado', 401);
-        const { nome, status, prioridade, complexidade, dificuldade, data } = await request.json();
-        const complexidadeVal = complexidade || dificuldade || 'Moderada'; // accept both for compat
-        if (!nome?.trim()) return fail('Nome obrigatório');
+        const {
+          nome,
+          status,
+          prioridade,
+          complexidade,
+          dificuldade,
+          data,
+          descricao,
+          estimativa_horas,
+          criterios_pronto,
+          contexto_execucao,
+          template_id,
+        } = await request.json();
+        let template = null;
+        if (template_id) {
+          template = await env.DB.prepare(
+            `SELECT id, nome, status, prioridade, dificuldade, descricao, estimativa_horas, criterios_pronto, contexto_execucao
+             FROM templates_tarefa
+             WHERE id = ? AND ativo = 1`
+          ).bind(template_id).first();
+          if (!template) return fail('Template não encontrado', 404);
+        }
+        const nomeFinal = (nome || template?.nome || '').trim();
+        if (!nomeFinal) return fail('Nome obrigatório');
+        const complexidadeVal = complexidade || dificuldade || template?.dificuldade || 'Moderada'; // accept both for compat
         const id = 'tsk_' + uid();
         await env.DB.prepare(
-          'INSERT INTO tarefas (id, projeto_id, nome, status, prioridade, dificuldade, data, dono_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?)'
-        ).bind(id, projetoId, nome.trim(), status || 'A fazer', prioridade || 'Média', complexidadeVal, data || null, u.uid).run();
+          `INSERT INTO tarefas (
+            id, projeto_id, nome, status, prioridade, dificuldade, data, dono_id,
+            descricao, estimativa_horas, criterios_pronto, contexto_execucao
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+        ).bind(
+          id,
+          projetoId,
+          nomeFinal,
+          status || template?.status || 'A fazer',
+          prioridade || template?.prioridade || 'Média',
+          complexidadeVal,
+          data || null,
+          u.uid,
+          descricao?.trim() || template?.descricao || null,
+          estimativa_horas ?? template?.estimativa_horas ?? null,
+          criterios_pronto?.trim() || template?.criterios_pronto || null,
+          contexto_execucao?.trim() || template?.contexto_execucao || null
+        ).run();
         return ok({ id });
       }
     }
@@ -1038,12 +1209,38 @@ export default {
         const [u, e] = await requireAuth(request, env);
         if (e) return fail('Não autorizado', 401);
         if (!await podeEditarTarefa(env, tarefaId, u.uid, u.papel)) return fail('Sem permissão', 403);
-        const { nome, status, prioridade, complexidade, dificuldade, data } = await request.json();
+        const {
+          nome,
+          status,
+          prioridade,
+          complexidade,
+          dificuldade,
+          data,
+          descricao,
+          estimativa_horas,
+          criterios_pronto,
+          contexto_execucao,
+        } = await request.json();
         const complexidadeVal = complexidade || dificuldade || 'Moderada';
         if (!nome?.trim()) return fail('Nome obrigatório');
         await env.DB.prepare(
-          'UPDATE tarefas SET nome=?, status=?, prioridade=?, dificuldade=?, data=?, atualizado_em=datetime("now") WHERE id=?'
-        ).bind(nome.trim(), status, prioridade, complexidadeVal, data || null, tarefaId).run();
+          `UPDATE tarefas
+           SET nome=?, status=?, prioridade=?, dificuldade=?, data=?,
+               descricao=?, estimativa_horas=?, criterios_pronto=?, contexto_execucao=?,
+               atualizado_em=datetime('now')
+           WHERE id=?`
+        ).bind(
+          nome.trim(),
+          status,
+          prioridade,
+          complexidadeVal,
+          data || null,
+          descricao?.trim() || null,
+          estimativa_horas ?? null,
+          criterios_pronto?.trim() || null,
+          contexto_execucao?.trim() || null,
+          tarefaId
+        ).run();
         return ok({ ok: true });
       }
 
@@ -1069,6 +1266,42 @@ export default {
         await env.DB.prepare('DELETE FROM tarefas WHERE id = ?').bind(tarefaId).run();
         return ok({ ok: true });
       }
+    }
+
+    const matchDuplicarTarefa = path.match(/^\/tarefas\/(tsk_\w+)\/duplicar$/);
+    if (matchDuplicarTarefa && method === 'POST') {
+      const [u, e] = await requireAuth(request, env);
+      if (e) return fail('Não autorizado', 401);
+      const tarefaId = matchDuplicarTarefa[1];
+      if (!await podeEditarTarefa(env, tarefaId, u.uid, u.papel)) return fail('Sem permissão', 403);
+      const original = await env.DB.prepare(`
+        SELECT projeto_id, nome, status, prioridade, dificuldade, data,
+          descricao, estimativa_horas, criterios_pronto, contexto_execucao
+        FROM tarefas
+        WHERE id = ?
+      `).bind(tarefaId).first();
+      if (!original) return fail('Tarefa não encontrada', 404);
+      const novoId = 'tsk_' + uid();
+      await env.DB.prepare(`
+        INSERT INTO tarefas (
+          id, projeto_id, nome, status, prioridade, dificuldade, data, dono_id,
+          descricao, estimativa_horas, criterios_pronto, contexto_execucao
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      `).bind(
+        novoId,
+        original.projeto_id,
+        `${original.nome} (cópia)`,
+        original.status,
+        original.prioridade,
+        original.dificuldade,
+        original.data,
+        u.uid,
+        original.descricao,
+        original.estimativa_horas,
+        original.criterios_pronto,
+        original.contexto_execucao
+      ).run();
+      return ok({ id: novoId });
     }
 
     // ── FOCO (C — batch para atomicidade) ──

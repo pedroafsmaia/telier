@@ -354,6 +354,9 @@ tr:hover td{background:var(--bg3)}
 .td-nome{font-size:var(--fs-100);color:var(--text)}
 .td-nome.em-foco{color:var(--accent);font-weight:500}
 .td-nome.concluida{color:var(--text3);text-decoration:line-through}
+.td-nome-main{line-height:1.3}
+.td-nome-meta{display:flex;gap:6px;flex-wrap:wrap;margin-top:5px}
+.task-meta-chip{font-size:var(--fs-070);color:var(--text3);border:1px solid var(--border);background:var(--bg3);border-radius:999px;padding:1px 8px}
 .td-ações{display:flex;gap:4px;align-items:center;opacity:0.3;transition:opacity .15s}
 tr:hover .td-ações{opacity:1}
 .foco-pin{background:none;border:none;cursor:pointer;font-size:16px;padding:3px;border-radius:4px;transition:all .15s;line-height:1;color:var(--text3)}
@@ -499,6 +502,7 @@ tr:hover .td-ações{opacity:1}
 .search-tarefa:hover { border-color: var(--border2); }
 .search-tarefa:focus { border-color: var(--accent); width: 220px; }
 .search-tarefa::placeholder { color: var(--text3); }
+.modal-hint{font-size:var(--fs-075);color:var(--text3);margin-bottom:10px}
 
 /* ── INDICADOR TIMER ── */
 .proj-card-timer-dot {
@@ -756,6 +760,7 @@ let COLEGAS_ATIVOS = [];
 let PRESENCE_ABERTO = false;
 let _presenceTick = null;
 let _presenceHintShown = false;
+let TEMPLATES_TAREFA = [];
 const TIMER_AVISO_HORAS = 4;
 
 // ── API ──
@@ -853,6 +858,16 @@ function btnLoading(id, on) {
   if (!b) return;
   b.disabled = on;
   b.classList.toggle('btn-loading', on);
+}
+
+async function carregarTemplatesTarefa(force = false) {
+  if (TEMPLATES_TAREFA.length && !force) return TEMPLATES_TAREFA;
+  try {
+    TEMPLATES_TAREFA = await req('GET', '/templates-tarefa');
+  } catch {
+    TEMPLATES_TAREFA = [];
+  }
+  return TEMPLATES_TAREFA;
 }
 
 // TAGS
@@ -1605,6 +1620,7 @@ async function abrirCentralAdmin(aba = 'agora') {
         <button class="admin-tab ${aba==='usuarios'?'ativo':''}" onclick="abrirCentralAdmin('usuarios')">Usuários</button>
         <button class="admin-tab ${aba==='projetos'?'ativo':''}" onclick="abrirCentralAdmin('projetos')">Projetos</button>
         <button class="admin-tab ${aba==='tempo'?'ativo':''}" onclick="abrirCentralAdmin('tempo')">Tempo</button>
+        <button class="admin-tab ${aba==='templates'?'ativo':''}" onclick="abrirCentralAdmin('templates')">Templates</button>
       </div>
       <div id="admin-body"><div class="loading"><div class="spinner"></div> Carregando painel admin...</div></div>
     </div>`;
@@ -1732,9 +1748,101 @@ async function abrirCentralAdmin(aba = 'agora') {
         </div>`;
       return;
     }
+
+    if (aba === 'templates') {
+      const templates = await carregarTemplatesTarefa(true);
+      const rows = templates.map(t => `
+        <tr>
+          <td>${esc(t.nome)}</td>
+          <td>${tag(t.status)}</td>
+          <td>${tag(t.prioridade, PT[t.prioridade])}</td>
+          <td>${tag(t.dificuldade, DT[t.dificuldade])}</td>
+          <td class="mono">${t.estimativa_horas ? Number(t.estimativa_horas).toFixed(2) + 'h' : '—'}</td>
+          <td>${esc(t.criado_por_nome || '—')}</td>
+          <td>
+            <div style="display:flex;gap:6px">
+              <button class="btn btn-sm" onclick="modalTemplateAdmin('${t.id}')">Editar</button>
+              <button class="btn btn-sm btn-danger" onclick="deletarTemplateAdmin('${t.id}','${esc(t.nome)}')">Excluir</button>
+            </div>
+          </td>
+        </tr>`).join('');
+      body.innerHTML = `
+        <div class="admin-tools">
+          <button class="btn btn-sm btn-primary" onclick="modalTemplateAdmin()">+ Novo template</button>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Nome</th><th>Status</th><th>Prioridade</th><th>Complexidade</th><th>Estimativa</th><th>Criado por</th><th></th></tr></thead>
+            <tbody>${rows || `<tr><td colspan="7" class="table-empty">Nenhum template.</td></tr>`}</tbody>
+          </table>
+        </div>`;
+      return;
+    }
   } catch (e) {
     body.innerHTML = `<div class="text-danger" style="padding:16px">${esc(e.message)}</div>`;
   }
+}
+
+function modalTemplateAdmin(templateId = null) {
+  const atual = templateId ? TEMPLATES_TAREFA.find(t => t.id === templateId) : null;
+  abrirModal(`
+    <h2>${atual ? 'Editar template' : 'Novo template'}</h2>
+    <div class="modal-hint">Template de tarefa reutilizável para criação rápida no projeto.</div>
+    <div class="form-row"><label>Nome do template</label><input id="tpl-nome" value="${esc(atual?.nome || '')}" placeholder="Ex: Levantamento inicial"></div>
+    <div class="form-row"><label>Descrição detalhada</label><textarea id="tpl-desc" placeholder="Contexto e orientações">${esc(atual?.descricao || '')}</textarea></div>
+    <div class="form-grid">
+      <div class="form-row"><label>Status padrão</label>${sel('tpl-status', STATUS_TAR, atual?.status || 'A fazer')}</div>
+      <div class="form-row"><label>Prioridade padrão</label>${sel('tpl-prior', PRIORS, atual?.prioridade || 'Média')}</div>
+      <div class="form-row"><label>Complexidade padrão</label>${sel('tpl-dific', DIFS, atual?.dificuldade || 'Moderada')}</div>
+      <div class="form-row"><label>Estimativa (horas)</label><input type="number" id="tpl-estimativa" min="0" step="0.25" value="${atual?.estimativa_horas ?? ''}"></div>
+    </div>
+    <div class="form-row"><label>Contexto de execução</label><input id="tpl-contexto" value="${esc(atual?.contexto_execucao || '')}" placeholder="Ex: precisa aprovação do cliente"></div>
+    <div class="form-row"><label>Critérios de pronto</label><textarea id="tpl-criterios" placeholder="Checklist de conclusão">${esc(atual?.criterios_pronto || '')}</textarea></div>
+    <div class="modal-footer">
+      <button class="btn" onclick="fecharModal();abrirCentralAdmin('templates')">Cancelar</button>
+      <button class="btn btn-primary" id="btn-salvar-template" onclick="salvarTemplateAdmin('${templateId || ''}')">Salvar template</button>
+    </div>
+  `, { lg: true });
+}
+
+async function salvarTemplateAdmin(templateId = '') {
+  const nome = gv('tpl-nome').trim();
+  if (!nome) { toast('Nome obrigatório', 'err'); return; }
+  btnLoading('btn-salvar-template', true);
+  const payload = {
+    nome,
+    status: gv('tpl-status') || 'A fazer',
+    prioridade: gv('tpl-prior') || 'Média',
+    dificuldade: gv('tpl-dific') || 'Moderada',
+    descricao: gv('tpl-desc') || null,
+    estimativa_horas: gv('tpl-estimativa') ? Number(gv('tpl-estimativa')) : null,
+    contexto_execucao: gv('tpl-contexto') || null,
+    criterios_pronto: gv('tpl-criterios') || null,
+  };
+  try {
+    if (templateId) await req('PUT', `/templates-tarefa/${templateId}`, payload);
+    else await req('POST', '/templates-tarefa', payload);
+    await carregarTemplatesTarefa(true);
+    fecharModal();
+    toast(templateId ? 'Template atualizado' : 'Template criado');
+    abrirCentralAdmin('templates');
+  } catch (e) {
+    toast(e.message, 'err');
+    btnLoading('btn-salvar-template', false);
+  }
+}
+
+function deletarTemplateAdmin(templateId, nome) {
+  confirmar(`Excluir o template "${nome}"?`, async () => {
+    try {
+      await req('DELETE', `/templates-tarefa/${templateId}`);
+      await carregarTemplatesTarefa(true);
+      toast('Template excluído');
+      abrirCentralAdmin('templates');
+    } catch (e) {
+      toast(e.message, 'err');
+    }
+  }, { titulo: 'Excluir template', btnTexto: 'Excluir', danger: true });
 }
 
 function aplicarFiltroTempoAdmin() {
@@ -1972,10 +2080,17 @@ function renderLista(el, tarefas) {
         : `<button class="btn btn-ghost btn-icon btn-sm" disabled title="Você não é colaborador desta tarefa" style="opacity:.3"><svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M4 2.5l5 3.5-5 3.5v-7z" fill="currentColor"/></svg></button>`;
 
     const data = t.data ? prazoFmt(t.data, true) : '—';
+    const meta = [];
+    if (Number(t.estimativa_horas) > 0) meta.push(`<span class="task-meta-chip">Estimativa: ${Number(t.estimativa_horas).toFixed(1)}h</span>`);
+    if (t.contexto_execucao) meta.push(`<span class="task-meta-chip">Contexto definido</span>`);
+    if (t.criterios_pronto) meta.push(`<span class="task-meta-chip">Critérios de pronto</span>`);
 
     return `<tr>
       <td style="width:36px" onclick="event.stopPropagation()">${pin}</td>
-      <td class="td-nome ${t.foco&&minha?'em-foco':''} ${t.status==='Concluída'?'concluida':''}">${esc(t.nome)}</td>
+      <td class="td-nome ${t.foco&&minha?'em-foco':''} ${t.status==='Concluída'?'concluida':''}">
+        <div class="td-nome-main">${esc(t.nome)}</div>
+        ${meta.length ? `<div class="td-nome-meta">${meta.join('')}</div>` : ''}
+      </td>
       <td><div class="resp-chip">${avatar(t.dono_nome,'avatar-sm')} <span>${esc(t.dono_nome||'—')}</span></div></td>
       <td>${tag(t.complexidade, DT[t.complexidade])}</td>
       <td>${tag(t.prioridade, PT[t.prioridade])}</td>
@@ -1992,6 +2107,7 @@ function renderLista(el, tarefas) {
       <td><div class="td-ações">
         <button class="btn btn-ghost btn-icon btn-sm" onclick="expandirSessoes('${t.id}')" title="Abrir detalhes e registro de tempo"><svg width="14" height="14" viewBox="0 0 14 14" fill="none"><rect x="2" y="2" width="10" height="10" rx="2" stroke="currentColor" stroke-width="1.3"/><path d="M4.5 5.2h5M4.5 7h5M4.5 8.8h3" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg></button>
         ${minha ? `<button class="btn btn-ghost btn-icon btn-sm" onclick="modalColabsTarefa('${t.id}')" title="Colaboradores da tarefa"><svg width="14" height="14" viewBox="0 0 14 14" fill="none"><circle cx="5" cy="4.5" r="2" stroke="currentColor" stroke-width="1.3"/><path d="M1.5 11.5c0-1.93 1.57-3.5 3.5-3.5s3.5 1.57 3.5 3.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/><path d="M9 7a2 2 0 1 0 0-4M12 11.5c0-1.65-1.12-3.04-2.66-3.43" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg></button>` : ''}
+        ${canEdit ? `<button class="btn btn-ghost btn-icon btn-sm" onclick="duplicarTarefa('${t.id}')" title="Duplicar tarefa"><svg width="13" height="13" viewBox="0 0 13 13" fill="none"><rect x="2" y="3" width="6" height="6" rx="1" stroke="currentColor" stroke-width="1.2"/><rect x="5" y="6" width="6" height="6" rx="1" stroke="currentColor" stroke-width="1.2"/></svg></button>` : ''}
         ${canEdit ? `<button class="btn btn-ghost btn-icon btn-sm" onclick="modalEditarTarefa('${t.id}')" title="Editar tarefa"><svg width="13" height="13" viewBox="0 0 13 13" fill="none"><path d="M2 9.5V11h1.5l5.5-5.5-1.5-1.5L2 9.5zM10.85 2.65a1 1 0 0 0-1.42 0l-.79.79 1.42 1.42.79-.79a1 1 0 0 0 0-1.42z" fill="currentColor"/></svg></button>` : ''}
         ${canEdit ? `<button class="btn btn-danger btn-icon btn-sm" onclick="deletarTarefa('${t.id}')" title="Excluir tarefa"><svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M1.5 1.5l9 9M10.5 1.5l-9 9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></button>` : ''}
       </div></td>
@@ -2397,20 +2513,80 @@ async function removerPerm(projetoId, usuarioId) {
 }
 
 // TAREFAS
-function modalNovaTarefa(projetoId) {
+async function modalNovaTarefa(projetoId) {
+  const templates = await carregarTemplatesTarefa();
   abrirModal(`
     <h2>Nova tarefa</h2>
+    <div class="modal-hint">Campos desta janela afetam apenas a tarefa, sem alterar dados da janela de projeto.</div>
+    <div class="form-row"><label>Template <span style="color:var(--text3)">(opcional)</span></label>
+      <div style="display:flex;gap:8px;align-items:center">
+        <select id="m-template" style="flex:1">
+          <option value="">— Sem template —</option>
+          ${templates.map(tpl => `<option value="${tpl.id}">${esc(tpl.nome)}</option>`).join('')}
+        </select>
+        <button class="btn btn-sm" type="button" onclick="aplicarTemplateNoModal()">Aplicar</button>
+      </div>
+    </div>
     <div class="form-row"><label>Descrição da tarefa</label><input id="m-nome" placeholder="Ex: Detalhar corte da escada"></div>
+    <div class="form-row"><label>Descrição detalhada</label><textarea id="m-desc" placeholder="Contexto e detalhes para execução"></textarea></div>
     <div class="form-grid">
       <div class="form-row"><label>Status</label>${sel('m-status',STATUS_TAR,'A fazer')}</div>
       <div class="form-row"><label>Prioridade</label>${sel('m-prior',PRIORS,'Média')}</div>
       <div class="form-row"><label>Complexidade</label>${sel('m-dific',DIFS,'Moderada')}</div>
-      <div class="form-row"><label>Data</label><input type="date" id="m-data"></div>
+      <div class="form-row"><label>Prazo da tarefa</label><input type="date" id="m-data"></div>
+      <div class="form-row"><label>Estimativa (horas)</label><input type="number" id="m-estimativa" min="0" step="0.25" placeholder="Ex: 3.5"></div>
+      <div class="form-row"><label>Contexto de execução</label><input id="m-contexto" placeholder="Ex: validar com estrutural"></div>
     </div>
+    <div class="form-row"><label>Critérios de pronto</label><textarea id="m-criterios" placeholder="Checklist para considerar concluída"></textarea></div>
     <div class="modal-footer">
+      ${isAdmin() ? `<button class="btn" type="button" onclick="salvarTemplateAdminDaTarefaModal()">Salvar como template admin</button>` : ''}
       <button class="btn" onclick="fecharModal()">Cancelar</button>
       <button class="btn btn-primary" id="btn-criar-tar" onclick="criarTarefa('${projetoId}')">Criar tarefa</button>
     </div>`);
+}
+
+function aplicarTemplateNoModal() {
+  const templateId = gv('m-template');
+  const tpl = TEMPLATES_TAREFA.find(t => t.id === templateId);
+  if (!tpl) return;
+  const nomeAtual = gv('m-nome').trim();
+  if (!nomeAtual) document.getElementById('m-nome').value = tpl.nome || '';
+  document.getElementById('m-status').value = tpl.status || 'A fazer';
+  document.getElementById('m-prior').value = tpl.prioridade || 'Média';
+  document.getElementById('m-dific').value = tpl.dificuldade || 'Moderada';
+  document.getElementById('m-desc').value = tpl.descricao || '';
+  document.getElementById('m-estimativa').value = tpl.estimativa_horas ?? '';
+  document.getElementById('m-contexto').value = tpl.contexto_execucao || '';
+  document.getElementById('m-criterios').value = tpl.criterios_pronto || '';
+  toast('Template aplicado');
+}
+
+async function salvarTemplateAdminDaTarefaModal() {
+  if (!isAdmin()) {
+    toast('Disponível apenas no perfil admin', 'err');
+    return;
+  }
+  const nome = gv('m-nome').trim();
+  if (!nome) {
+    toast('Defina o nome da tarefa antes de salvar template', 'err');
+    return;
+  }
+  try {
+    await req('POST', '/templates-tarefa', {
+      nome,
+      status: gv('m-status'),
+      prioridade: gv('m-prior'),
+      dificuldade: gv('m-dific'),
+      descricao: gv('m-desc') || null,
+      estimativa_horas: gv('m-estimativa') ? Number(gv('m-estimativa')) : null,
+      contexto_execucao: gv('m-contexto') || null,
+      criterios_pronto: gv('m-criterios') || null,
+    });
+    await carregarTemplatesTarefa(true);
+    toast('Template admin salvo');
+  } catch (e) {
+    toast(e.message, 'err');
+  }
 }
 
 async function criarTarefa(projetoId) {
@@ -2418,7 +2594,18 @@ async function criarTarefa(projetoId) {
   if (!nome) { toast('Nome obrigatório', 'err'); return; }
   btnLoading('btn-criar-tar', true);
   try {
-    await req('POST', `/projetos/${projetoId}/tarefas`, { nome, status: gv('m-status'), prioridade: gv('m-prior'), complexidade: gv('m-dific'), data: gv('m-data')||null });
+    await req('POST', `/projetos/${projetoId}/tarefas`, {
+      nome,
+      status: gv('m-status'),
+      prioridade: gv('m-prior'),
+      complexidade: gv('m-dific'),
+      data: gv('m-data')||null,
+      template_id: gv('m-template') || null,
+      descricao: gv('m-desc') || null,
+      estimativa_horas: gv('m-estimativa') ? Number(gv('m-estimativa')) : null,
+      contexto_execucao: gv('m-contexto') || null,
+      criterios_pronto: gv('m-criterios') || null,
+    });
     fecharModal(); toast('Tarefa criada'); await recarregarProjeto('lista');
   } catch (e) { toast(e.message, 'err'); btnLoading('btn-criar-tar', false); }
 }
@@ -2426,16 +2613,32 @@ async function criarTarefa(projetoId) {
 async function modalEditarTarefa(id) {
   const t = TAREFAS.find(t => t.id === id);
   if (!t) return;
+  const templates = await carregarTemplatesTarefa();
   abrirModal(`
     <h2>Editar tarefa</h2>
+    <div class="modal-hint">Campos desta janela afetam apenas a tarefa, sem alterar dados da janela de projeto.</div>
+    <div class="form-row"><label>Template <span style="color:var(--text3)">(opcional)</span></label>
+      <div style="display:flex;gap:8px;align-items:center">
+        <select id="m-template" style="flex:1">
+          <option value="">— Sem template —</option>
+          ${templates.map(tpl => `<option value="${tpl.id}">${esc(tpl.nome)}</option>`).join('')}
+        </select>
+        <button class="btn btn-sm" type="button" onclick="aplicarTemplateNoModal()">Aplicar</button>
+      </div>
+    </div>
     <div class="form-row"><label>Descrição</label><input id="m-nome" value="${esc(t.nome)}"></div>
+    <div class="form-row"><label>Descrição detalhada</label><textarea id="m-desc">${esc(t.descricao || '')}</textarea></div>
     <div class="form-grid">
       <div class="form-row"><label>Status</label>${sel('m-status',STATUS_TAR,t.status)}</div>
       <div class="form-row"><label>Prioridade</label>${sel('m-prior',PRIORS,t.prioridade)}</div>
       <div class="form-row"><label>Complexidade</label>${sel('m-dific',DIFS,t.complexidade||t.dificuldade)}</div>
-      <div class="form-row"><label>Data</label><input type="date" id="m-data" value="${t.data||''}"></div>
+      <div class="form-row"><label>Prazo da tarefa</label><input type="date" id="m-data" value="${t.data||''}"></div>
+      <div class="form-row"><label>Estimativa (horas)</label><input type="number" id="m-estimativa" min="0" step="0.25" value="${t.estimativa_horas ?? ''}"></div>
+      <div class="form-row"><label>Contexto de execução</label><input id="m-contexto" value="${esc(t.contexto_execucao || '')}"></div>
     </div>
+    <div class="form-row"><label>Critérios de pronto</label><textarea id="m-criterios">${esc(t.criterios_pronto || '')}</textarea></div>
     <div class="modal-footer">
+      ${isAdmin() ? `<button class="btn" type="button" onclick="salvarTemplateAdminDaTarefaModal()">Salvar como template admin</button>` : ''}
       <button class="btn" onclick="fecharModal()">Cancelar</button>
       <button class="btn btn-primary" id="btn-salvar-tar" onclick="salvarTarefa('${id}')">Salvar</button>
     </div>`);
@@ -2446,9 +2649,29 @@ async function salvarTarefa(id) {
   if (!nome) { toast('Nome obrigatório', 'err'); return; }
   btnLoading('btn-salvar-tar', true);
   try {
-    await req('PUT', `/tarefas/${id}`, { nome, status: gv('m-status'), prioridade: gv('m-prior'), complexidade: gv('m-dific'), data: gv('m-data')||null });
+    await req('PUT', `/tarefas/${id}`, {
+      nome,
+      status: gv('m-status'),
+      prioridade: gv('m-prior'),
+      complexidade: gv('m-dific'),
+      data: gv('m-data')||null,
+      descricao: gv('m-desc') || null,
+      estimativa_horas: gv('m-estimativa') ? Number(gv('m-estimativa')) : null,
+      contexto_execucao: gv('m-contexto') || null,
+      criterios_pronto: gv('m-criterios') || null,
+    });
     fecharModal(); toast('Tarefa atualizada'); await recarregarProjeto();
   } catch (e) { toast(e.message, 'err'); btnLoading('btn-salvar-tar', false); }
+}
+
+async function duplicarTarefa(id) {
+  try {
+    await req('POST', `/tarefas/${id}/duplicar`, {});
+    toast('Tarefa duplicada');
+    await recarregarProjeto('lista');
+  } catch (e) {
+    toast(e.message, 'err');
+  }
 }
 
 // ── QUICK-ADD ──

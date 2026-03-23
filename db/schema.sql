@@ -49,6 +49,10 @@ CREATE TABLE IF NOT EXISTS tarefas (
   status TEXT NOT NULL DEFAULT 'A fazer',
   prioridade TEXT NOT NULL DEFAULT 'Média',
   dificuldade TEXT NOT NULL DEFAULT 'Moderada',
+  descricao TEXT,
+  estimativa_horas REAL,
+  criterios_pronto TEXT,
+  contexto_execucao TEXT,
   -- horas_decorridas removido: agora calculado via sessoes_tempo
   data TEXT,
   foco INTEGER NOT NULL DEFAULT 0,
@@ -57,6 +61,23 @@ CREATE TABLE IF NOT EXISTS tarefas (
   atualizado_em TEXT DEFAULT (datetime('now')),
   FOREIGN KEY (projeto_id) REFERENCES projetos(id) ON DELETE CASCADE,
   FOREIGN KEY (dono_id) REFERENCES usuarios(id)
+);
+
+CREATE TABLE IF NOT EXISTS templates_tarefa (
+  id TEXT PRIMARY KEY,
+  nome TEXT NOT NULL,
+  status TEXT NOT NULL DEFAULT 'A fazer',
+  prioridade TEXT NOT NULL DEFAULT 'Média',
+  dificuldade TEXT NOT NULL DEFAULT 'Moderada',
+  descricao TEXT,
+  estimativa_horas REAL,
+  criterios_pronto TEXT,
+  contexto_execucao TEXT,
+  criado_por TEXT NOT NULL,
+  ativo INTEGER NOT NULL DEFAULT 1,
+  criado_em TEXT DEFAULT (datetime('now')),
+  atualizado_em TEXT DEFAULT (datetime('now')),
+  FOREIGN KEY (criado_por) REFERENCES usuarios(id)
 );
 
 
