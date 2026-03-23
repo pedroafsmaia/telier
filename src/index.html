@@ -372,6 +372,38 @@ tr:hover .td-ações{opacity:1}
 .horas-unit{font-size:var(--fs-075);color:var(--text3)}
 .resp-chip{display:flex;align-items:center;gap:5px;font-size:var(--fs-080);color:var(--text3)}
 
+/* ── MOBILE: CARDS LAYOUT ── */
+.tasks-cards{display:none;flex-direction:column;gap:8px}
+.task-card{display:flex;flex-direction:column;gap:10px;background:var(--bg2);border:1px solid var(--border);border-radius:var(--r2);padding:12px;transition:all .15s}
+.task-card:active{background:var(--bg3)}
+.task-card-header{display:flex;align-items:flex-start;justify-content:space-between;gap:8px}
+.task-card-title{flex:1;font-size:var(--fs-100);color:var(--text);font-weight:500;line-height:1.3}
+.task-card-title.em-foco{color:var(--accent)}
+.task-card-title.concluida{color:var(--text3);text-decoration:line-through}
+.task-card-foco{padding:0;cursor:pointer;font-size:16px;background:none;border:none;color:var(--text3);transition:all .15s}
+.task-card-foco:active{transform:scale(1.15)}
+.task-card-foco.ativo{color:var(--yellow)}
+.task-card-meta{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+.task-card-chip{display:flex;align-items:center;gap:4px;font-size:var(--fs-075);padding:4px 8px;background:var(--bg3);border:1px solid var(--border);border-radius:4px;color:var(--text2)}
+.task-card-chip .avatar-sm{margin-right:2px}
+.task-card-footer{display:flex;align-items:center;gap:8px;border-top:1px solid var(--border);padding-top:8px;flex-wrap:wrap;justify-content:space-between}
+.task-card-actions{display:flex;gap:4px;flex-wrap:wrap}
+.task-card-actions .btn{padding:6px 10px;font-size:var(--fs-075);height:32px}
+.task-card-primary-btn{flex:1;min-width:80px}
+
+/* ── MOBILE BREAKPOINT (≤768px) ── */
+@media (max-width:768px){
+  .tarefas-toolbar{flex-direction:column;align-items:stretch}
+  .tarefas-toolbar > div:first-child{display:flex;flex-direction:column;gap:8px;width:100%}
+  .tarefas-toolbar .search-tarefa{width:100%!important;flex:1}
+  .tarefas-toolbar .resp-filter{width:100%;height:32px}
+  .tarefas-toolbar .btn{width:100%}
+  .table-wrap{display:none;overflow:visible;border:none}
+  table{display:none}
+  .tasks-cards{display:flex}
+  .search-tarefa:focus{width:100%!important}
+}
+
 /* ── MAPA DE FOCO ── */
 .mapa-intro{font-size:var(--fs-090);color:var(--text3);margin-bottom:16px;padding:10px 14px;background:var(--bg3);border-radius:var(--r);border-left:2px solid var(--accent)}
 .mapa-list{display:flex;flex-direction:column;gap:6px}
@@ -2198,6 +2230,47 @@ function renderLista(el, tarefas) {
         </tr></thead>
         <tbody>${rows || `<tr><td colspan="9" style="text-align:center;color:var(--text3);padding:24px"><div style="font-style:italic">Nenhuma tarefa ainda.</div><div style="font-size:var(--fs-080);margin-top:8px;color:var(--text2)">Comece por uma tarefa principal, com prioridade e prazo.</div><button class="btn btn-sm btn-primary" style="margin-top:10px" onclick="modalNovaTarefa('${PROJETO?.id}')">+ Criar primeira tarefa</button></td></tr>`}</tbody>
       </table>
+    </div>
+    <div class="tasks-cards">
+      ${todas.map(t => {
+        const minha = t.dono_id === EU?.id;
+        const canEdit = minha || podeEditar(PROJETO) || isAdmin();
+        const podeCron = minha || (t.colaboradores_ids || []).includes(EU?.id) || isAdmin();
+        const timerAtivoPorTarefa = {};
+        Object.entries(TIMERS).forEach(([sid, timer]) => { timerAtivoPorTarefa[timer.tarefaId] = sid; });
+        const sessaoAtiva = timerAtivoPorTarefa[t.id];
+        const data = t.data ? prazoFmt(t.data, true) : '—';
+        const statusBtn = (minha || podeEditar(PROJETO) || isAdmin())
+          ? `<select class="status-sel status-select" style="height:28px;padding:2px 4px;font-size:var(--fs-075)" onchange="mudarStatus('${t.id}',this.value,this)">
+              ${['A fazer','Em andamento','Bloqueada','Concluída'].map(s =>
+                `<option value="${s}" ${s===t.status?'selected':''}>${s}</option>`
+              ).join('')}
+            </select>`
+          : `<span class="tag" style="font-size:var(--fs-075)">${escHtml(t.status)}</span>`;
+        return `<div class="task-card ${t.status==='Concluída'?'concluida':''}">
+          <div class="task-card-header">
+            <div class="task-card-title ${t.foco&&minha?'em-foco':''} ${t.status==='Concluída'?'concluida':''}">${esc(t.nome)}</div>
+            ${minha ? `<button class="task-card-foco ${t.foco?'ativo':''} " onclick="toggleFoco('${t.id}',${!!t.foco}); event.stopPropagation()" title="${t.foco?'Remover foco':'Marcar como foco'}">${t.foco?'★':'☆'}</button>` : ''}
+          </div>
+          <div class="task-card-meta">
+            <div class="task-card-chip">${avatar(t.dono_nome,'avatar-sm')} <span>${esc(t.dono_nome||'—')}</span></div>
+            ${tag(t.complexidade, DT[t.complexidade])}
+            ${tag(t.prioridade, PT[t.prioridade])}
+            <span class="task-card-chip" style="margin-left:auto;color:var(--text3);border:none;background:transparent">${esc(data)}</span>
+          </div>
+          <div class="task-card-footer">
+            <div style="flex:1">${statusBtn}</div>
+            <div class="task-card-actions">
+              <button class="btn btn-ghost btn-icon btn-sm" onclick="expandirSessoes('${t.id}')"; title="Detalhes"><svg width="14" height="14" viewBox="0 0 14 14" fill="none"><rect x="2" y="2" width="10" height="10" rx="2" stroke="currentColor" stroke-width="1.3"/><path d="M4.5 5.2h5M4.5 7h5M4.5 8.8h3" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg></button>
+              ${minha ? `<button class="btn btn-ghost btn-icon btn-sm" onclick="modalColabsTarefa('${t.id}'); event.stopPropagation()" title="Colaboradores" style="font-size:16px">👥</button>` : ''}
+              ${canEdit ? `<button class="btn btn-ghost btn-icon btn-sm" onclick="duplicarTarefa('${t.id}')" title="Duplicar"><svg width="13" height="13" viewBox="0 0 13 13" fill="none"><rect x="2" y="3" width="6" height="6" rx="1" stroke="currentColor" stroke-width="1.2"/><rect x="5" y="6" width="6" height="6" rx="1" stroke="currentColor" stroke-width="1.2"/></svg></button>` : ''}
+              ${canEdit ? `<button class="btn btn-ghost btn-icon btn-sm" onclick="modalEditarTarefa('${t.id}')" title="Editar"><svg width="13" height="13" viewBox="0 0 13 13" fill="none"><path d="M2 9.5V11h1.5l5.5-5.5-1.5-1.5L2 9.5zM10.85 2.65a1 1 0 0 0-1.42 0l-.79.79 1.42 1.42.79-.79a1 1 0 0 0 0-1.42z" fill="currentColor"/></svg></button>` : ''}
+              ${canEdit ? `<button class="btn btn-danger btn-icon btn-sm" onclick="deletarTarefa('${t.id}')" title="Excluir"><svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M1.5 1.5l9 9M10.5 1.5l-9 9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></button>` : ''}
+              ${sessaoAtiva ? `<button class="btn btn-danger btn-sm " onclick="pararCronometro('${sessaoAtiva}')" style="font-size:var(--fs-075)" title="Parar"><svg width="11" height="11" viewBox="0 0 11 11" fill="none" style="margin-right:4px"><rect x="2" y="2" width="7" height="7" rx="1" fill="currentColor"/></svg>Parar</button>` : (podeCron ? `<button class="btn btn-ghost btn-sm" onclick="iniciarCronometro('${t.id}','${esc(t.nome)}')" style="color:var(--green)" title="Iniciar"><svg width="12" height="12" viewBox="0 0 12 12" fill="none" style="margin-right:4px"><path d="M4 2.5l5 3.5-5 3.5v-7z" fill="currentColor"/></svg>Cronômetro</button>` : '')}
+            </div>
+          </div>
+        </div>`;
+      }).join('') || `<div style="text-align:center;color:var(--text3);padding:24px;background:var(--bg2);border:1px solid var(--border);border-radius:var(--r2)"><div style="font-style:italic">Nenhuma tarefa ainda.</div><div style="font-size:var(--fs-080);margin-top:8px;color:var(--text2)">Comece por uma tarefa principal, com prioridade e prazo.</div><button class="btn btn-sm btn-primary" style="margin-top:10px" onclick="modalNovaTarefa('${PROJETO?.id}')">+ Criar primeira tarefa</button></div>`}
     </div>`;
 }
 
