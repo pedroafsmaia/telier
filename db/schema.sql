@@ -36,6 +36,7 @@ CREATE TABLE IF NOT EXISTS permissoes_projeto (
   projeto_id TEXT NOT NULL,
   usuario_id TEXT NOT NULL,
   nivel TEXT NOT NULL DEFAULT 'editor',
+  origem TEXT NOT NULL DEFAULT 'manual',
   criado_em TEXT DEFAULT (datetime('now')),
   PRIMARY KEY (projeto_id, usuario_id),
   FOREIGN KEY (projeto_id) REFERENCES projetos(id) ON DELETE CASCADE,

@@ -643,6 +643,13 @@ tr:hover .td-ações{opacity:1}
 .text-danger{color:var(--red)}
 .modal-copy{font-size:var(--fs-090);color:var(--text2);margin-bottom:16px;line-height:var(--lh-base)}
 .modal-copy-tight{font-size:var(--fs-090);color:var(--text2)}
+.modal-block{margin-top:14px;border:1px solid var(--border);border-radius:var(--r2);background:var(--bg3)}
+.modal-block[open]{background:var(--bg2)}
+.modal-block-summary{cursor:pointer;list-style:none;padding:12px 14px;font-size:var(--fs-080);font-weight:500;color:var(--text2);display:flex;align-items:center;justify-content:space-between;gap:10px}
+.modal-block-summary::-webkit-details-marker{display:none}
+.modal-block-summary::after{content:'+';font-size:var(--fs-100);color:var(--text3)}
+.modal-block[open] .modal-block-summary::after{content:'−';color:var(--text2)}
+.modal-block-body{padding:0 14px 14px}
 .inline-note{font-size:var(--fs-080);color:var(--text3)}
 .inline-note-strong{color:var(--text2)}
 .api-empty{padding:40px;text-align:center;color:var(--text3)}
@@ -1243,6 +1250,22 @@ function renderProjetosDash(projetos, grupos) {
 
   const collapsed = JSON.parse(localStorage.getItem('telier_grupos_collapsed') || '[]');
   const isCollapsed = id => collapsed.includes(id);
+  const hoje = new Date();
+  hoje.setHours(0, 0, 0, 0);
+
+  function calcGrupoKpis(items) {
+    return items.reduce((acc, projeto) => {
+      const status = projeto.status || '';
+      const prazo = projeto.prazo ? new Date(`${projeto.prazo}T00:00:00`) : null;
+      if (prazo) prazo.setHours(0, 0, 0, 0);
+      acc.area += Number(projeto.area_m2 || 0);
+      acc.horas += Number(projeto.total_horas || 0);
+      if (status === 'Concluído') acc.concluidos += 1;
+      if (status === 'Em andamento' || status === 'Em revisão') acc.ativos += 1;
+      if (prazo && prazo < hoje && status !== 'Concluído' && status !== 'Arquivado') acc.atrasados += 1;
+      return acc;
+    }, { area: 0, horas: 0, concluidos: 0, atrasados: 0, ativos: 0 });
+  }
 
   let html = '';
 
@@ -1252,11 +1275,12 @@ function renderProjetosDash(projetos, grupos) {
   for (const grupo of (grupos || [])) {
     const gprojetos = lista.filter(p => p.grupo_id === grupo.id);
     const col = isCollapsed(grupo.id);
-    const areaGrupo = Number(grupo.area_total_m2 || 0);
-    const horasGrupo = Number(grupo.total_horas || 0);
-    const concluidos = Number(grupo.projetos_concluidos || 0);
-    const atrasados = Number(grupo.projetos_atrasados || 0);
-    const ativos = Number(grupo.projetos_ativos || 0);
+    const kpis = calcGrupoKpis(gprojetos);
+    const areaGrupo = kpis.area;
+    const horasGrupo = kpis.horas;
+    const concluidos = kpis.concluidos;
+    const atrasados = kpis.atrasados;
+    const ativos = kpis.ativos;
     const pctConcl = gprojetos.length ? Math.round((concluidos / gprojetos.length) * 100) : 0;
     html += `
       <div class="grupo-section" id="gs-${grupo.id}"
@@ -1280,7 +1304,6 @@ function renderProjetosDash(projetos, grupos) {
           </div>
           <div class="grupo-actions" onclick="event.stopPropagation()">
             <button class="btn btn-ghost btn-icon btn-sm" onclick="modalEditarGrupo('${grupo.id}')" title="Configurar grupo"><svg width="13" height="13" viewBox="0 0 13 13" fill="none"><path d="M2 9.5V11h1.5l5.5-5.5-1.5-1.5L2 9.5zM10.85 2.65a1 1 0 0 0-1.42 0l-.79.79 1.42 1.42.79-.79a1 1 0 0 0 0-1.42z" fill="currentColor"/></svg></button>
-            <button class="btn btn-ghost btn-icon btn-sm" onclick="deletarGrupo('${grupo.id}','${esc(grupo.nome)}')" title="Excluir grupo"><svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M1.5 1.5l9 9M10.5 1.5l-9 9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></button>
           </div>
         </div>
         ${col ? '' : gprojetos.length
@@ -1494,37 +1517,54 @@ async function modalEditarGrupo(id) {
   const disponiveis = USUARIOS.filter(u => u.id !== g.dono_id && !colabIds.includes(u.id));
   abrirModal(`
     <h2>Configurar grupo</h2>
+    <p class="modal-copy">Grupo organiza projetos e compartilha acesso. Alterações aqui repercutem automaticamente nos projetos vinculados.</p>
     <div class="form-row"><label>Nome do grupo</label><input id="m-grupo-nome" value="${esc(g.nome || '')}"></div>
     <div class="form-grid">
       <div class="form-row"><label>Status</label>${sel('m-grupo-status',['Ativo','Pausado','Arquivado'], g.status || 'Ativo')}</div>
-      <div class="form-row"><label>Descrição</label><input id="m-grupo-desc" value="${esc(g.descricao || '')}" placeholder="Opcional"></div>
+      <div class="form-row"><label>Descrição curta</label><input id="m-grupo-desc" value="${esc(g.descricao || '')}" placeholder="Opcional"></div>
     </div>
-    <div class="form-grid">
-      <div class="form-row"><label>Projetos no grupo</label><input value="${totalProjetos}" disabled></div>
-      <div class="form-row"><label>Área total (m²)</label><input value="${area.toLocaleString('pt-BR', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}" disabled></div>
-      <div class="form-row"><label>Horas totais</label><input value="${horas.toFixed(2)}h" disabled></div>
-      <div class="form-row"><label>Origem dos totais</label><input value="Soma automática dos projetos" disabled></div>
-    </div>
-    <div class="form-row"><label>Colaboradores do grupo</label>
-      <div class="editor-list">
-        ${colaboradores.map(c => `
-          <div class="editor-row">
-            <div class="editor-info">${avatar(c.nome)} ${esc(c.nome)} <span class="inline-user-handle">@${esc(c.usuario_login)}</span></div>
-            <button class="editor-del" onclick="removerPermGrupo('${id}','${c.usuario_id}')" title="Remover"><svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M1.5 1.5l9 9M10.5 1.5l-9 9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></button>
-          </div>`).join('') || '<div class="inline-muted-sm">Nenhum colaborador no grupo</div>'}
+    <details class="modal-block" open>
+      <summary class="modal-block-summary">Resumo do grupo</summary>
+      <div class="modal-block-body">
+        <div class="form-grid" style="margin-top:6px">
+          <div class="form-row"><label>Projetos no grupo</label><input value="${totalProjetos}" disabled></div>
+          <div class="form-row"><label>Área total (m²)</label><input value="${area.toLocaleString('pt-BR', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}" disabled></div>
+          <div class="form-row"><label>Horas totais</label><input value="${horas.toFixed(2)}h" disabled></div>
+          <div class="form-row"><label>Origem dos totais</label><input value="Soma automática dos projetos do grupo" disabled></div>
+        </div>
       </div>
-    </div>
-    ${disponiveis.length ? `<div class="form-row"><label>Adicionar colaborador</label>
-      <div style="display:flex;gap:8px">
-        <select id="m-grupo-colab" style="flex:1">${disponiveis.map(u => `<option value="${u.id}">${esc(u.nome)} (@${esc(u.usuario_login)})</option>`).join('')}</select>
-        <button class="btn btn-sm btn-primary" onclick="adicionarPermGrupo('${id}')">Adicionar</button>
+    </details>
+    <details class="modal-block" open>
+      <summary class="modal-block-summary">Acesso do grupo</summary>
+      <div class="modal-block-body">
+        <p class="modal-copy-tight" style="margin:4px 0 14px">Quem entra aqui ganha acesso herdado aos projetos já vinculados e aos próximos projetos deste grupo.</p>
+        <div class="form-row"><label>Colaboradores do grupo</label>
+          <div class="editor-list">
+            ${colaboradores.map(c => `
+              <div class="editor-row">
+                <div class="editor-info">${avatar(c.nome)} ${esc(c.nome)} <span class="inline-user-handle">@${esc(c.usuario_login)}</span></div>
+                <button class="editor-del" onclick="removerPermGrupo('${id}','${c.usuario_id}')" title="Remover"><svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M1.5 1.5l9 9M10.5 1.5l-9 9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></button>
+              </div>`).join('') || '<div class="inline-muted-sm">Nenhum colaborador no grupo</div>'}
+          </div>
+        </div>
+        ${disponiveis.length ? `<div class="form-row"><label>Adicionar colaborador</label>
+          <div style="display:flex;gap:8px">
+            <select id="m-grupo-colab" style="flex:1">${disponiveis.map(u => `<option value="${u.id}">${esc(u.nome)} (@${esc(u.usuario_login)})</option>`).join('')}</select>
+            <button class="btn btn-sm btn-primary" onclick="adicionarPermGrupo('${id}')">Adicionar</button>
+          </div>
+        </div>` : '<div class="inline-muted-sm">Todos os usuários disponíveis já estão neste grupo.</div>'}
       </div>
-    </div>` : ''}
-    <div class="form-sep"></div>
-    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px">
-      <button class="btn btn-sm" onclick="acaoGrupo('${id}','ungroup_all')">Desagrupar todos os projetos</button>
-      <button class="btn btn-sm" onclick="modalMoverTodosGrupo('${id}')">Mover todos para outro grupo</button>
-    </div>
+    </details>
+    <details class="modal-block">
+      <summary class="modal-block-summary">Ações avançadas</summary>
+      <div class="modal-block-body">
+        <p class="modal-copy-tight" style="margin:4px 0 14px">Use estas ações só quando a estrutura do grupo realmente precisar mudar.</p>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px">
+          <button class="btn btn-sm" onclick="acaoGrupo('${id}','ungroup_all')">Desagrupar todos os projetos</button>
+          <button class="btn btn-sm" onclick="modalMoverTodosGrupo('${id}')">Mover todos para outro grupo</button>
+        </div>
+      </div>
+    </details>
     <div class="modal-footer">
       ${(g.pode_gerenciar || souDono(g.dono_id) || isAdmin()) ? `<button class="btn btn-danger" onclick="deletarGrupo('${id}','${esc(g.nome)}')">Excluir</button>` : ''}
       <button class="btn" onclick="fecharModal()">Cancelar</button>
@@ -2462,19 +2502,24 @@ async function deletarProjeto(id) {
 async function modalPermissoes(projetoId) {
   if (!USUARIOS.length) USUARIOS = await req('GET', '/usuarios');
   const proj = PROJETO?.id === projetoId ? PROJETO : await req('GET', `/projetos/${projetoId}`);
-  const editores = proj.editores || [];
+  const editores = [...(proj.editores || [])].sort((a, b) => {
+    if ((a.origem || 'manual') === (b.origem || 'manual')) return (a.nome || '').localeCompare(b.nome || '');
+    return (a.origem || 'manual') === 'manual' ? -1 : 1;
+  });
   const editIds = editores.map(e => e.usuario_id);
   const disponiveis = USUARIOS.filter(u => u.id !== proj.dono_id && !editIds.includes(u.id));
 
   const editorRows = editores.map(e => `
     <div class="editor-row">
-      <div class="editor-info">${avatar(e.nome)} ${esc(e.nome)} <span class="inline-user-handle">@${esc(e.usuario_login)}</span></div>
-      <button class="editor-del" onclick="removerPerm('${projetoId}','${e.usuario_id}')" title="Remover"><svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M1.5 1.5l9 9M10.5 1.5l-9 9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></button>
+      <div class="editor-info">${avatar(e.nome)} ${esc(e.nome)} <span class="inline-user-handle">@${esc(e.usuario_login)}</span> ${e.origem === 'grupo' ? tag('Herdado do grupo', 'tag-gray', 'Acesso vindo do grupo do projeto') : tag('Manual', 'tag-cyan', 'Acesso dado diretamente no projeto')}</div>
+      ${e.origem === 'grupo'
+        ? `<span class="inline-muted-sm">Remova no grupo para revogar</span>`
+        : `<button class="editor-del" onclick="removerPerm('${projetoId}','${e.usuario_id}')" title="Remover"><svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M1.5 1.5l9 9M10.5 1.5l-9 9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></button>`}
     </div>`).join('') || `<div class="inline-muted-sm">Nenhum colaborador adicionado</div>`;
 
   abrirModal(`
     <h2>Colaboradores do projeto</h2>
-    <p class="modal-copy">Selecione usuários já registrados para colaborar neste projeto com acesso de edição.</p>
+    <p class="modal-copy">Acesso manual vale só neste projeto. Acesso herdado vem do grupo atual e deve ser gerenciado na janela do grupo.</p>
     <div class="form-row"><label>Colaboradores com acesso</label><div class="editor-list">${editorRows}</div></div>
     ${disponiveis.length ? `
     <div class="form-sep"></div>
@@ -2528,16 +2573,23 @@ async function modalNovaTarefa(projetoId) {
       </div>
     </div>
     <div class="form-row"><label>Descrição da tarefa</label><input id="m-nome" placeholder="Ex: Detalhar corte da escada"></div>
-    <div class="form-row"><label>Descrição detalhada</label><textarea id="m-desc" placeholder="Contexto e detalhes para execução"></textarea></div>
     <div class="form-grid">
       <div class="form-row"><label>Status</label>${sel('m-status',STATUS_TAR,'A fazer')}</div>
       <div class="form-row"><label>Prioridade</label>${sel('m-prior',PRIORS,'Média')}</div>
       <div class="form-row"><label>Complexidade</label>${sel('m-dific',DIFS,'Moderada')}</div>
       <div class="form-row"><label>Prazo da tarefa</label><input type="date" id="m-data"></div>
-      <div class="form-row"><label>Estimativa (horas)</label><input type="number" id="m-estimativa" min="0" step="0.25" placeholder="Ex: 3.5"></div>
-      <div class="form-row"><label>Contexto de execução</label><input id="m-contexto" placeholder="Ex: validar com estrutural"></div>
     </div>
-    <div class="form-row"><label>Critérios de pronto</label><textarea id="m-criterios" placeholder="Checklist para considerar concluída"></textarea></div>
+    <details class="modal-block">
+      <summary class="modal-block-summary">Campos avançados</summary>
+      <div class="modal-block-body">
+        <div class="form-row" style="margin-top:10px"><label>Descrição detalhada</label><textarea id="m-desc" placeholder="Contexto e detalhes para execução"></textarea></div>
+        <div class="form-grid">
+          <div class="form-row"><label>Estimativa (horas)</label><input type="number" id="m-estimativa" min="0" step="0.25" placeholder="Ex: 3.5"></div>
+          <div class="form-row"><label>Contexto de execução</label><input id="m-contexto" placeholder="Ex: validar com estrutural"></div>
+        </div>
+        <div class="form-row"><label>Critérios de pronto</label><textarea id="m-criterios" placeholder="Checklist para considerar concluída"></textarea></div>
+      </div>
+    </details>
     <div class="modal-footer">
       ${isAdmin() ? `<button class="btn" type="button" onclick="salvarTemplateAdminDaTarefaModal()">Salvar como template admin</button>` : ''}
       <button class="btn" onclick="fecharModal()">Cancelar</button>
@@ -2614,6 +2666,7 @@ async function modalEditarTarefa(id) {
   const t = TAREFAS.find(t => t.id === id);
   if (!t) return;
   const templates = await carregarTemplatesTarefa();
+  const temAvancado = !!(t.descricao || t.estimativa_horas || t.contexto_execucao || t.criterios_pronto);
   abrirModal(`
     <h2>Editar tarefa</h2>
     <div class="modal-hint">Campos desta janela afetam apenas a tarefa, sem alterar dados da janela de projeto.</div>
@@ -2627,16 +2680,23 @@ async function modalEditarTarefa(id) {
       </div>
     </div>
     <div class="form-row"><label>Descrição</label><input id="m-nome" value="${esc(t.nome)}"></div>
-    <div class="form-row"><label>Descrição detalhada</label><textarea id="m-desc">${esc(t.descricao || '')}</textarea></div>
     <div class="form-grid">
       <div class="form-row"><label>Status</label>${sel('m-status',STATUS_TAR,t.status)}</div>
       <div class="form-row"><label>Prioridade</label>${sel('m-prior',PRIORS,t.prioridade)}</div>
       <div class="form-row"><label>Complexidade</label>${sel('m-dific',DIFS,t.complexidade||t.dificuldade)}</div>
       <div class="form-row"><label>Prazo da tarefa</label><input type="date" id="m-data" value="${t.data||''}"></div>
-      <div class="form-row"><label>Estimativa (horas)</label><input type="number" id="m-estimativa" min="0" step="0.25" value="${t.estimativa_horas ?? ''}"></div>
-      <div class="form-row"><label>Contexto de execução</label><input id="m-contexto" value="${esc(t.contexto_execucao || '')}"></div>
     </div>
-    <div class="form-row"><label>Critérios de pronto</label><textarea id="m-criterios">${esc(t.criterios_pronto || '')}</textarea></div>
+    <details class="modal-block" ${temAvancado ? 'open' : ''}>
+      <summary class="modal-block-summary">Campos avançados</summary>
+      <div class="modal-block-body">
+        <div class="form-row" style="margin-top:10px"><label>Descrição detalhada</label><textarea id="m-desc">${esc(t.descricao || '')}</textarea></div>
+        <div class="form-grid">
+          <div class="form-row"><label>Estimativa (horas)</label><input type="number" id="m-estimativa" min="0" step="0.25" value="${t.estimativa_horas ?? ''}"></div>
+          <div class="form-row"><label>Contexto de execução</label><input id="m-contexto" value="${esc(t.contexto_execucao || '')}"></div>
+        </div>
+        <div class="form-row"><label>Critérios de pronto</label><textarea id="m-criterios">${esc(t.criterios_pronto || '')}</textarea></div>
+      </div>
+    </details>
     <div class="modal-footer">
       ${isAdmin() ? `<button class="btn" type="button" onclick="salvarTemplateAdminDaTarefaModal()">Salvar como template admin</button>` : ''}
       <button class="btn" onclick="fecharModal()">Cancelar</button>
