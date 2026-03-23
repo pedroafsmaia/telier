@@ -895,6 +895,7 @@ const STARTDAY_COLLAPSE_KEY = 'telier_startday_collapsed';
 const TIMER_AVISO_HORAS = 4;
 const DASH_FILTERS_KEY = 'telier_dash_filters_v1';
 const DASH_STATUS_OPCOES = new Set(['todos', 'Em andamento', 'A fazer', 'Em revisão', 'Pausado', 'Concluído', 'Arquivado']);
+const REQ_TIMEOUT_MS = 15000;
 let _pendingUndoAction = null;
 
 function carregarFiltrosDash() {
@@ -924,13 +925,28 @@ carregarFiltrosDash();
 
 // ── API ──
 async function req(method, path, body) {
-  const r = await fetch(API + path, {
-    method,
-    headers: { 'Content-Type': 'application/json', ...(TOKEN ? { Authorization: 'Bearer ' + TOKEN } : {}) },
-    ...(body !== undefined ? { body: JSON.stringify(body) } : {}),
-  });
-  const d = await r.json();
-  if (!r.ok) throw new Error(d.error || 'Erro na requisição');
+  const ctrl = new AbortController();
+  const timeoutId = setTimeout(() => ctrl.abort(), REQ_TIMEOUT_MS);
+  let r;
+  try {
+    r = await fetch(API + path, {
+      method,
+      signal: ctrl.signal,
+      headers: { 'Content-Type': 'application/json', ...(TOKEN ? { Authorization: 'Bearer ' + TOKEN } : {}) },
+      ...(body !== undefined ? { body: JSON.stringify(body) } : {}),
+    });
+  } catch (e) {
+    if (e?.name === 'AbortError') {
+      throw new Error('Tempo limite atingido ao conectar ao servidor.');
+    }
+    throw new Error('Falha de conexão com o servidor.');
+  } finally {
+    clearTimeout(timeoutId);
+  }
+
+  let d = null;
+  try { d = await r.json(); } catch { d = null; }
+  if (!r.ok) throw new Error(d?.error || `Erro na requisição (${r.status})`);
   return d;
 }
 
@@ -1598,7 +1614,9 @@ async function renderDash() {
     VISTA_ATUAL = 'dash';
     c.innerHTML = html;
     if (slide) slideContent('left');
-  } catch (e) { c.innerHTML = `<div class="error-block">${esc(e.message)}</div>`; }
+  } catch (e) {
+    c.innerHTML = `<div class="error-block">${esc(e.message)}<div style="margin-top:12px"><button class="btn btn-sm" onclick="renderDash()">Tentar novamente</button></div></div>`;
+  }
 }
 
 function renderProjetosDash(projetos, grupos) {
