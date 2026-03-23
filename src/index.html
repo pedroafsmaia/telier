@@ -1326,6 +1326,23 @@ function toggleSenhaCadastro() {
   input.type = check.checked ? 'text' : 'password';
 }
 
+function toggleSenhaObrigatoria() {
+  const check = document.getElementById('m-show-pass-obg');
+  if (!check) return;
+  const t = check.checked ? 'text' : 'password';
+  ['m-senha-atual-obg','m-senha-nova-obg','m-senha-nova2-obg'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.type = t;
+  });
+}
+
+function toggleSenhaReset() {
+  const input = document.getElementById('m-reset-senha');
+  const check = document.getElementById('m-reset-show-pass');
+  if (!input || !check) return;
+  input.type = check.checked ? 'text' : 'password';
+}
+
 async function fazerLogin() {
   const errEl = document.getElementById('login-err');
   errEl.classList.add('hidden');
@@ -1399,6 +1416,12 @@ function modalTrocaSenhaObrigatoria() {
     <div class="form-row"><label>Senha atual</label><input id="m-senha-atual-obg" type="password" autocomplete="current-password"></div>
     <div class="form-row"><label>Nova senha</label><input id="m-senha-nova-obg" type="password" autocomplete="new-password" placeholder="Mínimo 8 caracteres"></div>
     <div class="form-row"><label>Confirmar nova senha</label><input id="m-senha-nova2-obg" type="password" autocomplete="new-password"></div>
+    <div class="form-row" style="margin-top:-10px;margin-bottom:12px">
+      <label style="display:flex;align-items:center;gap:8px;cursor:pointer;margin:0">
+        <input type="checkbox" id="m-show-pass-obg" onchange="toggleSenhaObrigatoria()" style="width:auto">
+        <span>Mostrar senha</span>
+      </label>
+    </div>
     <div class="modal-footer">
       <button class="btn btn-primary" id="btn-salvar-senha-obg" onclick="salvarSenhaObrigatoria()">Salvar nova senha</button>
     </div>
@@ -1433,6 +1456,12 @@ function modalResetSenhaUsuario(usuarioId, nomeUsuario) {
     <h2>Redefinir senha</h2>
     <p class="modal-copy">Defina uma senha temporária para <strong>${esc(nomeUsuario)}</strong>. A sessão atual do usuário será encerrada.</p>
     <div class="form-row"><label>Nova senha temporária</label><input id="m-reset-senha" type="password" placeholder="Mínimo 8 caracteres"></div>
+    <div class="form-row" style="margin-top:-10px;margin-bottom:12px">
+      <label style="display:flex;align-items:center;gap:8px;cursor:pointer;margin:0">
+        <input type="checkbox" id="m-reset-show-pass" onchange="toggleSenhaReset()" style="width:auto">
+        <span>Mostrar senha</span>
+      </label>
+    </div>
     <div class="form-row" style="margin-top:-10px;margin-bottom:12px">
       <label style="display:flex;align-items:center;gap:8px;cursor:pointer;margin:0">
         <input type="checkbox" id="m-reset-obrigar" checked style="width:auto">
