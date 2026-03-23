@@ -72,6 +72,7 @@ database_id = "SEU_DATABASE_ID_AQUI"
 
 [vars]
 ALLOWED_ORIGIN = "https://telier.pages.dev"
+AUTO_SCHEMA_SYNC = "0"
 ```
 
 ### 4. Deploy do Worker
@@ -240,6 +241,7 @@ wrangler d1 execute telier-db --local --command=".tables"
 |------------------|-------------|-----------------------------------------------------|
 | `DB`             | Sim         | Binding D1 — configurar em wrangler.toml            |
 | `ALLOWED_ORIGIN` | Sim         | URL do Pages — ex: `https://telier.pages.dev` |
+| `AUTO_SCHEMA_SYNC` | Não       | `1` habilita sincronização automática de schema em runtime; padrão recomendado: `0` |
 
 ---
 
@@ -261,3 +263,13 @@ wrangler d1 execute telier-db --local --command=".tables"
 - Projetos só podem ser **excluídos** após serem **arquivados** (status = Arquivado).
 - O cronômetro persiste no servidor — fechar o navegador não para o timer.
 - Sessões de login expiram em **30 dias**.
+
+---
+
+## Segurança de senha sem email
+
+- Senhas são armazenadas com hash PBKDF2.
+- Fluxo recomendado para suporte interno:
+  - Admin redefine senha do usuário.
+  - Usuário é marcado para trocar a senha no próximo login.
+  - Não é necessário fluxo de recuperação por email.

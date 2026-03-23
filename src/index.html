@@ -897,6 +897,7 @@ const DASH_FILTERS_KEY = 'telier_dash_filters_v1';
 const DASH_STATUS_OPCOES = new Set(['todos', 'Em andamento', 'A fazer', 'Em revisão', 'Pausado', 'Concluído', 'Arquivado']);
 const REQ_TIMEOUT_MS = 15000;
 let _pendingUndoAction = null;
+let FORCE_PASSWORD_CHANGE = false;
 
 function carregarFiltrosDash() {
   try {
@@ -1122,10 +1123,12 @@ function abrirModal(html, opts = {}) {
   overlay.className = 'modal-overlay';
   overlay.id = id;
   overlay.innerHTML = `<div class="modal ${opts.lg ? 'modal-lg' : ''}">${html}</div>`;
-  overlay.addEventListener('click', e => { if (e.target === overlay) overlay.remove(); });
-  const onKey = e => { if (e.key === 'Escape') { overlay.remove(); document.removeEventListener('keydown', onKey); } };
-  document.addEventListener('keydown', onKey);
-  overlay.addEventListener('remove', () => document.removeEventListener('keydown', onKey));
+  if (!opts.locked) {
+    overlay.addEventListener('click', e => { if (e.target === overlay) overlay.remove(); });
+    const onKey = e => { if (e.key === 'Escape') { overlay.remove(); document.removeEventListener('keydown', onKey); } };
+    document.addEventListener('keydown', onKey);
+    overlay.addEventListener('remove', () => document.removeEventListener('keydown', onKey));
+  }
   document.getElementById('modais').appendChild(overlay);
   setTimeout(() => overlay.querySelector('input:not([type=date]):not([type=number])')?.focus(), 60);
   return overlay;
@@ -1232,6 +1235,7 @@ async function init() {
     NEEDS_SETUP = !!setup.needs_setup;
     if (!TOKEN) { mostrar('login'); return; }
     EU = await req('GET', '/auth/me');
+    FORCE_PASSWORD_CHANGE = Number(EU?.deve_trocar_senha || 0) === 1;
     localStorage.setItem('ea_user', JSON.stringify(EU));
     mostrar('app');
   } catch {
@@ -1253,6 +1257,9 @@ function mostrar(tela) {
     iniciarPollNotificacoes();
     syncAdminModeUI();
     isAdmin() ? abrirCentralAdmin() : renderDash();
+    if (FORCE_PASSWORD_CHANGE) {
+      setTimeout(() => modalTrocaSenhaObrigatoria(), 120);
+    }
   }
 }
 
@@ -1329,6 +1336,7 @@ async function fazerLogin() {
       senha: document.getElementById('l-senha').value,
     });
     TOKEN = r.token; EU = r.usuario; // r.usuario tem: id, nome, usuario_login, papel
+    FORCE_PASSWORD_CHANGE = !!r.must_change_password || Number(r?.usuario?.deve_trocar_senha || 0) === 1;
     localStorage.setItem('ea_token', TOKEN);
     localStorage.setItem('ea_user', JSON.stringify(EU));
     if (!isAdminRole()) {
@@ -1381,7 +1389,81 @@ async function fazerCadastroPublico() {
     btnLoading('btn-reg', false);
   }
 }
+
+function modalTrocaSenhaObrigatoria() {
+  if (!FORCE_PASSWORD_CHANGE || document.getElementById('m-senha-atual-obg')) return;
+  abrirModal(`
+    <h2>Atualize sua senha</h2>
+    <p class="modal-copy">Por segurança, você precisa trocar sua senha antes de continuar.</p>
+    <div class="form-row"><label>Senha atual</label><input id="m-senha-atual-obg" type="password" autocomplete="current-password"></div>
+    <div class="form-row"><label>Nova senha</label><input id="m-senha-nova-obg" type="password" autocomplete="new-password" placeholder="Mínimo 8 caracteres"></div>
+    <div class="form-row"><label>Confirmar nova senha</label><input id="m-senha-nova2-obg" type="password" autocomplete="new-password"></div>
+    <div class="modal-footer">
+      <button class="btn btn-primary" id="btn-salvar-senha-obg" onclick="salvarSenhaObrigatoria()">Salvar nova senha</button>
+    </div>
+  `, { locked: true });
+}
+
+async function salvarSenhaObrigatoria() {
+  const atual = gv('m-senha-atual-obg');
+  const nova = gv('m-senha-nova-obg');
+  const nova2 = gv('m-senha-nova2-obg');
+  if (!atual || !nova || !nova2) { toast('Preencha todos os campos', 'err'); return; }
+  if (nova !== nova2) { toast('As novas senhas não coincidem', 'err'); return; }
+  if (nova.length < 8) { toast('A nova senha deve ter no mínimo 8 caracteres', 'err'); return; }
+  btnLoading('btn-salvar-senha-obg', true);
+  try {
+    await req('POST', '/auth/trocar-senha', { senha_atual: atual, nova_senha: nova });
+    FORCE_PASSWORD_CHANGE = false;
+    if (EU) {
+      EU.deve_trocar_senha = 0;
+      localStorage.setItem('ea_user', JSON.stringify(EU));
+    }
+    fecharModal();
+    toast('Senha atualizada com sucesso');
+  } catch (e) {
+    toast(e.message, 'err');
+    btnLoading('btn-salvar-senha-obg', false);
+  }
+}
+
+function modalResetSenhaUsuario(usuarioId, nomeUsuario) {
+  abrirModal(`
+    <h2>Redefinir senha</h2>
+    <p class="modal-copy">Defina uma senha temporária para <strong>${esc(nomeUsuario)}</strong>. A sessão atual do usuário será encerrada.</p>
+    <div class="form-row"><label>Nova senha temporária</label><input id="m-reset-senha" type="password" placeholder="Mínimo 8 caracteres"></div>
+    <div class="form-row" style="margin-top:-10px;margin-bottom:12px">
+      <label style="display:flex;align-items:center;gap:8px;cursor:pointer;margin:0">
+        <input type="checkbox" id="m-reset-obrigar" checked style="width:auto">
+        <span>Exigir troca no próximo login</span>
+      </label>
+    </div>
+    <div class="modal-footer">
+      <button class="btn" onclick="fecharModal()">Cancelar</button>
+      <button class="btn btn-primary" id="btn-reset-senha" onclick="resetarSenhaUsuario('${usuarioId}')">Salvar senha</button>
+    </div>
+  `);
+}
+
+async function resetarSenhaUsuario(usuarioId) {
+  const nova = gv('m-reset-senha');
+  const exigir = !!document.getElementById('m-reset-obrigar')?.checked;
+  if (!nova || nova.length < 8) { toast('Senha deve ter no mínimo 8 caracteres', 'err'); return; }
+  btnLoading('btn-reset-senha', true);
+  try {
+    await req('PUT', `/usuarios/${usuarioId}/senha`, { nova_senha: nova, exigir_troca: exigir });
+    fecharModal();
+    toast('Senha redefinida com sucesso');
+  } catch (e) {
+    toast(e.message, 'err');
+    btnLoading('btn-reset-senha', false);
+  }
+}
+
 document.addEventListener('keydown', e => {
+  if (FORCE_PASSWORD_CHANGE && !document.getElementById('page-app')?.classList.contains('hidden')) {
+    return;
+  }
   const emInput = ['INPUT','TEXTAREA','SELECT'].includes(document.activeElement?.tagName);
 
   if (e.key === 'Enter') {
@@ -1453,6 +1535,7 @@ async function fazerLogout() {
   if (pd) pd.innerHTML = '';
   try { await req('POST', '/auth/logout'); } catch {}
   TOKEN = null; EU = null;
+  FORCE_PASSWORD_CHANGE = false;
   localStorage.removeItem('ea_token'); localStorage.removeItem('ea_user');
   localStorage.removeItem(ADMIN_MODE_KEY);
   ADMIN_MODE = 'admin';
@@ -2435,7 +2518,10 @@ async function abrirUsuarioAdmin(usuarioId) {
       <div class="form-row"><label>Tempo por tarefa (top 8)</label>
         <div class="table-wrap"><table><thead><tr><th>Projeto</th><th>Tarefa</th><th>Horas</th></tr></thead><tbody>${tempoTop || '<tr><td colspan="3" class="table-empty-sm">Sem registros.</td></tr>'}</tbody></table></div>
       </div>
-      <div class="modal-footer"><button class="btn" onclick="fecharModal()">Fechar</button></div>
+      <div class="modal-footer">
+        <button class="btn" onclick="modalResetSenhaUsuario('${d.usuario.id}','${esc(d.usuario.nome)}')">Redefinir senha</button>
+        <button class="btn" onclick="fecharModal()">Fechar</button>
+      </div>
     `, { lg: true });
   } catch (e) {
     toast(e.message, 'err');

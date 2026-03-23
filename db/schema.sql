@@ -6,6 +6,7 @@ CREATE TABLE IF NOT EXISTS usuarios (
   nome TEXT NOT NULL,
   login TEXT UNIQUE NOT NULL,  -- nome de usuário para acesso ao sistema
   senha_hash TEXT NOT NULL,
+  deve_trocar_senha INTEGER NOT NULL DEFAULT 0,
   papel TEXT NOT NULL DEFAULT 'membro',
   criado_em TEXT DEFAULT (datetime('now'))
 );
@@ -18,6 +19,29 @@ CREATE TABLE IF NOT EXISTS sessoes (
   FOREIGN KEY (usuario_id) REFERENCES usuarios(id)
 );
 
+CREATE INDEX IF NOT EXISTS idx_sessoes_expira_em ON sessoes(expira_em);
+CREATE INDEX IF NOT EXISTS idx_sessoes_usuario ON sessoes(usuario_id);
+
+CREATE TABLE IF NOT EXISTS grupos_projetos (
+  id TEXT PRIMARY KEY,
+  nome TEXT NOT NULL,
+  descricao TEXT,
+  status TEXT NOT NULL DEFAULT 'Ativo',
+  dono_id TEXT NOT NULL,
+  ordem INTEGER DEFAULT 0,
+  criado_em TEXT DEFAULT (datetime('now')),
+  FOREIGN KEY (dono_id) REFERENCES usuarios(id)
+);
+
+CREATE TABLE IF NOT EXISTS permissoes_grupo (
+  grupo_id TEXT NOT NULL,
+  usuario_id TEXT NOT NULL,
+  criado_em TEXT DEFAULT (datetime('now')),
+  PRIMARY KEY (grupo_id, usuario_id),
+  FOREIGN KEY (grupo_id) REFERENCES grupos_projetos(id) ON DELETE CASCADE,
+  FOREIGN KEY (usuario_id) REFERENCES usuarios(id) ON DELETE CASCADE
+);
+
 CREATE TABLE IF NOT EXISTS projetos (
   id TEXT PRIMARY KEY,
   nome TEXT NOT NULL,
@@ -26,6 +50,7 @@ CREATE TABLE IF NOT EXISTS projetos (
   prioridade TEXT NOT NULL DEFAULT 'Média',
   prazo TEXT,
   area_m2 REAL,                    -- área em metros quadrados
+  grupo_id TEXT REFERENCES grupos_projetos(id) ON DELETE SET NULL,
   dono_id TEXT NOT NULL,
   criado_em TEXT DEFAULT (datetime('now')),
   atualizado_em TEXT DEFAULT (datetime('now')),
@@ -42,6 +67,9 @@ CREATE TABLE IF NOT EXISTS permissoes_projeto (
   FOREIGN KEY (projeto_id) REFERENCES projetos(id) ON DELETE CASCADE,
   FOREIGN KEY (usuario_id) REFERENCES usuarios(id) ON DELETE CASCADE
 );
+
+CREATE INDEX IF NOT EXISTS idx_permissoes_projeto_usuario ON permissoes_projeto(usuario_id);
+CREATE INDEX IF NOT EXISTS idx_permissoes_grupo_usuario ON permissoes_grupo(usuario_id);
 
 -- Usuário pode recusar um projeto compartilhado (mesmo herdado por grupo)
 CREATE TABLE IF NOT EXISTS recusas_projeto (
@@ -146,14 +174,4 @@ CREATE TABLE IF NOT EXISTS decisoes (
   FOREIGN KEY (dono_id) REFERENCES usuarios(id)
 );
 
--- ── MIGRAÇÃO v5 → v6: Grupos de projetos ──
--- Execute no console D1 em ordem:
--- 1. CREATE TABLE IF NOT EXISTS grupos_projetos (
---      id TEXT PRIMARY KEY,
---      nome TEXT NOT NULL,
---      dono_id TEXT NOT NULL,
---      ordem INTEGER DEFAULT 0,
---      criado_em TEXT DEFAULT (datetime('now')),
---      FOREIGN KEY (dono_id) REFERENCES usuarios(id)
---    );
--- 2. ALTER TABLE projetos ADD COLUMN grupo_id TEXT REFERENCES grupos_projetos(id) ON DELETE SET NULL;
+-- Schema atualizado inclui grupos/permissões e índices necessários.

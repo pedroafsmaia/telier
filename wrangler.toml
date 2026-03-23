@@ -13,3 +13,4 @@ database_id = "4ea87f58-e284-4fef-847c-93de662b43f4"
 
 [vars]
 ALLOWED_ORIGIN = "https://telier.pages.dev"
+AUTO_SCHEMA_SYNC = "0"
