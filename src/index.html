@@ -1502,9 +1502,9 @@ async function renderDash() {
         <div class="dash-toolbar-row">
           <input type="search" class="search-dash" id="busca-dash" placeholder="Buscar projeto..." value="${esc(BUSCA_DASH)}" oninput="filtrarProjetosBusca(this.value)">
           <div class="segmented">
-            <button class="segmented-btn ${FILTRO_ORIGEM_DASH==='todos'?'ativo':''}" onclick="filtrarOrigemDash('todos')">Todos acessos</button>
-            <button class="segmented-btn ${FILTRO_ORIGEM_DASH==='meus'?'ativo':''}" onclick="filtrarOrigemDash('meus')">Meus</button>
-            <button class="segmented-btn ${FILTRO_ORIGEM_DASH==='compartilhados'?'ativo':''}" onclick="filtrarOrigemDash('compartilhados')">Compartilhados</button>
+            <button class="segmented-btn ${FILTRO_ORIGEM_DASH==='todos'?'ativo':''}" data-origem="todos" onclick="filtrarOrigemDash('todos')">Todos acessos</button>
+            <button class="segmented-btn ${FILTRO_ORIGEM_DASH==='meus'?'ativo':''}" data-origem="meus" onclick="filtrarOrigemDash('meus')">Meus</button>
+            <button class="segmented-btn ${FILTRO_ORIGEM_DASH==='compartilhados'?'ativo':''}" data-origem="compartilhados" onclick="filtrarOrigemDash('compartilhados')">Compartilhados</button>
           </div>
           <select class="resp-filter" onchange="filtrarGrupoDash(this.value)">
             <option value="todos" ${FILTRO_GRUPO_DASH==='todos'?'selected':''}>Todos os grupos</option>
@@ -1534,7 +1534,7 @@ function renderProjetosDash(projetos, grupos) {
   if (FILTRO_GRUPO_DASH === 'sem') lista = lista.filter(p => !p.grupo_id);
   else if (FILTRO_GRUPO_DASH !== 'todos') lista = lista.filter(p => p.grupo_id === FILTRO_GRUPO_DASH);
   if (!lista.length) {
-    const vazioInicial = !busca && FILTRO_STATUS === 'todos' && FILTRO_GRUPO_DASH === 'todos';
+    const vazioInicial = !busca && FILTRO_STATUS === 'todos' && FILTRO_GRUPO_DASH === 'todos' && FILTRO_ORIGEM_DASH === 'todos';
     const vazioTexto = FILTRO_ORIGEM_DASH === 'compartilhados'
       ? 'Nenhum projeto compartilhado com você no contexto atual.'
       : (busca ? 'Tente outro termo de busca' : FILTRO_STATUS !== 'todos' ? 'Tente outro filtro' : 'Comece criando seu primeiro projeto.');
@@ -1704,6 +1704,9 @@ function filtrarGrupoDash(v) {
 
 function filtrarOrigemDash(v) {
   FILTRO_ORIGEM_DASH = v || 'todos';
+  document.querySelectorAll('.segmented-btn[data-origem]').forEach(btn => {
+    btn.classList.toggle('ativo', btn.dataset.origem === FILTRO_ORIGEM_DASH);
+  });
   const grid = document.getElementById('cards-grid-dash');
   if (grid) grid.innerHTML = renderProjetosDash(_projsDash, _gruposDash);
 }
