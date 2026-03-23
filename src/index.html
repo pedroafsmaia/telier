@@ -147,11 +147,15 @@ label{font-size:var(--fs-080);color:var(--text2);display:block;margin-bottom:5px
 .avatar{width:22px;height:22px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:var(--fs-075);font-weight:500;flex-shrink:0;font-family:var(--ff-mono);text-transform:uppercase}
 .avatar-sm{width:18px;height:18px;font-size:0.625rem}
 .avatar-lg{width:32px;height:32px;font-size:var(--fs-080)}
+.colabs-stack { display:flex; align-items:center; }
+.colabs-stack .avatar { margin-left:-5px; border:2px solid var(--bg2); }
+.colabs-stack .avatar:first-child { margin-left:0; }
+.colabs-stack-more { font-size:var(--fs-075); color:var(--text3); margin-left:4px; }
 
 /* ── MODAL ── */
 .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.75);display:flex;align-items:center;justify-content:center;z-index:1000;backdrop-filter:blur(6px);animation:fadeIn .15s ease;padding:16px}
-.modal{background:var(--bg2);border:1px solid var(--border2);border-radius:var(--r3);padding:32px;width:100%;max-width:500px;max-height:92vh;overflow-y:auto;animation:popIn .22s cubic-bezier(.34,1.56,.64,1);box-shadow:var(--shadow2)}
-.modal-lg{max-width:600px}
+.modal{background:var(--bg2);border:1px solid var(--border2);border-radius:var(--r3);padding:clamp(18px,5vw,32px);width:min(100%,500px);max-height:92vh;overflow-y:auto;animation:popIn .22s cubic-bezier(.34,1.56,.64,1);box-shadow:var(--shadow2)}
+.modal-lg{width:min(100%,600px)}
 .modal h2{font-size:var(--fs-300);font-weight:500;margin-bottom:22px;color:var(--text);line-height:var(--lh-tight)}
 .modal-footer{display:flex;gap:8px;justify-content:flex-end;margin-top:24px;padding-top:16px;border-top:1px solid var(--border)}
 .form-row{margin-bottom:20px}
@@ -234,7 +238,7 @@ label{font-size:var(--fs-080);color:var(--text2);display:block;margin-bottom:5px
 .startday-toggle:hover{color:var(--text2);border-color:var(--border3)}
 .startday-wrap.collapsed{padding-bottom:12px}
 .startday-wrap.collapsed .startday-grid{display:none}
-.startday-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:10px}
+.startday-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(240px,100%),1fr));gap:10px}
 .startday-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r2);padding:14px;display:flex;flex-direction:column;gap:8px;min-height:132px}
 .startday-card h4{font-size:var(--fs-090);color:var(--text2);font-weight:500}
 .startday-main{font-size:var(--fs-100);color:var(--text);line-height:1.35}
@@ -256,6 +260,45 @@ label{font-size:var(--fs-080);color:var(--text2);display:block;margin-bottom:5px
 .admin-tools{display:flex;gap:8px;align-items:end;flex-wrap:wrap;margin-bottom:10px}
 .admin-tools .tool-field{display:flex;flex-direction:column;gap:4px}
 .admin-tools label{font-size:var(--fs-075);color:var(--text3);margin:0}
+.timeline-wrap { display:flex; flex-direction:column; gap:6px; margin-top:12px; }
+.tl-row { display:flex; align-items:center; gap:8px; font-size:12px; }
+.tl-name {
+  width:70px; font-size:var(--fs-075); color:var(--text2);
+  white-space:nowrap; overflow:hidden; text-overflow:ellipsis; flex-shrink:0;
+}
+.tl-track {
+  flex:1; height:14px; background:var(--bg3);
+  border-radius:3px; overflow:hidden; position:relative;
+}
+.tl-block { height:100%; border-radius:3px; position:absolute; }
+.tl-hours {
+  font-size:var(--fs-075); font-family:var(--ff-mono);
+  color:var(--text3); width:32px; text-align:right; flex-shrink:0;
+}
+.tl-axis {
+  display:flex; justify-content:space-between;
+  font-size:10px; color:var(--text3);
+  margin-top:4px; padding:0 40px 0 78px;
+}
+@media (max-width: 768px) {
+  .admin-table-wrap { display: none; }
+  .admin-cards { display: flex; flex-direction: column; gap: 8px; }
+}
+@media (min-width: 769px) {
+  .admin-cards { display: none; }
+}
+.admin-card {
+  background:var(--bg2); border:1px solid var(--border);
+  border-radius:var(--r2); padding:12px;
+  display:flex; flex-direction:column; gap:6px;
+}
+.admin-card-title {
+  font-size:var(--fs-090); font-weight:500; color:var(--text);
+}
+.admin-card-meta {
+  display:flex; gap:8px; flex-wrap:wrap;
+  font-size:var(--fs-080); color:var(--text3);
+}
 
 /* FILTROS */
 .dash-filters{display:flex;gap:8px;margin-bottom:24px;flex-wrap:wrap}
@@ -281,6 +324,12 @@ label{font-size:var(--fs-080);color:var(--text2);display:block;margin-bottom:5px
 .proj-card.shared{border-color:rgba(125,190,255,.3)}
 [data-theme="light"] .proj-card{box-shadow:0 1px 3px rgba(0,0,0,.07),0 0 0 1px rgba(0,0,0,.05);border-color:transparent}
 [data-theme="light"] .proj-card:hover{box-shadow:0 4px 14px rgba(0,0,0,.10),0 0 0 1px rgba(0,0,0,.06);border-color:transparent}
+tr[data-status="Em andamento"] { border-left:2px solid var(--blue); }
+tr[data-status="Bloqueada"]    { border-left:2px solid var(--red); }
+tr[data-status="Concluída"]    { border-left:2px solid var(--green); opacity:.75; }
+.task-card[data-status="Em andamento"] { border-left:3px solid var(--blue); }
+.task-card[data-status="Bloqueada"]    { border-left:3px solid var(--red); }
+.task-card[data-status="Concluída"]    { border-left:3px solid var(--green); }
 [data-theme="light"] .startday-card{box-shadow:0 1px 3px rgba(0,0,0,.06),0 0 0 1px rgba(0,0,0,.04);border-color:transparent}
 [data-theme="light"] .modal{box-shadow:0 8px 32px rgba(0,0,0,.14),0 0 0 1px rgba(0,0,0,.06)}
 .proj-card-header{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:14px;gap:8px}
@@ -329,7 +378,7 @@ label{font-size:var(--fs-080);color:var(--text2);display:block;margin-bottom:5px
 .proj-tags{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px}
 .btn-back{background:none;border:none;color:var(--text3);font-size:var(--fs-090);cursor:pointer;padding:4px 0;margin-bottom:14px;display:inline-flex;align-items:center;gap:6px;transition:color .15s;font-family:inherit}
 .btn-back:hover{color:var(--text)}
-.proj-meta{display:flex;flex-wrap:wrap;gap:16px;margin-bottom:18px}
+.proj-meta{display:flex;flex-wrap:wrap;gap:16px;row-gap:6px;margin-bottom:18px}
 .proj-meta-item{display:flex;flex-direction:column;gap:5px}
 .proj-meta-label{font-size:var(--fs-075);font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.07em}
 .card-meta{display:flex;flex-wrap:wrap;gap:8px 14px;margin-bottom:10px}
@@ -378,8 +427,9 @@ label{font-size:var(--fs-080);color:var(--text2);display:block;margin-bottom:5px
 .proj-foco-empty{margin-top:14px;padding:10px 14px;background:var(--bg3);border:1px dashed var(--border2);border-radius:var(--r);font-size:var(--fs-080);color:var(--text3)}
 
 /* ── ABAS ── */
-.abas{display:flex;border-bottom:1px solid var(--border);margin-bottom:28px;gap:4px}
-.aba{padding:10px 20px;font-size:var(--fs-090);font-weight:500;cursor:pointer;color:var(--text3);border:none;border-bottom:2px solid transparent;background:none;font-family:inherit;transition:all .2s;margin-bottom:-1px;letter-spacing:.01em}
+.abas{display:flex;border-bottom:1px solid var(--border);margin-bottom:28px;gap:4px;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;flex-wrap:nowrap;padding-bottom:2px}
+.abas::-webkit-scrollbar{display:none}
+.aba{padding:10px 20px;font-size:var(--fs-090);font-weight:500;cursor:pointer;color:var(--text3);border:none;border-bottom:2px solid transparent;background:none;font-family:inherit;transition:all .2s;margin-bottom:-1px;letter-spacing:.01em;white-space:nowrap;flex-shrink:0}
 .aba:hover{color:var(--text2)}
 .aba.ativa{color:var(--text);border-bottom-color:var(--accent)}
 
@@ -596,6 +646,39 @@ tr:hover .td-ações{opacity:1}
 }
 .proj-horas-dist-item { display: flex; align-items: center; gap: 5px; }
 .proj-horas-dist-item strong { color: var(--green); font-family: var(--ff-mono); }
+.proj-hero-details-wrap {
+  margin-top:10px; border-top:1px solid var(--border); padding-top:10px;
+}
+.proj-hero-details-toggle {
+  cursor:pointer; list-style:none;
+  font-size:var(--fs-080); color:var(--text3);
+}
+.proj-hero-details-toggle::-webkit-details-marker { display:none; }
+
+.kanban-board {
+  display:grid; grid-template-columns:repeat(4,1fr);
+  gap:12px; align-items:start; margin-top:16px;
+}
+.kanban-col {
+  background:var(--bg2); border:1px solid var(--border);
+  border-radius:var(--r2); padding:10px; min-height:200px;
+  transition:border-color .15s;
+}
+.kanban-col.drag-over { border-color:var(--accent); }
+.kanban-col-header {
+  font-size:var(--fs-075); font-weight:500; color:var(--text2);
+  text-transform:uppercase; letter-spacing:.06em; margin-bottom:10px;
+}
+.kanban-card {
+  background:var(--bg); border:1px solid var(--border);
+  border-radius:var(--r); padding:10px; margin-bottom:8px;
+  cursor:grab; transition:border-color .15s;
+}
+.kanban-card:hover { border-color:var(--border2); }
+.kanban-card:active { cursor:grabbing; opacity:.8; }
+@media (max-width:768px) {
+  .kanban-board { grid-template-columns:1fr; }
+}
 
 /* ── PAINEL DE PRESENÇA ── */
 #presence-dock {
@@ -652,6 +735,26 @@ tr:hover .td-ações{opacity:1}
   width: 7px; height: 7px; border-radius: 50%;
   background: var(--green); animation: pulse 2s ease infinite; flex-shrink: 0;
 }
+#timer-dock, #presence-dock {
+  bottom: max(16px, env(safe-area-inset-bottom));
+}
+body.has-presence #timer-dock {
+  bottom: max(70px, calc(env(safe-area-inset-bottom) + 54px));
+}
+.topbar-presence-chip {
+  display:flex; align-items:center; gap:5px; background:none;
+  border:1px solid var(--border2); border-radius:999px;
+  padding:3px 8px 3px 6px; cursor:pointer; transition:all .15s;
+}
+.topbar-presence-chip:hover { background:var(--bg3); }
+.topbar-presence-count { font-size:var(--fs-075); color:var(--text2); font-weight:500; }
+.topbar-presence-avatars { display:flex; }
+.topbar-presence-avatars .avatar { margin-left:-4px; border:2px solid var(--bg); }
+.topbar-presence-avatars .avatar:first-child { margin-left:0; }
+.presence-live-dot {
+  width:6px; height:6px; border-radius:50%;
+  background:var(--green); flex-shrink:0;
+}
 .content > .startday-wrap:first-child { margin-top: 0; }
 
 /* ── COLABORADORES TAREFA ── */
@@ -702,6 +805,11 @@ tr:hover .td-ações{opacity:1}
     --fs-600: 1.25rem;
   }
 
+  .proj-hero { padding: 16px; }
+  .proj-nome { font-size: var(--fs-300); }
+  .proj-stats { grid-template-columns: repeat(2, 1fr); }
+  .proj-hero-top { gap: 10px; }
+  .proj-hero-top > div:last-child { flex-wrap: wrap; justify-content: flex-start; }
   .auth-box { padding: 28px 22px; }
   .cards-grid { grid-template-columns: 1fr; }
   .form-grid { grid-template-columns: 1fr; }
@@ -734,7 +842,7 @@ tr:hover .td-ações{opacity:1}
 .modal-section-title{font-size:var(--fs-075);color:var(--text3);text-transform:uppercase;letter-spacing:.08em;margin-bottom:10px}
 .field-hint{font-size:var(--fs-075);color:var(--text3);margin-top:4px;line-height:1.35}
 .prazo-hint{font-size:var(--fs-075);color:var(--text3);margin-top:6px}
-.modal-footer-sticky{position:sticky;bottom:-32px;margin:24px -32px -32px;padding:14px 32px;background:color-mix(in srgb,var(--bg2) 90%, transparent);backdrop-filter:blur(6px);border-top:1px solid var(--border);z-index:2}
+.modal-footer-sticky{position:sticky;bottom:calc(clamp(18px,5vw,32px) * -1);margin:24px calc(clamp(18px,5vw,32px) * -1) calc(clamp(18px,5vw,32px) * -1);padding:14px clamp(18px,5vw,32px);background:color-mix(in srgb,var(--bg2) 90%, transparent);backdrop-filter:blur(6px);border-top:1px solid var(--border);z-index:2}
 .inline-note{font-size:var(--fs-080);color:var(--text3)}
 .inline-note-strong{color:var(--text2)}
 .api-empty{padding:40px;text-align:center;color:var(--text3)}
@@ -832,6 +940,7 @@ tr:hover .td-ações{opacity:1}
     <div id="topbar-breadcrumb" class="topbar-breadcrumb"></div>
     <div class="topbar-sep"></div>
     <div class="topbar-actions">
+      <div id="topbar-presence" style="display:none"></div>
       <span class="topbar-user-name" id="topbar-nome"></span>
       <button class="btn btn-ghost btn-sm" id="btn-admin-toggle" style="display:none" onclick="alternarPerfilAdmin()">Visão admin</button>
       <button class="topbar-bell" id="btn-notifs" onclick="abrirNotificacoes()" title="Notificações" style="display:none">
@@ -896,8 +1005,31 @@ const TIMER_AVISO_HORAS = 4;
 const DASH_FILTERS_KEY = 'telier_dash_filters_v1';
 const DASH_STATUS_OPCOES = new Set(['todos', 'Em andamento', 'A fazer', 'Em revisão', 'Pausado', 'Concluído', 'Arquivado']);
 const REQ_TIMEOUT_MS = 15000;
+const PROJ_CACHE_KEY = 'telier_proj_cache';
+const PROJ_CACHE_TTL = 45000;
 let _pendingUndoAction = null;
 let FORCE_PASSWORD_CHANGE = false;
+
+async function fetchProjetos(params) {
+  try {
+    const raw = sessionStorage.getItem(PROJ_CACHE_KEY);
+    if (raw) {
+      const { ts, data, key } = JSON.parse(raw);
+      if (key === params.toString() && Date.now() - ts < PROJ_CACHE_TTL) return data;
+    }
+  } catch {}
+  const data = await req('GET', `/projetos?${params}`);
+  try {
+    sessionStorage.setItem(PROJ_CACHE_KEY, JSON.stringify({
+      ts: Date.now(), data, key: params.toString(),
+    }));
+  } catch {}
+  return data;
+}
+
+function invalidarCacheProjetos() {
+  sessionStorage.removeItem(PROJ_CACHE_KEY);
+}
 
 function carregarFiltrosDash() {
   try {
@@ -1074,6 +1206,22 @@ function iniciarPollNotificacoes() {
   if (_notifTick) clearInterval(_notifTick);
   carregarNotificacoes(true);
   _notifTick = setInterval(() => carregarNotificacoes(false), 30000);
+}
+
+async function carregarStatus() {
+  try {
+    const data = await req('GET', '/status');
+    COLEGAS_ATIVOS = Array.isArray(data.colegas_ativos) ? data.colegas_ativos : [];
+    renderPresenceDock();
+    atualizarBadgeNotificacoes(data.notifs_nao_lidas);
+  } catch {}
+}
+
+function iniciarStatusPoll() {
+  if (!TOKEN) return;
+  if (window._statusTick) clearInterval(window._statusTick);
+  carregarStatus();
+  window._statusTick = setInterval(carregarStatus, 30000);
 }
 
 async function marcarNotifLida(id, abrirLink = null) {
@@ -1254,7 +1402,7 @@ function mostrar(tela) {
   if (tela === 'app') {
     document.getElementById('topbar-nome').textContent = EU?.nome || '';
     atualizarBadgeNotificacoes(0);
-    iniciarPollNotificacoes();
+    iniciarStatusPoll();
     syncAdminModeUI();
     isAdmin() ? abrirCentralAdmin() : renderDash();
     if (FORCE_PASSWORD_CHANGE) {
@@ -1362,8 +1510,7 @@ async function fazerLogin() {
     }
     mostrar('app');
     carregarTimersAtivos();
-    iniciarPollPresenca();
-    iniciarPollNotificacoes();
+    iniciarStatusPoll();
   } catch (e) {
     errEl.textContent = e.message;
     errEl.classList.remove('hidden');
@@ -1555,6 +1702,7 @@ async function fazerLogout() {
   }
   if (_presenceTick) clearInterval(_presenceTick);
   if (_notifTick) clearInterval(_notifTick);
+  if (window._statusTick) clearInterval(window._statusTick);
   if (window._presenceDisplayTick) clearInterval(window._presenceDisplayTick);
   COLEGAS_ATIVOS = []; PRESENCE_ABERTO = false;
   NOTIFS = [];
@@ -1572,7 +1720,7 @@ async function fazerLogout() {
   mostrar('login');
 }
 
-function renderInicioDia(projetos, ativas) {
+function renderInicioDia(projetos, ativas, ultimaSessao = null) {
   const focoProjeto = projetos.find(p => p.minha_tarefa_foco);
   const urgentes = projetos.filter(p => {
     const dias = diasRestantes(p.prazo);
@@ -1629,6 +1777,24 @@ function renderInicioDia(projetos, ativas) {
               : `<button class="btn btn-sm" disabled>Ver mais urgente</button>`}
           </div>
         </div>
+
+        <div class="startday-card">
+          <h4>Última sessão</h4>
+          <div class="startday-main">
+            ${ultimaSessao ? esc(ultimaSessao.tarefa_nome) : 'Nenhuma sessão anterior'}
+          </div>
+          <div class="startday-sub">
+            ${ultimaSessao
+              ? `${esc(ultimaSessao.projeto_nome)} · ${ultimaSessao.horas}h`
+              : 'Inicie seu primeiro cronômetro'}
+          </div>
+          <div class="startday-actions">
+            ${ultimaSessao
+              ? `<button class="btn btn-sm btn-primary"
+                   onclick="abrirProjeto('${ultimaSessao.projeto_id}')">Retomar projeto</button>`
+              : `<button class="btn btn-sm" disabled>Retomar projeto</button>`}
+          </div>
+        </div>
       </div>
     </div>`;
 }
@@ -1670,10 +1836,11 @@ async function renderDash() {
     if (FILTRO_STATUS !== 'todos') params.set('status', FILTRO_STATUS);
     if (isAdminRole() && ADMIN_MODE === 'normal') params.set('as_member', '1');
     const qs = params.toString() ? `?${params.toString()}` : '';
-    const [projetos, ativas, grupos] = await Promise.all([
-      req('GET', '/projetos' + qs),
+    const [projetos, ativas, grupos, ultimaSessao] = await Promise.all([
+      fetchProjetos(params),
       req('GET', `/tempo/ativas${isAdminRole() && ADMIN_MODE === 'normal' ? '?as_member=1' : ''}`).catch(() => []),
       req('GET', `/grupos${isAdminRole() && ADMIN_MODE === 'normal' ? '?as_member=1' : ''}`).catch(() => []),
+      req('GET', '/tempo/ultima-sessao').catch(() => null),
     ]);
 
     _projsDash = projetos;
@@ -1684,7 +1851,7 @@ async function renderDash() {
     const filtros = ['todos','Em andamento','A fazer','Em revisão','Pausado','Concluído','Arquivado'];
 
     let html = `
-      ${renderInicioDia(projetos, ativas)}
+      ${renderInicioDia(projetos, ativas, ultimaSessao)}
       <div class="dash-header" style="margin-top:22px">
         <div>
           <div class="dash-title">Projetos</div>
@@ -1899,11 +2066,15 @@ function renderCardsDash(projetos) {
   }).join('');
 }
 
+let _buscaDashTick;
 function filtrarProjetosBusca(v) {
-  BUSCA_DASH = v;
-  salvarFiltrosDash();
-  const grid = document.getElementById('cards-grid-dash');
-  if (grid) grid.innerHTML = renderProjetosDash(_projsDash, _gruposDash);
+  clearTimeout(_buscaDashTick);
+  _buscaDashTick = setTimeout(() => {
+    BUSCA_DASH = v;
+    salvarFiltrosDash();
+    const grid = document.getElementById('cards-grid-dash');
+    if (grid) grid.innerHTML = renderProjetosDash(_projsDash, _gruposDash);
+  }, 180);
 }
 
 function filtrarGrupoDash(v) {
@@ -2061,7 +2232,7 @@ async function criarGrupo() {
   btnLoading('btn-criar-grupo', true);
   try {
     await req('POST', '/grupos', { nome, status: gv('m-grupo-status'), descricao: gv('m-grupo-desc') || null });
-    fecharModal(); toast('Grupo criado'); renderDash();
+    fecharModal(); toast('Grupo criado'); invalidarCacheProjetos(); renderDash();
   } catch (e) { toast(e.message, 'err'); btnLoading('btn-criar-grupo', false); }
 }
 
@@ -2140,7 +2311,7 @@ async function salvarGrupo(id) {
   btnLoading('btn-salvar-grupo', true);
   try {
     await req('PUT', `/grupos/${id}`, { nome, status: gv('m-grupo-status'), descricao: gv('m-grupo-desc') || null });
-    fecharModal(); toast('Grupo atualizado'); renderDash();
+    fecharModal(); toast('Grupo atualizado'); invalidarCacheProjetos(); renderDash();
   } catch (e) { toast(e.message, 'err'); btnLoading('btn-salvar-grupo', false); }
 }
 
@@ -2171,6 +2342,7 @@ async function sairGrupoCompartilhado(grupoId, nomeGrupo) {
       try {
         await req('DELETE', `/grupos/${grupoId}/sair`);
         toast('Você saiu do grupo');
+        invalidarCacheProjetos();
         renderDash();
       } catch (e) { toast(e.message, 'err'); }
     }, 4200);
@@ -2191,6 +2363,7 @@ async function sairProjetoCompartilhado(projetoId, nomeProjeto) {
       try {
         await req('DELETE', `/projetos/${projetoId}/sair`);
         toast('Você saiu do projeto');
+        invalidarCacheProjetos();
         renderDash();
       } catch (e) { toast(e.message, 'err'); }
     }, 4200);
@@ -2206,6 +2379,7 @@ async function acaoGrupo(grupoId, action, destino = null) {
   try {
     await req('PATCH', `/grupos/${grupoId}`, { action, destino_grupo_id: destino });
     toast('Ação aplicada no grupo');
+    invalidarCacheProjetos();
     renderDash();
   } catch (e) { toast(e.message, 'err'); }
 }
@@ -2226,7 +2400,7 @@ function modalMoverTodosGrupo(grupoId) {
 
 function deletarGrupo(id, nome) {
   confirmar(`Excluir o grupo "${nome}"? Os projetos dentro dele não serão excluídos, apenas desagrupados.`, async () => {
-    try { await req('DELETE', `/grupos/${id}`); toast('Grupo excluído'); renderDash(); }
+    try { await req('DELETE', `/grupos/${id}`); toast('Grupo excluído'); invalidarCacheProjetos(); renderDash(); }
     catch (e) { toast(e.message, 'err'); }
   }, { titulo: 'Excluir grupo', btnTexto: 'Excluir', danger: true });
 }
@@ -2236,6 +2410,56 @@ function tempoDesde(inicio) {
   if (!inicio) return '—';
   const seg = Math.max(0, Math.floor((Date.now() - new Date(inicio.replace(' ', 'T') + 'Z').getTime()) / 1000));
   return fmtDuracao(seg);
+}
+
+async function renderTimelineHoje(el) {
+  el.innerHTML = `<div class="loading"><div class="spinner"></div></div>`;
+  try {
+    const rows = await req('GET', '/admin/timeline-hoje');
+    if (!rows.length) {
+      el.innerHTML = `<div style="color:var(--text3);padding:16px">Nenhuma sessão hoje.</div>`;
+      return;
+    }
+    const START = 480, RANGE = 720;
+    const byUser = {};
+    rows.forEach(r => {
+      (byUser[r.usuario_id] = byUser[r.usuario_id] || { nome: r.usuario_nome, sessions: [] })
+        .sessions.push(r);
+    });
+    const rowsHtml = Object.values(byUser).map(u => {
+      const blocks = u.sessions.map(s => {
+        const startMin = new Date(s.inicio.replace(' ', 'T') + 'Z').getHours() * 60
+                        + new Date(s.inicio.replace(' ', 'T') + 'Z').getMinutes();
+        const endMin   = s.fim
+          ? new Date(s.fim.replace(' ', 'T') + 'Z').getHours() * 60
+            + new Date(s.fim.replace(' ', 'T') + 'Z').getMinutes()
+          : (new Date().getHours() * 60 + new Date().getMinutes());
+        const left  = Math.max(0, Math.min(100, (startMin - START) / RANGE * 100));
+        const width = Math.max(0.5, Math.min(100 - left, (endMin - startMin) / RANGE * 100));
+        return `<div class="tl-block" style="left:${left}%;width:${width}%;
+          background:${s.fim ? 'var(--accent)' : 'var(--green)'};opacity:.7"
+          title="${esc(s.tarefa_nome)}"></div>`;
+      }).join('');
+      const totalH = (u.sessions.reduce((sum, s) => {
+        const dur = s.fim
+          ? (new Date(s.fim.replace(' ','T') + 'Z') - new Date(s.inicio.replace(' ','T') + 'Z')) / 3600000
+          : (Date.now() - new Date(s.inicio.replace(' ','T') + 'Z')) / 3600000;
+        return sum + dur;
+      }, 0)).toFixed(1);
+      return `<div class="tl-row">
+        <div class="tl-name">${esc(u.nome)}</div>
+        <div class="tl-track">${blocks}</div>
+        <div class="tl-hours">${totalH}h</div>
+      </div>`;
+    }).join('');
+    const axis = ['08h','10h','12h','14h','16h','18h','20h']
+      .map(h => `<span>${h}</span>`).join('');
+    el.innerHTML = `
+      <div class="timeline-wrap">${rowsHtml}</div>
+      <div class="tl-axis">${axis}</div>`;
+  } catch (err) {
+    el.innerHTML = `<div class="error-block">${esc(err.message)}</div>`;
+  }
 }
 
 async function abrirCentralAdmin(aba = 'agora') {
@@ -2286,12 +2510,25 @@ async function abrirCentralAdmin(aba = 'agora') {
           <td><button class="btn btn-sm" onclick="abrirProjeto('${a.projeto_id}')">Abrir</button></td>
         </tr>`).join('');
       body.innerHTML = kpi + `
-        <div class="table-wrap" style="margin-top:10px">
+        <div class="admin-table-wrap" style="margin-top:10px">
           <table>
             <thead><tr><th>Usuário</th><th>Projeto</th><th>Tarefa</th><th>Status</th><th>Rodando</th><th></th></tr></thead>
             <tbody>${rows || `<tr><td colspan="6" class="table-empty">Nenhuma atividade em andamento agora.</td></tr>`}</tbody>
           </table>
-        </div>`;
+        </div>
+        <div class="admin-cards">
+          ${ativas.map(a => `
+            <div class="admin-card">
+              <div class="admin-card-title">${avatar(a.usuario_nome,'avatar-sm')} ${esc(a.usuario_nome)}</div>
+              <div class="admin-card-meta">
+                <span>${esc(a.tarefa_nome)}</span>
+                <span>${esc(a.projeto_nome)}</span>
+                <span class="mono">${tempoDesde(a.inicio)}</span>
+              </div>
+            </div>`).join('')}
+        </div>
+        <div id="timeline-hoje-wrap" style="margin-top:16px"></div>`;
+      renderTimelineHoje(document.getElementById('timeline-hoje-wrap'));
       return;
     }
 
@@ -2307,11 +2544,22 @@ async function abrirCentralAdmin(aba = 'agora') {
           <td><button class="btn btn-sm" onclick="abrirUsuarioAdmin('${u.id}')">Detalhes</button></td>
         </tr>`).join('');
       body.innerHTML = `
-        <div class="table-wrap">
+        <div class="admin-table-wrap">
           <table>
             <thead><tr><th>Usuário</th><th>Papel</th><th>Projetos no dashboard</th><th>Em andamento</th><th>Horas totais</th><th></th></tr></thead>
             <tbody>${rows || `<tr><td colspan="6" class="table-empty">Nenhum usuário.</td></tr>`}</tbody>
           </table>
+        </div>
+        <div class="admin-cards">
+          ${usuarios.map(u => `
+            <div class="admin-card">
+              <div class="admin-card-title">${avatar(u.nome,'avatar-sm')} ${esc(u.nome)} ${tag(u.papel === 'admin' ? 'Admin' : 'Membro', u.papel === 'admin' ? 'tag-red' : 'tag-gray')}</div>
+              <div class="admin-card-meta">
+                <span>${(parseInt(u.projetos_como_dono)||0)+(parseInt(u.projetos_como_editor)||0)} projetos</span>
+                <span>${parseInt(u.tarefas_em_andamento)||0} em andamento</span>
+                <span class="mono">${Number(u.horas_totais||0).toFixed(2)}h</span>
+              </div>
+            </div>`).join('')}
         </div>`;
       return;
     }
@@ -2382,11 +2630,21 @@ async function abrirCentralAdmin(aba = 'agora') {
           <div class="admin-kpi"><div class="admin-kpi-label">Horas líquidas registradas</div><div class="admin-kpi-val">${total.toFixed(2)}h</div></div>
           <div class="admin-kpi"><div class="admin-kpi-label">Itens de tempo</div><div class="admin-kpi-val">${linhas.length}</div></div>
         </div>
-        <div class="table-wrap">
+        <div class="admin-table-wrap">
           <table>
             <thead><tr><th>Usuário</th><th>Projeto</th><th>Tarefa</th><th>Horas</th></tr></thead>
             <tbody>${rows || `<tr><td colspan="4" class="table-empty">Nenhum registro de tempo.</td></tr>`}</tbody>
           </table>
+        </div>
+        <div class="admin-cards">
+          ${linhas.map(l => `
+            <div class="admin-card">
+              <div class="admin-card-title">${esc(l.projeto_nome)} · ${esc(l.tarefa_nome)}</div>
+              <div class="admin-card-meta">
+                <span>${esc(l.usuario_nome)}</span>
+                <span class="mono">${Number(l.horas_liquidas||0).toFixed(2)}h</span>
+              </div>
+            </div>`).join('')}
         </div>`;
       return;
     }
@@ -2559,8 +2817,7 @@ async function abrirUsuarioAdmin(usuarioId) {
 }
 
 // ── PROJETO ──
-async function abrirProjeto(id) {
-  window.scrollTo(0, 0);
+async function abrirProjeto(id) {  window.scrollTo(0, 0);
   const c = document.getElementById('content');
   c.style.opacity = '0.4';
   c.style.pointerEvents = 'none';
@@ -2577,14 +2834,19 @@ async function abrirProjeto(id) {
     c.style.opacity = '';
     c.style.pointerEvents = '';
     const abaSalva = localStorage.getItem(`telier_aba_${id}`) || 'lista';
+    slideContent('right');
     renderProjeto(projeto, tarefas, decisoes, abaSalva, resumoHoras);
     VISTA_ATUAL = 'projeto';
-    slideContent('right');
   } catch (e) {
     c.style.opacity = '';
     c.style.pointerEvents = '';
     c.innerHTML = `<div class="error-block">${esc(e.message)}</div>`;
   }
+}
+
+function voltarDash() {
+  slideContent('left');
+  renderDash();
 }
 
 function renderProjeto(proj, tarefas, decisoes, abaAtiva, resumoHoras = []) {
@@ -2593,19 +2855,32 @@ function renderProjeto(proj, tarefas, decisoes, abaAtiva, resumoHoras = []) {
   const conc = tarefas.filter(t => t.status === 'Concluída').length;
   const pct = total ? Math.round(conc / total * 100) : 0;
   const focoMinha = tarefas.find(t => t.foco && t.dono_id === EU?.id);
+  const focoSessaoAtiva = focoMinha
+    ? Object.entries(TIMERS).find(([, t]) => t.tarefaId === focoMinha.id)
+    : null;
+  const focoBtnHtml = focoMinha
+    ? (focoSessaoAtiva
+        ? `<button class="btn btn-sm btn-danger"
+             onclick="pararCronometro('${focoSessaoAtiva[0]}')">■ Parar</button>`
+        : `<button class="btn btn-sm btn-primary"
+             onclick="iniciarCronometro('${focoMinha.id}','${esc(focoMinha.nome)}')">▶ Iniciar</button>`)
+    : '';
   const dias = diasRestantes(proj.prazo);
   const urgente = dias !== null && dias <= 7 && !projetoConcluido(statusProjeto);
   const canEdit = podeEditar(proj);
   const compartilhado = Number(proj.compartilhado_comigo) === 1;
 
   setBreadcrumb([
-    { label: 'Projetos', onClick: 'renderDash()' },
+    { label: 'Projetos', onClick: 'voltarDash()' },
+    ...(proj.grupo_nome
+      ? [{ label: proj.grupo_nome, onClick: 'voltarDash()' }]
+      : []),
     { label: proj.nome },
   ]);
 
   const c = document.getElementById('content');
   c.innerHTML = `
-    <button class="btn-back" onclick="renderDash()">← Voltar para projetos</button>
+    <button class="btn-back" onclick="voltarDash()">← Voltar para projetos</button>
     <div class="proj-hero" data-status="${esc(statusProjeto)}">
       <div class="proj-hero-top">
         <div class="proj-hero-left">
@@ -2620,13 +2895,26 @@ function renderProjeto(proj, tarefas, decisoes, abaAtiva, resumoHoras = []) {
         </div>
       </div>
       <div class="proj-meta">
-        ${compartilhado ? `<div class="proj-meta-item"><span class="proj-meta-label">Acesso</span><span class="tag tag-cyan">Compartilhado ${proj.origem_compartilhamento==='grupo'?'via grupo':'direto'}</span></div>` : ''}
-        <div class="proj-meta-item"><span class="proj-meta-label">Fase</span>${tag(proj.fase, FT[proj.fase])}</div>
         <div class="proj-meta-item"><span class="proj-meta-label">Status</span>${tag(statusProjeto)}</div>
-        <div class="proj-meta-item"><span class="proj-meta-label">Prioridade</span>${tag(proj.prioridade, PT[proj.prioridade])}</div>
-        ${proj.prazo ? `<div class="proj-meta-item"><span class="proj-meta-label">Prazo</span><span class="tag ${urgente?'tag-red':'tag-gray'} mono">${prazoFmt(proj.prazo)}</span></div>` : ''}
-        ${proj.area_m2 ? `<div class="proj-meta-item"><span class="proj-meta-label">Área</span><span class="tag tag-gray mono">${proj.area_m2.toLocaleString('pt-BR')} m²</span></div>` : ''}
       </div>
+      <details class="proj-hero-details-wrap">
+        <summary class="proj-hero-details-toggle">Detalhes do projeto</summary>
+        <div class="proj-hero-details">
+          <div class="proj-meta">
+            ${compartilhado ? `<div class="proj-meta-item"><span class="proj-meta-label">Acesso</span><span class="tag tag-cyan">Compartilhado ${proj.origem_compartilhamento==='grupo'?'via grupo':'direto'}</span></div>` : ''}
+            <div class="proj-meta-item"><span class="proj-meta-label">Fase</span>${tag(proj.fase, FT[proj.fase])}</div>
+            <div class="proj-meta-item"><span class="proj-meta-label">Prioridade</span>${tag(proj.prioridade, PT[proj.prioridade])}</div>
+            ${proj.prazo ? `<div class="proj-meta-item"><span class="proj-meta-label">Prazo</span><span class="tag ${urgente?'tag-red':'tag-gray'} mono">${prazoFmt(proj.prazo)}</span></div>` : ''}
+            ${proj.area_m2 ? `<div class="proj-meta-item"><span class="proj-meta-label">Área</span><span class="tag tag-gray mono">${proj.area_m2.toLocaleString('pt-BR')} m²</span></div>` : ''}
+          </div>
+          ${resumoHoras?.length > 1 ? `
+            <div class="proj-horas-dist">
+              ${resumoHoras.map(r =>
+                `<span class="proj-horas-dist-item">${avatar(r.usuario_nome,'avatar-sm')} ${esc(r.usuario_nome)}: <strong>${r.horas}h</strong></span>`
+              ).join('')}
+            </div>` : ''}
+        </div>
+      </details>
       <div class="proj-stats">
         <div class="proj-stat">
           <div class="proj-stat-label">Tarefas</div>
@@ -2648,20 +2936,15 @@ function renderProjeto(proj, tarefas, decisoes, abaAtiva, resumoHoras = []) {
           <div class="proj-prog-bar"><div class="proj-prog-fill ${pct===100?'done':'partial'}" style="width:${pct}%"></div></div>
         </div>
       </div>
-      ${resumoHoras?.length > 1 ? `
-        <div class="proj-horas-dist">
-          ${resumoHoras.map(r =>
-            `<span class="proj-horas-dist-item">${avatar(r.usuario_nome,'avatar-sm')} ${esc(r.usuario_nome)}: <strong>${r.horas}h</strong></span>`
-          ).join('')}
-        </div>` : ''}
       ${focoMinha
-        ? `<div class="proj-foco-banner"><span class="fl">Meu foco</span><span class="fn">${esc(focoMinha.nome)}</span></div>`
+        ? `<div class="proj-foco-banner"><span class="fl">Meu foco</span><span class="fn">${esc(focoMinha.nome)}</span>${focoBtnHtml}</div>`
         : `<div class="proj-foco-empty">Nenhuma tarefa em foco — use ★ na lista para definir</div>`}
     </div>
     <div class="abas">
       <button class="aba ${abaAtiva==='lista'?'ativa':''}" data-aba="lista" onclick="mudarAba('lista')">Lista de tarefas</button>
       <button class="aba ${abaAtiva==='mapa'?'ativa':''}" data-aba="mapa" onclick="mudarAba('mapa')">Mapa de Foco</button>
       <button class="aba ${abaAtiva==='relatorio'?'ativa':''}" data-aba="relatorio" onclick="mudarAba('relatorio')">Relatório</button>
+      <button class="aba ${abaAtiva==='kanban'?'ativa':''}" data-aba="kanban" onclick="mudarAba('kanban')">Kanban</button>
     </div>
     <div id="aba"></div>
     <div id="decisoes-sec"></div>`;
@@ -2682,10 +2965,54 @@ function renderAba(aba, tarefas) {
   TAREFAS = tarefas;
   if (aba === 'lista') renderLista(el, tarefas);
   else if (aba === 'mapa') renderMapa(el, tarefas);
-  else renderRelatorio(el, tarefas);
+  else if (aba === 'relatorio') renderRelatorio(el, tarefas);
+  else if (aba === 'kanban') renderKanban(el, tarefas);
+}
+
+function renderKanban(el, tarefas) {
+  const cols = ['A fazer', 'Em andamento', 'Em revisão', 'Concluída'];
+
+  function cardHtml(t) {
+    return `<div class="kanban-card" draggable="true"
+                 data-tarefa-id="${t.id}"
+                 ondragstart="event.dataTransfer.setData('tarefaId',this.dataset.tarefaId)"
+                 onclick="modalEditarTarefa('${t.id}')">
+      <div style="font-size:var(--fs-090);margin-bottom:6px">${esc(t.nome)}</div>
+      <div style="display:flex;align-items:center;gap:6px">
+        ${avatar(t.dono_nome,'avatar-sm')}
+        ${tag(t.prioridade, PT[t.prioridade])}
+      </div>
+    </div>`;
+  }
+
+  const colsHtml = cols.map(col => {
+    const items = tarefas.filter(t => t.status === col);
+    return `<div class="kanban-col"
+                 ondragover="event.preventDefault();this.classList.add('drag-over')"
+                 ondragleave="this.classList.remove('drag-over')"
+                 ondrop="this.classList.remove('drag-over');
+                         mudarStatus(event.dataTransfer.getData('tarefaId'),'${col}',null)">
+      <div class="kanban-col-header">${col} <span style="color:var(--text3)">${items.length}</span></div>
+      ${items.map(cardHtml).join('') || `<div style="color:var(--text3);font-size:var(--fs-080);padding:8px 0">Vazio</div>`}
+    </div>`;
+  }).join('');
+
+  el.innerHTML = `<div class="kanban-board">${colsHtml}</div>`;
 }
 
 // ── LISTA ──
+function renderColabsStack(ids = [], max = 3) {
+  const visible = ids.slice(0, max);
+  const extra = ids.length - max;
+  const html = visible.map(id => {
+    const u = USUARIOS.find(u => u.id === id);
+    return u ? avatar(u.nome, 'avatar-sm') : '';
+  }).join('');
+  return `<div class="colabs-stack">${html}${
+    extra > 0 ? `<span class="colabs-stack-more">+${extra}</span>` : ''
+  }</div>`;
+}
+
 function renderLista(el, tarefas) {
   const pendentes = tarefas.filter(t => t.status !== 'Concluída');
   const concluidas = tarefas.filter(t => t.status === 'Concluída');
@@ -2726,12 +3053,12 @@ function renderLista(el, tarefas) {
 
     const data = t.data ? prazoFmt(t.data, true) : '—';
 
-    return `<tr>
+    return `<tr data-status="${esc(t.status)}">
       <td style="width:36px" onclick="event.stopPropagation()">${pin}</td>
       <td class="td-nome ${t.foco&&minha?'em-foco':''} ${t.status==='Concluída'?'concluida':''}">
         <div class="td-nome-main">${esc(t.nome)}</div>
       </td>
-      <td><div class="resp-chip">${avatar(t.dono_nome,'avatar-sm')} <span>${esc(t.dono_nome||'—')}</span></div></td>
+      <td><div class="resp-chip">${avatar(t.dono_nome,'avatar-sm')} <span>${esc(t.dono_nome||'—')}</span></div>${t.colaboradores_ids?.length ? renderColabsStack(t.colaboradores_ids) : ''}</td>
       <td>${tag(t.complexidade, DT[t.complexidade])}</td>
       <td>${tag(t.prioridade, PT[t.prioridade])}</td>
       <td onclick="event.stopPropagation()">
@@ -2817,13 +3144,14 @@ function renderLista(el, tarefas) {
               ).join('')}
             </select>`
           : `<span class="tag" style="font-size:var(--fs-075)">${escHtml(t.status)}</span>`;
-        return `<div class="task-card ${t.status==='Concluída'?'concluida':''}">
+        return `<div class="task-card ${t.status==='Concluída'?'concluida':''}" data-status="${esc(t.status)}">
           <div class="task-card-header">
             <div class="task-card-title ${t.foco&&minha?'em-foco':''} ${t.status==='Concluída'?'concluida':''}">${esc(t.nome)}</div>
             ${minha ? `<button class="task-card-foco ${t.foco?'ativo':''} " onclick="toggleFoco('${t.id}',${!!t.foco}); event.stopPropagation()" title="${t.foco?'Remover foco':'Marcar como foco'}">${t.foco?'★':'☆'}</button>` : ''}
           </div>
           <div class="task-card-meta">
             <div class="task-card-chip">${avatar(t.dono_nome,'avatar-sm')} <span>${esc(t.dono_nome||'—')}</span></div>
+            ${t.colaboradores_ids?.length ? renderColabsStack(t.colaboradores_ids) : ''}
             ${tag(t.complexidade, DT[t.complexidade])}
             ${tag(t.prioridade, PT[t.prioridade])}
             <span class="task-card-chip" style="margin-left:auto;color:var(--text3);border:none;background:transparent">${esc(data)}</span>
@@ -2877,17 +3205,12 @@ async function renderRelatorio(el, tarefas) {
 
   // Usar cache se válido (mesmo projeto, menos de 30s)
   let resumoMap;
-  if (RELATORIO_CACHE && RELATORIO_CACHE.projetoId === projetoId && (Date.now() - RELATORIO_CACHE.ts) < 30000) {
+  if (RELATORIO_CACHE && RELATORIO_CACHE.projetoId === projetoId && (Date.now() - RELATORIO_CACHE.ts) < 60000) {
     resumoMap = RELATORIO_CACHE.resumoMap;
   } else {
     el.innerHTML = `<div class="loading"><div class="spinner"></div> Calculando horas...</div>`;
-    resumoMap = {};
-    await Promise.all(tarefas.map(async t => {
-      try {
-        const r = await req('GET', `/tarefas/${t.id}/tempo/resumo`);
-        resumoMap[t.id] = r;
-      } catch { resumoMap[t.id] = []; }
-    }));
+    const byTarefa = await req('GET', `/projetos/${projetoId}/relatorio`);
+    resumoMap = byTarefa;
     RELATORIO_CACHE = { projetoId, ts: Date.now(), resumoMap };
   }
 
@@ -3093,7 +3416,7 @@ async function criarProjeto() {
   btnLoading('btn-criar-proj', true);
   try {
     const areaVal = gv('m-area'); await req('POST', '/projetos', { nome, fase: gv('m-fase'), status: gv('m-status'), prioridade: gv('m-prior'), prazo: gv('m-prazo')||null, area_m2: areaVal ? parseFloat(areaVal) : null, grupo_id: gv('m-grupo') || null });
-    fecharModal(); toast('Projeto criado'); renderDash();
+    fecharModal(); toast('Projeto criado'); invalidarCacheProjetos(); renderDash();
   } catch (e) { toast(e.message, 'err'); btnLoading('btn-criar-proj', false); }
 }
 
@@ -3129,7 +3452,7 @@ async function salvarProjeto(id) {
   try {
     const areaVal2 = gv('m-area'); await req('PUT', `/projetos/${id}`, { nome, fase: gv('m-fase'), status: gv('m-status'), prioridade: gv('m-prior'), prazo: gv('m-prazo')||null, area_m2: areaVal2 ? parseFloat(areaVal2) : null, grupo_id: gv('m-grupo') || null });
     fecharModal(); toast('Projeto atualizado');
-    if (PROJETO?.id === id) await recarregarProjeto(); else renderDash();
+    invalidarCacheProjetos(); if (PROJETO?.id === id) await recarregarProjeto(); else renderDash();
   } catch (e) { toast(e.message, 'err'); btnLoading('btn-salvar-proj', false); }
 }
 
@@ -3141,7 +3464,7 @@ async function deletarProjeto(id) {
     return;
   }
   confirmar(`Excluir o projeto "${proj?.nome || ''}" e todas as suas tarefas, sessões de tempo e decisões? Esta ação é permanente.`, async () => {
-    try { await req('DELETE', `/projetos/${id}`); fecharModal(); toast('Projeto excluído'); renderDash(); }
+    try { await req('DELETE', `/projetos/${id}`); fecharModal(); toast('Projeto excluído'); invalidarCacheProjetos(); renderDash(); }
     catch (e) { toast(e.message, 'err'); }
   }, { titulo: 'Excluir projeto', btnTexto: 'Excluir', danger: true });
 }
@@ -3426,9 +3749,13 @@ async function quickAddTarefa(e, projetoId) {
 }
 
 // ── BUSCA DE TAREFA ──
-function filtrarTarefasBusca(v) {
-  BUSCA_TAREFA = v;
-  renderLista(document.getElementById('aba'), TAREFAS);
+let _buscaTarefaTick;
+function filtrarTarefasBusca(value) {
+  clearTimeout(_buscaTarefaTick);
+  _buscaTarefaTick = setTimeout(() => {
+    BUSCA_TAREFA = value;
+    renderLista(document.getElementById('aba'), TAREFAS);
+  }, 180);
 }
 
 // ── EXPORTAÇÃO CSV ──
@@ -3499,6 +3826,25 @@ function iniciarPollPresenca() {
 function renderPresenceDock() {
   const dock = document.getElementById('presence-dock');
   if (!dock) return;
+  document.body.classList.toggle('has-presence', COLEGAS_ATIVOS.length > 0);
+  const topbarPresence = document.getElementById('topbar-presence');
+  if (topbarPresence) {
+    if (COLEGAS_ATIVOS.length > 0) {
+      const avatarsHtml = COLEGAS_ATIVOS.slice(0, 3)
+        .map(c => avatar(c.usuario_nome, 'avatar-sm')).join('');
+      topbarPresence.innerHTML = `
+        <button class="topbar-presence-chip"
+                onclick="togglePresencePanel()"
+                title="${COLEGAS_ATIVOS.length} colega(s) online">
+          <span class="presence-live-dot"></span>
+          <div class="topbar-presence-avatars">${avatarsHtml}</div>
+          <span class="topbar-presence-count">${COLEGAS_ATIVOS.length}</span>
+        </button>`;
+      topbarPresence.style.display = '';
+    } else {
+      topbarPresence.style.display = 'none';
+    }
+  }
   if (!COLEGAS_ATIVOS.length) {
     clearInterval(window._presenceDisplayTick);
     dock.innerHTML = '';
@@ -4185,15 +4531,15 @@ window.addEventListener('load', async () => {
   aplicarTema(temaSalvo);
   await init();
   if (TOKEN) await carregarTimersAtivos();
-  if (TOKEN) iniciarPollPresenca();
+  if (TOKEN) iniciarStatusPoll();
 });
 
 window.addEventListener('focus', () => {
-  if (TOKEN) carregarColegasAtivos();
+  if (TOKEN) carregarStatus();
 });
 
 document.addEventListener('visibilitychange', () => {
-  if (!document.hidden && TOKEN) carregarColegasAtivos();
+  if (!document.hidden && TOKEN) carregarStatus();
 });
 </script>
 </body>

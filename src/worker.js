@@ -210,21 +210,26 @@ function normalizarStatusProjeto(status) {
 
 async function podeEditarProjeto(env, projetoId, usuarioId, papel) {
   if (papel === 'admin') return true;
-  const proj = await env.DB.prepare('SELECT dono_id, grupo_id FROM projetos WHERE id = ?').bind(projetoId).first();
-  if (!proj) return false;
-  if (proj.dono_id === usuarioId) return true;
-  const recusado = await env.DB.prepare(
-    'SELECT 1 FROM recusas_projeto WHERE projeto_id = ? AND usuario_id = ?'
-  ).bind(projetoId, usuarioId).first();
-  if (recusado) return false;
-  const perm = await env.DB.prepare(
-    'SELECT 1 FROM permissoes_projeto WHERE projeto_id = ? AND usuario_id = ?'
-  ).bind(projetoId, usuarioId).first();
-  if (perm) return true;
-  if (proj.grupo_id) {
+
+  const [proj, recusado, perm] = await env.DB.batch([
+    env.DB.prepare('SELECT dono_id, grupo_id FROM projetos WHERE id = ?')
+      .bind(projetoId),
+    env.DB.prepare('SELECT 1 as ok FROM recusas_projeto WHERE projeto_id = ? AND usuario_id = ?')
+      .bind(projetoId, usuarioId),
+    env.DB.prepare('SELECT 1 as ok FROM permissoes_projeto WHERE projeto_id = ? AND usuario_id = ?')
+      .bind(projetoId, usuarioId),
+  ]);
+
+  const projRow = proj.results[0];
+  if (!projRow) return false;
+  if (projRow.dono_id === usuarioId) return true;
+  if (recusado.results[0]) return false;
+  if (perm.results[0]) return true;
+
+  if (projRow.grupo_id) {
     const gperm = await env.DB.prepare(
       'SELECT 1 FROM permissoes_grupo WHERE grupo_id = ? AND usuario_id = ?'
-    ).bind(proj.grupo_id, usuarioId).first();
+    ).bind(projRow.grupo_id, usuarioId).first();
     if (gperm) return true;
   }
   return false;
@@ -479,6 +484,18 @@ async function podeCronometrar(env, tarefaId, usuarioId, papel) {
   return !!colab;
 }
 
+async function ensureIndexes(env) {
+  if (env._idxReady) return;
+  await env.DB.batch([
+    env.DB.prepare('CREATE INDEX IF NOT EXISTS idx_tarefas_projeto   ON tarefas(projeto_id)'),
+    env.DB.prepare('CREATE INDEX IF NOT EXISTS idx_sessoes_tarefa    ON sessoes_tempo(tarefa_id)'),
+    env.DB.prepare('CREATE INDEX IF NOT EXISTS idx_sessoes_fim       ON sessoes_tempo(fim)'),
+    env.DB.prepare('CREATE INDEX IF NOT EXISTS idx_intervalos_sessao ON intervalos(sessao_id)'),
+    env.DB.prepare('CREATE INDEX IF NOT EXISTS idx_colab_tarefa      ON colaboradores_tarefa(tarefa_id)'),
+  ]);
+  env._idxReady = true;
+}
+
 export default {
   async fetch(request, env) {
     const startedAt = Date.now();
@@ -497,6 +514,7 @@ export default {
 
     try {
     await ensureUserSecuritySchema(env);
+    await ensureIndexes(env);
     if (env.AUTO_SCHEMA_SYNC === '1') {
       await ensureGrupoSchema(env);
       await ensureTaskSchema(env);
@@ -705,6 +723,34 @@ export default {
       return ok({ ok: true });
     }
 
+    // GET /status — polling unificado (colegas ativos + notificações não lidas)
+    if (path === '/status' && method === 'GET') {
+      const [u, e] = await requireAuth(request, env);
+      if (e) return fail('Não autorizado', 401);
+
+      const [colegas, notifs] = await env.DB.batch([
+        env.DB.prepare(`
+          SELECT st.usuario_id, tu.nome as usuario_nome,
+                 t.nome as tarefa_nome, p.nome as projeto_nome,
+                 p.id as projeto_id, st.inicio
+          FROM sessoes_tempo st
+          JOIN usuarios tu ON tu.id = st.usuario_id
+          JOIN tarefas t ON t.id = st.tarefa_id
+          JOIN projetos p ON p.id = t.projeto_id
+          WHERE st.fim IS NULL AND st.usuario_id != ?
+          ORDER BY st.inicio ASC
+        `).bind(u.uid),
+        env.DB.prepare(
+          'SELECT COUNT(*) as nao_lidas FROM notificacoes WHERE usuario_id = ? AND lida_em IS NULL'
+        ).bind(u.uid),
+      ]);
+
+      return ok({
+        colegas_ativos: colegas.results,
+        notifs_nao_lidas: notifs.results[0]?.nao_lidas || 0,
+      });
+    }
+
     // ── CENTRAL ADMIN ──
     if (path === '/admin/agora' && method === 'GET') {
       const [u, e] = await requireAuth(request, env);
@@ -723,6 +769,22 @@ export default {
         ORDER BY st.inicio ASC
       `).all();
       return ok(ativas.results);
+    }
+
+    if (path === '/admin/timeline-hoje' && method === 'GET') {
+      const [u, e] = await requireAuth(request, env);
+      if (e) return fail('Não autorizado', 401);
+      if (!isAdmin(u)) return fail('Sem permissão', 403);
+      const rows = await env.DB.prepare(`
+        SELECT st.usuario_id, u.nome as usuario_nome,
+               st.inicio, st.fim, t.nome as tarefa_nome
+        FROM sessoes_tempo st
+        JOIN usuarios u ON u.id = st.usuario_id
+        JOIN tarefas t ON t.id = st.tarefa_id
+        WHERE DATE(st.inicio) = DATE('now')
+        ORDER BY st.usuario_id, st.inicio
+      `).all();
+      return ok(rows.results);
     }
 
     if (path === '/admin/usuarios' && method === 'GET') {
@@ -2219,7 +2281,66 @@ export default {
       return ok(colegas.results);
     }
 
+    // GET /tempo/ultima-sessao — última sessão concluída do usuário
+    if (path === '/tempo/ultima-sessao' && method === 'GET') {
+      const [u, e] = await requireAuth(request, env);
+      if (e) return fail('Não autorizado', 401);
+      const row = await env.DB.prepare(`
+        SELECT st.tarefa_id, t.nome as tarefa_nome,
+               p.id as projeto_id, p.nome as projeto_nome,
+               st.fim,
+               ROUND((julianday(st.fim) - julianday(st.inicio)) * 24, 2) as horas
+        FROM sessoes_tempo st
+        JOIN tarefas t ON t.id = st.tarefa_id
+        JOIN projetos p ON p.id = t.projeto_id
+        WHERE st.usuario_id = ? AND st.fim IS NOT NULL
+        ORDER BY st.fim DESC LIMIT 1
+      `).bind(u.uid).first();
+      return ok(row || null);
+    }
+
     // ── PROJETO: HORAS POR USUÁRIO ──
+
+    // GET /projetos/:id/relatorio — relatório agregado de horas por tarefa e usuário
+    const matchRelatorio = path.match(/^\/projetos\/(prj_\w+)\/relatorio$/);
+    if (matchRelatorio && method === 'GET') {
+      const [u, e] = await requireAuth(request, env);
+      if (e) return fail('Não autorizado', 401);
+      const projetoId = matchRelatorio[1];
+      const proj = await env.DB.prepare(
+        'SELECT dono_id FROM projetos WHERE id = ?'
+      ).bind(projetoId).first();
+      if (!proj) return fail('Não encontrado', 404);
+      if (!isAdmin(u) && !(await podeEditarProjeto(env, projetoId, u.uid, u.papel)))
+        return fail('Sem permissão', 403);
+
+      const rows = await env.DB.prepare(`
+        SELECT st.tarefa_id, tu.nome as usuario_nome,
+          ROUND(SUM(
+            (CASE WHEN st.fim IS NULL
+              THEN (julianday('now') - julianday(st.inicio)) * 24
+              ELSE (julianday(st.fim)  - julianday(st.inicio)) * 24 END)
+            - COALESCE((
+                SELECT SUM(CASE WHEN i.fim IS NULL THEN 0
+                  ELSE (julianday(i.fim) - julianday(i.inicio)) * 24 END)
+                FROM intervalos i WHERE i.sessao_id = st.id
+              ), 0)
+          ), 2) as horas_liquidas
+        FROM sessoes_tempo st
+        JOIN tarefas t ON t.id = st.tarefa_id
+        JOIN usuarios tu ON tu.id = st.usuario_id
+        WHERE t.projeto_id = ?
+        GROUP BY st.tarefa_id, st.usuario_id, tu.nome
+        HAVING horas_liquidas > 0
+        ORDER BY st.tarefa_id, horas_liquidas DESC
+      `).bind(projetoId).all();
+
+      const byTarefa = {};
+      for (const row of rows.results) {
+        (byTarefa[row.tarefa_id] = byTarefa[row.tarefa_id] || []).push(row);
+      }
+      return ok(byTarefa);
+    }
 
     // GET /projetos/:id/horas-por-usuario — distribuição de horas por pessoa no projeto
     const matchHorasProjeto = path.match(/^\/projetos\/(prj_\w+)\/horas-por-usuario$/);
