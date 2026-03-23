@@ -31,7 +31,7 @@
   --border3: rgba(255,255,255,.16);
   --text:    #e8e8ec;
   --text2:   #8e8e9e;
-  --text3:   #52525e;
+  --text3:   #6b6b78;
   --accent:  #5b8af5;
   --accent2: #3d6fe0;
   --accent-fg: #fff;
@@ -280,6 +280,10 @@ label{font-size:var(--fs-080);color:var(--text2);display:block;margin-bottom:5px
 .empty-icon{font-size:36px;opacity:.25}
 .empty-text{font-size:var(--fs-100)}
 .empty-sub{font-size:var(--fs-080);color:var(--text3);opacity:.7}
+.empty-guide{margin-top:8px;padding:12px 14px;background:var(--bg3);border:1px solid var(--border);border-radius:var(--r);max-width:520px;text-align:left}
+.empty-guide-item{font-size:var(--fs-080);color:var(--text2);line-height:1.5}
+.empty-guide-item + .empty-guide-item{margin-top:4px}
+.empty-cta{margin-top:12px;display:flex;justify-content:center}
 
 /* ── PROJETO DETALHE ── */
 .proj-back{margin-bottom:18px}
@@ -1250,7 +1254,8 @@ function renderProjetosDash(projetos, grupos) {
   if (FILTRO_GRUPO_DASH === 'sem') lista = lista.filter(p => !p.grupo_id);
   else if (FILTRO_GRUPO_DASH !== 'todos') lista = lista.filter(p => p.grupo_id === FILTRO_GRUPO_DASH);
   if (!lista.length) {
-    return `<div class="empty-state"><div class="empty-icon" aria-hidden="true"><svg width="36" height="36" viewBox="0 0 24 24" fill="none"><path d="M3 18h18" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><path d="M7 18V9.5h4V18M13 18V6h4v12" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><path d="M8 7.5l2-2 2 2M14 4l2-2 2 2" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></div><div class="empty-text">Nenhum projeto encontrado</div><div class="empty-sub">${busca ? 'Tente outro termo de busca' : FILTRO_STATUS !== 'todos' ? 'Tente outro filtro' : 'Crie o primeiro projeto'}</div></div>`;
+    const vazioInicial = !busca && FILTRO_STATUS === 'todos' && FILTRO_GRUPO_DASH === 'todos';
+    return `<div class="empty-state"><div class="empty-icon" aria-hidden="true"><svg width="36" height="36" viewBox="0 0 24 24" fill="none"><path d="M3 18h18" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><path d="M7 18V9.5h4V18M13 18V6h4v12" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><path d="M8 7.5l2-2 2 2M14 4l2-2 2 2" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></div><div class="empty-text">Nenhum projeto encontrado</div><div class="empty-sub">${busca ? 'Tente outro termo de busca' : FILTRO_STATUS !== 'todos' ? 'Tente outro filtro' : 'Comece criando seu primeiro projeto.'}</div>${vazioInicial ? `<div class="empty-guide"><div class="empty-guide-item">1. Crie um projeto.</div><div class="empty-guide-item">2. Abra o projeto e adicione a primeira tarefa.</div><div class="empty-guide-item">3. Defina prioridade e prazo para organizar o fluxo.</div><div class="empty-cta"><button class="btn btn-sm btn-primary" onclick="modalNovoProjeto()">+ Criar primeiro projeto</button></div></div>` : ''}</div>`;
   }
 
   const collapsed = JSON.parse(localStorage.getItem('telier_grupos_collapsed') || '[]');
@@ -1335,7 +1340,7 @@ function renderProjetosDash(projetos, grupos) {
     }
   }
 
-  return html || `<div class="empty-state"><div class="empty-icon" aria-hidden="true"><svg width="36" height="36" viewBox="0 0 24 24" fill="none"><path d="M3 18h18" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><path d="M7 18V9.5h4V18M13 18V6h4v12" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><path d="M8 7.5l2-2 2 2M14 4l2-2 2 2" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></div><div class="empty-text">Nenhum projeto encontrado</div></div>`;
+  return html || `<div class="empty-state"><div class="empty-icon" aria-hidden="true"><svg width="36" height="36" viewBox="0 0 24 24" fill="none"><path d="M3 18h18" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><path d="M7 18V9.5h4V18M13 18V6h4v12" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><path d="M8 7.5l2-2 2 2M14 4l2-2 2 2" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></div><div class="empty-text">Nenhum projeto encontrado</div><div class="empty-sub">Crie um projeto para começar a organizar tarefas e prazo.</div><div class="empty-cta"><button class="btn btn-sm btn-primary" onclick="modalNovoProjeto()">+ Novo projeto</button></div></div>`;
 }
 
 function renderCardsDash(projetos) {
@@ -2191,7 +2196,7 @@ function renderLista(el, tarefas) {
           <th>Complexidade</th><th>Prioridade</th><th>Status</th>
           <th>Tempo</th><th>Data</th><th>Ações</th>
         </tr></thead>
-        <tbody>${rows || `<tr><td colspan="9" style="text-align:center;color:var(--text3);padding:32px;font-style:italic">Nenhuma tarefa ainda — clique em "+ Nova tarefa" para começar</td></tr>`}</tbody>
+        <tbody>${rows || `<tr><td colspan="9" style="text-align:center;color:var(--text3);padding:24px"><div style="font-style:italic">Nenhuma tarefa ainda.</div><div style="font-size:var(--fs-080);margin-top:8px;color:var(--text2)">Comece por uma tarefa principal, com prioridade e prazo.</div><button class="btn btn-sm btn-primary" style="margin-top:10px" onclick="modalNovaTarefa('${PROJETO?.id}')">+ Criar primeira tarefa</button></td></tr>`}</tbody>
       </table>
     </div>`;
 }
@@ -2564,7 +2569,7 @@ async function modalNovaTarefa(projetoId) {
     <h2>Nova tarefa</h2>
     <div class="modal-hint">Esta janela altera apenas a tarefa.</div>
     <details class="modal-block">
-      <summary class="modal-block-summary">Template (opcional)</summary>
+      <summary class="modal-block-summary">Template de tarefa (opcional)</summary>
       <div class="modal-block-body">
         <div class="form-row" style="margin-top:10px"><label>Selecionar template</label>
           <div style="display:flex;gap:8px;align-items:center">
@@ -2592,7 +2597,7 @@ async function modalNovaTarefa(projetoId) {
       </div>
     </div>
     <div class="modal-footer modal-footer-sticky">
-      ${isAdmin() ? `<button class="btn" type="button" onclick="salvarTemplateAdminDaTarefaModal()">Salvar como template admin</button>` : ''}
+      ${isAdmin() ? `<button class="btn btn-ghost btn-sm" type="button" onclick="salvarTemplateAdminDaTarefaModal()">Salvar como template</button>` : ''}
       <button class="btn" onclick="fecharModal()">Cancelar</button>
       <button class="btn btn-primary" id="btn-criar-tar" onclick="criarTarefa('${projetoId}')">Criar tarefa</button>
     </div>`);
@@ -2663,7 +2668,7 @@ async function modalEditarTarefa(id) {
     <h2>Editar tarefa</h2>
     <div class="modal-hint">Esta janela altera apenas a tarefa.</div>
     <details class="modal-block">
-      <summary class="modal-block-summary">Template (opcional)</summary>
+      <summary class="modal-block-summary">Template de tarefa (opcional)</summary>
       <div class="modal-block-body">
         <div class="form-row" style="margin-top:10px"><label>Selecionar template</label>
           <div style="display:flex;gap:8px;align-items:center">
@@ -2691,7 +2696,7 @@ async function modalEditarTarefa(id) {
       </div>
     </div>
     <div class="modal-footer modal-footer-sticky">
-      ${isAdmin() ? `<button class="btn" type="button" onclick="salvarTemplateAdminDaTarefaModal()">Salvar como template admin</button>` : ''}
+      ${isAdmin() ? `<button class="btn btn-ghost btn-sm" type="button" onclick="salvarTemplateAdminDaTarefaModal()">Salvar como template</button>` : ''}
       <button class="btn" onclick="fecharModal()">Cancelar</button>
       <button class="btn btn-primary" id="btn-salvar-tar" onclick="salvarTarefa('${id}')">Salvar</button>
     </div>`);
