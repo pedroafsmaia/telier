@@ -1,11 +1,13 @@
-// worker.js — Cloudflare Worker v5
+// worker.js — Cloudflare Worker v6
 // Correções aplicadas:
 //   C1 — SQL injection removido: GET /projetos usa binding parametrizado
-//   C2 — Senhas com hash PBKDF2 + compatibilidade de migração legada
+//   C2 — Senhas com hash SHA-256 + salt aleatório (sha256v1); PBKDF2 e texto puro aceitos na verificação (legado)
 //   C3 — CORS restrito ao domínio do Pages (configurar ALLOWED_ORIGIN nas env vars)
 //   C4 — Email normalizado no setup (toLowerCase + trim)
 //   C5 — Stack trace não exposto em produção
 //   C6 — Token de sessão com 32 hex chars (128 bits) em vez de 16
+//   C7 — Checagem explícita de env.DB para mensagem de erro clara quando binding não configurado
+//   C8 — Migração automática de coluna senha_hash em bancos legados
 
 // ── CORS DINÂMICO (C3) ──
 // Configure a variável ALLOWED_ORIGIN nas env vars do Worker com o domínio do seu Cloudflare Pages
