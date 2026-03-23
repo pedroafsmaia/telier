@@ -309,6 +309,8 @@ label{font-size:var(--fs-080);color:var(--text2);display:block;margin-bottom:5px
 .grupo-toggle.collapsed{transform:rotate(-90deg)}
 .grupo-nome{font-size:var(--fs-080);font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.08em}
 .grupo-count{font-size:var(--fs-075);color:var(--text3);background:var(--bg3);border-radius:10px;padding:1px 7px}
+.grupo-kpis{display:flex;align-items:center;gap:6px}
+.grupo-kpi{font-size:var(--fs-075);color:var(--text2);background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:2px 8px}
 .grupo-actions{margin-left:auto;display:flex;gap:4px;opacity:0;transition:opacity .15s}
 .grupo-header:hover .grupo-actions{opacity:1}
 .grupo-sem-label{font-size:var(--fs-080);font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.08em;margin-bottom:12px;margin-top:4px;opacity:.5}
@@ -519,7 +521,7 @@ tr:hover .td-ações{opacity:1}
 
 /* ── PAINEL DE PRESENÇA ── */
 #presence-dock {
-  position: fixed; bottom: 24px; left: 24px;
+  position: fixed; bottom: 24px; right: 340px;
   z-index: 490; display: flex; flex-direction: column;
   align-items: flex-start; gap: 0;
 }
@@ -1226,6 +1228,8 @@ function renderProjetosDash(projetos, grupos) {
   for (const grupo of (grupos || [])) {
     const gprojetos = lista.filter(p => p.grupo_id === grupo.id);
     const col = isCollapsed(grupo.id);
+    const areaGrupo = Number(grupo.area_total_m2 || 0);
+    const horasGrupo = Number(grupo.total_horas || 0);
     html += `
       <div class="grupo-section" id="gs-${grupo.id}"
         ondragover="dragOver(event,'${grupo.id}')"
@@ -1235,8 +1239,12 @@ function renderProjetosDash(projetos, grupos) {
           <span class="grupo-toggle ${col ? 'collapsed' : ''}">▼</span>
           <span class="grupo-nome">${esc(grupo.nome)}</span>
           <span class="grupo-count">${gprojetos.length}</span>
+          <div class="grupo-kpis">
+            <span class="grupo-kpi mono">${areaGrupo.toLocaleString('pt-BR', { minimumFractionDigits: 0, maximumFractionDigits: 2 })} m²</span>
+            <span class="grupo-kpi mono">${horasGrupo.toFixed(2)}h</span>
+          </div>
           <div class="grupo-actions" onclick="event.stopPropagation()">
-            <button class="btn btn-ghost btn-icon btn-sm" onclick="modalRenomearGrupo('${grupo.id}','${esc(grupo.nome)}')" title="Renomear"><svg width="13" height="13" viewBox="0 0 13 13" fill="none"><path d="M2 9.5V11h1.5l5.5-5.5-1.5-1.5L2 9.5zM10.85 2.65a1 1 0 0 0-1.42 0l-.79.79 1.42 1.42.79-.79a1 1 0 0 0 0-1.42z" fill="currentColor"/></svg></button>
+            <button class="btn btn-ghost btn-icon btn-sm" onclick="modalEditarGrupo('${grupo.id}')" title="Configurar grupo"><svg width="13" height="13" viewBox="0 0 13 13" fill="none"><path d="M2 9.5V11h1.5l5.5-5.5-1.5-1.5L2 9.5zM10.85 2.65a1 1 0 0 0-1.42 0l-.79.79 1.42 1.42.79-.79a1 1 0 0 0 0-1.42z" fill="currentColor"/></svg></button>
             <button class="btn btn-ghost btn-icon btn-sm" onclick="deletarGrupo('${grupo.id}','${esc(grupo.nome)}')" title="Excluir grupo"><svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M1.5 1.5l9 9M10.5 1.5l-9 9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></button>
           </div>
         </div>
@@ -1394,23 +1402,34 @@ async function criarGrupo() {
   } catch (e) { toast(e.message, 'err'); btnLoading('btn-criar-grupo', false); }
 }
 
-function modalRenomearGrupo(id, nomeAtual) {
+async function modalEditarGrupo(id) {
+  const g = _gruposDash.find(x => x.id === id) || await req('GET', `/grupos/${id}`);
+  const area = Number(g.area_total_m2 || 0);
+  const horas = Number(g.total_horas || 0);
+  const totalProjetos = Number(g.total_projetos || 0);
   abrirModal(`
-    <h2>Renomear grupo</h2>
-    <div class="form-row"><label>Nome</label><input id="m-grupo-nome" value="${esc(nomeAtual)}"></div>
+    <h2>Configurar grupo</h2>
+    <div class="form-row"><label>Nome do grupo</label><input id="m-grupo-nome" value="${esc(g.nome || '')}"></div>
+    <div class="form-grid">
+      <div class="form-row"><label>Projetos no grupo</label><input value="${totalProjetos}" disabled></div>
+      <div class="form-row"><label>Área total (m²)</label><input value="${area.toLocaleString('pt-BR', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}" disabled></div>
+      <div class="form-row"><label>Horas totais</label><input value="${horas.toFixed(2)}h" disabled></div>
+      <div class="form-row"><label>Origem dos totais</label><input value="Soma automática dos projetos" disabled></div>
+    </div>
     <div class="modal-footer">
+      ${(g.pode_gerenciar || souDono(g.dono_id) || isAdmin()) ? `<button class="btn btn-danger" onclick="deletarGrupo('${id}','${esc(g.nome)}')">Excluir</button>` : ''}
       <button class="btn" onclick="fecharModal()">Cancelar</button>
-      <button class="btn btn-primary" id="btn-salvar-grupo" onclick="renomearGrupo('${id}')">Salvar</button>
+      <button class="btn btn-primary" id="btn-salvar-grupo" onclick="salvarGrupo('${id}')">Salvar</button>
     </div>`);
 }
 
-async function renomearGrupo(id) {
+async function salvarGrupo(id) {
   const nome = gv('m-grupo-nome').trim();
   if (!nome) { toast('Nome obrigatório', 'err'); return; }
   btnLoading('btn-salvar-grupo', true);
   try {
     await req('PUT', `/grupos/${id}`, { nome });
-    fecharModal(); toast('Grupo renomeado'); renderDash();
+    fecharModal(); toast('Grupo atualizado'); renderDash();
   } catch (e) { toast(e.message, 'err'); btnLoading('btn-salvar-grupo', false); }
 }
 

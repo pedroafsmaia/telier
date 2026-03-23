@@ -525,13 +525,85 @@ export default {
       let grupos;
       if (adminAll) {
         grupos = await env.DB.prepare(
-          `SELECT g.*, pu.nome as dono_nome FROM grupos_projetos g
+          `SELECT g.*, pu.nome as dono_nome,
+            (
+              SELECT COUNT(*)
+              FROM projetos p
+              WHERE p.grupo_id = g.id
+            ) as total_projetos,
+            (
+              SELECT ROUND(COALESCE(SUM(COALESCE(p.area_m2, 0)), 0), 2)
+              FROM projetos p
+              WHERE p.grupo_id = g.id
+            ) as area_total_m2,
+            (
+              SELECT ROUND(COALESCE(SUM(
+                (CASE WHEN st.fim IS NULL
+                  THEN (julianday('now') - julianday(st.inicio)) * 24
+                  ELSE (julianday(st.fim) - julianday(st.inicio)) * 24
+                END)
+                - COALESCE((
+                  SELECT SUM(CASE WHEN i.fim IS NULL THEN 0
+                    ELSE (julianday(i.fim) - julianday(i.inicio)) * 24
+                  END)
+                  FROM intervalos i
+                  WHERE i.sessao_id = st.id
+                ), 0)
+              ), 0), 2)
+              FROM sessoes_tempo st
+              JOIN tarefas t ON t.id = st.tarefa_id
+              JOIN projetos p ON p.id = t.projeto_id
+              WHERE p.grupo_id = g.id
+            ) as total_horas
+           FROM grupos_projetos g
            LEFT JOIN usuarios pu ON pu.id = g.dono_id
            ORDER BY g.ordem ASC, g.nome ASC`
         ).all();
       } else {
         grupos = await env.DB.prepare(
-          `SELECT g.*, pu.nome as dono_nome FROM grupos_projetos g
+          `SELECT g.*, pu.nome as dono_nome,
+            (
+              SELECT COUNT(*)
+              FROM projetos p2
+              WHERE p2.grupo_id = g.id AND (
+                p2.dono_id = ? OR EXISTS (
+                  SELECT 1 FROM permissoes_projeto pp2 WHERE pp2.projeto_id = p2.id AND pp2.usuario_id = ?
+                )
+              )
+            ) as total_projetos,
+            (
+              SELECT ROUND(COALESCE(SUM(COALESCE(p2.area_m2, 0)), 0), 2)
+              FROM projetos p2
+              WHERE p2.grupo_id = g.id AND (
+                p2.dono_id = ? OR EXISTS (
+                  SELECT 1 FROM permissoes_projeto pp2 WHERE pp2.projeto_id = p2.id AND pp2.usuario_id = ?
+                )
+              )
+            ) as area_total_m2,
+            (
+              SELECT ROUND(COALESCE(SUM(
+                (CASE WHEN st.fim IS NULL
+                  THEN (julianday('now') - julianday(st.inicio)) * 24
+                  ELSE (julianday(st.fim) - julianday(st.inicio)) * 24
+                END)
+                - COALESCE((
+                  SELECT SUM(CASE WHEN i.fim IS NULL THEN 0
+                    ELSE (julianday(i.fim) - julianday(i.inicio)) * 24
+                  END)
+                  FROM intervalos i
+                  WHERE i.sessao_id = st.id
+                ), 0)
+              ), 0), 2)
+              FROM sessoes_tempo st
+              JOIN tarefas t ON t.id = st.tarefa_id
+              JOIN projetos p3 ON p3.id = t.projeto_id
+              WHERE p3.grupo_id = g.id AND (
+                p3.dono_id = ? OR EXISTS (
+                  SELECT 1 FROM permissoes_projeto pp3 WHERE pp3.projeto_id = p3.id AND pp3.usuario_id = ?
+                )
+              )
+            ) as total_horas
+           FROM grupos_projetos g
            LEFT JOIN usuarios pu ON pu.id = g.dono_id
            WHERE g.dono_id = ? OR EXISTS (
              SELECT 1 FROM projetos p WHERE p.grupo_id = g.id AND (
@@ -541,7 +613,7 @@ export default {
              )
            )
            ORDER BY g.ordem ASC, g.nome ASC`
-        ).bind(u.uid, u.uid, u.uid).all();
+        ).bind(u.uid, u.uid, u.uid, u.uid, u.uid, u.uid, u.uid, u.uid, u.uid).all();
       }
       return ok(grupos.results);
     }
@@ -566,6 +638,71 @@ export default {
       const grupo = await env.DB.prepare('SELECT * FROM grupos_projetos WHERE id = ?').bind(grupoId).first();
       if (!grupo) return fail('Grupo não encontrado', 404);
       const podeGerenciar = grupo.dono_id === u.uid || isAdmin(u);
+
+      if (method === 'GET') {
+        const podeVer = isAdmin(u) || grupo.dono_id === u.uid || !!(await env.DB.prepare(
+          `SELECT 1
+           FROM projetos p
+           WHERE p.grupo_id = ? AND (
+             p.dono_id = ? OR EXISTS (
+               SELECT 1 FROM permissoes_projeto pp WHERE pp.projeto_id = p.id AND pp.usuario_id = ?
+             )
+           )
+           LIMIT 1`
+        ).bind(grupoId, u.uid, u.uid).first());
+        if (!podeVer) return fail('Sem permissão', 403);
+
+        const resumo = await env.DB.prepare(
+          `SELECT
+            (
+              SELECT COUNT(*)
+              FROM projetos p2
+              WHERE p2.grupo_id = ? AND (
+                ? = 1 OR p2.dono_id = ? OR EXISTS (
+                  SELECT 1 FROM permissoes_projeto pp2 WHERE pp2.projeto_id = p2.id AND pp2.usuario_id = ?
+                )
+              )
+            ) as total_projetos,
+            (
+              SELECT ROUND(COALESCE(SUM(COALESCE(p2.area_m2, 0)), 0), 2)
+              FROM projetos p2
+              WHERE p2.grupo_id = ? AND (
+                ? = 1 OR p2.dono_id = ? OR EXISTS (
+                  SELECT 1 FROM permissoes_projeto pp2 WHERE pp2.projeto_id = p2.id AND pp2.usuario_id = ?
+                )
+              )
+            ) as area_total_m2,
+            (
+              SELECT ROUND(COALESCE(SUM(
+                (CASE WHEN st.fim IS NULL
+                  THEN (julianday('now') - julianday(st.inicio)) * 24
+                  ELSE (julianday(st.fim) - julianday(st.inicio)) * 24
+                END)
+                - COALESCE((
+                  SELECT SUM(CASE WHEN i.fim IS NULL THEN 0
+                    ELSE (julianday(i.fim) - julianday(i.inicio)) * 24
+                  END)
+                  FROM intervalos i
+                  WHERE i.sessao_id = st.id
+                ), 0)
+              ), 0), 2)
+              FROM sessoes_tempo st
+              JOIN tarefas t ON t.id = st.tarefa_id
+              JOIN projetos p3 ON p3.id = t.projeto_id
+              WHERE p3.grupo_id = ? AND (
+                ? = 1 OR p3.dono_id = ? OR EXISTS (
+                  SELECT 1 FROM permissoes_projeto pp3 WHERE pp3.projeto_id = p3.id AND pp3.usuario_id = ?
+                )
+              )
+            ) as total_horas`
+        ).bind(
+          grupoId, isAdmin(u) ? 1 : 0, u.uid, u.uid,
+          grupoId, isAdmin(u) ? 1 : 0, u.uid, u.uid,
+          grupoId, isAdmin(u) ? 1 : 0, u.uid, u.uid,
+        ).first();
+
+        return ok({ ...grupo, ...resumo, pode_gerenciar: podeGerenciar });
+      }
 
       if (method === 'PUT') {
         if (!podeGerenciar) return fail('Sem permissão', 403);
