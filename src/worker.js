@@ -34,7 +34,7 @@ function err(msg, status = 400, cors = {}, extraHeaders = {}) {
 }
 
 // ── SENHAS (PBKDF2 + COMPAT LEGADO) ──
-const PBKDF2_ITER = 210000;
+const PBKDF2_ITER = 10000;
 const PBKDF2_ALGO = 'SHA-256';
 const LEGACY_PLAIN = 'legacy_plain';
 
@@ -79,7 +79,11 @@ function parseHash(stored) {
   if (parts.length !== 4) return null;
   const iter = Number(parts[1]);
   if (!Number.isFinite(iter) || iter < 10000) return null;
-  return { iter, salt: fromBase64(parts[2]), hash: fromBase64(parts[3]) };
+  try {
+    return { iter, salt: fromBase64(parts[2]), hash: fromBase64(parts[3]) };
+  } catch {
+    return null;
+  }
 }
 
 async function verificarSenha(senha, stored) {
@@ -87,8 +91,12 @@ async function verificarSenha(senha, stored) {
   if (!parsed) {
     return { ok: String(senha) === String(stored || ''), mode: LEGACY_PLAIN };
   }
-  const calc = await pbkdf2Hash(senha, parsed.salt, parsed.iter);
-  return { ok: timingSafeEqual(calc, parsed.hash), mode: 'pbkdf2' };
+  try {
+    const calc = await pbkdf2Hash(senha, parsed.salt, parsed.iter);
+    return { ok: timingSafeEqual(calc, parsed.hash), mode: 'pbkdf2' };
+  } catch {
+    return { ok: false, mode: 'pbkdf2' };
+  }
 }
 
 function isLegacyHash(stored) {
@@ -295,6 +303,27 @@ async function ensureTaskSchema(env) {
 let _userSecuritySchemaReady = false;
 async function ensureUserSecuritySchema(env) {
   if (_userSecuritySchemaReady) return;
+  // Ensure core auth tables exist (in case schema.sql was not applied to D1)
+  await env.DB.prepare(`
+    CREATE TABLE IF NOT EXISTS usuarios (
+      id TEXT PRIMARY KEY,
+      nome TEXT NOT NULL,
+      login TEXT UNIQUE NOT NULL,
+      senha_hash TEXT NOT NULL,
+      deve_trocar_senha INTEGER NOT NULL DEFAULT 0,
+      papel TEXT NOT NULL DEFAULT 'membro',
+      criado_em TEXT DEFAULT (datetime('now'))
+    )
+  `).run();
+  await env.DB.prepare(`
+    CREATE TABLE IF NOT EXISTS sessoes (
+      id TEXT PRIMARY KEY,
+      usuario_id TEXT NOT NULL,
+      criado_em TEXT DEFAULT (datetime('now')),
+      expira_em TEXT NOT NULL,
+      FOREIGN KEY (usuario_id) REFERENCES usuarios(id)
+    )
+  `).run();
   try { await env.DB.prepare('ALTER TABLE usuarios ADD COLUMN deve_trocar_senha INTEGER NOT NULL DEFAULT 0').run(); } catch {}
   try { await env.DB.prepare('CREATE INDEX IF NOT EXISTS idx_sessoes_expira_em ON sessoes(expira_em)').run(); } catch {}
   try { await env.DB.prepare('CREATE INDEX IF NOT EXISTS idx_sessoes_usuario ON sessoes(usuario_id)').run(); } catch {}
@@ -494,9 +523,14 @@ export default {
       if (!usuario) return fail('Credenciais inválidas', 401);
       const senhaValida = await verificarSenha(senha, usuario.senha_hash);
       if (!senhaValida.ok) return fail('Credenciais inválidas', 401);
-      if (senhaValida.mode === LEGACY_PLAIN && isLegacyHash(usuario.senha_hash)) {
-        const hashNovo = await hashSenha(senha);
-        await env.DB.prepare('UPDATE usuarios SET senha_hash = ? WHERE id = ?').bind(hashNovo, usuario.id).run();
+      // Migrate legacy plain-text passwords or high-iteration PBKDF2 hashes to current format
+      const parsedHash = parseHash(usuario.senha_hash);
+      const needsRehash = parsedHash === null || parsedHash.iter > PBKDF2_ITER;
+      if (needsRehash) {
+        try {
+          const hashNovo = await hashSenha(senha);
+          await env.DB.prepare('UPDATE usuarios SET senha_hash = ? WHERE id = ?').bind(hashNovo, usuario.id).run();
+        } catch {}
       }
       const sessaoId = sessaoUid();
       const expira = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().slice(0, 19).replace('T', ' ');
