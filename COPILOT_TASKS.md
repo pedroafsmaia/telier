@@ -1,0 +1,836 @@
+# Telier — Copilot Agent Implementation Instructions
+
+You have full access to this repository. The two files you will edit are:
+- `src/index.html` — single-file SPA (~4200 lines, vanilla JS + inline CSS)
+- `src/worker.js` — Cloudflare Worker + D1 SQLite backend (~2210 lines)
+
+Read both files before starting. Implement all tasks below, in order.
+After every task, verify the change compiles (no broken template literals, no
+unclosed brackets, no undefined variable references).
+
+---
+
+## Global constraints — apply to every change
+
+- Never hardcode color values. Always use existing CSS variables
+  (`var(--bg)`, `var(--border)`, `var(--text2)`, `var(--accent)`, etc.)
+- Always wrap user-generated strings with the existing `esc()` function
+- Never add `min-width` media queries — all breakpoints use `max-width`
+- Never extract code to separate files
+- Never rename or remove existing global variables
+- Use `sessionStorage` (not `localStorage`) for short-lived caches
+- `env.DB.batch([...])` is available in the Worker — no extra packages needed
+
+---
+
+## PHASE 1 — Immediate impact
+
+### TASK 1 · Breadcrumb: add Group level
+
+**Find:** function `renderProjeto` in `src/index.html`
+**Find inside it:** the `setBreadcrumb([...])` call
+
+**Change** that call to:
+```js
+setBreadcrumb([
+  { label: 'Projetos', onClick: 'renderDash()' },
+  ...(proj.grupo_nome
+    ? [{ label: proj.grupo_nome, onClick: 'renderDash()' }]
+    : []),
+  { label: proj.nome },
+]);
+```
+
+**Verify:** `proj.grupo_nome` is already returned by `GET /projetos` — no backend change needed.
+
+---
+
+### TASK 2 · Focus banner: add ▶ Start / ■ Stop button
+
+**Find:** function `renderProjeto` in `src/index.html`
+**Find inside it:** the variable `focoMinha` declaration
+
+**Add immediately after `focoMinha` is defined:**
+```js
+const focoSessaoAtiva = focoMinha
+  ? Object.entries(TIMERS).find(([, t]) => t.tarefaId === focoMinha.id)
+  : null;
+const focoBtnHtml = focoMinha
+  ? (focoSessaoAtiva
+      ? `<button class="btn btn-sm btn-danger"
+           onclick="pararCronometro('${focoSessaoAtiva[0]}')">■ Parar</button>`
+      : `<button class="btn btn-sm btn-primary"
+           onclick="iniciarCronometro('${focoMinha.id}','${esc(focoMinha.nome)}')">▶ Iniciar</button>`)
+  : '';
+```
+
+**Find inside `renderProjeto`:** the `.proj-foco-banner` template literal
+**Append** `${focoBtnHtml}` as the last child inside that div.
+
+---
+
+### TASK 3 · Collaborator avatar stack inline in task rows
+
+**In `src/index.html`, add this helper function immediately before `renderLista`:**
+```js
+function renderColabsStack(ids = [], max = 3) {
+  const visible = ids.slice(0, max);
+  const extra = ids.length - max;
+  const html = visible.map(id => {
+    const u = USUARIOS.find(u => u.id === id);
+    return u ? avatar(u.nome, 'avatar-sm') : '';
+  }).join('');
+  return `<div class="colabs-stack">${html}${
+    extra > 0 ? `<span class="colabs-stack-more">+${extra}</span>` : ''
+  }</div>`;
+}
+```
+
+**Add this CSS** in the CSS block near the other `.avatar` rules:
+```css
+.colabs-stack { display:flex; align-items:center; }
+.colabs-stack .avatar { margin-left:-5px; border:2px solid var(--bg2); }
+.colabs-stack .avatar:first-child { margin-left:0; }
+.colabs-stack-more { font-size:var(--fs-075); color:var(--text3); margin-left:4px; }
+```
+
+**Find inside `renderLista`:** the `<td>` that renders the `.resp-chip` with owner avatar
+**After that chip**, append:
+```js
+${t.colaboradores_ids?.length
+  ? renderColabsStack(t.colaboradores_ids)
+  : ''}
+```
+
+**Find inside `renderLista`:** the `.task-card-meta` div (mobile card)
+**Append the same** `renderColabsStack` call there.
+
+---
+
+### TASK 4 · Status color border on task rows
+
+**In `renderLista` inside `src/index.html`:**
+- Add `data-status="${esc(t.status)}"` to each `<tr>` element
+- Add `data-status="${esc(t.status)}"` to each `.task-card` div
+
+**Add this CSS** near the existing `[data-status]` rules for `.proj-card`:
+```css
+tr[data-status="Em andamento"] { border-left:2px solid var(--blue); }
+tr[data-status="Bloqueada"]    { border-left:2px solid var(--red); }
+tr[data-status="Concluída"]    { border-left:2px solid var(--green); opacity:.75; }
+.task-card[data-status="Em andamento"] { border-left:3px solid var(--blue); }
+.task-card[data-status="Bloqueada"]    { border-left:3px solid var(--red); }
+.task-card[data-status="Concluída"]    { border-left:3px solid var(--green); }
+```
+
+---
+
+### TASK 5 · Consistent slide transitions on navigate/back
+
+**Find:** function `abrirProjeto` in `src/index.html`
+**Add** `slideContent('right');` immediately before the `renderProjeto(...)` call inside it.
+
+**Add this new function** after `abrirProjeto`:
+```js
+function voltarDash() {
+  slideContent('left');
+  renderDash();
+}
+```
+
+**Find all occurrences** of `onclick="renderDash()"` that appear inside:
+- The `<button class="btn-back">` generated by `renderProjeto`
+- The breadcrumb crumb with `label: 'Projetos'`
+
+**Replace those two** with `onclick="voltarDash()"`.
+Do NOT replace other `renderDash()` calls (filter buttons, group actions, etc.).
+
+---
+
+### TASK 6 · Missing D1 indexes
+
+**In `src/worker.js`, add this function** before the main `fetch` handler:
+```js
+async function ensureIndexes(env) {
+  if (env._idxReady) return;
+  await env.DB.batch([
+    env.DB.prepare('CREATE INDEX IF NOT EXISTS idx_tarefas_projeto   ON tarefas(projeto_id)'),
+    env.DB.prepare('CREATE INDEX IF NOT EXISTS idx_sessoes_tarefa    ON sessoes_tempo(tarefa_id)'),
+    env.DB.prepare('CREATE INDEX IF NOT EXISTS idx_sessoes_fim       ON sessoes_tempo(fim)'),
+    env.DB.prepare('CREATE INDEX IF NOT EXISTS idx_intervalos_sessao ON intervalos(sessao_id)'),
+    env.DB.prepare('CREATE INDEX IF NOT EXISTS idx_colab_tarefa      ON colaboradores_tarefa(tarefa_id)'),
+  ]);
+  env._idxReady = true;
+}
+```
+
+**Find inside the main `fetch` handler:** the line `await ensureUserSecuritySchema(env);`
+**Add immediately after it:** `await ensureIndexes(env);`
+
+**Also add** all five `CREATE INDEX` statements to `db/schema.sql`.
+
+---
+
+### TASK 7 · Debounce task search and dashboard search
+
+**Find:** function `filtrarTarefasBusca` in `src/index.html`
+**Replace its body** with a debounced version:
+```js
+let _buscaTarefaTick;
+function filtrarTarefasBusca(value) {
+  clearTimeout(_buscaTarefaTick);
+  _buscaTarefaTick = setTimeout(() => {
+    BUSCA_TAREFA = value;
+    renderLista(document.getElementById('aba'), TAREFAS);
+  }, 180);
+}
+```
+
+**Find:** the dashboard search handler (the function or inline handler that sets `BUSCA_DASH`)
+**Wrap it the same way** with a 180ms debounce using a `_buscaDashTick` variable.
+
+---
+
+### TASK 8 · Tabs: horizontal scroll on mobile
+
+**Find:** the CSS rule for `.abas` in `src/index.html`
+**Add/override** these properties:
+```css
+.abas {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  flex-wrap: nowrap;
+  padding-bottom: 2px;
+}
+.abas::-webkit-scrollbar { display: none; }
+.aba { white-space: nowrap; flex-shrink: 0; }
+```
+
+---
+
+### TASK 9 · Startday grid: fix overflow on narrow screens
+
+**Find:** the CSS rule `.startday-grid` in `src/index.html`
+**Change** `minmax(240px, 1fr)` to `minmax(min(240px, 100%), 1fr)`.
+
+---
+
+### TASK 10 · Timer dock and presence dock: prevent overlap on mobile
+
+**Add to the CSS** of `#timer-dock` and `#presence-dock`:
+```css
+#timer-dock, #presence-dock {
+  bottom: max(16px, env(safe-area-inset-bottom));
+}
+body.has-presence #timer-dock {
+  bottom: max(70px, calc(env(safe-area-inset-bottom) + 54px));
+}
+```
+
+**Find:** the function that renders or updates `#presence-dock` (it references `COLEGAS_ATIVOS`)
+**Add inside it:**
+```js
+document.body.classList.toggle('has-presence', COLEGAS_ATIVOS.length > 0);
+```
+
+---
+
+## PHASE 2 — Daily flow
+
+### TASK 11 · Presence chip in topbar
+
+**In `src/index.html`, find:** `<div class="topbar-actions">`
+**Add as first child** (before the notification bell):
+```html
+<div id="topbar-presence" style="display:none"></div>
+```
+
+**Add this CSS:**
+```css
+.topbar-presence-chip {
+  display:flex; align-items:center; gap:5px; background:none;
+  border:1px solid var(--border2); border-radius:999px;
+  padding:3px 8px 3px 6px; cursor:pointer; transition:all .15s;
+}
+.topbar-presence-chip:hover { background:var(--bg3); }
+.topbar-presence-count { font-size:var(--fs-075); color:var(--text2); font-weight:500; }
+.topbar-presence-avatars { display:flex; }
+.topbar-presence-avatars .avatar { margin-left:-4px; border:2px solid var(--bg); }
+.topbar-presence-avatars .avatar:first-child { margin-left:0; }
+.presence-live-dot {
+  width:6px; height:6px; border-radius:50%;
+  background:var(--green); flex-shrink:0;
+}
+```
+
+**Find:** the function that updates `#presence-dock`
+**Add inside it** (alongside the existing dock update):
+```js
+const topbarPresence = document.getElementById('topbar-presence');
+if (topbarPresence) {
+  if (COLEGAS_ATIVOS.length > 0) {
+    const avatarsHtml = COLEGAS_ATIVOS.slice(0, 3)
+      .map(c => avatar(c.nome, 'avatar-sm')).join('');
+    topbarPresence.innerHTML = `
+      <button class="topbar-presence-chip"
+              onclick="togglePresencePanel()"
+              title="${COLEGAS_ATIVOS.length} colega(s) online">
+        <span class="presence-live-dot"></span>
+        <div class="topbar-presence-avatars">${avatarsHtml}</div>
+        <span class="topbar-presence-count">${COLEGAS_ATIVOS.length}</span>
+      </button>`;
+    topbarPresence.style.display = '';
+  } else {
+    topbarPresence.style.display = 'none';
+  }
+}
+```
+
+---
+
+### TASK 12 · "Last session" card in startday
+
+**In `src/worker.js`, add this endpoint** in the `// ── TEMPO ──` section:
+```js
+if (path === '/tempo/ultima-sessao' && method === 'GET') {
+  const [u, e] = await requireAuth(request, env);
+  if (e) return fail('Não autorizado', 401);
+  const row = await env.DB.prepare(`
+    SELECT st.tarefa_id, t.nome as tarefa_nome,
+           p.id as projeto_id, p.nome as projeto_nome,
+           st.fim,
+           ROUND((julianday(st.fim) - julianday(st.inicio)) * 24, 2) as horas
+    FROM sessoes_tempo st
+    JOIN tarefas t ON t.id = st.tarefa_id
+    JOIN projetos p ON p.id = t.projeto_id
+    WHERE st.usuario_id = ? AND st.fim IS NOT NULL
+    ORDER BY st.fim DESC LIMIT 1
+  `).bind(u.uid).first();
+  return ok(row || null);
+}
+```
+
+**In `src/index.html`, find:** the `Promise.all` block inside `renderDash`
+**Add** `req('GET', '/tempo/ultima-sessao').catch(() => null)` to that array.
+**Capture the result** and pass it as a third argument to `renderInicioDia`.
+
+**Find:** function `renderInicioDia`
+**Update its signature** to `renderInicioDia(projetos, ativas, ultimaSessao = null)`
+**Add a 4th `.startday-card`** after the existing three:
+```js
+`<div class="startday-card">
+  <h4>Última sessão</h4>
+  <div class="startday-main">
+    ${ultimaSessao ? esc(ultimaSessao.tarefa_nome) : 'Nenhuma sessão anterior'}
+  </div>
+  <div class="startday-sub">
+    ${ultimaSessao
+      ? `${esc(ultimaSessao.projeto_nome)} · ${ultimaSessao.horas}h`
+      : 'Inicie seu primeiro cronômetro'}
+  </div>
+  <div class="startday-actions">
+    ${ultimaSessao
+      ? `<button class="btn btn-sm btn-primary"
+           onclick="abrirProjeto('${ultimaSessao.projeto_id}')">Retomar projeto</button>`
+      : `<button class="btn btn-sm" disabled>Retomar projeto</button>`}
+  </div>
+</div>`
+```
+
+---
+
+### TASK 13 · Collapsible project hero
+
+**Find:** function `renderProjeto` in `src/index.html`
+**Find inside its template literal:** the `.proj-meta` and `.proj-horas-dist` blocks
+
+**Wrap** fase, prioridade, prazo, area_m2, hours distribution, and share origin in:
+```html
+<details class="proj-hero-details-wrap">
+  <summary class="proj-hero-details-toggle">Detalhes do projeto</summary>
+  <div class="proj-hero-details">
+    <!-- move the secondary metadata here -->
+  </div>
+</details>
+```
+
+Keep always visible: project name, owner, status tag, progress bar, and stats numbers.
+
+**Add this CSS:**
+```css
+.proj-hero-details-wrap {
+  margin-top:10px; border-top:1px solid var(--border); padding-top:10px;
+}
+.proj-hero-details-toggle {
+  cursor:pointer; list-style:none;
+  font-size:var(--fs-080); color:var(--text3);
+}
+.proj-hero-details-toggle::-webkit-details-marker { display:none; }
+```
+
+---
+
+### TASK 14 · Unified polling endpoint `GET /status`
+
+**In `src/worker.js`, add this endpoint:**
+```js
+if (path === '/status' && method === 'GET') {
+  const [u, e] = await requireAuth(request, env);
+  if (e) return fail('Não autorizado', 401);
+
+  const [colegas, notifs] = await env.DB.batch([
+    env.DB.prepare(`
+      SELECT st.usuario_id, tu.nome as usuario_nome,
+             t.nome as tarefa_nome, p.nome as projeto_nome,
+             p.id as projeto_id, st.inicio
+      FROM sessoes_tempo st
+      JOIN usuarios tu ON tu.id = st.usuario_id
+      JOIN tarefas t ON t.id = st.tarefa_id
+      JOIN projetos p ON p.id = t.projeto_id
+      WHERE st.fim IS NULL AND st.usuario_id != ?
+      ORDER BY st.inicio ASC
+    `).bind(u.uid),
+    env.DB.prepare(
+      'SELECT COUNT(*) as nao_lidas FROM notificacoes WHERE usuario_id = ? AND lida_em IS NULL'
+    ).bind(u.uid),
+  ]);
+
+  return ok({
+    colegas_ativos: colegas.results,
+    notifs_nao_lidas: notifs.results[0]?.nao_lidas || 0,
+  });
+}
+```
+
+**In `src/index.html`:**
+- Add this function:
+```js
+async function carregarStatus() {
+  try {
+    const data = await req('GET', '/status');
+    COLEGAS_ATIVOS = Array.isArray(data.colegas_ativos) ? data.colegas_ativos : [];
+    renderPresenceDock();
+    atualizarBadgeNotificacoes(data.notifs_nao_lidas);
+  } catch {}
+}
+
+function iniciarStatusPoll() {
+  if (window._statusTick) clearInterval(window._statusTick);
+  carregarStatus();
+  window._statusTick = setInterval(carregarStatus, 30000);
+}
+```
+
+- **Find:** calls to `iniciarPollNotificacoes()` and the presence interval start
+- **Replace both** with a single call to `iniciarStatusPoll()`
+- **Find:** teardown code that clears `_presenceTick` and `_notifTick`
+- **Add** `if (window._statusTick) clearInterval(window._statusTick);` alongside them
+- Keep `carregarNotificacoes()` intact — it is still called when the user opens the panel
+
+---
+
+### TASK 15 · Batch queries in `podeEditarProjeto`
+
+**Find:** function `podeEditarProjeto` in `src/worker.js`
+**Replace its body** with:
+```js
+async function podeEditarProjeto(env, projetoId, usuarioId, papel) {
+  if (papel === 'admin') return true;
+
+  const [proj, recusado, perm] = await env.DB.batch([
+    env.DB.prepare('SELECT dono_id, grupo_id FROM projetos WHERE id = ?')
+      .bind(projetoId),
+    env.DB.prepare('SELECT 1 as ok FROM recusas_projeto WHERE projeto_id = ? AND usuario_id = ?')
+      .bind(projetoId, usuarioId),
+    env.DB.prepare('SELECT 1 as ok FROM permissoes_projeto WHERE projeto_id = ? AND usuario_id = ?')
+      .bind(projetoId, usuarioId),
+  ]);
+
+  const projRow = proj.results[0];
+  if (!projRow) return false;
+  if (projRow.dono_id === usuarioId) return true;
+  if (recusado.results[0]) return false;
+  if (perm.results[0]) return true;
+
+  if (projRow.grupo_id) {
+    const gperm = await env.DB.prepare(
+      'SELECT 1 FROM permissoes_grupo WHERE grupo_id = ? AND usuario_id = ?'
+    ).bind(projRow.grupo_id, usuarioId).first();
+    if (gperm) return true;
+  }
+  return false;
+}
+```
+
+---
+
+### TASK 16 · Client-side cache for `/projetos`
+
+**In `src/index.html`, add these constants and functions** near the top of the script block:
+```js
+const PROJ_CACHE_KEY = 'telier_proj_cache';
+const PROJ_CACHE_TTL = 45000;
+
+async function fetchProjetos(params) {
+  try {
+    const raw = sessionStorage.getItem(PROJ_CACHE_KEY);
+    if (raw) {
+      const { ts, data, key } = JSON.parse(raw);
+      if (key === params.toString() && Date.now() - ts < PROJ_CACHE_TTL) return data;
+    }
+  } catch {}
+  const data = await req('GET', `/projetos?${params}`);
+  try {
+    sessionStorage.setItem(PROJ_CACHE_KEY, JSON.stringify({
+      ts: Date.now(), data, key: params.toString(),
+    }));
+  } catch {}
+  return data;
+}
+
+function invalidarCacheProjetos() {
+  sessionStorage.removeItem(PROJ_CACHE_KEY);
+}
+```
+
+**Find:** inside `renderDash`, the `req('GET', '/projetos?...')` call
+**Replace it** with `fetchProjetos(params)`.
+
+**Find:** every call to `renderDash()` that follows a mutation
+(create project, edit project, delete project, change project status, create/delete task)
+**Add** `invalidarCacheProjetos();` immediately before each of those `renderDash()` calls.
+
+---
+
+### TASK 17 · Project hero metadata: graceful wrap on mobile
+
+**Find:** the CSS rule for `.proj-meta` in `src/index.html`
+**Add** `flex-wrap: wrap;` and `row-gap: 6px;` to it.
+
+**Add inside the `@media (max-width: 600px)` block:**
+```css
+.proj-hero { padding: 16px; }
+.proj-nome { font-size: var(--fs-300); }
+.proj-stats { grid-template-columns: repeat(2, 1fr); }
+.proj-hero-top { gap: 10px; }
+.proj-hero-top > div:last-child {
+  flex-wrap: wrap;
+  justify-content: flex-start;
+}
+```
+
+---
+
+### TASK 18 · Modal padding: scale on very small screens
+
+**Find:** the CSS rule `.modal` in `src/index.html`
+**Replace** `width:100%; max-width:500px; padding:32px;` with:
+```css
+width: min(100%, 500px);
+padding: clamp(18px, 5vw, 32px);
+```
+
+**Find:** `.modal-lg`
+**Replace** its `max-width` with:
+```css
+width: min(100%, 600px);
+```
+
+**Find:** `.modal-footer-sticky`
+**Replace** its hardcoded `-32px` margin/padding values with:
+```css
+margin: 24px calc(clamp(18px, 5vw, 32px) * -1) calc(clamp(18px, 5vw, 32px) * -1);
+padding: 14px clamp(18px, 5vw, 32px);
+```
+
+---
+
+## PHASE 3 — Management visibility
+
+### TASK 19 · Aggregate report endpoint `GET /projetos/:id/relatorio`
+
+**In `src/worker.js`, add this endpoint** in the project routes section:
+```js
+const matchRelatorio = path.match(/^\/projetos\/(prj_\w+)\/relatorio$/);
+if (matchRelatorio && method === 'GET') {
+  const [u, e] = await requireAuth(request, env);
+  if (e) return fail('Não autorizado', 401);
+  const projetoId = matchRelatorio[1];
+  const proj = await env.DB.prepare(
+    'SELECT dono_id FROM projetos WHERE id = ?'
+  ).bind(projetoId).first();
+  if (!proj) return fail('Não encontrado', 404);
+  if (!isAdmin(u) && !(await podeEditarProjeto(env, projetoId, u.uid, u.papel)))
+    return fail('Sem permissão', 403);
+
+  const rows = await env.DB.prepare(`
+    SELECT st.tarefa_id, tu.nome as usuario_nome,
+      ROUND(SUM(
+        (CASE WHEN st.fim IS NULL
+          THEN (julianday('now') - julianday(st.inicio)) * 24
+          ELSE (julianday(st.fim)  - julianday(st.inicio)) * 24 END)
+        - COALESCE((
+            SELECT SUM(CASE WHEN i.fim IS NULL THEN 0
+              ELSE (julianday(i.fim) - julianday(i.inicio)) * 24 END)
+            FROM intervalos i WHERE i.sessao_id = st.id
+          ), 0)
+      ), 2) as horas_liquidas
+    FROM sessoes_tempo st
+    JOIN tarefas t ON t.id = st.tarefa_id
+    JOIN usuarios tu ON tu.id = st.usuario_id
+    WHERE t.projeto_id = ?
+    GROUP BY st.tarefa_id, st.usuario_id, tu.nome
+    HAVING horas_liquidas > 0
+    ORDER BY st.tarefa_id, horas_liquidas DESC
+  `).bind(projetoId).all();
+
+  const byTarefa = {};
+  for (const row of rows.results) {
+    (byTarefa[row.tarefa_id] = byTarefa[row.tarefa_id] || []).push(row);
+  }
+  return ok(byTarefa);
+}
+```
+
+**In `src/index.html`, find:** function `renderRelatorio`
+**Find inside it:** the `Promise.all(tarefas.map(async t => ...))` fan-out
+**Replace the entire block** with:
+```js
+el.innerHTML = `<div class="loading"><div class="spinner"></div> Calculando horas...</div>`;
+const byTarefa = await req('GET', `/projetos/${projetoId}/relatorio`);
+resumoMap = byTarefa;
+```
+
+**Find:** `RELATORIO_CACHE` TTL value `30000`
+**Change it to** `60000`.
+
+---
+
+### TASK 20 · Kanban view (4th tab)
+
+**Find:** function `renderProjeto` in `src/index.html`
+**Find inside it:** the Relatório tab button
+**Add after it:**
+```js
+`<button class="aba ${abaAtiva==='kanban'?'ativa':''}"
+  data-aba="kanban" onclick="mudarAba('kanban')">Kanban</button>`
+```
+
+**Find:** function `renderAba`
+**Add:** `else if (aba === 'kanban') renderKanban(el, tarefas);`
+
+**Add this new function** after `renderAba`:
+```js
+function renderKanban(el, tarefas) {
+  const cols = ['A fazer', 'Em andamento', 'Em revisão', 'Concluída'];
+
+  function cardHtml(t) {
+    return `<div class="kanban-card" draggable="true"
+                 data-tarefa-id="${t.id}"
+                 ondragstart="event.dataTransfer.setData('tarefaId',this.dataset.tarefaId)"
+                 onclick="modalEditarTarefa('${t.id}')">
+      <div style="font-size:var(--fs-090);margin-bottom:6px">${esc(t.nome)}</div>
+      <div style="display:flex;align-items:center;gap:6px">
+        ${avatar(t.dono_nome,'avatar-sm')}
+        ${tag(t.prioridade, PT[t.prioridade])}
+      </div>
+    </div>`;
+  }
+
+  const colsHtml = cols.map(col => {
+    const items = tarefas.filter(t => t.status === col);
+    return `<div class="kanban-col"
+                 ondragover="event.preventDefault();this.classList.add('drag-over')"
+                 ondragleave="this.classList.remove('drag-over')"
+                 ondrop="this.classList.remove('drag-over');
+                         mudarStatus(event.dataTransfer.getData('tarefaId'),'${col}',null)">
+      <div class="kanban-col-header">${col} <span style="color:var(--text3)">${items.length}</span></div>
+      ${items.map(cardHtml).join('') || `<div style="color:var(--text3);font-size:var(--fs-080);padding:8px 0">Vazio</div>`}
+    </div>`;
+  }).join('');
+
+  el.innerHTML = `<div class="kanban-board">${colsHtml}</div>`;
+}
+```
+
+**Add this CSS:**
+```css
+.kanban-board {
+  display:grid; grid-template-columns:repeat(4,1fr);
+  gap:12px; align-items:start; margin-top:16px;
+}
+.kanban-col {
+  background:var(--bg2); border:1px solid var(--border);
+  border-radius:var(--r2); padding:10px; min-height:200px;
+  transition:border-color .15s;
+}
+.kanban-col.drag-over { border-color:var(--accent); }
+.kanban-col-header {
+  font-size:var(--fs-075); font-weight:500; color:var(--text2);
+  text-transform:uppercase; letter-spacing:.06em; margin-bottom:10px;
+}
+.kanban-card {
+  background:var(--bg); border:1px solid var(--border);
+  border-radius:var(--r); padding:10px; margin-bottom:8px;
+  cursor:grab; transition:border-color .15s;
+}
+.kanban-card:hover { border-color:var(--border2); }
+.kanban-card:active { cursor:grabbing; opacity:.8; }
+@media (max-width:768px) {
+  .kanban-board { grid-template-columns:1fr; }
+}
+```
+
+---
+
+### TASK 21 · Admin: daily activity timeline
+
+**In `src/worker.js`, add this endpoint** in the admin routes section:
+```js
+if (path === '/admin/timeline-hoje' && method === 'GET') {
+  const [u, e] = await requireAuth(request, env);
+  if (e) return fail('Não autorizado', 401);
+  if (!isAdmin(u)) return fail('Sem permissão', 403);
+  const rows = await env.DB.prepare(`
+    SELECT st.usuario_id, u.nome as usuario_nome,
+           st.inicio, st.fim, t.nome as tarefa_nome
+    FROM sessoes_tempo st
+    JOIN usuarios u ON u.id = st.usuario_id
+    JOIN tarefas t ON t.id = st.tarefa_id
+    WHERE DATE(st.inicio) = DATE('now')
+    ORDER BY st.usuario_id, st.inicio
+  `).all();
+  return ok(rows.results);
+}
+```
+
+**In `src/index.html`, add this function:**
+```js
+async function renderTimelineHoje(el) {
+  el.innerHTML = `<div class="loading"><div class="spinner"></div></div>`;
+  try {
+    const rows = await req('GET', '/admin/timeline-hoje');
+    if (!rows.length) {
+      el.innerHTML = `<div style="color:var(--text3);padding:16px">Nenhuma sessão hoje.</div>`;
+      return;
+    }
+    // Day window: 08:00–20:00 = 480min to 1200min from midnight
+    const START = 480, RANGE = 720;
+    const byUser = {};
+    rows.forEach(r => {
+      (byUser[r.usuario_id] = byUser[r.usuario_id] || { nome: r.usuario_nome, sessions: [] })
+        .sessions.push(r);
+    });
+    const rowsHtml = Object.values(byUser).map(u => {
+      const blocks = u.sessions.map(s => {
+        const startMin = new Date(s.inicio.replace(' ', 'T') + 'Z').getHours() * 60
+                        + new Date(s.inicio.replace(' ', 'T') + 'Z').getMinutes();
+        const endMin   = s.fim
+          ? new Date(s.fim.replace(' ', 'T') + 'Z').getHours() * 60
+            + new Date(s.fim.replace(' ', 'T') + 'Z').getMinutes()
+          : (new Date().getHours() * 60 + new Date().getMinutes());
+        const left  = Math.max(0, Math.min(100, (startMin - START) / RANGE * 100));
+        const width = Math.max(0.5, Math.min(100 - left, (endMin - startMin) / RANGE * 100));
+        return `<div class="tl-block" style="left:${left}%;width:${width}%;
+          background:${s.fim ? 'var(--accent)' : 'var(--green)'};opacity:.7"
+          title="${esc(s.tarefa_nome)}"></div>`;
+      }).join('');
+      const totalH = (u.sessions.reduce((sum, s) => {
+        const dur = s.fim
+          ? (new Date(s.fim.replace(' ',' T') + 'Z') - new Date(s.inicio.replace(' ','T') + 'Z')) / 3600000
+          : (Date.now() - new Date(s.inicio.replace(' ','T') + 'Z')) / 3600000;
+        return sum + dur;
+      }, 0)).toFixed(1);
+      return `<div class="tl-row">
+        <div class="tl-name">${esc(u.nome)}</div>
+        <div class="tl-track">${blocks}</div>
+        <div class="tl-hours">${totalH}h</div>
+      </div>`;
+    }).join('');
+    const axis = ['08h','10h','12h','14h','16h','18h','20h']
+      .map(h => `<span>${h}</span>`).join('');
+    el.innerHTML = `
+      <div class="timeline-wrap">${rowsHtml}</div>
+      <div class="tl-axis">${axis}</div>`;
+  } catch (err) {
+    el.innerHTML = `<div class="error-block">${esc(err.message)}</div>`;
+  }
+}
+```
+
+**Find:** function `abrirCentralAdmin` in `src/index.html`
+**Find inside it:** the section that renders the "Agora" tab content
+**Add a call** to `renderTimelineHoje(subEl)` where `subEl` is the container for that tab.
+
+**Add this CSS:**
+```css
+.timeline-wrap { display:flex; flex-direction:column; gap:6px; margin-top:12px; }
+.tl-row { display:flex; align-items:center; gap:8px; font-size:12px; }
+.tl-name {
+  width:70px; font-size:var(--fs-075); color:var(--text2);
+  white-space:nowrap; overflow:hidden; text-overflow:ellipsis; flex-shrink:0;
+}
+.tl-track {
+  flex:1; height:14px; background:var(--bg3);
+  border-radius:3px; overflow:hidden; position:relative;
+}
+.tl-block { height:100%; border-radius:3px; position:absolute; }
+.tl-hours {
+  font-size:var(--fs-075); font-family:var(--ff-mono);
+  color:var(--text3); width:32px; text-align:right; flex-shrink:0;
+}
+.tl-axis {
+  display:flex; justify-content:space-between;
+  font-size:10px; color:var(--text3);
+  margin-top:4px; padding:0 40px 0 78px;
+}
+```
+
+---
+
+### TASK 22 · Admin tables: card fallback on mobile
+
+**Find:** every `.table-wrap` block inside function `abrirCentralAdmin` in `src/index.html`
+
+For each table, add a companion `.admin-cards` div with the same data as stacked cards.
+
+**Add this CSS:**
+```css
+@media (max-width: 768px) {
+  .admin-table-wrap { display: none; }
+  .admin-cards { display: flex; flex-direction: column; gap: 8px; }
+}
+@media (min-width: 769px) {
+  .admin-cards { display: none; }
+}
+.admin-card {
+  background:var(--bg2); border:1px solid var(--border);
+  border-radius:var(--r2); padding:12px;
+  display:flex; flex-direction:column; gap:6px;
+}
+.admin-card-title {
+  font-size:var(--fs-090); font-weight:500; color:var(--text);
+}
+.admin-card-meta {
+  display:flex; gap:8px; flex-wrap:wrap;
+  font-size:var(--fs-080); color:var(--text3);
+}
+```
+
+Card contents per table:
+- **Sessões ativas:** user avatar + name, task name, project name, elapsed time via `fmtDuracao`
+- **Usuários:** name + role tag, projects owned count, tasks count, total hours
+- **Tempo/relatório:** project name, task name, user name, hours in mono font
+
+Wrap existing table `<div class="table-wrap">` with `<div class="admin-table-wrap">`.
+
+---
+
+## Done
+
+After all 22 tasks are implemented:
+1. Verify no template literal is left unclosed in `src/index.html`
+2. Verify no `async function` in `src/worker.js` has an unresolved `await`
+3. Verify all new CSS classes referenced in JS template literals have a corresponding CSS rule
+4. Verify `db/schema.sql` includes the 5 new indexes from TASK 6
