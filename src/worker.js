@@ -83,6 +83,10 @@ async function podeEditarProjeto(env, projetoId, usuarioId, papel) {
   const proj = await env.DB.prepare('SELECT dono_id, grupo_id FROM projetos WHERE id = ?').bind(projetoId).first();
   if (!proj) return false;
   if (proj.dono_id === usuarioId) return true;
+  const recusado = await env.DB.prepare(
+    'SELECT 1 FROM recusas_projeto WHERE projeto_id = ? AND usuario_id = ?'
+  ).bind(projetoId, usuarioId).first();
+  if (recusado) return false;
   const perm = await env.DB.prepare(
     'SELECT 1 FROM permissoes_projeto WHERE projeto_id = ? AND usuario_id = ?'
   ).bind(projetoId, usuarioId).first();
@@ -114,6 +118,70 @@ async function ensureGrupoSchema(env) {
   try { await env.DB.prepare('ALTER TABLE permissoes_projeto ADD COLUMN origem TEXT DEFAULT "manual"').run(); } catch {}
   try { await env.DB.prepare('UPDATE permissoes_projeto SET origem = "manual" WHERE origem IS NULL').run(); } catch {}
   _grupoSchemaReady = true;
+}
+
+let _shareSchemaReady = false;
+async function ensureShareSchema(env) {
+  if (_shareSchemaReady) return;
+  await env.DB.prepare(`
+    CREATE TABLE IF NOT EXISTS recusas_projeto (
+      projeto_id TEXT NOT NULL,
+      usuario_id TEXT NOT NULL,
+      criado_em TEXT DEFAULT (datetime('now')),
+      PRIMARY KEY (projeto_id, usuario_id),
+      FOREIGN KEY (projeto_id) REFERENCES projetos(id) ON DELETE CASCADE,
+      FOREIGN KEY (usuario_id) REFERENCES usuarios(id) ON DELETE CASCADE
+    )
+  `).run();
+  await env.DB.prepare(`
+    CREATE TABLE IF NOT EXISTS notificacoes (
+      id TEXT PRIMARY KEY,
+      usuario_id TEXT NOT NULL,
+      tipo TEXT NOT NULL,
+      escopo TEXT NOT NULL,
+      entidade_id TEXT,
+      titulo TEXT NOT NULL,
+      mensagem TEXT,
+      ator_id TEXT,
+      lida_em TEXT,
+      criado_em TEXT DEFAULT (datetime('now')),
+      FOREIGN KEY (usuario_id) REFERENCES usuarios(id) ON DELETE CASCADE,
+      FOREIGN KEY (ator_id) REFERENCES usuarios(id) ON DELETE SET NULL
+    )
+  `).run();
+  try { await env.DB.prepare('CREATE INDEX IF NOT EXISTS idx_notif_usuario_data ON notificacoes(usuario_id, criado_em DESC)').run(); } catch {}
+  try { await env.DB.prepare('CREATE INDEX IF NOT EXISTS idx_notif_usuario_lida ON notificacoes(usuario_id, lida_em)').run(); } catch {}
+  _shareSchemaReady = true;
+}
+
+async function criarNotificacaoCompartilhamento(env, payload) {
+  const {
+    usuarioId,
+    tipo,
+    escopo,
+    entidadeId,
+    titulo,
+    mensagem,
+    atorId,
+  } = payload || {};
+  if (!usuarioId || !tipo || !escopo || !titulo) return;
+  if (atorId && atorId === usuarioId) return;
+
+  const dup = await env.DB.prepare(`
+    SELECT id FROM notificacoes
+    WHERE usuario_id = ? AND tipo = ? AND escopo = ?
+      AND COALESCE(entidade_id, '') = COALESCE(?, '')
+      AND COALESCE(ator_id, '') = COALESCE(?, '')
+      AND lida_em IS NULL
+      AND datetime(criado_em) >= datetime('now', '-10 minutes')
+    LIMIT 1
+  `).bind(usuarioId, tipo, escopo, entidadeId || null, atorId || null).first();
+  if (dup) return;
+
+  await env.DB.prepare(`
+    INSERT INTO notificacoes (id, usuario_id, tipo, escopo, entidade_id, titulo, mensagem, ator_id)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+  `).bind('ntf_' + uid(), usuarioId, tipo, escopo, entidadeId || null, titulo, mensagem || null, atorId || null).run();
 }
 
 let _taskSchemaReady = false;
@@ -160,7 +228,11 @@ async function syncProjetoPermissoesGrupo(env, projetoId, grupoId, donoId = null
     FROM permissoes_grupo pg
     WHERE pg.grupo_id = ?
       AND (? IS NULL OR pg.usuario_id <> ?)
-  `).bind(projetoId, grupoId, ownerId, ownerId).run();
+      AND NOT EXISTS (
+        SELECT 1 FROM recusas_projeto rp
+        WHERE rp.projeto_id = ? AND rp.usuario_id = pg.usuario_id
+      )
+  `).bind(projetoId, grupoId, ownerId, ownerId, projetoId).run();
 
   await env.DB.prepare(`
     DELETE FROM permissoes_projeto
@@ -225,6 +297,50 @@ export default {
     try {
     await ensureGrupoSchema(env);
     await ensureTaskSchema(env);
+    await ensureShareSchema(env);
+
+    // ── NOTIFICAÇÕES ──
+    if (path === '/notificacoes' && method === 'GET') {
+      const [u, e] = await requireAuth(request, env);
+      if (e) return fail('Não autorizado', 401);
+      const apenasNaoLidas = url.searchParams.get('apenas_nao_lidas') === '1';
+      const notifs = await env.DB.prepare(`
+        SELECT n.*, au.nome as ator_nome
+        FROM notificacoes n
+        LEFT JOIN usuarios au ON au.id = n.ator_id
+        WHERE n.usuario_id = ?
+          AND (? = 0 OR n.lida_em IS NULL)
+        ORDER BY n.criado_em DESC
+        LIMIT 80
+      `).bind(u.uid, apenasNaoLidas ? 1 : 0).all();
+      const naoLidasRow = await env.DB.prepare(
+        'SELECT COUNT(*) as total FROM notificacoes WHERE usuario_id = ? AND lida_em IS NULL'
+      ).bind(u.uid).first();
+      return ok({
+        itens: notifs.results,
+        nao_lidas: Number(naoLidasRow?.total || 0),
+      });
+    }
+
+    if (path === '/notificacoes/lidas' && method === 'PUT') {
+      const [u, e] = await requireAuth(request, env);
+      if (e) return fail('Não autorizado', 401);
+      await env.DB.prepare(
+        'UPDATE notificacoes SET lida_em = datetime("now") WHERE usuario_id = ? AND lida_em IS NULL'
+      ).bind(u.uid).run();
+      return ok({ ok: true });
+    }
+
+    const matchNotifLida = path.match(/^\/notificacoes\/(ntf_\w+)\/lida$/);
+    if (matchNotifLida && method === 'PUT') {
+      const [u, e] = await requireAuth(request, env);
+      if (e) return fail('Não autorizado', 401);
+      const notifId = matchNotifLida[1];
+      await env.DB.prepare(
+        'UPDATE notificacoes SET lida_em = datetime("now") WHERE id = ? AND usuario_id = ?'
+      ).bind(notifId, u.uid).run();
+      return ok({ ok: true });
+    }
 
     // ── SETUP ──
     if (path === '/auth/setup' && method === 'POST') {
@@ -573,6 +689,32 @@ export default {
         SELECT p.*,
           pu.nome as dono_nome,
           p.grupo_id, g.nome as grupo_nome,
+          CASE
+            WHEN p.dono_id <> ?
+              AND NOT EXISTS (
+                SELECT 1 FROM recusas_projeto rp WHERE rp.projeto_id = p.id AND rp.usuario_id = ?
+              )
+              AND (
+                EXISTS (SELECT 1 FROM permissoes_projeto pp0 WHERE pp0.projeto_id = p.id AND pp0.usuario_id = ?)
+                OR EXISTS (SELECT 1 FROM permissoes_grupo pg0 WHERE pg0.grupo_id = p.grupo_id AND pg0.usuario_id = ?)
+              )
+            THEN 1 ELSE 0
+          END as compartilhado_comigo,
+          CASE
+            WHEN p.dono_id <> ?
+              AND NOT EXISTS (
+                SELECT 1 FROM recusas_projeto rp WHERE rp.projeto_id = p.id AND rp.usuario_id = ?
+              )
+              AND EXISTS (SELECT 1 FROM permissoes_grupo pg0 WHERE pg0.grupo_id = p.grupo_id AND pg0.usuario_id = ?)
+            THEN 'grupo'
+            WHEN p.dono_id <> ?
+              AND NOT EXISTS (
+                SELECT 1 FROM recusas_projeto rp WHERE rp.projeto_id = p.id AND rp.usuario_id = ?
+              )
+              AND EXISTS (SELECT 1 FROM permissoes_projeto pp0 WHERE pp0.projeto_id = p.id AND pp0.usuario_id = ?)
+            THEN 'manual'
+            ELSE NULL
+          END as origem_compartilhamento,
           COUNT(DISTINCT t.id) as total_tarefas,
           SUM(CASE WHEN t.status = 'Concluída' THEN 1 ELSE 0 END) as tarefas_concluidas,
           (
@@ -603,10 +745,14 @@ export default {
         LEFT JOIN grupos_projetos g ON g.id = p.grupo_id
         LEFT JOIN tarefas t ON t.projeto_id = p.id
         WHERE
-          (? = 1 OR p.dono_id = ? OR EXISTS (
-            SELECT 1 FROM permissoes_projeto pp WHERE pp.projeto_id = p.id AND pp.usuario_id = ?
-          ) OR EXISTS (
-            SELECT 1 FROM permissoes_grupo pg WHERE pg.grupo_id = p.grupo_id AND pg.usuario_id = ?
+          (? = 1 OR p.dono_id = ? OR (
+            NOT EXISTS (
+              SELECT 1 FROM recusas_projeto rp WHERE rp.projeto_id = p.id AND rp.usuario_id = ?
+            )
+            AND (
+              EXISTS (SELECT 1 FROM permissoes_projeto pp WHERE pp.projeto_id = p.id AND pp.usuario_id = ?)
+              OR EXISTS (SELECT 1 FROM permissoes_grupo pg WHERE pg.grupo_id = p.grupo_id AND pg.usuario_id = ?)
+            )
           ))
           AND (? IS NULL OR p.status = ?)
         GROUP BY p.id
@@ -615,7 +761,13 @@ export default {
           CASE p.prioridade WHEN 'Alta' THEN 0 WHEN 'Média' THEN 1 ELSE 2 END,
           p.prazo ASC NULLS LAST,
           p.atualizado_em DESC
-      `).bind(u.uid, adminScope, u.uid, u.uid, u.uid, statusFiltro, statusFiltro).all();
+      `).bind(
+        u.uid, u.uid, u.uid, u.uid,
+        u.uid, u.uid, u.uid,
+        u.uid, u.uid, u.uid,
+        adminScope, u.uid, u.uid, u.uid, u.uid,
+        statusFiltro, statusFiltro,
+      ).all();
       return ok(projetos.results);
     }
 
@@ -951,16 +1103,49 @@ export default {
       const grupoId = matchGrupoPerms[1];
       const [u, e] = await requireAuth(request, env);
       if (e) return fail('Não autorizado', 401);
-      const grupo = await env.DB.prepare('SELECT dono_id FROM grupos_projetos WHERE id = ?').bind(grupoId).first();
+      const grupo = await env.DB.prepare('SELECT dono_id, nome FROM grupos_projetos WHERE id = ?').bind(grupoId).first();
       if (!grupo) return fail('Grupo não encontrado', 404);
       if (grupo.dono_id !== u.uid && !isAdmin(u)) return fail('Sem permissão', 403);
       const { usuario_id } = await request.json();
       if (!usuario_id) return fail('Usuário obrigatório');
       await env.DB.prepare('INSERT OR REPLACE INTO permissoes_grupo (grupo_id, usuario_id) VALUES (?, ?)').bind(grupoId, usuario_id).run();
+      await env.DB.prepare(
+        'DELETE FROM recusas_projeto WHERE usuario_id = ? AND projeto_id IN (SELECT id FROM projetos WHERE grupo_id = ?)'
+      ).bind(usuario_id, grupoId).run();
       await env.DB.prepare(`
         INSERT OR IGNORE INTO permissoes_projeto (projeto_id, usuario_id, origem)
         SELECT p.id, ?, 'grupo' FROM projetos p WHERE p.grupo_id = ? AND p.dono_id <> ?
       `).bind(usuario_id, grupoId, grupo.dono_id).run();
+      await criarNotificacaoCompartilhamento(env, {
+        usuarioId: usuario_id,
+        tipo: 'compartilhamento_recebido',
+        escopo: 'grupo',
+        entidadeId: grupoId,
+        titulo: 'Grupo compartilhado com você',
+        mensagem: `Você recebeu acesso ao grupo "${grupo.nome}".`,
+        atorId: u.uid,
+      });
+      return ok({ ok: true });
+    }
+
+    const matchGrupoSair = path.match(/^\/grupos\/(grp_\w+)\/sair$/);
+    if (matchGrupoSair && method === 'DELETE') {
+      const grupoId = matchGrupoSair[1];
+      const [u, e] = await requireAuth(request, env);
+      if (e) return fail('Não autorizado', 401);
+      const grupo = await env.DB.prepare('SELECT dono_id FROM grupos_projetos WHERE id = ?').bind(grupoId).first();
+      if (!grupo) return fail('Grupo não encontrado', 404);
+      if (grupo.dono_id === u.uid) return fail('O dono não pode sair do próprio grupo', 400);
+      const rm = await env.DB.prepare(
+        'DELETE FROM permissoes_grupo WHERE grupo_id = ? AND usuario_id = ?'
+      ).bind(grupoId, u.uid).run();
+      await env.DB.prepare(`
+        DELETE FROM permissoes_projeto
+        WHERE usuario_id = ?
+          AND origem = 'grupo'
+          AND projeto_id IN (SELECT id FROM projetos WHERE grupo_id = ?)
+      `).bind(u.uid, grupoId).run();
+      if (!(rm.meta?.changes > 0)) return fail('Você não participa deste grupo', 400);
       return ok({ ok: true });
     }
 
@@ -1004,9 +1189,44 @@ export default {
       if (method === 'GET') {
         const [u, e] = await requireAuth(request, env);
         if (e) return fail('Não autorizado', 401);
+        if (!await podeEditarProjeto(env, projetoId, u.uid, u.papel)) return fail('Sem permissão', 403);
         const projeto = await env.DB.prepare(
-          'SELECT p.*, pu.nome as dono_nome FROM projetos p LEFT JOIN usuarios pu ON pu.id = p.dono_id WHERE p.id = ?'
-        ).bind(projetoId).first();
+          `SELECT p.*, pu.nome as dono_nome,
+            CASE
+              WHEN p.dono_id <> ?
+                AND NOT EXISTS (
+                  SELECT 1 FROM recusas_projeto rp WHERE rp.projeto_id = p.id AND rp.usuario_id = ?
+                )
+                AND (
+                  EXISTS (SELECT 1 FROM permissoes_projeto pp WHERE pp.projeto_id = p.id AND pp.usuario_id = ?)
+                  OR EXISTS (SELECT 1 FROM permissoes_grupo pg WHERE pg.grupo_id = p.grupo_id AND pg.usuario_id = ?)
+                )
+              THEN 1 ELSE 0
+            END as compartilhado_comigo,
+            CASE
+              WHEN p.dono_id <> ?
+                AND NOT EXISTS (
+                  SELECT 1 FROM recusas_projeto rp WHERE rp.projeto_id = p.id AND rp.usuario_id = ?
+                )
+                AND EXISTS (SELECT 1 FROM permissoes_grupo pg WHERE pg.grupo_id = p.grupo_id AND pg.usuario_id = ?)
+              THEN 'grupo'
+              WHEN p.dono_id <> ?
+                AND NOT EXISTS (
+                  SELECT 1 FROM recusas_projeto rp WHERE rp.projeto_id = p.id AND rp.usuario_id = ?
+                )
+                AND EXISTS (SELECT 1 FROM permissoes_projeto pp WHERE pp.projeto_id = p.id AND pp.usuario_id = ?)
+              THEN 'manual'
+              ELSE NULL
+            END as origem_compartilhamento
+           FROM projetos p
+           LEFT JOIN usuarios pu ON pu.id = p.dono_id
+           WHERE p.id = ?`
+        ).bind(
+          u.uid, u.uid, u.uid, u.uid,
+          u.uid, u.uid, u.uid,
+          u.uid, u.uid, u.uid,
+          projetoId,
+        ).first();
         if (!projeto) return fail('Projeto não encontrado', 404);
         const [perms, horasRow] = await Promise.all([
           env.DB.prepare(
@@ -1067,14 +1287,51 @@ export default {
       const [u, e] = await requireAuth(request, env);
       if (e) return fail('Não autorizado', 401);
       const projetoId = matchPerms[1];
-      const proj = await env.DB.prepare('SELECT dono_id FROM projetos WHERE id = ?').bind(projetoId).first();
+      const proj = await env.DB.prepare('SELECT dono_id, nome FROM projetos WHERE id = ?').bind(projetoId).first();
       if (!proj) return fail('Não encontrado', 404);
       if (proj.dono_id !== u.uid && !isAdmin(u)) return fail('Sem permissão', 403);
       const { usuario_id } = await request.json();
       if (usuario_id === proj.dono_id) return fail('Usuário já é dono do projeto');
+      await env.DB.prepare('DELETE FROM recusas_projeto WHERE projeto_id = ? AND usuario_id = ?').bind(projetoId, usuario_id).run();
       await env.DB.prepare(
         'INSERT OR REPLACE INTO permissoes_projeto (projeto_id, usuario_id, origem) VALUES (?, ?, "manual")'
       ).bind(projetoId, usuario_id).run();
+      await criarNotificacaoCompartilhamento(env, {
+        usuarioId: usuario_id,
+        tipo: 'compartilhamento_recebido',
+        escopo: 'projeto',
+        entidadeId: projetoId,
+        titulo: 'Projeto compartilhado com você',
+        mensagem: `Você recebeu acesso ao projeto "${proj.nome}".`,
+        atorId: u.uid,
+      });
+      return ok({ ok: true });
+    }
+
+    const matchProjetoSair = path.match(/^\/projetos\/(prj_\w+)\/sair$/);
+    if (matchProjetoSair && method === 'DELETE') {
+      const [u, e] = await requireAuth(request, env);
+      if (e) return fail('Não autorizado', 401);
+      const projetoId = matchProjetoSair[1];
+      const proj = await env.DB.prepare('SELECT dono_id FROM projetos WHERE id = ?').bind(projetoId).first();
+      if (!proj) return fail('Projeto não encontrado', 404);
+      if (proj.dono_id === u.uid) return fail('O dono não pode sair do próprio projeto', 400);
+
+      const tinhaManual = await env.DB.prepare(
+        'SELECT 1 FROM permissoes_projeto WHERE projeto_id = ? AND usuario_id = ?'
+      ).bind(projetoId, u.uid).first();
+      const tinhaGrupo = await env.DB.prepare(
+        'SELECT 1 FROM projetos p JOIN permissoes_grupo pg ON pg.grupo_id = p.grupo_id WHERE p.id = ? AND pg.usuario_id = ?'
+      ).bind(projetoId, u.uid).first();
+      if (!tinhaManual && !tinhaGrupo) return fail('Você não participa deste projeto', 400);
+
+      await env.DB.prepare('DELETE FROM permissoes_projeto WHERE projeto_id = ? AND usuario_id = ?').bind(projetoId, u.uid).run();
+      await env.DB.prepare('INSERT OR REPLACE INTO recusas_projeto (projeto_id, usuario_id) VALUES (?, ?)').bind(projetoId, u.uid).run();
+      await env.DB.prepare(`
+        DELETE FROM colaboradores_tarefa
+        WHERE usuario_id = ?
+          AND tarefa_id IN (SELECT id FROM tarefas WHERE projeto_id = ?)
+      `).bind(u.uid, projetoId).run();
       return ok({ ok: true });
     }
 
@@ -1192,6 +1449,7 @@ export default {
       if (method === 'GET') {
         const [u, e] = await requireAuth(request, env);
         if (e) return fail('Não autorizado', 401);
+        if (!await podeEditarProjeto(env, projetoId, u.uid, u.papel)) return fail('Sem permissão', 403);
         const tarefas = await env.DB.prepare(
           `SELECT t.*, t.dificuldade AS complexidade, tu.nome as dono_nome,
            CASE WHEN t.dono_id = ? THEN 1 ELSE 0 END as minha_tarefa
@@ -1207,6 +1465,7 @@ export default {
       if (method === 'POST') {
         const [u, e] = await requireAuth(request, env);
         if (e) return fail('Não autorizado', 401);
+        if (!await podeEditarProjeto(env, projetoId, u.uid, u.papel)) return fail('Sem permissão', 403);
         const {
           nome,
           status,
@@ -1451,7 +1710,12 @@ export default {
 
       if (method === 'POST') {
         // Só o dono da tarefa ou admin pode adicionar colaboradores
-        const tarefa = await env.DB.prepare('SELECT dono_id FROM tarefas WHERE id = ?').bind(tarefaId).first();
+        const tarefa = await env.DB.prepare(
+          `SELECT t.dono_id, t.nome as tarefa_nome, p.nome as projeto_nome
+           FROM tarefas t
+           LEFT JOIN projetos p ON p.id = t.projeto_id
+           WHERE t.id = ?`
+        ).bind(tarefaId).first();
         if (!tarefa) return fail('Tarefa não encontrada', 404);
         if (tarefa.dono_id !== u.uid && !isAdmin(u)) return fail('Sem permissão', 403);
         const { usuario_id } = await request.json();
@@ -1459,8 +1723,32 @@ export default {
         await env.DB.prepare(
           'INSERT OR IGNORE INTO colaboradores_tarefa (tarefa_id, usuario_id) VALUES (?, ?)'
         ).bind(tarefaId, usuario_id).run();
+        await criarNotificacaoCompartilhamento(env, {
+          usuarioId: usuario_id,
+          tipo: 'compartilhamento_recebido',
+          escopo: 'tarefa',
+          entidadeId: tarefaId,
+          titulo: 'Tarefa compartilhada com você',
+          mensagem: `Você foi adicionado à tarefa "${tarefa.tarefa_nome}"${tarefa.projeto_nome ? ` no projeto "${tarefa.projeto_nome}"` : ''}.`,
+          atorId: u.uid,
+        });
         return ok({ ok: true });
       }
+    }
+
+    const matchTarefaSair = path.match(/^\/tarefas\/(tsk_\w+)\/sair$/);
+    if (matchTarefaSair && method === 'DELETE') {
+      const [u, e] = await requireAuth(request, env);
+      if (e) return fail('Não autorizado', 401);
+      const tarefaId = matchTarefaSair[1];
+      const tarefa = await env.DB.prepare('SELECT dono_id FROM tarefas WHERE id = ?').bind(tarefaId).first();
+      if (!tarefa) return fail('Tarefa não encontrada', 404);
+      if (tarefa.dono_id === u.uid) return fail('O dono não pode sair da própria tarefa', 400);
+      const rm = await env.DB.prepare(
+        'DELETE FROM colaboradores_tarefa WHERE tarefa_id = ? AND usuario_id = ?'
+      ).bind(tarefaId, u.uid).run();
+      if (!(rm.meta?.changes > 0)) return fail('Você não é colaborador desta tarefa', 400);
+      return ok({ ok: true });
     }
 
     // DELETE /tarefas/:id/colaboradores/:uid

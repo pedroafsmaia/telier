@@ -194,6 +194,9 @@ label{font-size:var(--fs-080);color:var(--text2);display:block;margin-bottom:5px
 .topbar-sep-crumb{color:var(--text3);font-size:var(--fs-075);flex-shrink:0}
 .topbar-theme{background:none;border:1px solid var(--border2);color:var(--text2);cursor:pointer;font-size:var(--fs-100);width:32px;height:32px;border-radius:var(--r);display:flex;align-items:center;justify-content:center;transition:all .15s;flex-shrink:0}
 .topbar-theme:hover{background:var(--bg3);color:var(--text)}
+.topbar-bell{position:relative;background:none;border:1px solid var(--border2);color:var(--text2);cursor:pointer;width:32px;height:32px;border-radius:var(--r);display:flex;align-items:center;justify-content:center;transition:all .15s;flex-shrink:0}
+.topbar-bell:hover{background:var(--bg3);color:var(--text)}
+.topbar-bell-dot{position:absolute;top:-5px;right:-5px;min-width:16px;height:16px;padding:0 4px;border-radius:999px;background:var(--red);color:#fff;font-size:10px;font-family:var(--ff-mono);display:flex;align-items:center;justify-content:center;border:2px solid var(--bg)}
 .topbar-sep{flex:1}
 .topbar-actions{display:flex;align-items:center;gap:8px}
 .topbar-user-name{font-size:var(--fs-090);color:var(--text2)}
@@ -307,6 +310,8 @@ label{font-size:var(--fs-080);color:var(--text2);display:block;margin-bottom:5px
 .card-meta{display:flex;flex-wrap:wrap;gap:8px 14px;margin-bottom:10px}
 .card-meta-item{display:flex;flex-direction:column;gap:3px}
 .card-meta-label{font-size:9px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.06em}
+.share-hint{display:flex;align-items:center;gap:8px;background:var(--bg3);border:1px solid var(--border);padding:10px 12px;border-radius:var(--r2);margin-bottom:16px;font-size:var(--fs-080);color:var(--text2)}
+.share-hint strong{color:var(--text)}
 .grupo-section{margin-bottom:28px}
 .grupo-header{display:flex;align-items:center;gap:10px;margin-bottom:12px;cursor:pointer;user-select:none}
 .grupo-toggle{font-size:var(--fs-075);color:var(--text3);transition:transform .2s;display:inline-block;width:16px}
@@ -709,6 +714,13 @@ tr:hover .td-ações{opacity:1}
 .mono-cell-muted{font-size:var(--fs-075);color:var(--text3)}
 .resp-filter{font-size:var(--fs-080);padding:3px 8px;background:var(--bg3);border:1px solid var(--border2);border-radius:var(--r);color:var(--text2);min-height:30px;appearance:auto;-webkit-appearance:menulist;background-image:none;padding-right:8px}
 .inline-running{color:var(--green)}
+.notif-list{display:flex;flex-direction:column;gap:8px;max-height:420px;overflow:auto}
+.notif-item{padding:10px 12px;border:1px solid var(--border);border-radius:var(--r);background:var(--bg2);cursor:pointer;transition:all .15s}
+.notif-item:hover{border-color:var(--border2);background:var(--bg3)}
+.notif-item.nao-lida{border-left:3px solid var(--accent)}
+.notif-title{font-size:var(--fs-090);font-weight:500;color:var(--text)}
+.notif-meta{font-size:var(--fs-075);color:var(--text3);margin-top:3px}
+.notif-msg{font-size:var(--fs-080);color:var(--text2);margin-top:6px}
 </style>
 </head>
 <body>
@@ -763,6 +775,10 @@ tr:hover .td-ações{opacity:1}
     <div class="topbar-actions">
       <span class="topbar-user-name" id="topbar-nome"></span>
       <button class="btn btn-ghost btn-sm" id="btn-admin-toggle" style="display:none" onclick="alternarPerfilAdmin()">Visão admin</button>
+      <button class="topbar-bell" id="btn-notifs" onclick="abrirNotificacoes()" title="Notificações" style="display:none">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M12 3.5a5 5 0 0 0-5 5v2.2c0 .7-.23 1.39-.66 1.94L5 14.5h14l-1.34-1.86a3.3 3.3 0 0 1-.66-1.94V8.5a5 5 0 0 0-5-5z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M9.5 17a2.5 2.5 0 0 0 5 0" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+        <span class="topbar-bell-dot hidden" id="notif-badge">0</span>
+      </button>
       <button class="topbar-theme" id="btn-tema" onclick="alternarTema()" title="Alternar tema">
         <svg id="icon-tema-svg" width="15" height="15" viewBox="0 0 15 15" fill="none" xmlns="http://www.w3.org/2000/svg">
           <path d="M12.5 9.5A5.5 5.5 0 0 1 5.5 2.5a5.5 5.5 0 1 0 7 7z" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
@@ -809,6 +825,10 @@ let PRESENCE_ABERTO = false;
 let _presenceTick = null;
 let _presenceHintShown = false;
 let TEMPLATES_TAREFA = [];
+let FILTRO_ORIGEM_DASH = 'todos';
+let NOTIFS = [];
+let _notifTick = null;
+let _lastNotifSeen = 0;
 const TIMER_AVISO_HORAS = 4;
 
 // ── API ──
@@ -831,6 +851,91 @@ function toast(msg, tipo = 'ok') {
   el.className = tipo === 'err' ? 'toast-err' : '';
   clearTimeout(_toastTimer);
   _toastTimer = setTimeout(() => el.classList.add('hidden'), 3000);
+}
+
+function atualizarBadgeNotificacoes(total) {
+  const btn = document.getElementById('btn-notifs');
+  const badge = document.getElementById('notif-badge');
+  if (!btn || !badge) return;
+  btn.style.display = TOKEN ? 'inline-flex' : 'none';
+  const n = Number(total || 0);
+  badge.textContent = n > 99 ? '99+' : String(n);
+  badge.classList.toggle('hidden', n <= 0);
+}
+
+async function carregarNotificacoes(silencioso = true) {
+  if (!TOKEN) {
+    NOTIFS = [];
+    atualizarBadgeNotificacoes(0);
+    return;
+  }
+  try {
+    const data = await req('GET', '/notificacoes');
+    const itens = Array.isArray(data?.itens) ? data.itens : [];
+    const naoLidas = Number(data?.nao_lidas || 0);
+    const novoMaisRecente = itens.length ? Date.parse(String(itens[0].criado_em || '').replace(' ', 'T') + 'Z') : 0;
+    if (_lastNotifSeen && novoMaisRecente > _lastNotifSeen && !silencioso) {
+      const ult = itens[0];
+      if (ult?.titulo) toast(ult.titulo);
+    }
+    _lastNotifSeen = Math.max(_lastNotifSeen, Number.isFinite(novoMaisRecente) ? novoMaisRecente : 0);
+    NOTIFS = itens;
+    atualizarBadgeNotificacoes(naoLidas);
+  } catch (e) {
+    if (!silencioso) toast(e.message, 'err');
+  }
+}
+
+function iniciarPollNotificacoes() {
+  if (!TOKEN) return;
+  if (_notifTick) clearInterval(_notifTick);
+  carregarNotificacoes(true);
+  _notifTick = setInterval(() => carregarNotificacoes(false), 30000);
+}
+
+async function marcarNotifLida(id, abrirLink = null) {
+  try {
+    await req('PUT', `/notificacoes/${id}/lida`, {});
+    await carregarNotificacoes(true);
+    if (abrirLink) abrirLink();
+  } catch (e) {
+    toast(e.message, 'err');
+  }
+}
+
+async function marcarTodasNotifLidas() {
+  try {
+    await req('PUT', '/notificacoes/lidas', {});
+    await carregarNotificacoes(true);
+    toast('Notificações marcadas como lidas');
+    abrirNotificacoes();
+  } catch (e) {
+    toast(e.message, 'err');
+  }
+}
+
+function abrirNotificacoes() {
+  const itens = NOTIFS || [];
+  const lista = itens.map(n => {
+    const dataFmt = new Date(String(n.criado_em || '').replace(' ', 'T') + 'Z').toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
+    const onOpen = n.escopo === 'projeto' && n.entidade_id
+      ? `marcarNotifLida('${n.id}', () => { fecharModal(); abrirProjeto('${n.entidade_id}'); })`
+      : `marcarNotifLida('${n.id}')`;
+    return `<div class="notif-item ${n.lida_em ? '' : 'nao-lida'}" onclick="${onOpen}">
+      <div class="notif-title">${esc(n.titulo || 'Notificação')}</div>
+      <div class="notif-meta">${esc(dataFmt)}${n.ator_nome ? ` · por ${esc(n.ator_nome)}` : ''}</div>
+      ${n.mensagem ? `<div class="notif-msg">${esc(n.mensagem)}</div>` : ''}
+    </div>`;
+  }).join('') || '<div class="inline-muted-sm">Sem notificações por enquanto.</div>';
+
+  abrirModal(`
+    <h2>Notificações</h2>
+    <div class="notif-list" style="margin-top:12px">${lista}</div>
+    <div class="modal-footer">
+      <button class="btn" onclick="fecharModal()">Fechar</button>
+      <button class="btn btn-primary" onclick="marcarTodasNotifLidas()">Marcar todas como lidas</button>
+    </div>
+  `, { lg: true });
 }
 
 // ── MODAL ──
@@ -962,9 +1067,13 @@ function mostrar(tela) {
   window.scrollTo(0, 0);
   ['login','setup','app'].forEach(t => document.getElementById('page-' + t).classList.toggle('hidden', t !== tela));
   const setupBtn = document.getElementById('btn-admin-setup');
+  const btnNotifs = document.getElementById('btn-notifs');
   if (setupBtn) setupBtn.style.display = (tela === 'login' && NEEDS_SETUP) ? 'inline-flex' : 'none';
+  if (btnNotifs && tela !== 'app') btnNotifs.style.display = 'none';
   if (tela === 'app') {
     document.getElementById('topbar-nome').textContent = EU?.nome || '';
+    atualizarBadgeNotificacoes(0);
+    iniciarPollNotificacoes();
     syncAdminModeUI();
     isAdmin() ? abrirCentralAdmin() : renderDash();
   }
@@ -1051,6 +1160,7 @@ async function fazerLogin() {
     }
     mostrar('app');
     iniciarPollPresenca();
+    iniciarPollNotificacoes();
   } catch (e) {
     errEl.textContent = e.message;
     errEl.classList.remove('hidden');
@@ -1155,8 +1265,12 @@ async function fazerLogout() {
     if (!confirm(`Você tem ${plural}. Os cronômetros continuarão rodando no servidor. Deseja sair mesmo assim?`)) return;
   }
   if (_presenceTick) clearInterval(_presenceTick);
+  if (_notifTick) clearInterval(_notifTick);
   if (window._presenceDisplayTick) clearInterval(window._presenceDisplayTick);
   COLEGAS_ATIVOS = []; PRESENCE_ABERTO = false;
+  NOTIFS = [];
+  _lastNotifSeen = 0;
+  atualizarBadgeNotificacoes(0);
   _presenceHintShown = false;
   const pd = document.getElementById('presence-dock');
   if (pd) pd.innerHTML = '';
@@ -1247,13 +1361,14 @@ async function renderDash() {
     _projsDash = projetos;
     _ativasDash = ativas;
     _gruposDash = grupos;
+    const compartilhados = projetos.filter(p => Number(p.compartilhado_comigo) === 1);
     const emAndamento = projetos.filter(p => !['Concluído','Arquivado'].includes(normalizarStatusProjeto(p.status))).length;
     const filtros = ['todos','Em andamento','A fazer','Em revisão','Pausado','Concluído','Arquivado'];
 
     let html = `
       ${renderInicioDia(projetos, ativas)}
       <div class="dash-header" style="margin-top:28px">
-        <div class="dash-title">Projetos <span style="font-size:var(--fs-090);color:var(--text3);font-weight:400">${emAndamento} em andamento · ${projetos.length} total</span></div>
+        <div class="dash-title">Projetos <span style="font-size:var(--fs-090);color:var(--text3);font-weight:400">${emAndamento} em andamento · ${projetos.length} total · ${compartilhados.length} compartilhado${compartilhados.length===1?'':'s'} comigo</span></div>
         <div style="display:flex;gap:8px">
           ${isAdmin() ? `<button class="btn" onclick="abrirCentralAdmin()">Central admin</button>` : ''}
           ${isAdmin() ? `<button class="btn" onclick="modalNovoColega()">Cadastrar admin</button>` : ''}
@@ -1261,8 +1376,14 @@ async function renderDash() {
           <button class="btn btn-primary" onclick="modalNovoProjeto()">+ Novo projeto</button>
         </div>
       </div>
+      ${compartilhados.length ? `<div class="share-hint"><strong>${compartilhados.length}</strong> projeto${compartilhados.length===1?'':'s'} compartilhado${compartilhados.length===1?'':'s'} com você no momento.</div>` : ''}
       <div class="dash-filters">
         <input type="search" class="search-dash" id="busca-dash" placeholder="Buscar projeto..." value="${esc(BUSCA_DASH)}" oninput="filtrarProjetosBusca(this.value)">
+        <select class="resp-filter" onchange="filtrarOrigemDash(this.value)">
+          <option value="todos" ${FILTRO_ORIGEM_DASH==='todos'?'selected':''}>Todos os acessos</option>
+          <option value="meus" ${FILTRO_ORIGEM_DASH==='meus'?'selected':''}>Meus projetos</option>
+          <option value="compartilhados" ${FILTRO_ORIGEM_DASH==='compartilhados'?'selected':''}>Compartilhados comigo</option>
+        </select>
         <select class="resp-filter" onchange="filtrarGrupoDash(this.value)">
           <option value="todos" ${FILTRO_GRUPO_DASH==='todos'?'selected':''}>Todos os grupos</option>
           <option value="sem" ${FILTRO_GRUPO_DASH==='sem'?'selected':''}>Sem grupo</option>
@@ -1283,6 +1404,8 @@ async function renderDash() {
 function renderProjetosDash(projetos, grupos) {
   const busca = BUSCA_DASH.toLowerCase().trim();
   let lista = busca ? projetos.filter(p => p.nome.toLowerCase().includes(busca)) : projetos;
+  if (FILTRO_ORIGEM_DASH === 'meus') lista = lista.filter(p => Number(p.compartilhado_comigo) !== 1);
+  else if (FILTRO_ORIGEM_DASH === 'compartilhados') lista = lista.filter(p => Number(p.compartilhado_comigo) === 1);
   if (FILTRO_GRUPO_DASH === 'sem') lista = lista.filter(p => !p.grupo_id);
   else if (FILTRO_GRUPO_DASH !== 'todos') lista = lista.filter(p => p.grupo_id === FILTRO_GRUPO_DASH);
   if (!lista.length) {
@@ -1384,6 +1507,8 @@ function renderCardsDash(projetos) {
     const dias = diasRestantes(p.prazo);
     const urgente = dias !== null && dias <= 7 && !projetoConcluido(statusProjeto);
     const timerAtivo = _ativasDash && _ativasDash.some(a => a.projeto_id === p.id);
+    const compartilhado = Number(p.compartilhado_comigo) === 1;
+    const origem = p.origem_compartilhamento === 'grupo' ? 'via grupo' : p.origem_compartilhamento === 'manual' ? 'direto' : '';
     return `
       <div class="proj-card" data-status="${esc(statusProjeto)}"
         draggable="true"
@@ -1395,6 +1520,7 @@ function renderCardsDash(projetos) {
           ${souDono(p.dono_id) ? `<button class="btn btn-ghost btn-icon btn-sm proj-card-edit" onclick="event.stopPropagation();modalEditarProjeto('${p.id}')" title="Editar"><svg width="13" height="13" viewBox="0 0 13 13" fill="none"><path d="M2 9.5V11h1.5l5.5-5.5-1.5-1.5L2 9.5zM10.85 2.65a1 1 0 0 0-1.42 0l-.79.79 1.42 1.42.79-.79a1 1 0 0 0 0-1.42z" fill="currentColor"/></svg></button>` : ''}
         </div>
         <div class="card-meta">
+          ${compartilhado ? `<div class="card-meta-item"><span class="card-meta-label">Compartilhamento</span><span class="tag tag-cyan">Compartilhado ${origem ? `· ${origem}` : ''}</span></div>` : ''}
           <div class="card-meta-item"><span class="card-meta-label">Fase</span>${tag(p.fase, FT[p.fase])}</div>
           <div class="card-meta-item"><span class="card-meta-label">Status</span>${tag(statusProjeto)}</div>
           <div class="card-meta-item"><span class="card-meta-label">Prioridade</span>${tag(p.prioridade, PT[p.prioridade])}</div>
@@ -1411,6 +1537,7 @@ function renderCardsDash(projetos) {
           <div class="proj-card-dono">${avatar(p.dono_nome,'avatar-sm')} <span>${esc(p.dono_nome||'—')}</span></div>
           ${urgente ? `<div class="proj-urgente ${dias <= 0 ? 'overdue' : 'warning'}"><svg width="11" height="11" viewBox="0 0 24 24" fill="none"><path d="M12 3.5l9 15.5H3l9-15.5z" stroke="currentColor" stroke-width="1.9"/><path d="M12 9v5" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/><circle cx="12" cy="16.7" r="1" fill="currentColor"/></svg>${dias <= 0 ? 'vencido' : dias + 'd'}</div>` : ''}
         </div>
+        ${compartilhado ? `<div class="inline-detail-row">Compartilhado por ${esc(p.dono_nome || 'alguém')}</div>` : ''}
         ${p.minha_tarefa_foco ? `<div class="proj-foco-chip">→ ${esc(p.minha_tarefa_foco)}</div>` : ''}
       </div>`;
   }).join('');
@@ -1424,6 +1551,12 @@ function filtrarProjetosBusca(v) {
 
 function filtrarGrupoDash(v) {
   FILTRO_GRUPO_DASH = v || 'todos';
+  const grid = document.getElementById('cards-grid-dash');
+  if (grid) grid.innerHTML = renderProjetosDash(_projsDash, _gruposDash);
+}
+
+function filtrarOrigemDash(v) {
+  FILTRO_ORIGEM_DASH = v || 'todos';
   const grid = document.getElementById('cards-grid-dash');
   if (grid) grid.innerHTML = renderProjetosDash(_projsDash, _gruposDash);
 }
@@ -1555,6 +1688,8 @@ async function modalEditarGrupo(id) {
   const horas = Number(g.total_horas || 0);
   const totalProjetos = Number(g.total_projetos || 0);
   const colaboradores = g.colaboradores || [];
+  const podeGerenciar = !!(g.pode_gerenciar || souDono(g.dono_id) || isAdmin());
+  const souColaborador = colaboradores.some(c => c.usuario_id === EU?.id);
   const colabIds = colaboradores.map(c => c.usuario_id);
   const disponiveis = USUARIOS.filter(u => u.id !== g.dono_id && !colabIds.includes(u.id));
   abrirModal(`
@@ -1585,16 +1720,17 @@ async function modalEditarGrupo(id) {
             ${colaboradores.map(c => `
               <div class="editor-row">
                 <div class="editor-info">${avatar(c.nome)} ${esc(c.nome)} <span class="inline-user-handle">@${esc(c.usuario_login)}</span></div>
-                <button class="editor-del" onclick="removerPermGrupo('${id}','${c.usuario_id}')" title="Remover"><svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M1.5 1.5l9 9M10.5 1.5l-9 9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></button>
+                ${podeGerenciar ? `<button class="editor-del" onclick="removerPermGrupo('${id}','${c.usuario_id}')" title="Remover"><svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M1.5 1.5l9 9M10.5 1.5l-9 9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></button>` : ''}
               </div>`).join('') || '<div class="inline-muted-sm">Nenhum colaborador no grupo</div>'}
           </div>
         </div>
-        ${disponiveis.length ? `<div class="form-row"><label>Adicionar colaborador</label>
+        ${podeGerenciar && disponiveis.length ? `<div class="form-row"><label>Adicionar colaborador</label>
           <div style="display:flex;gap:8px">
             <select id="m-grupo-colab" style="flex:1">${disponiveis.map(u => `<option value="${u.id}">${esc(u.nome)} (@${esc(u.usuario_login)})</option>`).join('')}</select>
             <button class="btn btn-sm btn-primary" onclick="adicionarPermGrupo('${id}')">Adicionar</button>
           </div>
-        </div>` : '<div class="inline-muted-sm">Todos os usuários disponíveis já estão neste grupo.</div>'}
+        </div>` : podeGerenciar ? '<div class="inline-muted-sm">Todos os usuários disponíveis já estão neste grupo.</div>' : ''}
+        ${!podeGerenciar && souColaborador ? `<div class="form-row"><label>Saída voluntária</label><button class="btn btn-danger" onclick="sairGrupoCompartilhado('${id}','${esc(g.nome)}')">Sair deste grupo</button></div>` : ''}
       </div>
     </details>
     <details class="modal-block">
@@ -1608,9 +1744,9 @@ async function modalEditarGrupo(id) {
       </div>
     </details>
     <div class="modal-footer">
-      ${(g.pode_gerenciar || souDono(g.dono_id) || isAdmin()) ? `<button class="btn btn-danger" onclick="deletarGrupo('${id}','${esc(g.nome)}')">Excluir</button>` : ''}
+      ${podeGerenciar ? `<button class="btn btn-danger" onclick="deletarGrupo('${id}','${esc(g.nome)}')">Excluir</button>` : ''}
       <button class="btn" onclick="fecharModal()">Cancelar</button>
-      <button class="btn btn-primary" id="btn-salvar-grupo" onclick="salvarGrupo('${id}')">Salvar</button>
+      ${podeGerenciar ? `<button class="btn btn-primary" id="btn-salvar-grupo" onclick="salvarGrupo('${id}')">Salvar</button>` : ''}
     </div>`);
 }
 
@@ -1640,6 +1776,28 @@ async function removerPermGrupo(grupoId, usuarioId) {
     toast('Colaborador removido do grupo');
     modalEditarGrupo(grupoId);
   } catch (e) { toast(e.message, 'err'); }
+}
+
+async function sairGrupoCompartilhado(grupoId, nomeGrupo) {
+  confirmar(`Sair do grupo "${nomeGrupo}"? Você perderá os acessos herdados deste grupo.`, async () => {
+    try {
+      await req('DELETE', `/grupos/${grupoId}/sair`);
+      fecharModal();
+      toast('Você saiu do grupo');
+      renderDash();
+    } catch (e) { toast(e.message, 'err'); }
+  }, { titulo: 'Sair do grupo', btnTexto: 'Sair do grupo', danger: true });
+}
+
+async function sairProjetoCompartilhado(projetoId, nomeProjeto) {
+  confirmar(`Sair do projeto "${nomeProjeto}"? Você perderá acesso ao projeto e às tarefas vinculadas a ele.`, async () => {
+    try {
+      await req('DELETE', `/projetos/${projetoId}/sair`);
+      fecharModal();
+      toast('Você saiu do projeto');
+      renderDash();
+    } catch (e) { toast(e.message, 'err'); }
+  }, { titulo: 'Sair do projeto', btnTexto: 'Sair do projeto', danger: true });
 }
 
 async function acaoGrupo(grupoId, action, destino = null) {
@@ -2033,6 +2191,7 @@ function renderProjeto(proj, tarefas, decisoes, abaAtiva, resumoHoras = []) {
   const dias = diasRestantes(proj.prazo);
   const urgente = dias !== null && dias <= 7 && !projetoConcluido(statusProjeto);
   const canEdit = podeEditar(proj);
+  const compartilhado = Number(proj.compartilhado_comigo) === 1;
 
   setBreadcrumb([]);
 
@@ -2047,10 +2206,12 @@ function renderProjeto(proj, tarefas, decisoes, abaAtiva, resumoHoras = []) {
         <div style="display:flex;gap:8px;flex-shrink:0">
           ${canEdit ? `<button class="btn btn-sm" onclick="modalEditarProjeto('${proj.id}')">Editar</button>` : ''}
           ${souDono(proj.dono_id) ? `<button class="btn btn-sm" onclick="modalPermissoes('${proj.id}')">Adicionar colaborador</button>` : ''}
+          ${compartilhado ? `<button class="btn btn-sm" onclick="sairProjetoCompartilhado('${proj.id}','${esc(proj.nome)}')">Sair do projeto</button>` : ''}
           ${proj.total_horas > 0 ? `<button class="btn btn-sm" onclick="exportarTempoProjetoCSV('${proj.id}')">↓ CSV</button>` : ''}
         </div>
       </div>
       <div class="proj-meta">
+        ${compartilhado ? `<div class="proj-meta-item"><span class="proj-meta-label">Acesso</span><span class="tag tag-cyan">Compartilhado ${proj.origem_compartilhamento==='grupo'?'via grupo':'direto'}</span></div>` : ''}
         <div class="proj-meta-item"><span class="proj-meta-label">Fase</span>${tag(proj.fase, FT[proj.fase])}</div>
         <div class="proj-meta-item"><span class="proj-meta-label">Status</span>${tag(statusProjeto)}</div>
         <div class="proj-meta-item"><span class="proj-meta-label">Prioridade</span>${tag(proj.prioridade, PT[proj.prioridade])}</div>
@@ -2176,7 +2337,7 @@ function renderLista(el, tarefas) {
       <td><span class="mono mono-cell-muted">${esc(data)}</span></td>
       <td><div class="td-ações">
         <button class="btn btn-ghost btn-icon btn-sm" onclick="expandirSessoes('${t.id}')" title="Abrir detalhes e registro de tempo"><svg width="14" height="14" viewBox="0 0 14 14" fill="none"><rect x="2" y="2" width="10" height="10" rx="2" stroke="currentColor" stroke-width="1.3"/><path d="M4.5 5.2h5M4.5 7h5M4.5 8.8h3" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg></button>
-        ${minha ? `<button class="btn btn-ghost btn-icon btn-sm" onclick="modalColabsTarefa('${t.id}')" title="Colaboradores da tarefa"><svg width="14" height="14" viewBox="0 0 14 14" fill="none"><circle cx="5" cy="4.5" r="2" stroke="currentColor" stroke-width="1.3"/><path d="M1.5 11.5c0-1.93 1.57-3.5 3.5-3.5s3.5 1.57 3.5 3.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/><path d="M9 7a2 2 0 1 0 0-4M12 11.5c0-1.65-1.12-3.04-2.66-3.43" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg></button>` : ''}
+        ${podeCron ? `<button class="btn btn-ghost btn-icon btn-sm" onclick="modalColabsTarefa('${t.id}')" title="Colaboradores da tarefa"><svg width="14" height="14" viewBox="0 0 14 14" fill="none"><circle cx="5" cy="4.5" r="2" stroke="currentColor" stroke-width="1.3"/><path d="M1.5 11.5c0-1.93 1.57-3.5 3.5-3.5s3.5 1.57 3.5 3.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/><path d="M9 7a2 2 0 1 0 0-4M12 11.5c0-1.65-1.12-3.04-2.66-3.43" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg></button>` : ''}
         ${canEdit ? `<button class="btn btn-ghost btn-icon btn-sm" onclick="duplicarTarefa('${t.id}')" title="Duplicar tarefa"><svg width="13" height="13" viewBox="0 0 13 13" fill="none"><rect x="2" y="3" width="6" height="6" rx="1" stroke="currentColor" stroke-width="1.2"/><rect x="5" y="6" width="6" height="6" rx="1" stroke="currentColor" stroke-width="1.2"/></svg></button>` : ''}
         ${canEdit ? `<button class="btn btn-ghost btn-icon btn-sm" onclick="modalEditarTarefa('${t.id}')" title="Editar tarefa"><svg width="13" height="13" viewBox="0 0 13 13" fill="none"><path d="M2 9.5V11h1.5l5.5-5.5-1.5-1.5L2 9.5zM10.85 2.65a1 1 0 0 0-1.42 0l-.79.79 1.42 1.42.79-.79a1 1 0 0 0 0-1.42z" fill="currentColor"/></svg></button>` : ''}
         ${canEdit ? `<button class="btn btn-danger btn-icon btn-sm" onclick="deletarTarefa('${t.id}')" title="Excluir tarefa"><svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M1.5 1.5l9 9M10.5 1.5l-9 9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></button>` : ''}
@@ -2262,7 +2423,7 @@ function renderLista(el, tarefas) {
             <div style="flex:1">${statusBtn}</div>
             <div class="task-card-actions">
               <button class="btn btn-ghost btn-icon btn-sm" onclick="expandirSessoes('${t.id}')"; title="Detalhes"><svg width="14" height="14" viewBox="0 0 14 14" fill="none"><rect x="2" y="2" width="10" height="10" rx="2" stroke="currentColor" stroke-width="1.3"/><path d="M4.5 5.2h5M4.5 7h5M4.5 8.8h3" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg></button>
-              ${minha ? `<button class="btn btn-ghost btn-icon btn-sm" onclick="modalColabsTarefa('${t.id}'); event.stopPropagation()" title="Colaboradores" style="font-size:16px">👥</button>` : ''}
+              ${podeCron ? `<button class="btn btn-ghost btn-icon btn-sm" onclick="modalColabsTarefa('${t.id}'); event.stopPropagation()" title="Colaboradores" style="font-size:16px">👥</button>` : ''}
               ${canEdit ? `<button class="btn btn-ghost btn-icon btn-sm" onclick="duplicarTarefa('${t.id}')" title="Duplicar"><svg width="13" height="13" viewBox="0 0 13 13" fill="none"><rect x="2" y="3" width="6" height="6" rx="1" stroke="currentColor" stroke-width="1.2"/><rect x="5" y="6" width="6" height="6" rx="1" stroke="currentColor" stroke-width="1.2"/></svg></button>` : ''}
               ${canEdit ? `<button class="btn btn-ghost btn-icon btn-sm" onclick="modalEditarTarefa('${t.id}')" title="Editar"><svg width="13" height="13" viewBox="0 0 13 13" fill="none"><path d="M2 9.5V11h1.5l5.5-5.5-1.5-1.5L2 9.5zM10.85 2.65a1 1 0 0 0-1.42 0l-.79.79 1.42 1.42.79-.79a1 1 0 0 0 0-1.42z" fill="currentColor"/></svg></button>` : ''}
               ${canEdit ? `<button class="btn btn-danger btn-icon btn-sm" onclick="deletarTarefa('${t.id}')" title="Excluir"><svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M1.5 1.5l9 9M10.5 1.5l-9 9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></button>` : ''}
@@ -3039,26 +3200,40 @@ async function modalColabsTarefa(tarefaId) {
   try { colabs = await req('GET', `/tarefas/${tarefaId}/colaboradores`); } catch {}
 
   const colabIds = colabs.map(c => c.id);
+  const podeGerenciar = tarefa?.dono_id === EU?.id || isAdmin();
+  const souColab = colabIds.includes(EU?.id);
   const disponiveis = USUARIOS.filter(u => u.id !== tarefa?.dono_id && !colabIds.includes(u.id) && u.id !== EU?.id);
 
   const colabRows = colabs.map(c => `
     <div class="colab-row">
       <div class="colab-info">${avatar(c.nome)} <span>${esc(c.nome)}</span> <span class="inline-user-handle">@${esc(c.usuario_login)}</span></div>
-      <button class="colab-del" onclick="removerColab('${tarefaId}','${c.id}')" title="Remover"><svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M1.5 1.5l9 9M10.5 1.5l-9 9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></button>
+      ${podeGerenciar ? `<button class="colab-del" onclick="removerColab('${tarefaId}','${c.id}')" title="Remover"><svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M1.5 1.5l9 9M10.5 1.5l-9 9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></button>` : ''}
     </div>`).join('') || `<div class="inline-muted-sm">Nenhum colaborador adicionado</div>`;
 
   abrirModal(`
     <h2>Colaboradores da tarefa</h2>
     <p class="modal-copy">Colaboradores podem iniciar o cronômetro nesta tarefa. Cada um vê apenas suas próprias sessões.</p>
     <div class="form-row"><label>Colaboradores atuais</label><div class="colab-list">${colabRows}</div></div>
-    ${disponiveis.length ? `
+    ${podeGerenciar && disponiveis.length ? `
     <div class="form-row"><label>Adicionar colaborador</label>
       <div style="display:flex;gap:8px">
         <select id="m-colab" style="flex:1">${disponiveis.map(u=>`<option value="${u.id}">${esc(u.nome)} (@${esc(u.usuario_login)})</option>`).join('')}</select>
         <button class="btn btn-sm btn-primary" id="btn-add-colab" onclick="adicionarColab('${tarefaId}')">Adicionar</button>
       </div>
-    </div>` : `<div class="inline-muted-sm" style="margin-top:8px">Todos os membros já são colaboradores.</div>`}
+    </div>` : podeGerenciar ? `<div class="inline-muted-sm" style="margin-top:8px">Todos os membros já são colaboradores.</div>` : ''}
+    ${!podeGerenciar && souColab ? `<div class="form-row"><label>Saída voluntária</label><button class="btn btn-danger" onclick="sairTarefaCompartilhada('${tarefaId}','${esc(tarefa?.nome || 'Tarefa')}')">Sair desta tarefa</button></div>` : ''}
     <div class="modal-footer"><button class="btn" onclick="fecharModal()">Fechar</button></div>`, { lg: true });
+}
+
+async function sairTarefaCompartilhada(tarefaId, nomeTarefa) {
+  confirmar(`Sair da tarefa "${nomeTarefa}"? Você deixará de ser colaborador desta tarefa.`, async () => {
+    try {
+      await req('DELETE', `/tarefas/${tarefaId}/sair`);
+      fecharModal();
+      toast('Você saiu da tarefa');
+      await recarregarProjeto('lista');
+    } catch (e) { toast(e.message,'err'); }
+  }, { titulo: 'Sair da tarefa', btnTexto: 'Sair da tarefa', danger: true });
 }
 
 async function adicionarColab(tarefaId) {

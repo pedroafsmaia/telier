@@ -43,6 +43,32 @@ CREATE TABLE IF NOT EXISTS permissoes_projeto (
   FOREIGN KEY (usuario_id) REFERENCES usuarios(id) ON DELETE CASCADE
 );
 
+-- Usuário pode recusar um projeto compartilhado (mesmo herdado por grupo)
+CREATE TABLE IF NOT EXISTS recusas_projeto (
+  projeto_id TEXT NOT NULL,
+  usuario_id TEXT NOT NULL,
+  criado_em TEXT DEFAULT (datetime('now')),
+  PRIMARY KEY (projeto_id, usuario_id),
+  FOREIGN KEY (projeto_id) REFERENCES projetos(id) ON DELETE CASCADE,
+  FOREIGN KEY (usuario_id) REFERENCES usuarios(id) ON DELETE CASCADE
+);
+
+-- Notificações in-app (compartilhamentos, etc.)
+CREATE TABLE IF NOT EXISTS notificacoes (
+  id TEXT PRIMARY KEY,
+  usuario_id TEXT NOT NULL,
+  tipo TEXT NOT NULL,
+  escopo TEXT NOT NULL,
+  entidade_id TEXT,
+  titulo TEXT NOT NULL,
+  mensagem TEXT,
+  ator_id TEXT,
+  lida_em TEXT,
+  criado_em TEXT DEFAULT (datetime('now')),
+  FOREIGN KEY (usuario_id) REFERENCES usuarios(id) ON DELETE CASCADE,
+  FOREIGN KEY (ator_id) REFERENCES usuarios(id) ON DELETE SET NULL
+);
+
 CREATE TABLE IF NOT EXISTS tarefas (
   id TEXT PRIMARY KEY,
   projeto_id TEXT NOT NULL,
