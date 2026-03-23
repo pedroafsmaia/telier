@@ -120,9 +120,6 @@ let _taskSchemaReady = false;
 async function ensureTaskSchema(env) {
   if (_taskSchemaReady) return;
   try { await env.DB.prepare('ALTER TABLE tarefas ADD COLUMN descricao TEXT').run(); } catch {}
-  try { await env.DB.prepare('ALTER TABLE tarefas ADD COLUMN estimativa_horas REAL').run(); } catch {}
-  try { await env.DB.prepare('ALTER TABLE tarefas ADD COLUMN criterios_pronto TEXT').run(); } catch {}
-  try { await env.DB.prepare('ALTER TABLE tarefas ADD COLUMN contexto_execucao TEXT').run(); } catch {}
 
   await env.DB.prepare(`
     CREATE TABLE IF NOT EXISTS templates_tarefa (
@@ -132,9 +129,6 @@ async function ensureTaskSchema(env) {
       prioridade TEXT NOT NULL DEFAULT 'Média',
       dificuldade TEXT NOT NULL DEFAULT 'Moderada',
       descricao TEXT,
-      estimativa_horas REAL,
-      criterios_pronto TEXT,
-      contexto_execucao TEXT,
       criado_por TEXT NOT NULL,
       ativo INTEGER NOT NULL DEFAULT 1,
       criado_em TEXT DEFAULT (datetime('now')),
@@ -1104,7 +1098,7 @@ export default {
       if (e) return fail('Não autorizado', 401);
       const templates = await env.DB.prepare(`
         SELECT tt.id, tt.nome, tt.status, tt.prioridade, tt.dificuldade,
-          tt.descricao, tt.estimativa_horas, tt.criterios_pronto, tt.contexto_execucao,
+          tt.descricao,
           tt.criado_por, tu.nome as criado_por_nome,
           tt.criado_em, tt.atualizado_em
         FROM templates_tarefa tt
@@ -1125,17 +1119,14 @@ export default {
         prioridade,
         dificuldade,
         descricao,
-        estimativa_horas,
-        criterios_pronto,
-        contexto_execucao,
       } = await request.json();
       if (!nome?.trim()) return fail('Nome obrigatório');
       const id = 'tpl_' + uid();
       await env.DB.prepare(`
         INSERT INTO templates_tarefa (
           id, nome, status, prioridade, dificuldade,
-          descricao, estimativa_horas, criterios_pronto, contexto_execucao, criado_por
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+          descricao, criado_por
+        ) VALUES (?, ?, ?, ?, ?, ?, ?)
       `).bind(
         id,
         nome.trim(),
@@ -1143,9 +1134,6 @@ export default {
         prioridade || 'Média',
         dificuldade || 'Moderada',
         descricao?.trim() || null,
-        estimativa_horas ?? null,
-        criterios_pronto?.trim() || null,
-        contexto_execucao?.trim() || null,
         u.uid
       ).run();
       return ok({ id });
@@ -1163,9 +1151,6 @@ export default {
         prioridade,
         dificuldade,
         descricao,
-        estimativa_horas,
-        criterios_pronto,
-        contexto_execucao,
       } = await request.json();
       if (!nome?.trim()) return fail('Nome obrigatório');
       const t = await env.DB.prepare('SELECT id FROM templates_tarefa WHERE id = ? AND ativo = 1').bind(templateId).first();
@@ -1173,7 +1158,7 @@ export default {
       await env.DB.prepare(`
         UPDATE templates_tarefa
         SET nome=?, status=?, prioridade=?, dificuldade=?,
-            descricao=?, estimativa_horas=?, criterios_pronto=?, contexto_execucao=?,
+            descricao=?,
             atualizado_em=datetime('now')
         WHERE id=?
       `).bind(
@@ -1182,9 +1167,6 @@ export default {
         prioridade || 'Média',
         dificuldade || 'Moderada',
         descricao?.trim() || null,
-        estimativa_horas ?? null,
-        criterios_pronto?.trim() || null,
-        contexto_execucao?.trim() || null,
         templateId
       ).run();
       return ok({ ok: true });
@@ -1233,15 +1215,12 @@ export default {
           dificuldade,
           data,
           descricao,
-          estimativa_horas,
-          criterios_pronto,
-          contexto_execucao,
           template_id,
         } = await request.json();
         let template = null;
         if (template_id) {
           template = await env.DB.prepare(
-            `SELECT id, nome, status, prioridade, dificuldade, descricao, estimativa_horas, criterios_pronto, contexto_execucao
+            `SELECT id, nome, status, prioridade, dificuldade, descricao
              FROM templates_tarefa
              WHERE id = ? AND ativo = 1`
           ).bind(template_id).first();
@@ -1254,8 +1233,8 @@ export default {
         await env.DB.prepare(
           `INSERT INTO tarefas (
             id, projeto_id, nome, status, prioridade, dificuldade, data, dono_id,
-            descricao, estimativa_horas, criterios_pronto, contexto_execucao
-          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+            descricao
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
         ).bind(
           id,
           projetoId,
@@ -1265,10 +1244,7 @@ export default {
           complexidadeVal,
           data || null,
           u.uid,
-          descricao?.trim() || template?.descricao || null,
-          estimativa_horas ?? template?.estimativa_horas ?? null,
-          criterios_pronto?.trim() || template?.criterios_pronto || null,
-          contexto_execucao?.trim() || template?.contexto_execucao || null
+          descricao?.trim() || template?.descricao || null
         ).run();
         return ok({ id });
       }
@@ -1291,16 +1267,13 @@ export default {
           dificuldade,
           data,
           descricao,
-          estimativa_horas,
-          criterios_pronto,
-          contexto_execucao,
         } = await request.json();
         const complexidadeVal = complexidade || dificuldade || 'Moderada';
         if (!nome?.trim()) return fail('Nome obrigatório');
         await env.DB.prepare(
           `UPDATE tarefas
            SET nome=?, status=?, prioridade=?, dificuldade=?, data=?,
-               descricao=?, estimativa_horas=?, criterios_pronto=?, contexto_execucao=?,
+               descricao=?,
                atualizado_em=datetime('now')
            WHERE id=?`
         ).bind(
@@ -1310,9 +1283,6 @@ export default {
           complexidadeVal,
           data || null,
           descricao?.trim() || null,
-          estimativa_horas ?? null,
-          criterios_pronto?.trim() || null,
-          contexto_execucao?.trim() || null,
           tarefaId
         ).run();
         return ok({ ok: true });
@@ -1350,7 +1320,7 @@ export default {
       if (!await podeEditarTarefa(env, tarefaId, u.uid, u.papel)) return fail('Sem permissão', 403);
       const original = await env.DB.prepare(`
         SELECT projeto_id, nome, status, prioridade, dificuldade, data,
-          descricao, estimativa_horas, criterios_pronto, contexto_execucao
+          descricao
         FROM tarefas
         WHERE id = ?
       `).bind(tarefaId).first();
@@ -1359,8 +1329,8 @@ export default {
       await env.DB.prepare(`
         INSERT INTO tarefas (
           id, projeto_id, nome, status, prioridade, dificuldade, data, dono_id,
-          descricao, estimativa_horas, criterios_pronto, contexto_execucao
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+          descricao
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
       `).bind(
         novoId,
         original.projeto_id,
@@ -1370,10 +1340,7 @@ export default {
         original.dificuldade,
         original.data,
         u.uid,
-        original.descricao,
-        original.estimativa_horas,
-        original.criterios_pronto,
-        original.contexto_execucao
+        original.descricao
       ).run();
       return ok({ id: novoId });
     }
