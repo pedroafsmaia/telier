@@ -1344,6 +1344,7 @@ async function fazerLogin() {
       localStorage.setItem(ADMIN_MODE_KEY, ADMIN_MODE);
     }
     mostrar('app');
+    carregarTimersAtivos();
     iniciarPollPresenca();
     iniciarPollNotificacoes();
   } catch (e) {
@@ -4154,7 +4155,7 @@ window.addEventListener('load', async () => {
   const temaSalvo = localStorage.getItem('ea_tema') || 'dark';
   aplicarTema(temaSalvo);
   await init();
-  await carregarTimersAtivos();
+  if (TOKEN) await carregarTimersAtivos();
   if (TOKEN) iniciarPollPresenca();
 });
 

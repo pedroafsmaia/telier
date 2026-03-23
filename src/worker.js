@@ -325,10 +325,44 @@ async function ensureUserSecuritySchema(env) {
     )
   `).run();
   try { await env.DB.prepare('ALTER TABLE usuarios ADD COLUMN deve_trocar_senha INTEGER NOT NULL DEFAULT 0').run(); } catch {}
-  try { await env.DB.prepare("ALTER TABLE sessoes ADD COLUMN criado_em TEXT DEFAULT (datetime('now'))").run(); } catch {}
+  try { await env.DB.prepare('ALTER TABLE sessoes ADD COLUMN criado_em TEXT DEFAULT (datetime("now"))').run(); } catch {}
   try { await env.DB.prepare('CREATE INDEX IF NOT EXISTS idx_sessoes_expira_em ON sessoes(expira_em)').run(); } catch {}
   try { await env.DB.prepare('CREATE INDEX IF NOT EXISTS idx_sessoes_usuario ON sessoes(usuario_id)').run(); } catch {}
   try { await env.DB.prepare('CREATE INDEX IF NOT EXISTS idx_permissoes_projeto_usuario ON permissoes_projeto(usuario_id)').run(); } catch {}
+  // Ensure time-tracking tables exist; failures are acceptable if FK-referenced tables (tarefas) don't exist yet
+  try { await env.DB.prepare(`
+    CREATE TABLE IF NOT EXISTS sessoes_tempo (
+      id TEXT PRIMARY KEY,
+      tarefa_id TEXT NOT NULL,
+      usuario_id TEXT NOT NULL,
+      inicio TEXT NOT NULL,
+      fim TEXT,
+      criado_em TEXT DEFAULT (datetime('now')),
+      FOREIGN KEY (tarefa_id) REFERENCES tarefas(id) ON DELETE CASCADE,
+      FOREIGN KEY (usuario_id) REFERENCES usuarios(id)
+    )
+  `).run(); } catch {}
+  try { await env.DB.prepare(`
+    CREATE TABLE IF NOT EXISTS colaboradores_tarefa (
+      tarefa_id TEXT NOT NULL,
+      usuario_id TEXT NOT NULL,
+      adicionado_em TEXT DEFAULT (datetime('now')),
+      PRIMARY KEY (tarefa_id, usuario_id),
+      FOREIGN KEY (tarefa_id) REFERENCES tarefas(id) ON DELETE CASCADE,
+      FOREIGN KEY (usuario_id) REFERENCES usuarios(id) ON DELETE CASCADE
+    )
+  `).run(); } catch {}
+  try { await env.DB.prepare(`
+    CREATE TABLE IF NOT EXISTS intervalos (
+      id TEXT PRIMARY KEY,
+      sessao_id TEXT NOT NULL,
+      tipo TEXT NOT NULL,
+      inicio TEXT NOT NULL,
+      fim TEXT,
+      criado_em TEXT DEFAULT (datetime('now')),
+      FOREIGN KEY (sessao_id) REFERENCES sessoes_tempo(id) ON DELETE CASCADE
+    )
+  `).run(); } catch {}
   _userSecuritySchemaReady = true;
 }
 
@@ -534,11 +568,10 @@ export default {
         } catch {}
       }
       const sessaoId = sessaoUid();
-      const criado_em = new Date().toISOString().slice(0, 19).replace('T', ' ');
       const expira = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().slice(0, 19).replace('T', ' ');
       await env.DB.prepare(
-        'INSERT INTO sessoes (id, usuario_id, criado_em, expira_em) VALUES (?, ?, ?, ?)'
-      ).bind(sessaoId, usuario.id, criado_em, expira).run();
+        'INSERT INTO sessoes (id, usuario_id, expira_em) VALUES (?, ?, ?)'
+      ).bind(sessaoId, usuario.id, expira).run();
       return ok({
         token: sessaoId,
         must_change_password: Number(usuario.deve_trocar_senha || 0) === 1,
