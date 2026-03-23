@@ -5,7 +5,6 @@ name = "telier-api"
 main = "src/worker.js"
 compatibility_date = "2024-01-01"
 workers_dev = true
-pages_build_output_dir = "src"
 
 [[d1_databases]]
 binding = "DB"
