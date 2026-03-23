@@ -1048,35 +1048,22 @@ export default {
       return ok(ativas.results);
     }
 
-    // GET /tempo/colegas-ativos — colaboradores com sessão ativa (exceto o próprio)
+    // GET /tempo/colegas-ativos — colaboradores com cronômetro ativo (exceto o próprio)
     if (path === '/tempo/colegas-ativos' && method === 'GET') {
       const [u, e] = await requireAuth(request, env);
       if (e) return fail('Não autorizado', 401);
       const colegas = await env.DB.prepare(`
-        SELECT
-          tu.id as usuario_id,
+        SELECT st.id, st.inicio, st.usuario_id,
           tu.nome as usuario_nome,
-          st.inicio,
           t.nome as tarefa_nome,
           p.nome as projeto_nome,
           p.id as projeto_id
-        FROM usuarios tu
-        LEFT JOIN sessoes_tempo st ON st.id = (
-          SELECT st2.id
-          FROM sessoes_tempo st2
-          WHERE st2.usuario_id = tu.id AND st2.fim IS NULL
-          ORDER BY st2.inicio DESC
-          LIMIT 1
-        )
-        LEFT JOIN tarefas t ON t.id = st.tarefa_id
-        LEFT JOIN projetos p ON p.id = t.projeto_id
-        WHERE tu.id != ?
-          AND EXISTS (
-            SELECT 1
-            FROM sessoes s
-            WHERE s.usuario_id = tu.id AND s.expira_em > datetime('now')
-          )
-        ORDER BY tu.nome ASC
+        FROM sessoes_tempo st
+        JOIN usuarios tu ON tu.id = st.usuario_id
+        JOIN tarefas t ON t.id = st.tarefa_id
+        JOIN projetos p ON p.id = t.projeto_id
+        WHERE st.fim IS NULL AND st.usuario_id != ?
+        ORDER BY st.inicio ASC
       `).bind(u.uid).all();
       return ok(colegas.results);
     }

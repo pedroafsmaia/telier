@@ -2404,7 +2404,7 @@ async function carregarColegasAtivos() {
         : [];
     if (!COLEGAS_ATIVOS.length && !_presenceHintShown) {
       _presenceHintShown = true;
-      toast('Nenhum colaborador online agora');
+      toast('Nenhum colaborador ativo agora');
     }
     if (COLEGAS_ATIVOS.length) _presenceHintShown = false;
     renderPresenceDock();
@@ -2434,10 +2434,10 @@ function renderPresenceDock() {
     .map(c => avatar(c.usuario_nome, 'avatar-sm')).join('');
 
   const toggleHtml = `
-    <button class="presence-toggle" onclick="togglePresencePanel()" title="Colaboradores online agora">
+    <button class="presence-toggle" onclick="togglePresencePanel()" title="Colaboradores ativos agora">
       <div class="presence-online-dot"></div>
       <div class="presence-toggle-avatars">${avatarsHtml}</div>
-      <span class="presence-count">${COLEGAS_ATIVOS.length} online</span>
+      <span class="presence-count">${COLEGAS_ATIVOS.length} ativo${COLEGAS_ATIVOS.length === 1 ? '' : 's'}</span>
     </button>`;
 
   if (!PRESENCE_ABERTO) { dock.innerHTML = toggleHtml; return; }
@@ -2461,7 +2461,7 @@ function renderPresenceDock() {
 
   dock.innerHTML = `
     <div class="presence-panel">
-      <div class="presence-panel-header">Online agora</div>
+      <div class="presence-panel-header">Ativos agora</div>
       ${itemsHtml}
     </div>
     ${toggleHtml}`;
