@@ -14,7 +14,7 @@ CREATE TABLE IF NOT EXISTS usuarios (
 CREATE TABLE IF NOT EXISTS sessoes (
   id TEXT PRIMARY KEY,
   usuario_id TEXT NOT NULL,
-  criado_em TEXT DEFAULT (datetime('now')),
+  criado_em TEXT NOT NULL,  -- sempre fornecido explicitamente pelo worker (D1 não avalia DEFAULT expressions no INSERT)
   expira_em TEXT NOT NULL,
   FOREIGN KEY (usuario_id) REFERENCES usuarios(id)
 );
