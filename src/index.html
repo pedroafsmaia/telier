@@ -1797,7 +1797,6 @@ async function abrirCentralAdmin(aba = 'agora') {
           <td>${tag(t.status)}</td>
           <td>${tag(t.prioridade, PT[t.prioridade])}</td>
           <td>${tag(t.dificuldade, DT[t.dificuldade])}</td>
-          <td class="mono">${t.estimativa_horas ? Number(t.estimativa_horas).toFixed(2) + 'h' : '—'}</td>
           <td>${esc(t.criado_por_nome || '—')}</td>
           <td>
             <div style="display:flex;gap:6px">
@@ -1812,8 +1811,8 @@ async function abrirCentralAdmin(aba = 'agora') {
         </div>
         <div class="table-wrap">
           <table>
-            <thead><tr><th>Nome</th><th>Status</th><th>Prioridade</th><th>Complexidade</th><th>Estimativa</th><th>Criado por</th><th></th></tr></thead>
-            <tbody>${rows || `<tr><td colspan="7" class="table-empty">Nenhum template.</td></tr>`}</tbody>
+            <thead><tr><th>Nome</th><th>Status</th><th>Prioridade</th><th>Complexidade</th><th>Criado por</th><th></th></tr></thead>
+            <tbody>${rows || `<tr><td colspan="6" class="table-empty">Nenhum template.</td></tr>`}</tbody>
           </table>
         </div>`;
       return;
@@ -1834,10 +1833,7 @@ function modalTemplateAdmin(templateId = null) {
       <div class="form-row"><label>Status padrão</label>${sel('tpl-status', STATUS_TAR, atual?.status || 'A fazer')}</div>
       <div class="form-row"><label>Prioridade padrão</label>${sel('tpl-prior', PRIORS, atual?.prioridade || 'Média')}</div>
       <div class="form-row"><label>Complexidade padrão</label>${sel('tpl-dific', DIFS, atual?.dificuldade || 'Moderada')}</div>
-      <div class="form-row"><label>Estimativa (horas)</label><input type="number" id="tpl-estimativa" min="0" step="0.25" value="${atual?.estimativa_horas ?? ''}"></div>
     </div>
-    <div class="form-row"><label>Contexto de execução</label><input id="tpl-contexto" value="${esc(atual?.contexto_execucao || '')}" placeholder="Ex: precisa aprovação do cliente"></div>
-    <div class="form-row"><label>Critérios de pronto</label><textarea id="tpl-criterios" placeholder="Checklist de conclusão">${esc(atual?.criterios_pronto || '')}</textarea></div>
     <div class="modal-footer">
       <button class="btn" onclick="fecharModal();abrirCentralAdmin('templates')">Cancelar</button>
       <button class="btn btn-primary" id="btn-salvar-template" onclick="salvarTemplateAdmin('${templateId || ''}')">Salvar template</button>
@@ -1855,9 +1851,6 @@ async function salvarTemplateAdmin(templateId = '') {
     prioridade: gv('tpl-prior') || 'Média',
     dificuldade: gv('tpl-dific') || 'Moderada',
     descricao: gv('tpl-desc') || null,
-    estimativa_horas: gv('tpl-estimativa') ? Number(gv('tpl-estimativa')) : null,
-    contexto_execucao: gv('tpl-contexto') || null,
-    criterios_pronto: gv('tpl-criterios') || null,
   };
   try {
     if (templateId) await req('PUT', `/templates-tarefa/${templateId}`, payload);
@@ -2120,16 +2113,11 @@ function renderLista(el, tarefas) {
         : `<button class="btn btn-ghost btn-icon btn-sm" disabled title="Você não é colaborador desta tarefa" style="opacity:.3"><svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M4 2.5l5 3.5-5 3.5v-7z" fill="currentColor"/></svg></button>`;
 
     const data = t.data ? prazoFmt(t.data, true) : '—';
-    const meta = [];
-    if (Number(t.estimativa_horas) > 0) meta.push(`<span class="task-meta-chip">Estimativa: ${Number(t.estimativa_horas).toFixed(1)}h</span>`);
-    if (t.contexto_execucao) meta.push(`<span class="task-meta-chip">Contexto definido</span>`);
-    if (t.criterios_pronto) meta.push(`<span class="task-meta-chip">Critérios de pronto</span>`);
 
     return `<tr>
       <td style="width:36px" onclick="event.stopPropagation()">${pin}</td>
       <td class="td-nome ${t.foco&&minha?'em-foco':''} ${t.status==='Concluída'?'concluida':''}">
         <div class="td-nome-main">${esc(t.nome)}</div>
-        ${meta.length ? `<div class="td-nome-meta">${meta.join('')}</div>` : ''}
       </td>
       <td><div class="resp-chip">${avatar(t.dono_nome,'avatar-sm')} <span>${esc(t.dono_nome||'—')}</span></div></td>
       <td>${tag(t.complexidade, DT[t.complexidade])}</td>
@@ -2573,23 +2561,13 @@ async function modalNovaTarefa(projetoId) {
       </div>
     </div>
     <div class="form-row"><label>Descrição da tarefa</label><input id="m-nome" placeholder="Ex: Detalhar corte da escada"></div>
+    <div class="form-row"><label>Descrição detalhada</label><textarea id="m-desc" placeholder="Contexto e orientações para execução"></textarea></div>
     <div class="form-grid">
       <div class="form-row"><label>Status</label>${sel('m-status',STATUS_TAR,'A fazer')}</div>
       <div class="form-row"><label>Prioridade</label>${sel('m-prior',PRIORS,'Média')}</div>
       <div class="form-row"><label>Complexidade</label>${sel('m-dific',DIFS,'Moderada')}</div>
       <div class="form-row"><label>Prazo da tarefa</label><input type="date" id="m-data"></div>
     </div>
-    <details class="modal-block">
-      <summary class="modal-block-summary">Campos avançados</summary>
-      <div class="modal-block-body">
-        <div class="form-row" style="margin-top:10px"><label>Descrição detalhada</label><textarea id="m-desc" placeholder="Contexto e detalhes para execução"></textarea></div>
-        <div class="form-grid">
-          <div class="form-row"><label>Estimativa (horas)</label><input type="number" id="m-estimativa" min="0" step="0.25" placeholder="Ex: 3.5"></div>
-          <div class="form-row"><label>Contexto de execução</label><input id="m-contexto" placeholder="Ex: validar com estrutural"></div>
-        </div>
-        <div class="form-row"><label>Critérios de pronto</label><textarea id="m-criterios" placeholder="Checklist para considerar concluída"></textarea></div>
-      </div>
-    </details>
     <div class="modal-footer">
       ${isAdmin() ? `<button class="btn" type="button" onclick="salvarTemplateAdminDaTarefaModal()">Salvar como template admin</button>` : ''}
       <button class="btn" onclick="fecharModal()">Cancelar</button>
@@ -2607,9 +2585,6 @@ function aplicarTemplateNoModal() {
   document.getElementById('m-prior').value = tpl.prioridade || 'Média';
   document.getElementById('m-dific').value = tpl.dificuldade || 'Moderada';
   document.getElementById('m-desc').value = tpl.descricao || '';
-  document.getElementById('m-estimativa').value = tpl.estimativa_horas ?? '';
-  document.getElementById('m-contexto').value = tpl.contexto_execucao || '';
-  document.getElementById('m-criterios').value = tpl.criterios_pronto || '';
   toast('Template aplicado');
 }
 
@@ -2630,9 +2605,6 @@ async function salvarTemplateAdminDaTarefaModal() {
       prioridade: gv('m-prior'),
       dificuldade: gv('m-dific'),
       descricao: gv('m-desc') || null,
-      estimativa_horas: gv('m-estimativa') ? Number(gv('m-estimativa')) : null,
-      contexto_execucao: gv('m-contexto') || null,
-      criterios_pronto: gv('m-criterios') || null,
     });
     await carregarTemplatesTarefa(true);
     toast('Template admin salvo');
@@ -2654,9 +2626,6 @@ async function criarTarefa(projetoId) {
       data: gv('m-data')||null,
       template_id: gv('m-template') || null,
       descricao: gv('m-desc') || null,
-      estimativa_horas: gv('m-estimativa') ? Number(gv('m-estimativa')) : null,
-      contexto_execucao: gv('m-contexto') || null,
-      criterios_pronto: gv('m-criterios') || null,
     });
     fecharModal(); toast('Tarefa criada'); await recarregarProjeto('lista');
   } catch (e) { toast(e.message, 'err'); btnLoading('btn-criar-tar', false); }
@@ -2666,7 +2635,6 @@ async function modalEditarTarefa(id) {
   const t = TAREFAS.find(t => t.id === id);
   if (!t) return;
   const templates = await carregarTemplatesTarefa();
-  const temAvancado = !!(t.descricao || t.estimativa_horas || t.contexto_execucao || t.criterios_pronto);
   abrirModal(`
     <h2>Editar tarefa</h2>
     <div class="modal-hint">Campos desta janela afetam apenas a tarefa, sem alterar dados da janela de projeto.</div>
@@ -2680,23 +2648,13 @@ async function modalEditarTarefa(id) {
       </div>
     </div>
     <div class="form-row"><label>Descrição</label><input id="m-nome" value="${esc(t.nome)}"></div>
+    <div class="form-row"><label>Descrição detalhada</label><textarea id="m-desc">${esc(t.descricao || '')}</textarea></div>
     <div class="form-grid">
       <div class="form-row"><label>Status</label>${sel('m-status',STATUS_TAR,t.status)}</div>
       <div class="form-row"><label>Prioridade</label>${sel('m-prior',PRIORS,t.prioridade)}</div>
       <div class="form-row"><label>Complexidade</label>${sel('m-dific',DIFS,t.complexidade||t.dificuldade)}</div>
       <div class="form-row"><label>Prazo da tarefa</label><input type="date" id="m-data" value="${t.data||''}"></div>
     </div>
-    <details class="modal-block" ${temAvancado ? 'open' : ''}>
-      <summary class="modal-block-summary">Campos avançados</summary>
-      <div class="modal-block-body">
-        <div class="form-row" style="margin-top:10px"><label>Descrição detalhada</label><textarea id="m-desc">${esc(t.descricao || '')}</textarea></div>
-        <div class="form-grid">
-          <div class="form-row"><label>Estimativa (horas)</label><input type="number" id="m-estimativa" min="0" step="0.25" value="${t.estimativa_horas ?? ''}"></div>
-          <div class="form-row"><label>Contexto de execução</label><input id="m-contexto" value="${esc(t.contexto_execucao || '')}"></div>
-        </div>
-        <div class="form-row"><label>Critérios de pronto</label><textarea id="m-criterios">${esc(t.criterios_pronto || '')}</textarea></div>
-      </div>
-    </details>
     <div class="modal-footer">
       ${isAdmin() ? `<button class="btn" type="button" onclick="salvarTemplateAdminDaTarefaModal()">Salvar como template admin</button>` : ''}
       <button class="btn" onclick="fecharModal()">Cancelar</button>
@@ -2716,9 +2674,6 @@ async function salvarTarefa(id) {
       complexidade: gv('m-dific'),
       data: gv('m-data')||null,
       descricao: gv('m-desc') || null,
-      estimativa_horas: gv('m-estimativa') ? Number(gv('m-estimativa')) : null,
-      contexto_execucao: gv('m-contexto') || null,
-      criterios_pronto: gv('m-criterios') || null,
     });
     fecharModal(); toast('Tarefa atualizada'); await recarregarProjeto();
   } catch (e) { toast(e.message, 'err'); btnLoading('btn-salvar-tar', false); }
