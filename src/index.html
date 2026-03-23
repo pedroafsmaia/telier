@@ -2404,7 +2404,7 @@ async function carregarColegasAtivos() {
         : [];
     if (!COLEGAS_ATIVOS.length && !_presenceHintShown) {
       _presenceHintShown = true;
-      toast('Nenhum colega online agora');
+      toast('Nenhum colaborador online agora');
     }
     if (COLEGAS_ATIVOS.length) _presenceHintShown = false;
     renderPresenceDock();
@@ -2434,7 +2434,7 @@ function renderPresenceDock() {
     .map(c => avatar(c.usuario_nome, 'avatar-sm')).join('');
 
   const toggleHtml = `
-    <button class="presence-toggle" onclick="togglePresencePanel()" title="Colegas online agora">
+    <button class="presence-toggle" onclick="togglePresencePanel()" title="Colaboradores online agora">
       <div class="presence-online-dot"></div>
       <div class="presence-toggle-avatars">${avatarsHtml}</div>
       <span class="presence-count">${COLEGAS_ATIVOS.length} online</span>
@@ -2446,13 +2446,14 @@ function renderPresenceDock() {
     const inicioIso = String(c.inicio || '').replace(' ', 'T');
     const inicioMs = Date.parse(inicioIso.endsWith('Z') ? inicioIso : `${inicioIso}Z`);
     const seg = Number.isFinite(inicioMs) ? Math.floor((Date.now() - inicioMs) / 1000) : 0;
+    const clickAbrir = c.projeto_id ? `abrirProjeto('${c.projeto_id}')` : 'return';
     return `
-      <div class="presence-item" onclick="abrirProjeto('${c.projeto_id}')" title="Abrir projeto">
+      <div class="presence-item" onclick="${clickAbrir}" title="${c.projeto_id ? 'Abrir projeto' : 'Sem projeto ativo'}">
         ${avatar(c.usuario_nome, 'avatar-sm')}
         <div class="presence-item-info">
           <div class="presence-item-nome">${esc(c.usuario_nome)}</div>
-          <div class="presence-item-tarefa">${esc(c.tarefa_nome)}</div>
-          <div class="presence-item-projeto">${esc(c.projeto_nome)}</div>
+          <div class="presence-item-tarefa">${esc(c.tarefa_nome || 'Sem cronômetro ativo')}</div>
+          <div class="presence-item-projeto">${esc(c.projeto_nome || 'Disponível')}</div>
         </div>
         <div class="presence-item-tempo">${fmtDuracao(seg)}</div>
       </div>`;
