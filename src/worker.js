@@ -33,8 +33,13 @@ function err(msg, status = 400, cors = {}, extraHeaders = {}) {
   return json({ error: msg }, status, cors, extraHeaders);
 }
 
-// ── SENHAS (PBKDF2 + COMPAT LEGADO) ──
-const PBKDF2_ITER = 10000;
+// ── SENHAS (SHA-256 + COMPAT PBKDF2/LEGADO) ──
+// C2 — hashSenha usa SHA-256 com salt aleatório (sha256v1).
+//       crypto.subtle.deriveBits (PBKDF2) não é suportado de forma confiável
+//       em todos os planos do Cloudflare Workers; SHA-256 é sempre disponível.
+//       Hashes PBKDF2 e senhas em texto puro são aceitos na verificação para
+//       compatibilidade com contas existentes e migrados na próxima autenticação.
+const PBKDF2_ITER = 10000; // mantido apenas para verificar hashes pbkdf2 legados
 const PBKDF2_ALGO = 'SHA-256';
 const LEGACY_PLAIN = 'legacy_plain';
 
@@ -59,6 +64,19 @@ function timingSafeEqual(a, b) {
   return diff === 0;
 }
 
+// Converte hex string → Uint8Array sem depender de TextEncoder para instanceof
+function hexToBytes(hex) {
+  const out = new Uint8Array(hex.length >>> 1);
+  for (let i = 0; i < out.length; i++) out[i] = parseInt(hex.slice(i * 2, i * 2 + 2), 16);
+  return out;
+}
+
+// SHA-256 de um ArrayBuffer/Uint8Array, retorna hex string
+async function sha256Hex(data) {
+  const buf = await crypto.subtle.digest('SHA-256', data);
+  return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
 async function pbkdf2Hash(senha, saltBytes, iter = PBKDF2_ITER) {
   const enc = new TextEncoder();
   const key = await crypto.subtle.importKey('raw', enc.encode(String(senha || '')), 'PBKDF2', false, ['deriveBits']);
@@ -66,10 +84,13 @@ async function pbkdf2Hash(senha, saltBytes, iter = PBKDF2_ITER) {
   return new Uint8Array(bits);
 }
 
+// Gera hash sha256v1: salt aleatório (32 hex chars) + SHA-256(salt:senha)
 async function hashSenha(senha) {
-  const salt = crypto.getRandomValues(new Uint8Array(16));
-  const hash = await pbkdf2Hash(senha, salt, PBKDF2_ITER);
-  return `pbkdf2$${PBKDF2_ITER}$${toBase64(salt)}$${toBase64(hash)}`;
+  const saltBytes = crypto.getRandomValues(new Uint8Array(16));
+  const salt = Array.from(saltBytes).map(b => b.toString(16).padStart(2, '0')).join('');
+  const enc = new TextEncoder();
+  const hash = await sha256Hex(enc.encode(salt + ':' + String(senha)));
+  return `sha256v1$${salt}$${hash}`;
 }
 
 function parseHash(stored) {
@@ -87,21 +108,31 @@ function parseHash(stored) {
 }
 
 async function verificarSenha(senha, stored) {
-  const parsed = parseHash(stored);
-  if (!parsed) {
-    const enc = new TextEncoder();
-    return { ok: timingSafeEqual(enc.encode(String(senha)), enc.encode(String(stored || ''))), mode: LEGACY_PLAIN };
-  }
-  try {
-    const calc = await pbkdf2Hash(senha, parsed.salt, parsed.iter);
-    return { ok: timingSafeEqual(calc, parsed.hash), mode: 'pbkdf2' };
-  } catch {
-    return { ok: false, mode: 'pbkdf2' };
-  }
-}
+  const s = String(stored || '');
 
-function isLegacyHash(stored) {
-  return !parseHash(stored);
+  // sha256v1 — formato atual
+  if (s.startsWith('sha256v1$')) {
+    const parts = s.split('$');
+    if (parts.length !== 3) return { ok: false, mode: 'sha256v1' };
+    const [, salt, storedHash] = parts;
+    const enc = new TextEncoder();
+    const calc = await sha256Hex(enc.encode(salt + ':' + String(senha)));
+    return { ok: timingSafeEqual(hexToBytes(calc), hexToBytes(storedHash)), mode: 'sha256v1' };
+  }
+
+  // pbkdf2 — compatibilidade com hashes criados entre c680bba e este commit
+  const parsed = parseHash(s);
+  if (parsed) {
+    try {
+      const calc = await pbkdf2Hash(senha, parsed.salt, parsed.iter);
+      return { ok: timingSafeEqual(calc, parsed.hash), mode: 'pbkdf2' };
+    } catch {
+      return { ok: false, mode: 'pbkdf2' };
+    }
+  }
+
+  // texto puro — legado (antes de c680bba); migrado para sha256v1 no próximo login
+  return { ok: String(senha) === s, mode: LEGACY_PLAIN };
 }
 
 const RATE_WINDOW_MS = 60000;
@@ -136,6 +167,9 @@ function getPagination(url, defaultSize = 100, maxSize = 500) {
   const offset = (page - 1) * pageSize;
   return { page, pageSize, offset };
 }
+
+// Retorna datetime atual no formato SQLite ('YYYY-MM-DD HH:MM:SS')
+function nowStr(d = new Date()) { return d.toISOString().slice(0, 19).replace('T', ' '); }
 
 // ── TOKEN COM 128 BITS (C6) ──
 function uid() { return crypto.randomUUID().replace(/-/g, ''); } // 32 hex chars = 128 bits
@@ -320,7 +354,7 @@ async function ensureUserSecuritySchema(env) {
     CREATE TABLE IF NOT EXISTS sessoes (
       id TEXT PRIMARY KEY,
       usuario_id TEXT NOT NULL,
-      criado_em TEXT DEFAULT (datetime('now')),
+      criado_em TEXT,
       expira_em TEXT NOT NULL,
       FOREIGN KEY (usuario_id) REFERENCES usuarios(id)
     )
@@ -561,9 +595,8 @@ export default {
       if (!usuario) return fail('Credenciais inválidas', 401);
       const senhaValida = await verificarSenha(senha, usuario.senha_hash);
       if (!senhaValida.ok) return fail('Credenciais inválidas', 401);
-      // Migrate legacy plain-text passwords or high-iteration PBKDF2 hashes to current format
-      const parsedHash = parseHash(usuario.senha_hash);
-      const needsRehash = parsedHash === null || parsedHash.iter !== PBKDF2_ITER;
+      // Migra senha em texto puro ou hash pbkdf2 para sha256v1 no próximo login
+      const needsRehash = !String(usuario.senha_hash || '').startsWith('sha256v1$');
       if (needsRehash) {
         try {
           const hashNovo = await hashSenha(senha);
@@ -573,10 +606,10 @@ export default {
         }
       }
       const sessaoId = sessaoUid();
-      const expira = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().slice(0, 19).replace('T', ' ');
+      const expira = nowStr(new Date(Date.now() + 30 * 24 * 60 * 60 * 1000));
       await env.DB.prepare(
-        'INSERT INTO sessoes (id, usuario_id, expira_em) VALUES (?, ?, ?)'
-      ).bind(sessaoId, usuario.id, expira).run();
+        'INSERT INTO sessoes (id, usuario_id, criado_em, expira_em) VALUES (?, ?, ?, ?)'
+      ).bind(sessaoId, usuario.id, nowStr(), expira).run();
       return ok({
         token: sessaoId,
         must_change_password: Number(usuario.deve_trocar_senha || 0) === 1,
