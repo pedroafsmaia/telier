@@ -1395,9 +1395,8 @@ function renderInicioDia(projetos, ativas) {
     tempoRodando = `${fmtDuracao(seg)} rodando`;
   }
 
-  const temSinal = !!(focoProjeto || ativo || urgentes.length);
   const saved = localStorage.getItem(STARTDAY_COLLAPSE_KEY);
-  const collapsed = saved === null ? !temSinal : saved === '1';
+  const collapsed = saved === '1';
 
   return `
     <div class="startday-wrap ${collapsed ? 'collapsed' : ''}" id="startday-wrap">
@@ -1717,8 +1716,10 @@ let _dragJustEnded = false;
 let _dragGrupoId = null;
 
 function dragProjeto(e, projetoId) {
+  e.stopPropagation();
   _dragProjetoId = projetoId;
   e.dataTransfer.effectAllowed = 'move';
+  try { e.dataTransfer.setData('text/plain', projetoId); } catch {}
   setTimeout(() => e.target.closest('.proj-card')?.classList.add('dragging'), 0);
 }
 
@@ -1731,8 +1732,10 @@ function dragProjetoEnd(e) {
 }
 
 function dragGrupo(e, grupoId) {
+  e.stopPropagation();
   _dragGrupoId = grupoId;
   e.dataTransfer.effectAllowed = 'move';
+  try { e.dataTransfer.setData('text/plain', grupoId); } catch {}
   setTimeout(() => e.target.closest('.grupo-section')?.classList.add('dragging'), 0);
 }
 
@@ -2341,10 +2344,14 @@ function renderProjeto(proj, tarefas, decisoes, abaAtiva, resumoHoras = []) {
   const canEdit = podeEditar(proj);
   const compartilhado = Number(proj.compartilhado_comigo) === 1;
 
-  setBreadcrumb([]);
+  setBreadcrumb([
+    { label: 'Projetos', onClick: 'renderDash()' },
+    { label: proj.nome },
+  ]);
 
   const c = document.getElementById('content');
   c.innerHTML = `
+    <button class="btn-back" onclick="renderDash()">← Voltar para projetos</button>
     <div class="proj-hero" data-status="${esc(statusProjeto)}">
       <div class="proj-hero-top">
         <div class="proj-hero-left">
