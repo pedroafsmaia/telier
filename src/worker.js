@@ -89,7 +89,8 @@ function parseHash(stored) {
 async function verificarSenha(senha, stored) {
   const parsed = parseHash(stored);
   if (!parsed) {
-    return { ok: String(senha) === String(stored || ''), mode: LEGACY_PLAIN };
+    const enc = new TextEncoder();
+    return { ok: timingSafeEqual(enc.encode(String(senha)), enc.encode(String(stored || ''))), mode: LEGACY_PLAIN };
   }
   try {
     const calc = await pbkdf2Hash(senha, parsed.salt, parsed.iter);
@@ -325,6 +326,8 @@ async function ensureUserSecuritySchema(env) {
     )
   `).run();
   try { await env.DB.prepare('ALTER TABLE usuarios ADD COLUMN deve_trocar_senha INTEGER NOT NULL DEFAULT 0').run(); } catch {}
+  // D1/SQLite does not support DEFAULT (expression) in ALTER TABLE ADD COLUMN — only literal values.
+  // Existing rows that predate the column receive NULL; new rows use the DEFAULT defined in CREATE TABLE above.
   try { await env.DB.prepare('ALTER TABLE sessoes ADD COLUMN criado_em TEXT DEFAULT NULL').run(); } catch {}
   try { await env.DB.prepare('CREATE INDEX IF NOT EXISTS idx_sessoes_expira_em ON sessoes(expira_em)').run(); } catch {}
   try { await env.DB.prepare('CREATE INDEX IF NOT EXISTS idx_sessoes_usuario ON sessoes(usuario_id)').run(); } catch {}
@@ -565,7 +568,9 @@ export default {
         try {
           const hashNovo = await hashSenha(senha);
           await env.DB.prepare('UPDATE usuarios SET senha_hash = ? WHERE id = ?').bind(hashNovo, usuario.id).run();
-        } catch {}
+        } catch (e) {
+          console.error('[auth] password rehash failed', e?.message);
+        }
       }
       const sessaoId = sessaoUid();
       const expira = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().slice(0, 19).replace('T', ' ');
