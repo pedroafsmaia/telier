@@ -78,7 +78,7 @@ function parseHash(stored) {
   const parts = s.split('$');
   if (parts.length !== 4) return null;
   const iter = Number(parts[1]);
-  if (!Number.isFinite(iter) || iter < 10000) return null;
+  if (!Number.isFinite(iter) || iter < 1) return null;
   try {
     return { iter, salt: fromBase64(parts[2]), hash: fromBase64(parts[3]) };
   } catch {
@@ -325,6 +325,7 @@ async function ensureUserSecuritySchema(env) {
     )
   `).run();
   try { await env.DB.prepare('ALTER TABLE usuarios ADD COLUMN deve_trocar_senha INTEGER NOT NULL DEFAULT 0').run(); } catch {}
+  try { await env.DB.prepare("ALTER TABLE sessoes ADD COLUMN criado_em TEXT DEFAULT (datetime('now'))").run(); } catch {}
   try { await env.DB.prepare('CREATE INDEX IF NOT EXISTS idx_sessoes_expira_em ON sessoes(expira_em)').run(); } catch {}
   try { await env.DB.prepare('CREATE INDEX IF NOT EXISTS idx_sessoes_usuario ON sessoes(usuario_id)').run(); } catch {}
   try { await env.DB.prepare('CREATE INDEX IF NOT EXISTS idx_permissoes_projeto_usuario ON permissoes_projeto(usuario_id)').run(); } catch {}
@@ -525,7 +526,7 @@ export default {
       if (!senhaValida.ok) return fail('Credenciais inválidas', 401);
       // Migrate legacy plain-text passwords or high-iteration PBKDF2 hashes to current format
       const parsedHash = parseHash(usuario.senha_hash);
-      const needsRehash = parsedHash === null || parsedHash.iter > PBKDF2_ITER;
+      const needsRehash = parsedHash === null || parsedHash.iter !== PBKDF2_ITER;
       if (needsRehash) {
         try {
           const hashNovo = await hashSenha(senha);
@@ -533,10 +534,11 @@ export default {
         } catch {}
       }
       const sessaoId = sessaoUid();
+      const criado_em = new Date().toISOString().slice(0, 19).replace('T', ' ');
       const expira = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().slice(0, 19).replace('T', ' ');
       await env.DB.prepare(
-        'INSERT INTO sessoes (id, usuario_id, expira_em) VALUES (?, ?, ?)'
-      ).bind(sessaoId, usuario.id, expira).run();
+        'INSERT INTO sessoes (id, usuario_id, criado_em, expira_em) VALUES (?, ?, ?, ?)'
+      ).bind(sessaoId, usuario.id, criado_em, expira).run();
       return ok({
         token: sessaoId,
         must_change_password: Number(usuario.deve_trocar_senha || 0) === 1,
