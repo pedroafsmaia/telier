@@ -607,6 +607,14 @@ tr:hover .td-ações{opacity:1}
 }
 .proj-horas-dist-item { display: flex; align-items: center; gap: 5px; }
 .proj-horas-dist-item strong { color: var(--green); font-family: var(--ff-mono); }
+.proj-hero-details-wrap {
+  margin-top:10px; border-top:1px solid var(--border); padding-top:10px;
+}
+.proj-hero-details-toggle {
+  cursor:pointer; list-style:none;
+  font-size:var(--fs-080); color:var(--text3);
+}
+.proj-hero-details-toggle::-webkit-details-marker { display:none; }
 
 /* ── PAINEL DE PRESENÇA ── */
 #presence-dock {
@@ -928,8 +936,31 @@ const TIMER_AVISO_HORAS = 4;
 const DASH_FILTERS_KEY = 'telier_dash_filters_v1';
 const DASH_STATUS_OPCOES = new Set(['todos', 'Em andamento', 'A fazer', 'Em revisão', 'Pausado', 'Concluído', 'Arquivado']);
 const REQ_TIMEOUT_MS = 15000;
+const PROJ_CACHE_KEY = 'telier_proj_cache';
+const PROJ_CACHE_TTL = 45000;
 let _pendingUndoAction = null;
 let FORCE_PASSWORD_CHANGE = false;
+
+async function fetchProjetos(params) {
+  try {
+    const raw = sessionStorage.getItem(PROJ_CACHE_KEY);
+    if (raw) {
+      const { ts, data, key } = JSON.parse(raw);
+      if (key === params.toString() && Date.now() - ts < PROJ_CACHE_TTL) return data;
+    }
+  } catch {}
+  const data = await req('GET', `/projetos?${params}`);
+  try {
+    sessionStorage.setItem(PROJ_CACHE_KEY, JSON.stringify({
+      ts: Date.now(), data, key: params.toString(),
+    }));
+  } catch {}
+  return data;
+}
+
+function invalidarCacheProjetos() {
+  sessionStorage.removeItem(PROJ_CACHE_KEY);
+}
 
 function carregarFiltrosDash() {
   try {
@@ -1106,6 +1137,22 @@ function iniciarPollNotificacoes() {
   if (_notifTick) clearInterval(_notifTick);
   carregarNotificacoes(true);
   _notifTick = setInterval(() => carregarNotificacoes(false), 30000);
+}
+
+async function carregarStatus() {
+  try {
+    const data = await req('GET', '/status');
+    COLEGAS_ATIVOS = Array.isArray(data.colegas_ativos) ? data.colegas_ativos : [];
+    renderPresenceDock();
+    atualizarBadgeNotificacoes(data.notifs_nao_lidas);
+  } catch {}
+}
+
+function iniciarStatusPoll() {
+  if (!TOKEN) return;
+  if (window._statusTick) clearInterval(window._statusTick);
+  carregarStatus();
+  window._statusTick = setInterval(carregarStatus, 30000);
 }
 
 async function marcarNotifLida(id, abrirLink = null) {
@@ -1286,7 +1333,7 @@ function mostrar(tela) {
   if (tela === 'app') {
     document.getElementById('topbar-nome').textContent = EU?.nome || '';
     atualizarBadgeNotificacoes(0);
-    iniciarPollNotificacoes();
+    iniciarStatusPoll();
     syncAdminModeUI();
     isAdmin() ? abrirCentralAdmin() : renderDash();
     if (FORCE_PASSWORD_CHANGE) {
@@ -1394,8 +1441,7 @@ async function fazerLogin() {
     }
     mostrar('app');
     carregarTimersAtivos();
-    iniciarPollPresenca();
-    iniciarPollNotificacoes();
+    iniciarStatusPoll();
   } catch (e) {
     errEl.textContent = e.message;
     errEl.classList.remove('hidden');
@@ -1587,6 +1633,7 @@ async function fazerLogout() {
   }
   if (_presenceTick) clearInterval(_presenceTick);
   if (_notifTick) clearInterval(_notifTick);
+  if (window._statusTick) clearInterval(window._statusTick);
   if (window._presenceDisplayTick) clearInterval(window._presenceDisplayTick);
   COLEGAS_ATIVOS = []; PRESENCE_ABERTO = false;
   NOTIFS = [];
@@ -1604,7 +1651,7 @@ async function fazerLogout() {
   mostrar('login');
 }
 
-function renderInicioDia(projetos, ativas) {
+function renderInicioDia(projetos, ativas, ultimaSessao = null) {
   const focoProjeto = projetos.find(p => p.minha_tarefa_foco);
   const urgentes = projetos.filter(p => {
     const dias = diasRestantes(p.prazo);
@@ -1661,6 +1708,24 @@ function renderInicioDia(projetos, ativas) {
               : `<button class="btn btn-sm" disabled>Ver mais urgente</button>`}
           </div>
         </div>
+
+        <div class="startday-card">
+          <h4>Última sessão</h4>
+          <div class="startday-main">
+            ${ultimaSessao ? esc(ultimaSessao.tarefa_nome) : 'Nenhuma sessão anterior'}
+          </div>
+          <div class="startday-sub">
+            ${ultimaSessao
+              ? `${esc(ultimaSessao.projeto_nome)} · ${ultimaSessao.horas}h`
+              : 'Inicie seu primeiro cronômetro'}
+          </div>
+          <div class="startday-actions">
+            ${ultimaSessao
+              ? `<button class="btn btn-sm btn-primary"
+                   onclick="abrirProjeto('${ultimaSessao.projeto_id}')">Retomar projeto</button>`
+              : `<button class="btn btn-sm" disabled>Retomar projeto</button>`}
+          </div>
+        </div>
       </div>
     </div>`;
 }
@@ -1702,10 +1767,11 @@ async function renderDash() {
     if (FILTRO_STATUS !== 'todos') params.set('status', FILTRO_STATUS);
     if (isAdminRole() && ADMIN_MODE === 'normal') params.set('as_member', '1');
     const qs = params.toString() ? `?${params.toString()}` : '';
-    const [projetos, ativas, grupos] = await Promise.all([
-      req('GET', '/projetos' + qs),
+    const [projetos, ativas, grupos, ultimaSessao] = await Promise.all([
+      fetchProjetos(params),
       req('GET', `/tempo/ativas${isAdminRole() && ADMIN_MODE === 'normal' ? '?as_member=1' : ''}`).catch(() => []),
       req('GET', `/grupos${isAdminRole() && ADMIN_MODE === 'normal' ? '?as_member=1' : ''}`).catch(() => []),
+      req('GET', '/tempo/ultima-sessao').catch(() => null),
     ]);
 
     _projsDash = projetos;
@@ -1716,7 +1782,7 @@ async function renderDash() {
     const filtros = ['todos','Em andamento','A fazer','Em revisão','Pausado','Concluído','Arquivado'];
 
     let html = `
-      ${renderInicioDia(projetos, ativas)}
+      ${renderInicioDia(projetos, ativas, ultimaSessao)}
       <div class="dash-header" style="margin-top:22px">
         <div>
           <div class="dash-title">Projetos</div>
@@ -2673,13 +2739,26 @@ function renderProjeto(proj, tarefas, decisoes, abaAtiva, resumoHoras = []) {
         </div>
       </div>
       <div class="proj-meta">
-        ${compartilhado ? `<div class="proj-meta-item"><span class="proj-meta-label">Acesso</span><span class="tag tag-cyan">Compartilhado ${proj.origem_compartilhamento==='grupo'?'via grupo':'direto'}</span></div>` : ''}
-        <div class="proj-meta-item"><span class="proj-meta-label">Fase</span>${tag(proj.fase, FT[proj.fase])}</div>
         <div class="proj-meta-item"><span class="proj-meta-label">Status</span>${tag(statusProjeto)}</div>
-        <div class="proj-meta-item"><span class="proj-meta-label">Prioridade</span>${tag(proj.prioridade, PT[proj.prioridade])}</div>
-        ${proj.prazo ? `<div class="proj-meta-item"><span class="proj-meta-label">Prazo</span><span class="tag ${urgente?'tag-red':'tag-gray'} mono">${prazoFmt(proj.prazo)}</span></div>` : ''}
-        ${proj.area_m2 ? `<div class="proj-meta-item"><span class="proj-meta-label">Área</span><span class="tag tag-gray mono">${proj.area_m2.toLocaleString('pt-BR')} m²</span></div>` : ''}
       </div>
+      <details class="proj-hero-details-wrap">
+        <summary class="proj-hero-details-toggle">Detalhes do projeto</summary>
+        <div class="proj-hero-details">
+          <div class="proj-meta">
+            ${compartilhado ? `<div class="proj-meta-item"><span class="proj-meta-label">Acesso</span><span class="tag tag-cyan">Compartilhado ${proj.origem_compartilhamento==='grupo'?'via grupo':'direto'}</span></div>` : ''}
+            <div class="proj-meta-item"><span class="proj-meta-label">Fase</span>${tag(proj.fase, FT[proj.fase])}</div>
+            <div class="proj-meta-item"><span class="proj-meta-label">Prioridade</span>${tag(proj.prioridade, PT[proj.prioridade])}</div>
+            ${proj.prazo ? `<div class="proj-meta-item"><span class="proj-meta-label">Prazo</span><span class="tag ${urgente?'tag-red':'tag-gray'} mono">${prazoFmt(proj.prazo)}</span></div>` : ''}
+            ${proj.area_m2 ? `<div class="proj-meta-item"><span class="proj-meta-label">Área</span><span class="tag tag-gray mono">${proj.area_m2.toLocaleString('pt-BR')} m²</span></div>` : ''}
+          </div>
+          ${resumoHoras?.length > 1 ? `
+            <div class="proj-horas-dist">
+              ${resumoHoras.map(r =>
+                `<span class="proj-horas-dist-item">${avatar(r.usuario_nome,'avatar-sm')} ${esc(r.usuario_nome)}: <strong>${r.horas}h</strong></span>`
+              ).join('')}
+            </div>` : ''}
+        </div>
+      </details>
       <div class="proj-stats">
         <div class="proj-stat">
           <div class="proj-stat-label">Tarefas</div>
@@ -2701,12 +2780,6 @@ function renderProjeto(proj, tarefas, decisoes, abaAtiva, resumoHoras = []) {
           <div class="proj-prog-bar"><div class="proj-prog-fill ${pct===100?'done':'partial'}" style="width:${pct}%"></div></div>
         </div>
       </div>
-      ${resumoHoras?.length > 1 ? `
-        <div class="proj-horas-dist">
-          ${resumoHoras.map(r =>
-            `<span class="proj-horas-dist-item">${avatar(r.usuario_nome,'avatar-sm')} ${esc(r.usuario_nome)}: <strong>${r.horas}h</strong></span>`
-          ).join('')}
-        </div>` : ''}
       ${focoMinha
         ? `<div class="proj-foco-banner"><span class="fl">Meu foco</span><span class="fn">${esc(focoMinha.nome)}</span>${focoBtnHtml}</div>`
         : `<div class="proj-foco-empty">Nenhuma tarefa em foco — use ★ na lista para definir</div>`}
@@ -2715,6 +2788,7 @@ function renderProjeto(proj, tarefas, decisoes, abaAtiva, resumoHoras = []) {
       <button class="aba ${abaAtiva==='lista'?'ativa':''}" data-aba="lista" onclick="mudarAba('lista')">Lista de tarefas</button>
       <button class="aba ${abaAtiva==='mapa'?'ativa':''}" data-aba="mapa" onclick="mudarAba('mapa')">Mapa de Foco</button>
       <button class="aba ${abaAtiva==='relatorio'?'ativa':''}" data-aba="relatorio" onclick="mudarAba('relatorio')">Relatório</button>
+      <button class="aba ${abaAtiva==='kanban'?'ativa':''}" data-aba="kanban" onclick="mudarAba('kanban')">Kanban</button>
     </div>
     <div id="aba"></div>
     <div id="decisoes-sec"></div>`;
@@ -3570,6 +3644,24 @@ function renderPresenceDock() {
   const dock = document.getElementById('presence-dock');
   if (!dock) return;
   document.body.classList.toggle('has-presence', COLEGAS_ATIVOS.length > 0);
+  const topbarPresence = document.getElementById('topbar-presence');
+  if (topbarPresence) {
+    if (COLEGAS_ATIVOS.length > 0) {
+      const avatarsHtml = COLEGAS_ATIVOS.slice(0, 3)
+        .map(c => avatar(c.usuario_nome, 'avatar-sm')).join('');
+      topbarPresence.innerHTML = `
+        <button class="topbar-presence-chip"
+                onclick="togglePresencePanel()"
+                title="${COLEGAS_ATIVOS.length} colega(s) online">
+          <span class="presence-live-dot"></span>
+          <div class="topbar-presence-avatars">${avatarsHtml}</div>
+          <span class="topbar-presence-count">${COLEGAS_ATIVOS.length}</span>
+        </button>`;
+      topbarPresence.style.display = '';
+    } else {
+      topbarPresence.style.display = 'none';
+    }
+  }
   if (!COLEGAS_ATIVOS.length) {
     clearInterval(window._presenceDisplayTick);
     dock.innerHTML = '';
@@ -4256,15 +4348,15 @@ window.addEventListener('load', async () => {
   aplicarTema(temaSalvo);
   await init();
   if (TOKEN) await carregarTimersAtivos();
-  if (TOKEN) iniciarPollPresenca();
+  if (TOKEN) iniciarStatusPoll();
 });
 
 window.addEventListener('focus', () => {
-  if (TOKEN) carregarColegasAtivos();
+  if (TOKEN) carregarStatus();
 });
 
 document.addEventListener('visibilitychange', () => {
-  if (!document.hidden && TOKEN) carregarColegasAtivos();
+  if (!document.hidden && TOKEN) carregarStatus();
 });
 </script>
 </body>
