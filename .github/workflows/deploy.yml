@@ -1,0 +1,25 @@
+name: Deploy Worker
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'src/worker.js'
+      - 'wrangler.toml'
+      - 'db/schema.sql'
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    name: Deploy to Cloudflare Workers
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Deploy via Wrangler
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CF_API_TOKEN }}
+          accountId: ${{ secrets.CF_ACCOUNT_ID }}
