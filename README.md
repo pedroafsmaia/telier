@@ -127,6 +127,28 @@ Lembre de apontar `const API` para `http://localhost:8787` durante o desenvolvim
 
 ---
 
+## Smoke test rápido (UI)
+
+Para validar fluxos críticos do dashboard sem passar manualmente por tudo:
+
+```bash
+npm run smoke
+```
+
+Se a aplicação abrir em tela de login, rode com credenciais:
+
+```bash
+LOGIN_USER=seu_usuario LOGIN_PASS=sua_senha BASE_URL=http://localhost:3000 npm run smoke
+```
+
+Variáveis úteis:
+- `BASE_URL` (padrão: `http://localhost:3000`)
+- `LOGIN_USER`
+- `LOGIN_PASS`
+- `SMOKE_TIMEOUT_MS` (padrão: `20000`)
+
+---
+
 ## Comandos úteis do banco (D1)
 
 ### Executar queries direto no D1

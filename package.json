@@ -3,7 +3,8 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
-    "screenshots": "node capture.js"
+    "screenshots": "node capture.js",
+    "smoke": "node smoke.js"
   },
   "dependencies": {
     "playwright": "^1.52.0"

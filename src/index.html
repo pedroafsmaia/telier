@@ -166,9 +166,11 @@ label{font-size:var(--fs-080);color:var(--text2);display:block;margin-bottom:5px
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}
 
 /* ── TOAST ── */
-#toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(0);background:var(--bg3);border:1px solid var(--border2);color:var(--text);padding:10px 18px;border-radius:var(--r2);font-size:var(--fs-090);z-index:9999;transition:all .25s;white-space:nowrap;box-shadow:0 8px 24px rgba(0,0,0,.4)}
+#toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(0);background:var(--bg3);border:1px solid var(--border2);color:var(--text);padding:10px 18px;border-radius:var(--r2);font-size:var(--fs-090);z-index:9999;transition:all .25s;white-space:nowrap;box-shadow:0 8px 24px rgba(0,0,0,.4);display:inline-flex;align-items:center;gap:10px}
 #toast.hidden{transform:translateX(-50%) translateY(16px);opacity:0;pointer-events:none}
 #toast.toast-err{border-color:var(--red);color:var(--red)}
+.toast-undo-btn{border:1px solid var(--border3);background:transparent;color:var(--text);border-radius:999px;padding:4px 10px;font-size:var(--fs-080);cursor:pointer}
+.toast-undo-btn:hover{border-color:var(--accent);color:var(--accent)}
 
 /* ── TELA LOGIN ── */
 #page-login,#page-setup{min-height:100vh;display:flex;align-items:center;justify-content:center;background:var(--bg)}
@@ -335,6 +337,8 @@ label{font-size:var(--fs-080);color:var(--text2);display:block;margin-bottom:5px
 .card-meta-label{font-size:9px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.06em}
 .share-hint{display:flex;align-items:center;gap:8px;background:var(--bg3);border:1px solid var(--border);padding:10px 12px;border-radius:var(--r2);margin-bottom:16px;font-size:var(--fs-080);color:var(--text2)}
 .share-hint strong{color:var(--text)}
+.dash-context-note{display:flex;align-items:center;gap:8px;font-size:var(--fs-080);color:var(--text3);margin-bottom:12px}
+.dash-context-note strong{color:var(--text2)}
 .shared-spotlight{margin-bottom:14px}
 .shared-spotlight .cards-grid{grid-template-columns:repeat(auto-fill,minmax(260px,1fr))}
 .grupo-section{margin-bottom:28px}
@@ -351,11 +355,14 @@ label{font-size:var(--fs-080);color:var(--text2);display:block;margin-bottom:5px
 .grupo-sem-label{font-size:var(--fs-080);font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.08em;margin-bottom:12px;margin-top:4px;opacity:.5}
 .grupo-section{border-radius:var(--r2);padding:8px;margin-left:-8px;transition:background .15s,box-shadow .15s}
 .grupo-section.drag-over{background:rgba(124,106,247,.06);box-shadow:0 0 0 2px var(--accent) inset}
+.grupo-section.drag-over .grupo-header{transform:translateX(2px)}
 .proj-card{cursor:grab}
 .proj-card.dragging{opacity:.25;transform:scale(.97);cursor:grabbing}
 .grupo-empty-zone{border:2px dashed var(--border2);border-radius:var(--r2);padding:20px;text-align:center;min-height:72px;display:flex;align-items:center;justify-content:center;margin-bottom:4px;transition:border-color .15s,background .15s}
 .grupo-section.drag-over .grupo-empty-zone{border-color:var(--accent);background:rgba(124,106,247,.06)}
 .grupo-drop-hint{font-size:var(--fs-080);color:var(--text3)}
+.grupo-drop-indicator{display:none;margin-top:8px;font-size:var(--fs-075);color:var(--accent);font-family:var(--ff-mono)}
+.grupo-section.drag-over .grupo-drop-indicator{display:block}
 .proj-stats{display:flex;align-items:center;gap:16px;margin-bottom:12px;flex-wrap:wrap}
 .proj-stat{display:flex;flex-direction:column;gap:2px}
 .proj-stat-label{font-size:var(--fs-075);color:var(--text3);text-transform:uppercase;letter-spacing:.06em}
@@ -886,6 +893,34 @@ let _lastNotifSeen = 0;
 let NOTIF_TAB = 'compartilhamentos';
 const STARTDAY_COLLAPSE_KEY = 'telier_startday_collapsed';
 const TIMER_AVISO_HORAS = 4;
+const DASH_FILTERS_KEY = 'telier_dash_filters_v1';
+const DASH_STATUS_OPCOES = new Set(['todos', 'Em andamento', 'A fazer', 'Em revisão', 'Pausado', 'Concluído', 'Arquivado']);
+let _pendingUndoAction = null;
+
+function carregarFiltrosDash() {
+  try {
+    const raw = localStorage.getItem(DASH_FILTERS_KEY);
+    if (!raw) return;
+    const f = JSON.parse(raw);
+    if (typeof f?.busca === 'string') BUSCA_DASH = f.busca.slice(0, 120);
+    if (typeof f?.grupo === 'string' && f.grupo) FILTRO_GRUPO_DASH = f.grupo;
+    if (typeof f?.origem === 'string' && ['todos', 'meus', 'compartilhados'].includes(f.origem)) FILTRO_ORIGEM_DASH = f.origem;
+    if (typeof f?.status === 'string' && DASH_STATUS_OPCOES.has(f.status)) FILTRO_STATUS = f.status;
+  } catch {}
+}
+
+function salvarFiltrosDash() {
+  try {
+    localStorage.setItem(DASH_FILTERS_KEY, JSON.stringify({
+      busca: BUSCA_DASH,
+      grupo: FILTRO_GRUPO_DASH,
+      origem: FILTRO_ORIGEM_DASH,
+      status: FILTRO_STATUS,
+    }));
+  } catch {}
+}
+
+carregarFiltrosDash();
 
 // ── API ──
 async function req(method, path, body) {
@@ -903,10 +938,38 @@ async function req(method, path, body) {
 let _toastTimer;
 function toast(msg, tipo = 'ok') {
   const el = document.getElementById('toast');
+  if (_pendingUndoAction?.timeout) clearTimeout(_pendingUndoAction.timeout);
+  _pendingUndoAction = null;
   el.textContent = msg;
   el.className = tipo === 'err' ? 'toast-err' : '';
   clearTimeout(_toastTimer);
   _toastTimer = setTimeout(() => el.classList.add('hidden'), 3000);
+}
+
+function toastUndo(msg, onUndo, ttl = 5000) {
+  const el = document.getElementById('toast');
+  if (_pendingUndoAction?.timeout) clearTimeout(_pendingUndoAction.timeout);
+  _pendingUndoAction = {
+    onUndo,
+    timeout: setTimeout(() => {
+      _pendingUndoAction = null;
+      el.classList.add('hidden');
+    }, ttl),
+  };
+
+  el.className = '';
+  el.innerHTML = `<span>${esc(msg)}</span><button class="toast-undo-btn" id="toast-undo-btn" type="button">Desfazer</button>`;
+  const undoBtn = document.getElementById('toast-undo-btn');
+  if (undoBtn) {
+    undoBtn.onclick = () => {
+      const atual = _pendingUndoAction;
+      if (!atual) return;
+      clearTimeout(atual.timeout);
+      _pendingUndoAction = null;
+      Promise.resolve(atual.onUndo()).catch(() => {});
+      el.classList.add('hidden');
+    };
+  }
 }
 
 function atualizarBadgeNotificacoes(total) {
@@ -1451,6 +1514,18 @@ function toggleStartday() {
   if (btn) btn.textContent = collapsed ? 'Expandir' : 'Recolher';
 }
 
+function renderDashLoadingState() {
+  return `
+    <div class="dash-context-note"><strong>Carregando dashboard...</strong><span>Buscando projetos, grupos e tarefas ativas.</span></div>
+    <div class="dash-skeleton"><div class="dash-skeleton-card"></div><div class="dash-skeleton-card"></div><div class="dash-skeleton-card"></div></div>`;
+}
+
+function renderDashEmptyState(vazioTexto, opts = {}) {
+  const titulo = opts.titulo || 'Nenhum projeto encontrado';
+  const mostrarGuia = !!opts.mostrarGuia;
+  return `<div class="empty-state"><div class="empty-icon" aria-hidden="true"><svg width="36" height="36" viewBox="0 0 24 24" fill="none"><path d="M3 18h18" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><path d="M7 18V9.5h4V18M13 18V6h4v12" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><path d="M8 7.5l2-2 2 2M14 4l2-2 2 2" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></div><div class="empty-text">${titulo}</div><div class="empty-sub">${vazioTexto}</div>${mostrarGuia ? `<div class="empty-guide"><div class="empty-guide-item">1. Crie um projeto.</div><div class="empty-guide-item">2. Abra o projeto e adicione a primeira tarefa.</div><div class="empty-guide-item">3. Defina prioridade e prazo para organizar o fluxo.</div><div class="empty-cta"><button class="btn btn-sm btn-primary" onclick="modalNovoProjeto()">+ Criar primeiro projeto</button></div></div>` : ''}</div>`;
+}
+
 // ── DASHBOARD ──
 async function renderDash() {
   window.scrollTo(0, 0);
@@ -1460,7 +1535,7 @@ async function renderDash() {
   document.title = 'Telier';
   setBreadcrumb([]);
   const c = document.getElementById('content');
-  c.innerHTML = `<div class="dash-skeleton"><div class="dash-skeleton-card"></div><div class="dash-skeleton-card"></div><div class="dash-skeleton-card"></div></div>`;
+  c.innerHTML = renderDashLoadingState();
   try {
     const params = new URLSearchParams();
     if (FILTRO_STATUS !== 'todos') params.set('status', FILTRO_STATUS);
@@ -1538,7 +1613,8 @@ function renderProjetosDash(projetos, grupos) {
     const vazioTexto = FILTRO_ORIGEM_DASH === 'compartilhados'
       ? 'Nenhum projeto compartilhado com você no contexto atual.'
       : (busca ? 'Tente outro termo de busca' : FILTRO_STATUS !== 'todos' ? 'Tente outro filtro' : 'Comece criando seu primeiro projeto.');
-    return `<div class="empty-state"><div class="empty-icon" aria-hidden="true"><svg width="36" height="36" viewBox="0 0 24 24" fill="none"><path d="M3 18h18" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><path d="M7 18V9.5h4V18M13 18V6h4v12" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><path d="M8 7.5l2-2 2 2M14 4l2-2 2 2" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></div><div class="empty-text">Nenhum projeto encontrado</div><div class="empty-sub">${vazioTexto}</div>${vazioInicial ? `<div class="empty-guide"><div class="empty-guide-item">1. Crie um projeto.</div><div class="empty-guide-item">2. Abra o projeto e adicione a primeira tarefa.</div><div class="empty-guide-item">3. Defina prioridade e prazo para organizar o fluxo.</div><div class="empty-cta"><button class="btn btn-sm btn-primary" onclick="modalNovoProjeto()">+ Criar primeiro projeto</button></div></div>` : ''}</div>`;
+    const titulo = FILTRO_ORIGEM_DASH === 'compartilhados' ? 'Sem compartilhamentos no momento' : 'Nenhum projeto encontrado';
+    return renderDashEmptyState(vazioTexto, { titulo, mostrarGuia: vazioInicial });
   }
 
   const collapsed = JSON.parse(localStorage.getItem('telier_grupos_collapsed') || '[]');
@@ -1612,6 +1688,7 @@ function renderProjetosDash(projetos, grupos) {
             <button class="btn btn-ghost btn-icon btn-sm" onclick="modalEditarGrupo('${grupo.id}')" title="Configurar grupo"><svg width="13" height="13" viewBox="0 0 13 13" fill="none"><path d="M2 9.5V11h1.5l5.5-5.5-1.5-1.5L2 9.5zM10.85 2.65a1 1 0 0 0-1.42 0l-.79.79 1.42 1.42.79-.79a1 1 0 0 0 0-1.42z" fill="currentColor"/></svg></button>
           </div>
         </div>
+        <div class="grupo-drop-indicator">Solte para mover para ${esc(grupo.nome)}</div>
         ${col ? '' : gprojetos.length
           ? `<div class="cards-grid">${renderCardsDash(gprojetos)}</div>`
           : `<div class="grupo-empty-zone" style="flex-direction:column;gap:10px"><span class="grupo-drop-hint">Arraste projetos aqui</span><button class="btn btn-sm" onclick="event.stopPropagation();modalNovoProjeto('${grupo.id}')">+ Criar projeto neste grupo</button></div>`}
@@ -1627,6 +1704,7 @@ function renderProjetosDash(projetos, grupos) {
         ondragleave="dragLeave(event)"
         ondrop="dropProjeto(event,null)">
         <div class="grupo-sem-label">Sem grupo</div>
+        <div class="grupo-drop-indicator">Solte para remover do grupo</div>
         ${semGrupo.length
           ? `<div class="cards-grid">${renderCardsDash(semGrupo)}</div>`
           : `<div class="grupo-empty-zone"><span class="grupo-drop-hint">Arraste projetos aqui para desagrupar</span></div>`}
@@ -1636,7 +1714,7 @@ function renderProjetosDash(projetos, grupos) {
     }
   }
 
-  return html || `<div class="empty-state"><div class="empty-icon" aria-hidden="true"><svg width="36" height="36" viewBox="0 0 24 24" fill="none"><path d="M3 18h18" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><path d="M7 18V9.5h4V18M13 18V6h4v12" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><path d="M8 7.5l2-2 2 2M14 4l2-2 2 2" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></div><div class="empty-text">Nenhum projeto encontrado</div><div class="empty-sub">Crie um projeto para começar a organizar tarefas e prazo.</div><div class="empty-cta"><button class="btn btn-sm btn-primary" onclick="modalNovoProjeto()">+ Novo projeto</button></div></div>`;
+  return html || renderDashEmptyState('Crie um projeto para começar a organizar tarefas e prazo.', { mostrarGuia: false });
 }
 
 function renderCardsDash(projetos) {
@@ -1692,18 +1770,21 @@ function renderCardsDash(projetos) {
 
 function filtrarProjetosBusca(v) {
   BUSCA_DASH = v;
+  salvarFiltrosDash();
   const grid = document.getElementById('cards-grid-dash');
   if (grid) grid.innerHTML = renderProjetosDash(_projsDash, _gruposDash);
 }
 
 function filtrarGrupoDash(v) {
   FILTRO_GRUPO_DASH = v || 'todos';
+  salvarFiltrosDash();
   const grid = document.getElementById('cards-grid-dash');
   if (grid) grid.innerHTML = renderProjetosDash(_projsDash, _gruposDash);
 }
 
 function filtrarOrigemDash(v) {
   FILTRO_ORIGEM_DASH = v || 'todos';
+  salvarFiltrosDash();
   document.querySelectorAll('.segmented-btn[data-origem]').forEach(btn => {
     btn.classList.toggle('ativo', btn.dataset.origem === FILTRO_ORIGEM_DASH);
   });
@@ -1711,7 +1792,11 @@ function filtrarOrigemDash(v) {
   if (grid) grid.innerHTML = renderProjetosDash(_projsDash, _gruposDash);
 }
 
-function setFiltro(f) { FILTRO_STATUS = f; renderDash(); }
+function setFiltro(f) {
+  FILTRO_STATUS = f;
+  salvarFiltrosDash();
+  renderDash();
+}
 
 // ── DRAG & DROP DE PROJETOS ──
 let _dragProjetoId = null;
@@ -1797,7 +1882,21 @@ async function dropProjeto(e, grupoId) {
     const grid = document.getElementById('cards-grid-dash');
     if (grid) grid.innerHTML = renderProjetosDash(_projsDash, _gruposDash);
     const nomeGrupo = grupoAlvo ? (_gruposDash.find(g => g.id === grupoAlvo)?.nome || 'grupo') : null;
-    toast(nomeGrupo ? `Movido para "${nomeGrupo}"` : 'Removido do grupo');
+    const grupoAnterior = grupoAtual;
+    const grupoNovo = grupoAlvo;
+    toastUndo(nomeGrupo ? `Movido para "${nomeGrupo}"` : 'Removido do grupo', async () => {
+      try {
+        await req('PATCH', `/projetos/${projetoId}`, { grupo_id: grupoAnterior });
+        _projsDash = _projsDash.map(p => p.id === projetoId ? { ...p, grupo_id: grupoAnterior } : p);
+        const gridUndo = document.getElementById('cards-grid-dash');
+        if (gridUndo) gridUndo.innerHTML = renderProjetosDash(_projsDash, _gruposDash);
+        const nomeAnterior = grupoAnterior ? (_gruposDash.find(g => g.id === grupoAnterior)?.nome || 'grupo') : 'sem grupo';
+        toast(`Movimento desfeito (${nomeAnterior})`);
+      } catch (e) {
+        _projsDash = _projsDash.map(p => p.id === projetoId ? { ...p, grupo_id: grupoNovo } : p);
+        toast(e.message || 'Não foi possível desfazer', 'err');
+      }
+    }, 5500);
   } catch (err) { toast(err.message, 'err'); }
   finally { _dragProjetoId = null; }
 }
@@ -1934,23 +2033,41 @@ async function removerPermGrupo(grupoId, usuarioId) {
 
 async function sairGrupoCompartilhado(grupoId, nomeGrupo) {
   confirmar(`Sair do grupo "${nomeGrupo}"? Você perderá os acessos herdados deste grupo.`, async () => {
-    try {
-      await req('DELETE', `/grupos/${grupoId}/sair`);
-      fecharModal();
-      toast('Você saiu do grupo');
-      renderDash();
-    } catch (e) { toast(e.message, 'err'); }
+    fecharModal();
+    let cancelado = false;
+    const t = setTimeout(async () => {
+      if (cancelado) return;
+      try {
+        await req('DELETE', `/grupos/${grupoId}/sair`);
+        toast('Você saiu do grupo');
+        renderDash();
+      } catch (e) { toast(e.message, 'err'); }
+    }, 4200);
+    toastUndo('Saída do grupo agendada', () => {
+      cancelado = true;
+      clearTimeout(t);
+      toast('Saída cancelada');
+    }, 4200);
   }, { titulo: 'Sair do grupo', btnTexto: 'Sair do grupo', danger: true });
 }
 
 async function sairProjetoCompartilhado(projetoId, nomeProjeto) {
   confirmar(`Sair do projeto "${nomeProjeto}"? Você perderá acesso ao projeto e às tarefas vinculadas a ele.`, async () => {
-    try {
-      await req('DELETE', `/projetos/${projetoId}/sair`);
-      fecharModal();
-      toast('Você saiu do projeto');
-      renderDash();
-    } catch (e) { toast(e.message, 'err'); }
+    fecharModal();
+    let cancelado = false;
+    const t = setTimeout(async () => {
+      if (cancelado) return;
+      try {
+        await req('DELETE', `/projetos/${projetoId}/sair`);
+        toast('Você saiu do projeto');
+        renderDash();
+      } catch (e) { toast(e.message, 'err'); }
+    }, 4200);
+    toastUndo('Saída do projeto agendada', () => {
+      cancelado = true;
+      clearTimeout(t);
+      toast('Saída cancelada');
+    }, 4200);
   }, { titulo: 'Sair do projeto', btnTexto: 'Sair do projeto', danger: true });
 }
 
