@@ -221,6 +221,7 @@ label{font-size:var(--fs-080);color:var(--text2);display:block;margin-bottom:5px
 .dash-toolbar{position:sticky;top:56px;z-index:80;background:color-mix(in srgb,var(--bg) 90%, transparent);backdrop-filter:blur(14px);border:1px solid var(--border);border-radius:var(--r2);padding:12px;margin-bottom:18px}
 .dash-toolbar-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
 .dash-toolbar-row + .dash-toolbar-row{margin-top:8px}
+.toolbar-sep{width:1px;height:20px;background:var(--border);flex-shrink:0;margin:0 2px}
 .segmented{display:inline-flex;align-items:center;gap:5px;padding:4px;background:var(--bg3);border:1px solid var(--border);border-radius:999px}
 .segmented-btn{padding:6px 11px;border:none;border-radius:999px;background:transparent;color:var(--text2);font-size:var(--fs-080);cursor:pointer;transition:all .15s;font-family:inherit}
 .segmented-btn:hover{color:var(--text)}
@@ -306,7 +307,11 @@ label{font-size:var(--fs-080);color:var(--text2);display:block;margin-bottom:5px
 .filter-btn:hover{border-color:var(--border2);color:var(--text)}
 .filter-btn.ativo{background:var(--accent);color:var(--accent-fg);border-color:var(--accent);font-weight:500}
 .filter-btn.ativo:hover{background:var(--accent2);border-color:var(--accent2);color:var(--accent-fg)}
-.search-dash{padding:5px 12px;border-radius:20px;border:1px solid var(--border);background:transparent;color:var(--text);font-size:var(--fs-080);font-family:inherit;outline:none;width:160px;transition:all .15s}
+.seg-count{display:inline-flex;align-items:center;justify-content:center;min-width:17px;height:15px;padding:0 4px;border-radius:999px;font-size:10px;font-weight:600;margin-left:5px;line-height:1;background:rgba(255,255,255,.18);color:inherit}
+.segmented-btn:not(.ativo) .seg-count{background:var(--bg2);color:var(--text3)}
+.filter-btn .seg-count{font-size:9px;min-width:14px;height:14px;margin-left:4px;background:rgba(255,255,255,.15);color:inherit}
+.filter-btn:not(.ativo) .seg-count{background:var(--bg2);color:var(--text3)}
+.search-dash{padding:5px 12px;border-radius:20px;border:1px solid var(--border);background:transparent;color:var(--text);font-size:var(--fs-080);font-family:inherit;outline:none;width:160px;flex:1;min-width:120px;max-width:320px;transition:all .15s}
 .search-dash:hover{border-color:var(--border2)}
 .search-dash:focus{border-color:var(--accent)}
 .search-dash::placeholder{color:var(--text3)}
@@ -1006,7 +1011,7 @@ const DASH_FILTERS_KEY = 'telier_dash_filters_v1';
 const DASH_STATUS_OPCOES = new Set(['todos', 'Em andamento', 'A fazer', 'Em revisão', 'Pausado', 'Concluído', 'Arquivado']);
 const REQ_TIMEOUT_MS = 15000;
 const PROJ_CACHE_KEY = 'telier_proj_cache';
-const PROJ_CACHE_TTL = 45000;
+const PROJ_CACHE_TTL = 10000;
 let _pendingUndoAction = null;
 let FORCE_PASSWORD_CHANGE = false;
 
@@ -1404,7 +1409,7 @@ function mostrar(tela) {
     atualizarBadgeNotificacoes(0);
     iniciarStatusPoll();
     syncAdminModeUI();
-    isAdmin() ? abrirCentralAdmin() : renderDash();
+    renderDash();
     if (FORCE_PASSWORD_CHANGE) {
       setTimeout(() => modalTrocaSenhaObrigatoria(), 120);
     }
@@ -1412,6 +1417,7 @@ function mostrar(tela) {
 }
 
 function goHome() {
+  invalidarCacheProjetos();
   renderDash();
 }
 
@@ -1448,8 +1454,8 @@ function alternarPerfilAdmin() {
   ADMIN_MODE = ADMIN_MODE === 'admin' ? 'normal' : 'admin';
   localStorage.setItem(ADMIN_MODE_KEY, ADMIN_MODE);
   syncAdminModeUI();
-  toast(ADMIN_MODE === 'admin' ? 'Modo admin ativado' : 'Modo normal ativado');
-  isAdmin() ? abrirCentralAdmin() : renderDash();
+  toast(ADMIN_MODE === 'admin' ? 'Modo admin ativado' : 'Modo membro ativado');
+  renderDash();
 }
 
 // ── AUTH ──
@@ -1757,17 +1763,6 @@ function renderInicioDia(projetos, ativas, ultimaSessao = null) {
         </div>
 
         <div class="startday-card">
-          <h4>Cronômetro</h4>
-          <div class="startday-main">${ativo ? esc(ativo.tarefa_nome || 'Tarefa ativa') : 'Nenhuma tarefa ativa'}</div>
-          <div class="startday-sub">${tempoRodando}</div>
-          <div class="startday-actions">
-            ${ativo?.projeto_id
-              ? `<button class="btn btn-sm btn-primary" onclick="abrirProjeto('${ativo.projeto_id}')">Abrir tarefa ativa</button>`
-              : `<button class="btn btn-sm" disabled>Abrir tarefa ativa</button>`}
-          </div>
-        </div>
-
-        <div class="startday-card">
           <h4>Pendências urgentes</h4>
           <div class="startday-main">${urgentes.length ? `${urgentes.length} projeto(s) com prazo até 7 dias` : 'Sem urgências por prazo'}</div>
           <div class="startday-sub">${proximoUrgente ? `${esc(proximoUrgente.nome)} · ${prazoFmt(proximoUrgente.prazo, true)}` : 'Tudo em dia por enquanto'}</div>
@@ -1775,6 +1770,17 @@ function renderInicioDia(projetos, ativas, ultimaSessao = null) {
             ${proximoUrgente
               ? `<button class="btn btn-sm btn-primary" onclick="abrirProjeto('${proximoUrgente.id}')">Ver mais urgente</button>`
               : `<button class="btn btn-sm" disabled>Ver mais urgente</button>`}
+          </div>
+        </div>
+
+        <div class="startday-card">
+          <h4>Cronômetro</h4>
+          <div class="startday-main">${ativo ? esc(ativo.tarefa_nome || 'Tarefa ativa') : 'Nenhuma tarefa ativa'}</div>
+          <div class="startday-sub">${tempoRodando}</div>
+          <div class="startday-actions">
+            ${ativo?.projeto_id
+              ? `<button class="btn btn-sm btn-primary" onclick="abrirProjeto('${ativo.projeto_id}')">Abrir tarefa ativa</button>`
+              : `<button class="btn btn-sm" disabled>Abrir tarefa ativa</button>`}
           </div>
         </div>
 
@@ -1848,18 +1854,15 @@ async function renderDash() {
     _gruposDash = grupos;
     const compartilhados = projetos.filter(p => Number(p.compartilhado_comigo) === 1);
     const emAndamento = projetos.filter(p => !['Concluído','Arquivado'].includes(normalizarStatusProjeto(p.status))).length;
+    const meus = projetos.filter(p => Number(p.compartilhado_comigo) !== 1).length;
     const filtros = ['todos','Em andamento','A fazer','Em revisão','Pausado','Concluído','Arquivado'];
+    const statusCountMap = Object.fromEntries(filtros.map(f => [f, f === 'todos' ? projetos.length : projetos.filter(p => normalizarStatusProjeto(p.status) === f).length]));
 
     let html = `
       ${renderInicioDia(projetos, ativas, ultimaSessao)}
       <div class="dash-header" style="margin-top:22px">
         <div>
           <div class="dash-title">Projetos</div>
-          <div class="dash-kpis">
-            <span class="dash-kpi-chip ativo">${emAndamento} em andamento</span>
-            <span class="dash-kpi-chip">${projetos.length} total</span>
-            <span class="dash-kpi-chip shared">${compartilhados.length} compartilhado${compartilhados.length===1?'':'s'} comigo</span>
-          </div>
         </div>
         <div class="dash-actions">
           ${isAdmin() ? `<button class="btn" onclick="abrirCentralAdmin()">Central admin</button>` : ''}
@@ -1872,19 +1875,20 @@ async function renderDash() {
       <div class="dash-toolbar">
         <div class="dash-toolbar-row">
           <input type="search" class="search-dash" id="busca-dash" placeholder="Buscar projeto..." value="${esc(BUSCA_DASH)}" oninput="filtrarProjetosBusca(this.value)">
-          <div class="segmented">
-            <button class="segmented-btn ${FILTRO_ORIGEM_DASH==='todos'?'ativo':''}" data-origem="todos" onclick="filtrarOrigemDash('todos')">Todos acessos</button>
-            <button class="segmented-btn ${FILTRO_ORIGEM_DASH==='meus'?'ativo':''}" data-origem="meus" onclick="filtrarOrigemDash('meus')">Meus</button>
-            <button class="segmented-btn ${FILTRO_ORIGEM_DASH==='compartilhados'?'ativo':''}" data-origem="compartilhados" onclick="filtrarOrigemDash('compartilhados')">Compartilhados</button>
+          <div class="segmented" style="flex-shrink:0">
+            <button class="segmented-btn ${FILTRO_ORIGEM_DASH==='todos'?'ativo':''}" data-origem="todos" onclick="filtrarOrigemDash('todos')">Todos<span class="seg-count">${projetos.length}</span></button>
+            <button class="segmented-btn ${FILTRO_ORIGEM_DASH==='meus'?'ativo':''}" data-origem="meus" onclick="filtrarOrigemDash('meus')">Meus<span class="seg-count">${meus}</span></button>
+            <button class="segmented-btn ${FILTRO_ORIGEM_DASH==='compartilhados'?'ativo':''}" data-origem="compartilhados" onclick="filtrarOrigemDash('compartilhados')">Compartilhados<span class="seg-count">${compartilhados.length}</span></button>
           </div>
-          <select class="resp-filter" onchange="filtrarGrupoDash(this.value)">
+        </div>
+        <div class="dash-toolbar-row">
+          <select class="resp-filter" style="flex-shrink:0" onchange="filtrarGrupoDash(this.value)">
             <option value="todos" ${FILTRO_GRUPO_DASH==='todos'?'selected':''}>Todos os grupos</option>
             <option value="sem" ${FILTRO_GRUPO_DASH==='sem'?'selected':''}>Sem grupo</option>
             ${grupos.map(g => `<option value="${g.id}" ${FILTRO_GRUPO_DASH===g.id?'selected':''}>${esc(g.nome)}</option>`).join('')}
           </select>
-        </div>
-        <div class="dash-toolbar-row">
-          ${filtros.map(f => { const label = { 'todos':'Todos' }[f] || f; return `<button class="filter-btn ${FILTRO_STATUS===f?'ativo':''}" onclick="setFiltro('${esc(f)}')">${label}</button>`; }).join('')}
+          <div class="toolbar-sep"></div>
+          ${filtros.map(f => { const label = { 'todos':'Todos' }[f] || f; const cnt = statusCountMap[f] || 0; return `<button class="filter-btn ${FILTRO_STATUS===f?'ativo':''}" onclick="setFiltro('${esc(f)}')">${label}<span class="seg-count">${cnt}</span></button>`; }).join('')}
         </div>
       </div>
       <div id="cards-grid-dash">`;
@@ -2180,6 +2184,7 @@ async function dropProjeto(e, grupoId) {
   if (grupoAtual === grupoAlvo) return;
   try {
     await req('PATCH', `/projetos/${projetoId}`, { grupo_id: grupoAlvo });
+    invalidarCacheProjetos();
     _projsDash = _projsDash.map(p => p.id === projetoId ? { ...p, grupo_id: grupoAlvo } : p);
     const grid = document.getElementById('cards-grid-dash');
     if (grid) grid.innerHTML = renderProjetosDash(_projsDash, _gruposDash);
@@ -2846,6 +2851,7 @@ async function abrirProjeto(id) {  window.scrollTo(0, 0);
 
 function voltarDash() {
   slideContent('left');
+  invalidarCacheProjetos();
   renderDash();
 }
 
