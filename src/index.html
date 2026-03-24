@@ -537,6 +537,37 @@ tr[data-status="Concluída"]    { border-left:2px solid var(--green); opacity:.7
 .tarefas-toolbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;gap:12px}
 .tarefas-toolbar-spaced{margin-bottom:12px}
 .tarefas-toolbar-main{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.task-view-toolbar{position:sticky;top:64px;z-index:70;margin-bottom:18px}
+.task-view-toolbar .dash-toolbar-row:last-child{justify-content:space-between}
+.task-toolbar-main{display:flex;align-items:center;gap:10px;flex-wrap:wrap;flex:1;min-width:0}
+.task-toolbar-actions{display:flex;align-items:center;gap:8px;flex-shrink:0}
+.task-toolbar-summary{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.task-view-surface{background:linear-gradient(180deg, rgba(255,255,255,.05), rgba(255,255,255,.018)), var(--glass-bg);backdrop-filter:var(--glass-blur);-webkit-backdrop-filter:var(--glass-blur);border:1px solid var(--glass-border);border-radius:18px;box-shadow:var(--glass-shadow-soft);padding:14px 16px}
+.task-view-surface + .task-view-surface{margin-top:14px}
+.task-view-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:12px}
+.task-view-eyebrow{font-size:var(--fs-075);letter-spacing:.08em;text-transform:uppercase;color:var(--text3);font-weight:600}
+.task-view-title{font-size:var(--fs-120);color:var(--text);margin-top:3px}
+.task-view-copy{font-size:var(--fs-080);color:var(--text3);margin-top:3px}
+.task-view-kpi{font-family:var(--ff-mono);font-size:var(--fs-090);color:var(--text2)}
+.task-live-list{display:flex;flex-direction:column;gap:10px}
+.task-live-item{display:flex;align-items:center;gap:12px;padding:12px 14px;background:var(--bg2);border:1px solid var(--border);border-radius:14px;transition:all .15s}
+.task-live-item:hover{border-color:var(--glass-border);background:var(--bg3)}
+.task-live-item.clickable{cursor:pointer}
+.task-live-main{flex:1;min-width:0}
+.task-live-title{font-size:var(--fs-100);color:var(--text);line-height:1.3}
+.task-live-sub{font-size:var(--fs-080);color:var(--text3);margin-top:3px}
+.task-live-aside{display:flex;align-items:center;gap:8px;flex-shrink:0}
+.task-live-time{font-family:var(--ff-mono);font-size:var(--fs-080);color:var(--green);padding:0 10px;min-height:var(--btn-h-xs);display:inline-flex;align-items:center;border-radius:999px;background:rgba(62,207,142,.08);border:1px solid rgba(62,207,142,.18)}
+.task-live-dot{width:8px;height:8px;border-radius:50%;background:var(--green);box-shadow:0 0 0 4px rgba(62,207,142,.08)}
+.task-table-shell{background:linear-gradient(180deg, rgba(255,255,255,.035), rgba(255,255,255,.012));border:1px solid var(--border);border-radius:16px;padding:10px 10px 0}
+.task-table-shell .table-wrap,.task-table-shell .table-scroll{border:none}
+.task-table-shell table{border-radius:12px;overflow:hidden}
+.task-status-strip{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:2px}
+.task-empty-inline{font-size:var(--fs-080);color:var(--text3)}
+.view-toggle{display:flex;border:1px solid var(--border);border-radius:var(--r);overflow:hidden}
+.view-toggle-btn{display:flex;align-items:center;justify-content:center;width:34px;height:32px;background:var(--bg2);color:var(--text3);border:none;cursor:pointer;transition:all .15s;padding:0}
+.view-toggle-btn:hover{background:var(--bg3);color:var(--text2)}
+.view-toggle-btn.ativo{background:var(--accent);color:var(--accent-fg)}
 .tarefas-count{font-size:var(--fs-080);color:var(--text3)}
 .table-scroll{overflow-x:auto}
 .tasks-table-full{width:100%}
@@ -588,6 +619,11 @@ tr:hover .td-ações{opacity:1}
 @media (max-width:768px){
   .tarefas-toolbar{flex-direction:column;align-items:stretch}
   .tarefas-toolbar > div:first-child{display:flex;flex-direction:column;gap:8px;width:100%}
+  .task-view-toolbar{top:56px}
+  .task-toolbar-main,.task-toolbar-actions,.task-toolbar-summary{width:100%}
+  .task-toolbar-actions{justify-content:space-between}
+  .task-view-head,.task-live-item{flex-direction:column;align-items:flex-start}
+  .task-live-aside{width:100%;justify-content:space-between}
   .tarefas-toolbar .search-tarefa{width:100%!important;flex:1}
   .tarefas-toolbar .resp-filter{width:100%;height:32px}
   .tarefas-toolbar .btn{width:100%}
@@ -632,11 +668,12 @@ tr:hover .td-ações{opacity:1}
 .inline-empty-card{text-align:center;color:var(--text3);padding:24px;background:var(--bg2);border:1px solid var(--border);border-radius:var(--r2)}
 .inline-empty-card-title{font-style:italic}
 .inline-empty-card-copy{font-size:var(--fs-080);margin-top:8px;color:var(--text2)}
-.rel-group{margin-bottom:28px}
-.rel-group-header{display:flex;align-items:center;justify-content:space-between;padding-bottom:8px;border-bottom:1px solid var(--border);margin-bottom:10px}
+.rel-group{margin-bottom:16px;background:linear-gradient(180deg, rgba(255,255,255,.04), rgba(255,255,255,.015));border:1px solid var(--glass-border-soft);border-radius:16px;padding:14px 16px;box-shadow:inset 0 1px 0 rgba(255,255,255,.03)}
+.rel-group-header{display:flex;align-items:center;justify-content:space-between;padding-bottom:10px;border-bottom:1px solid var(--border);margin-bottom:10px}
 .rel-group-title{color:var(--text3);display:flex;align-items:center;gap:8px}
 .rel-group-total{font-size:var(--fs-080);font-family:var(--ff-mono);color:var(--green)}
-.rel-item{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--border)}
+.rel-item{display:flex;align-items:center;gap:10px;padding:11px 0;border-bottom:1px solid var(--border);transition:background .15s,border-color .15s}
+.rel-item:hover{background:rgba(255,255,255,.02)}
 .rel-item:last-child{border-bottom:none}
 .rel-nome{flex:1;font-size:var(--fs-100);color:var(--text)}
 .rel-horas{font-family:var(--ff-mono);font-size:var(--fs-080);color:var(--green)}
@@ -811,6 +848,14 @@ tr:hover .td-ações{opacity:1}
 }
 .kanban-card:hover { border-color:var(--border2); }
 .kanban-card:active { cursor:grabbing; opacity:.8; }
+.kanban-cron-btn{font-size:var(--fs-075);padding:3px 7px;height:26px;display:flex;align-items:center;white-space:nowrap}
+.kanban-avs{display:flex;align-items:center}
+.kanban-av-dono{opacity:1}
+.kanban-av-more{background:var(--bg3);color:var(--text3);font-size:.55rem}
+.kb-inline-add{margin-top:6px}
+.kb-inline-input{width:100%;background:transparent;border:none;border-bottom:1px dashed var(--border2);padding:6px 4px;font-size:var(--fs-080);color:var(--text);outline:none;transition:border-color .15s}
+.kb-inline-input:focus{border-bottom-color:var(--accent)}
+.kb-inline-input::placeholder{color:var(--text3)}
 @media (max-width:768px) {
   .kanban-board { grid-template-columns:1fr; }
 }
@@ -1161,6 +1206,11 @@ let _projsDash = [];
 let _ativasDash = [];
 let _gruposDash = [];
 let FILTRO_RESP_TAR = '';
+let FILTRO_ORIGEM_TAREFAS = 'todos';
+let FILTRO_STATUS_TAREFA = 'todos';
+let TAREFAS_VIEW = 'kanban'; // 'kanban' | 'lista'
+let LISTA_SORT = { col: null, dir: 'asc' };
+let LISTA_CONCLUIDAS_EXPANDIDA = false;
 let BUSCA_TAREFA = '';
 let FILTRO_GRUPO_DASH = 'todos';
 let COLEGAS_ATIVOS = [];
@@ -1844,9 +1894,11 @@ document.addEventListener('keydown', e => {
   }
 
   if (!emInput && !document.querySelector('.modal-overlay')) {
-    // N — nova tarefa (dentro de projeto, aba lista)
+    // N — nova tarefa (dentro de projeto, aba Tarefas)
     if (e.key === 'n' || e.key === 'N') {
-      if (PROJETO && document.getElementById('aba')) {
+      const abaAtiva = document.querySelector('.aba.ativa')?.dataset.aba;
+      if (PROJETO && document.getElementById('aba') &&
+          (abaAtiva === 'tarefas' || abaAtiva === 'lista' || abaAtiva === 'kanban' || !abaAtiva)) {
         e.preventDefault();
         modalNovaTarefa(PROJETO.id);
       }
@@ -2067,6 +2119,8 @@ async function renderDash() {
   PROJETO = null;
   FILTRO_RESP_TAR = '';
   BUSCA_TAREFA = '';
+  FILTRO_ORIGEM_TAREFAS = 'todos';
+  FILTRO_STATUS_TAREFA = 'todos';
   document.title = 'Telier';
   setBreadcrumb([]);
   const c = document.getElementById('content');
@@ -3112,11 +3166,91 @@ async function abrirUsuarioAdmin(usuarioId) {
 }
 
 // ── PROJETO ──
+function normalizarColaboradoresTarefas(tarefas) {
+  return (tarefas || []).map(t => ({
+    ...t,
+    colaboradores_ids: t.colaboradores_ids_raw
+      ? t.colaboradores_ids_raw.split(',').filter(Boolean)
+      : [],
+    colaboradores_nomes: t.colaboradores_nomes_raw
+      ? t.colaboradores_nomes_raw.split('||').filter(Boolean)
+      : [],
+  }));
+}
+
+function tarefaCompartilhadaComigo(t) {
+  if (!t || !EU?.id) return false;
+  return t.dono_id !== EU.id && (t.colaboradores_ids || []).includes(EU.id);
+}
+
+function filtrarColecaoTarefas(tarefas, opts = {}) {
+  let lista = [...(tarefas || [])];
+  const origem = opts.origem ?? FILTRO_ORIGEM_TAREFAS;
+  const busca = typeof opts.busca === 'string' ? opts.busca : BUSCA_TAREFA;
+  const responsavel = opts.responsavel ?? FILTRO_RESP_TAR;
+  const status = opts.status ?? FILTRO_STATUS_TAREFA;
+
+  if (origem === 'meus') lista = lista.filter(t => t.dono_id === EU?.id);
+  else if (origem === 'compartilhadas') lista = lista.filter(t => tarefaCompartilhadaComigo(t));
+  if (responsavel) lista = lista.filter(t => t.dono_id === responsavel);
+  if (status && status !== 'todos') lista = lista.filter(t => t.status === status);
+  if (busca) lista = lista.filter(t => (t.nome || '').toLowerCase().includes(busca.toLowerCase()));
+  return lista;
+}
+
+function renderAoVivoStream(sessoes, opts = {}) {
+  const mostrarProjeto = !!opts.mostrarProjeto;
+  const abrir = typeof opts.abrir === 'function' ? opts.abrir : null;
+  const titulo = opts.titulo || 'Ao vivo';
+  const copy = opts.copy || 'Sessões ativas neste momento.';
+  const resumo = `${sessoes.length} sess${sessoes.length === 1 ? 'ão ativa' : 'ões ativas'}`;
+  return `
+    <div class="task-view-surface">
+      <div class="task-view-head">
+        <div>
+          <div class="task-view-eyebrow">${titulo}</div>
+          <div class="task-view-title">${resumo}</div>
+          <div class="task-view-copy">${copy}</div>
+        </div>
+        <div class="task-view-kpi">Atualiza ao recarregar a aba</div>
+      </div>
+      <div class="task-live-list">
+        ${sessoes.map(s => {
+          const seg = s.inicio
+            ? Math.max(0, Math.floor((Date.now() - new Date(s.inicio.replace(' ','T')+'Z').getTime()) / 1000))
+            : 0;
+          const onclick = abrir ? `onclick="${abrir(s)}"` : '';
+          const clickable = abrir ? ' clickable' : '';
+          return `
+            <div class="task-live-item${clickable}" ${onclick}>
+              <div class="task-live-dot"></div>
+              <div class="task-live-main">
+                <div class="task-live-title">${esc(s.tarefa_nome)}</div>
+                <div class="task-live-sub">
+                  ${mostrarProjeto ? `${esc(s.projeto_nome)} · ` : ''}${esc(s.usuario_nome)} · iniciado ${fmtDuracao(seg)} atr&aacute;s
+                </div>
+              </div>
+              <div class="task-live-aside">
+                <div class="resp-chip">${avatar(s.usuario_nome,'avatar-sm')} <span>${esc(s.usuario_nome)}</span></div>
+                <div class="task-live-time">${fmtDuracao(seg)}</div>
+              </div>
+            </div>`;
+        }).join('')}
+      </div>
+    </div>`;
+}
+
 async function abrirProjeto(id) {  window.scrollTo(0, 0);
   const c = document.getElementById('content');
   c.style.opacity = '0.4';
   c.style.pointerEvents = 'none';
   BUSCA_TAREFA = '';
+  FILTRO_RESP_TAR = '';
+  FILTRO_ORIGEM_TAREFAS = 'todos';
+  FILTRO_STATUS_TAREFA = 'todos';
+  LISTA_SORT = { col: null, dir: 'asc' };
+  LISTA_CONCLUIDAS_EXPANDIDA = false;
+  sessionStorage.removeItem('kb_concl_expand');
   try {
     const [projeto, tarefas, decisoes, resumoHoras] = await Promise.all([
       req('GET', `/projetos/${id}`),
@@ -3124,13 +3258,15 @@ async function abrirProjeto(id) {  window.scrollTo(0, 0);
       req('GET', `/projetos/${id}/decisoes`),
       req('GET', `/projetos/${id}/horas-por-usuario`).catch(() => []),
     ]);
-    PROJETO = projeto; TAREFAS = tarefas;
+    PROJETO = projeto; TAREFAS = normalizarColaboradoresTarefas(tarefas);
     document.title = projeto.nome + ' · Telier';
     c.style.opacity = '';
     c.style.pointerEvents = '';
-    const abaSalva = localStorage.getItem(`telier_aba_${id}`) || 'lista';
+    const abaSalvaRaw = localStorage.getItem(`telier_aba_${id}`) || 'tarefas';
+    TAREFAS_VIEW = abaSalvaRaw === 'lista' || abaSalvaRaw === 'kanban' ? abaSalvaRaw : 'kanban';
+    const abaSalva = ['tarefas', 'mapa', 'relatorio'].includes(abaSalvaRaw) ? abaSalvaRaw : 'tarefas';
     slideContent('right');
-    renderProjeto(projeto, tarefas, decisoes, abaSalva, resumoHoras);
+    renderProjeto(projeto, TAREFAS, decisoes, abaSalva, resumoHoras);
     VISTA_ATUAL = 'projeto';
   } catch (e) {
     c.style.opacity = '';
@@ -3251,7 +3387,7 @@ async function carregarTarefasGrupo(grupo = GRUPO_ATUAL) {
   if (grupo._tarefasCacheKey === cacheKey && Array.isArray(grupo._tarefasCache)) return grupo._tarefasCache;
   const listas = await Promise.all(projetos.map(p =>
     req('GET', `/projetos/${p.id}/tarefas`).catch(() => []).then(tarefas =>
-      (tarefas || []).map(t => ({
+      normalizarColaboradoresTarefas(tarefas).map(t => ({
         ...t,
         projeto_id: t.projeto_id || p.id,
         projeto_nome: t.projeto_nome || p.nome,
@@ -3295,22 +3431,31 @@ async function renderGrupoAbaTarefas(el) {
     const tarefas = await carregarTarefasGrupo();
     const responsaveis = [...new Map(tarefas.map(t => [t.dono_id, { id: t.dono_id, nome: t.dono_nome }])).values()];
     const projetosFiltro = [...new Map(tarefas.map(t => [t.projeto_id, { id: t.projeto_id, nome: t.projeto_nome || 'Projeto' }])).values()];
+    const compartilhadas = tarefas.filter(t => tarefaCompartilhadaComigo(t)).length;
+    const minhas = tarefas.filter(t => t.dono_id === EU?.id).length;
 
     let filtroStatus = 'todos';
     let filtroPrior = 'todos';
     let filtroResp = '';
     let filtroProjeto = '';
+    let filtroBusca = '';
+    let filtroOrigem = 'todos';
 
     function aplicar() {
       filtroStatus = window._gtFiltroStatus || 'todos';
       filtroPrior = window._gtFiltroPrior || 'todos';
       filtroResp = window._gtFiltroResp || '';
       filtroProjeto = window._gtFiltroProjeto || '';
+      filtroBusca = window._gtBusca || '';
+      filtroOrigem = window._gtFiltroOrigem || 'todos';
       let lista = [...tarefas];
+      if (filtroOrigem === 'meus') lista = lista.filter(t => t.dono_id === EU?.id);
+      else if (filtroOrigem === 'compartilhadas') lista = lista.filter(t => tarefaCompartilhadaComigo(t));
       if (filtroStatus !== 'todos') lista = lista.filter(t => t.status === filtroStatus);
       if (filtroPrior !== 'todos') lista = lista.filter(t => t.prioridade === filtroPrior);
       if (filtroResp) lista = lista.filter(t => t.dono_id === filtroResp);
       if (filtroProjeto) lista = lista.filter(t => String(t.projeto_id) === String(filtroProjeto));
+      if (filtroBusca) lista = lista.filter(t => (t.nome || '').toLowerCase().includes(filtroBusca.toLowerCase()));
       const tbody = document.getElementById('gt-tbody');
       if (!tbody) return;
       tbody.innerHTML = lista.length ? lista.map(t => `
@@ -3326,40 +3471,56 @@ async function renderGrupoAbaTarefas(el) {
     }
 
     window._gtAplicar = () => aplicar();
+    const statusTabs = ['todos','A fazer','Em andamento','Bloqueada','Concluída'];
 
     el.innerHTML = `
-      <div class="tarefas-toolbar tarefas-toolbar-spaced">
-        <div class="tarefas-toolbar-main">
-          ${projetosFiltro.length > 1 ? `<select class="select-control" onchange="window._gtFiltroProjeto=this.value;window._gtAplicar()">
-            <option value="">Todos os projetos</option>
-            ${projetosFiltro.map(p=>`<option value="${p.id}">${esc(p.nome)}</option>`).join('')}
-          </select>` : ""}
-          <select class="select-control" onchange="window._gtFiltroStatus=this.value;window._gtAplicar()">
-            <option value="todos">Todos os status</option>
-            ${['A fazer','Em andamento','Bloqueada','Concluída'].map(s=>`<option value="${s}">${s}</option>`).join('')}
-          </select>
-          <select class="select-control" onchange="window._gtFiltroPrior=this.value;window._gtAplicar()">
-            <option value="todos">Toda prioridade</option>
-            ${['Alta','Média','Baixa'].map(s=>`<option value="${s}">${s}</option>`).join('')}
-          </select>
-          ${responsaveis.length > 1 ? `<select class="select-control" onchange="window._gtFiltroResp=this.value;window._gtAplicar()">
-            <option value="">Todos os responsáveis</option>
-            ${responsaveis.map(r=>`<option value="${r.id}">${esc(r.nome)}</option>`).join('')}
-          </select>` : ''}
+      <div class="dash-toolbar task-view-toolbar tarefas-toolbar-spaced">
+        <div class="dash-toolbar-row">
+          <div class="task-toolbar-main">
+            <input type="search" class="search-dash search-tarefa" placeholder="Buscar tarefa..." oninput="window._gtBusca=this.value;window._gtAplicar()">
+            <div class="segmented">
+              <button class="segmented-btn ativo" id="gt-origem-todos" onclick="window._gtFiltroOrigem='todos';window._gtAplicar();document.getElementById('gt-origem-todos').classList.add('ativo');document.getElementById('gt-origem-meus').classList.remove('ativo');document.getElementById('gt-origem-comp').classList.remove('ativo')">Todas${tarefas.length ? `<span class="seg-count">${tarefas.length}</span>` : ''}</button>
+              <button class="segmented-btn" id="gt-origem-meus" onclick="window._gtFiltroOrigem='meus';window._gtAplicar();document.getElementById('gt-origem-meus').classList.add('ativo');document.getElementById('gt-origem-todos').classList.remove('ativo');document.getElementById('gt-origem-comp').classList.remove('ativo')">Minhas${minhas ? `<span class="seg-count">${minhas}</span>` : ''}</button>
+              <button class="segmented-btn" id="gt-origem-comp" onclick="window._gtFiltroOrigem='compartilhadas';window._gtAplicar();document.getElementById('gt-origem-comp').classList.add('ativo');document.getElementById('gt-origem-todos').classList.remove('ativo');document.getElementById('gt-origem-meus').classList.remove('ativo')">Compartilhadas${compartilhadas ? `<span class="seg-count">${compartilhadas}</span>` : ''}</button>
+            </div>
+          </div>
+          <div class="task-view-kpi">${tarefas.length} tarefa${tarefas.length!==1?'s':''}</div>
         </div>
-        <div class="tarefas-count">${tarefas.length} tarefa${tarefas.length!==1?'s':''}</div>
+        <div class="dash-toolbar-row">
+          <div class="task-toolbar-summary">
+            ${projetosFiltro.length > 1 ? `<select class="select-control" onchange="window._gtFiltroProjeto=this.value;window._gtAplicar()">
+              <option value="">Todos os projetos</option>
+              ${projetosFiltro.map(p=>`<option value="${p.id}">${esc(p.nome)}</option>`).join('')}
+            </select>` : ""}
+            ${responsaveis.length > 1 ? `<select class="select-control" onchange="window._gtFiltroResp=this.value;window._gtAplicar()">
+              <option value="">Todos os responsáveis</option>
+              ${responsaveis.map(r=>`<option value="${r.id}">${esc(r.nome)}</option>`).join('')}
+            </select>` : ''}
+            <select class="select-control" onchange="window._gtFiltroPrior=this.value;window._gtAplicar()">
+              <option value="todos">Toda prioridade</option>
+              ${['Alta','Média','Baixa'].map(s=>`<option value="${s}">${s}</option>`).join('')}
+            </select>
+            ${statusTabs.map(s => `<button class="filter-btn ${s==='todos'?'ativo':''}" id="gt-status-${s.replace(/\s+/g,'-')}" onclick="window._gtFiltroStatus='${esc(s)}';window._gtAplicar();document.querySelectorAll('[id^=\\'gt-status-\\']').forEach(el=>el.classList.remove('ativo'));document.getElementById('gt-status-${s.replace(/\s+/g,'-')}').classList.add('ativo')">${s==='todos'?'Todos':s}</button>`).join('')}
+          </div>
+        </div>
       </div>
+      <div class="task-view-surface">
+      <div class="task-table-shell">
       <div class="table-scroll">
         <table class="tasks-table tasks-table-full">
           <thead><tr><th>Projeto</th><th>Tarefa</th><th>Responsável</th><th>Prioridade</th><th>Status</th><th>Data</th></tr></thead>
           <tbody id="gt-tbody"></tbody>
         </table>
+      </div>
+      </div>
       </div>`;
 
     window._gtFiltroProjeto = '';
     window._gtFiltroStatus = 'todos';
     window._gtFiltroPrior = 'todos';
     window._gtFiltroResp = '';
+    window._gtFiltroOrigem = 'todos';
+    window._gtBusca = '';
     aplicar();
   } catch (e) { el.innerHTML = `<div class="error-block">${esc(e.message)}</div>`; }
 }
@@ -3370,10 +3531,15 @@ async function renderGrupoAbaMapa(el) {
   try {
     const tarefas = await carregarTarefasGrupo();
     const pendentes = tarefas
-      .filter(t => t.status !== 'Concluída')
+      .filter(t => t.status !== 'Concluída' && t.status !== 'Bloqueada')
       .sort((a, b) => {
         const p = (PO[a.prioridade] ?? 1) - (PO[b.prioridade] ?? 1);
-        return p || ((DO[a.complexidade] ?? 1) - (DO[b.complexidade] ?? 1));
+        if (p) return p;
+        const d = (DO[a.complexidade] ?? 1) - (DO[b.complexidade] ?? 1);
+        if (d) return d;
+        const da = a.data || '9999-99-99';
+        const db = b.data || '9999-99-99';
+        return da.localeCompare(db);
       });
 
     if (!pendentes.length) {
@@ -3381,29 +3547,46 @@ async function renderGrupoAbaMapa(el) {
       return;
     }
 
+    const bloqueadas = tarefas.filter(t => t.status === 'Bloqueada');
     el.innerHTML = `
-      <div class="mapa-intro">Ordenado por prioridade e complexidade entre todos os projetos do grupo. Clique para abrir o projeto.</div>
-      <div class="mapa-list">
-        ${pendentes.map((t, i) => {
-          const diasT = diasRestantes(t.data || null);
-          const urgt = diasT !== null && diasT <= 2 && t.status !== 'Concluída';
-          return `
-            <div class="mapa-item clickable ${t.foco && t.dono_id === EU?.id ? 'is-foco' : ''}"
-                 onclick="abrirProjeto('${t.projeto_id}')">
-              <div class="mapa-rank">${String(i + 1).padStart(2, '0')}</div>
-              <div class="mapa-body">
-                <div class="mapa-nome">${esc(t.nome)}</div>
-                <div class="mapa-sub">${esc(t.projeto_nome || '')}</div>
-              </div>
-              <div class="mapa-tags">
-                <div class="resp-chip">${avatar(t.dono_nome,'avatar-sm')}</div>
-                ${tag(t.prioridade, PT[t.prioridade])}
-                ${tag(t.complexidade || t.dificuldade, DT[t.complexidade || t.dificuldade])}
-                ${t.foco && t.dono_id === EU?.id ? '<span class="tag tag-purple">Meu foco</span>' : ''}
-                ${urgt ? `<span class="tag tag-red mono">${diasT <= 0 ? 'vencida' : diasT + 'd'}</span>` : ''}
-              </div>
-            </div>`;
-        }).join('')}
+      <div class="task-view-surface">
+        <div class="task-view-head">
+          <div>
+            <div class="task-view-eyebrow">Mapa de foco do grupo</div>
+            <div class="task-view-title">${pendentes.length} prioridade${pendentes.length !== 1 ? 's' : ''} entre projetos</div>
+            <div class="task-view-copy">Ordenado por prioridade, complexidade e prazo entre todos os projetos do grupo.</div>
+          </div>
+          <div class="task-view-kpi">${bloqueadas.length} bloqueada${bloqueadas.length !== 1 ? 's' : ''}</div>
+        </div>
+        <div class="mapa-intro">Clique em um item para abrir o projeto e continuar a execução dali.</div>
+        ${bloqueadas.length ? `
+          <div class="task-view-surface" style="padding:12px 14px;background:rgba(231,68,68,.06);border-color:rgba(231,68,68,.2);box-shadow:none">
+            <div class="task-view-eyebrow" style="color:var(--red)">Bloqueadas</div>
+            <div class="task-status-strip">
+              ${bloqueadas.map(t => `<span class="tag tag-red">${esc(t.nome)}</span>`).join('')}
+            </div>
+          </div>` : ''}
+        <div class="mapa-list">
+          ${pendentes.map((t, i) => {
+            const diasT = diasRestantes(t.data || null);
+            const urgt = diasT !== null && diasT <= 2 && t.status !== 'Concluída';
+            return `
+              <div class="mapa-item clickable ${t.foco && t.dono_id === EU?.id ? 'is-foco' : ''}"
+                   onclick="abrirProjeto('${t.projeto_id}')">
+                <div class="mapa-rank">${String(i + 1).padStart(2, '0')}</div>
+                <div class="mapa-body">
+                  <div class="mapa-nome">${esc(t.nome)}</div>
+                  <div class="mapa-sub">${esc(t.projeto_nome || '')} · ${esc(t.dono_nome || 'Sem responsável')}</div>
+                </div>
+                <div class="mapa-tags">
+                  ${tag(t.prioridade, PT[t.prioridade])}
+                  ${tag(t.complexidade || t.dificuldade, DT[t.complexidade || t.dificuldade])}
+                  ${t.foco && t.dono_id === EU?.id ? '<span class="tag tag-purple">Meu foco</span>' : ''}
+                  ${urgt ? `<span class="tag ${diasT <= 0 ? 'tag-red' : 'tag-yellow'} mono">${diasT <= 0 ? 'vencida' : diasT + 'd'}</span>` : ''}
+                </div>
+              </div>`;
+          }).join('')}
+        </div>
       </div>`;
   } catch (e) { el.innerHTML = `<div class="error-block">${esc(e.message)}</div>`; }
 }
@@ -3417,24 +3600,12 @@ async function renderGrupoAbaAoVivo(el) {
       el.innerHTML = `<div class="empty-state"><div class="empty-text">Nenhum cronômetro ativo no grupo agora</div><div class="empty-sub">Quando um membro iniciar um cronômetro, ele aparece aqui.</div></div>`;
       return;
     }
-    el.innerHTML = `
-      <div class="rel-stack">
-        ${sessoes.map(s => {
-          const seg = s.inicio
-            ? Math.max(0, Math.floor((Date.now() - new Date(s.inicio.replace(' ','T')+'Z').getTime()) / 1000))
-            : 0;
-          return `
-            <div class="mapa-item clickable" onclick="abrirProjeto('${s.projeto_id}')">
-              <div class="mapa-dot-live"></div>
-              <div class="mapa-body">
-                <div class="mapa-nome">${esc(s.tarefa_nome)}</div>
-                <div class="mapa-sub">${esc(s.projeto_nome)} · iniciado ${fmtDuracao(seg)} atr&aacute;s</div>
-              </div>
-              <div class="resp-chip">${avatar(s.usuario_nome,'avatar-sm')} <span>${esc(s.usuario_nome)}</span></div>
-            </div>`;
-        }).join('')}
-      </div>
-      <div class="group-refresh-note">Atualiza ao recarregar a aba.</div>`;
+    el.innerHTML = renderAoVivoStream(sessoes, {
+      titulo: 'Ao vivo do grupo',
+      copy: 'Atividade em andamento nos projetos deste grupo.',
+      mostrarProjeto: true,
+      abrir: s => `abrirProjeto('${s.projeto_id}')`,
+    });
   } catch (e) { el.innerHTML = `<div class="error-block">${esc(e.message)}</div>`; }
 }
 
@@ -3455,6 +3626,15 @@ function renderGrupoAbaRelatorio(el, projetos) {
   ).length;
 
   el.innerHTML = `
+    <div class="task-view-surface">
+    <div class="task-view-head">
+      <div>
+        <div class="task-view-eyebrow">Relatório do grupo</div>
+        <div class="task-view-title">${total} projeto${total !== 1 ? 's' : ''}</div>
+        <div class="task-view-copy">Resumo consolidado do grupo.</div>
+      </div>
+      <div class="task-view-kpi">${fmtHoras(totalHoras)}</div>
+    </div>
     <div class="rel-kpi-grid">
       ${[
         ['Projetos',    total,                         false],
@@ -3473,6 +3653,7 @@ function renderGrupoAbaRelatorio(el, projetos) {
         <svg width="12" height="12" viewBox="0 0 24 24" fill="none"><rect x="3" y="10" width="18" height="11" rx="2" stroke="currentColor" stroke-width="1.8"/><path d="M7 10V7a5 5 0 0 1 10 0v3" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
         ${arquivados} projeto${arquivados !== 1 ? 's' : ''} arquivado${arquivados !== 1 ? 's' : ''} — exibidos em modo somente leitura.
       </div>` : ''}
+    </div>
     <div class="rel-stack">
       ${projetos.map(p => {
         const status  = normalizarStatusProjeto(p.status);
@@ -3600,7 +3781,7 @@ function renderProjeto(proj, tarefas, decisoes, abaAtiva, resumoHoras = []) {
       </div>
       ${focoMinha
         ? `<div class="proj-foco-banner"><span class="fl">Meu foco</span><span class="fn">${esc(focoMinha.nome)}</span>${focoBtnHtml}</div>`
-        : `<div class="proj-foco-empty">Nenhuma tarefa em foco — use ★ na lista para definir</div>`}
+        : `<div class="proj-foco-empty">Nenhuma tarefa em foco — use ★ na aba Tarefas para definir</div>`}
     </div>
     ${isArquivado ? `
       <div class="alert-banner block-gap">
@@ -3608,10 +3789,9 @@ function renderProjeto(proj, tarefas, decisoes, abaAtiva, resumoHoras = []) {
         Projeto arquivado — somente leitura. Edições, novas tarefas e cronômetro estão desabilitados.
       </div>` : ''}
     <div class="abas">
-      <button class="aba ${abaAtiva==='lista'?'ativa':''}" data-aba="lista" onclick="mudarAba('lista')">Lista de tarefas</button>
+      <button class="aba ${(abaAtiva==='tarefas'||abaAtiva==='lista'||abaAtiva==='kanban')?'ativa':''}" data-aba="tarefas" onclick="mudarAba('tarefas')">Tarefas</button>
       <button class="aba ${abaAtiva==='mapa'?'ativa':''}" data-aba="mapa" onclick="mudarAba('mapa')">Mapa de Foco</button>
       <button class="aba ${abaAtiva==='relatorio'?'ativa':''}" data-aba="relatorio" onclick="mudarAba('relatorio')">Relat&oacute;rio</button>
-      <button class="aba ${abaAtiva==='kanban'?'ativa':''}" data-aba="kanban" onclick="mudarAba('kanban')">Kanban</button>
       <button class="aba ${abaAtiva==='aovivo'?'ativa':''}" data-aba="aovivo" onclick="mudarAba('aovivo')">Ao vivo</button>
     </div>
     <div id="aba"></div>
@@ -3631,11 +3811,11 @@ function renderAba(aba, tarefas) {
   const el = document.getElementById('aba');
   if (!el) return;
   TAREFAS = tarefas;
-  if (aba === 'lista') renderLista(el, tarefas);
+  if (aba === 'lista' || aba === 'kanban') aba = 'tarefas';
+  if (aba === 'tarefas') renderAbaTarefas(el, tarefas);
   else if (aba === 'mapa') renderMapa(el, tarefas);
-  else if (aba === 'aovivo') renderProjetoAoVivo(el);
   else if (aba === 'relatorio') renderRelatorio(el, tarefas);
-  else if (aba === 'kanban') renderKanban(el, tarefas);
+  else if (aba === 'aovivo') renderProjetoAoVivo(el);
 }
 
 async function renderProjetoAoVivo(el) {
@@ -3647,61 +3827,258 @@ async function renderProjetoAoVivo(el) {
       el.innerHTML = `<div class="empty-state"><div class="empty-text">Nenhum cron&ocirc;metro ativo neste projeto</div><div class="empty-sub">Quando algu&eacute;m iniciar um cron&ocirc;metro em uma tarefa daqui, ele aparece nesta aba.</div></div>`;
       return;
     }
-    el.innerHTML = `
-      <div class="rel-stack">
-        ${sessoes.map(s => {
-          const seg = s.inicio
-            ? Math.max(0, Math.floor((Date.now() - new Date(s.inicio.replace(' ','T')+'Z').getTime()) / 1000))
-            : 0;
-          return `
-            <div class="mapa-item">
-              <div class="mapa-dot-live"></div>
-              <div class="mapa-body">
-                <div class="mapa-nome">${esc(s.tarefa_nome)}</div>
-                <div class="mapa-sub">Iniciado ${fmtDuracao(seg)} atras</div>
-              </div>
-              <div class="resp-chip">${avatar(s.usuario_nome,'avatar-sm')} <span>${esc(s.usuario_nome)}</span></div>
-            </div>`;
-        }).join('')}
-      </div>
-      <div class="group-refresh-note">Atualiza ao recarregar a aba.</div>`;
+    el.innerHTML = renderAoVivoStream(sessoes, {
+      titulo: 'Ao vivo do projeto',
+      copy: 'Tarefas em execução dentro deste projeto.',
+    });
   } catch (e) {
     el.innerHTML = `<div class="error-block">${esc(e.message)}</div>`;
   }
 }
 
-function renderKanban(el, tarefas) {
-  const cols = ['A fazer', 'Em andamento', 'Em revisão', 'Concluída'];
+function renderAbaTarefas(el, tarefas) {
+  const projetoArquivado = (
+    normalizarStatusProjeto(PROJETO?.status) === 'Arquivado' ||
+    (PROJETO?.grupo_status || null) === 'Arquivado'
+  );
+  const responsaveis = [...new Map(tarefas.map(t => [t.dono_id, { id: t.dono_id, nome: t.dono_nome }])).values()];
+  const statusTabs = ['todos', 'A fazer', 'Em andamento', 'Bloqueada', 'Concluída'];
+  const compartilhadas = tarefas.filter(t => tarefaCompartilhadaComigo(t)).length;
+  const meus = tarefas.filter(t => t.dono_id === EU?.id).length;
+  const baseFiltrada = filtrarColecaoTarefas(tarefas, { status: 'todos' });
+  const filtradas = filtrarColecaoTarefas(tarefas);
+  const pendentes = filtradas.filter(t => t.status !== 'Concluída').length;
+  const concluidas = filtradas.filter(t => t.status === 'Concluída').length;
+  const statusCountMap = Object.fromEntries(statusTabs.map(s => [s,
+    s === 'todos' ? baseFiltrada.length : baseFiltrada.filter(t => t.status === s).length
+  ]));
+
+  const toolbarHtml = `
+    <div class="dash-toolbar task-view-toolbar">
+      <div class="dash-toolbar-row">
+        <div class="task-toolbar-main">
+          <input type="search" class="search-dash search-tarefa" placeholder="Buscar tarefa..."
+                 value="${esc(BUSCA_TAREFA)}" oninput="filtrarTarefasBusca(this.value)">
+          <div class="segmented">
+            <button class="segmented-btn ${FILTRO_ORIGEM_TAREFAS==='todos'?'ativo':''}" onclick="FILTRO_ORIGEM_TAREFAS='todos';renderAbaTarefas(document.getElementById('aba'),TAREFAS)">Todas${tarefas.length ? `<span class="seg-count">${tarefas.length}</span>` : ''}</button>
+            <button class="segmented-btn ${FILTRO_ORIGEM_TAREFAS==='meus'?'ativo':''}" onclick="FILTRO_ORIGEM_TAREFAS='meus';renderAbaTarefas(document.getElementById('aba'),TAREFAS)">Minhas${meus ? `<span class="seg-count">${meus}</span>` : ''}</button>
+            <button class="segmented-btn ${FILTRO_ORIGEM_TAREFAS==='compartilhadas'?'ativo':''}" onclick="FILTRO_ORIGEM_TAREFAS='compartilhadas';renderAbaTarefas(document.getElementById('aba'),TAREFAS)">Compartilhadas${compartilhadas ? `<span class="seg-count">${compartilhadas}</span>` : ''}</button>
+          </div>
+        </div>
+        <div class="task-toolbar-actions">
+          <div class="view-toggle">
+            <button class="view-toggle-btn ${TAREFAS_VIEW==='lista'?'ativo':''}"
+                    onclick="TAREFAS_VIEW='lista';renderAbaTarefas(document.getElementById('aba'),TAREFAS)"
+                    title="Vista lista">
+              <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                <rect x="2" y="2" width="10" height="2" rx="1" fill="currentColor"/>
+                <rect x="2" y="6" width="10" height="2" rx="1" fill="currentColor"/>
+                <rect x="2" y="10" width="10" height="2" rx="1" fill="currentColor"/>
+              </svg>
+            </button>
+            <button class="view-toggle-btn ${TAREFAS_VIEW==='kanban'?'ativo':''}"
+                    onclick="TAREFAS_VIEW='kanban';renderAbaTarefas(document.getElementById('aba'),TAREFAS)"
+                    title="Vista kanban">
+              <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                <rect x="1" y="2" width="3.5" height="10" rx="1" fill="currentColor"/>
+                <rect x="5.25" y="2" width="3.5" height="10" rx="1" fill="currentColor"/>
+                <rect x="9.5" y="2" width="3.5" height="10" rx="1" fill="currentColor"/>
+              </svg>
+            </button>
+          </div>
+          ${!projetoArquivado ? `<button class="btn btn-primary btn-sm" onclick="modalNovaTarefa('${PROJETO?.id}')">+ Nova tarefa</button>` : ''}
+        </div>
+      </div>
+      <div class="dash-toolbar-row">
+        <div class="task-toolbar-summary">
+          ${responsaveis.length > 1 ? `
+            <select class="resp-filter select-control" onchange="FILTRO_RESP_TAR=this.value;renderAbaTarefas(document.getElementById('aba'),TAREFAS)">
+              <option value="">Todos os responsáveis</option>
+              ${responsaveis.map(r => `<option value="${r.id}" ${FILTRO_RESP_TAR===r.id?'selected':''}>${esc(r.nome)}</option>`).join('')}
+            </select>` : ''}
+          ${statusTabs.map(s => {
+            const label = s === 'todos' ? 'Todos' : s;
+            const cnt = statusCountMap[s] || 0;
+            return `<button class="filter-btn ${FILTRO_STATUS_TAREFA===s?'ativo':''}" onclick="FILTRO_STATUS_TAREFA='${esc(s)}';renderAbaTarefas(document.getElementById('aba'),TAREFAS)">${label}${cnt ? `<span class="seg-count">${cnt}</span>` : ''}</button>`;
+          }).join('')}
+        </div>
+        <div class="task-view-kpi">${pendentes} pendente${pendentes!==1?'s':''} · ${concluidas} concluída${concluidas!==1?'s':''}</div>
+      </div>
+    </div>`;
+
+  el.innerHTML = toolbarHtml + `<div id="tarefas-view-container"></div>`;
+  const container = document.getElementById('tarefas-view-container');
+  if (TAREFAS_VIEW === 'lista') renderListaInterna(container, tarefas);
+  else renderKanbanInterno(container, tarefas);
+}
+
+function renderKanbanInterno(el, tarefas) {
+  if (!el) return;
+
+  const projetoArquivado = (
+    normalizarStatusProjeto(PROJETO?.status) === 'Arquivado' ||
+    (PROJETO?.grupo_status || null) === 'Arquivado'
+  );
+  const cols = [
+    { status: 'A fazer', cor: 'var(--gray)' },
+    { status: 'Em andamento', cor: 'var(--blue)' },
+    { status: 'Bloqueada', cor: 'var(--red)' },
+    { status: 'Concluída', cor: 'var(--green)' },
+  ];
+
+  const filtradas = filtrarColecaoTarefas(tarefas);
+
+  const timerAtivoPorTarefa = {};
+  Object.entries(TIMERS).forEach(([sid, timer]) => { timerAtivoPorTarefa[timer.tarefaId] = sid; });
 
   function cardHtml(t) {
-    const data = t.data ? prazoFmt(t.data, true) : '';
-    return `<div class="kanban-card" draggable="true"
-                 data-tarefa-id="${t.id}"
+    const minha = t.dono_id === EU?.id;
+    const canEdit = !projetoArquivado && (minha || podeEditar(PROJETO) || isAdmin());
+    const podeCron = !projetoArquivado && (minha || (t.colaboradores_ids || []).includes(EU?.id) || isAdmin());
+    const sessaoAtiva = timerAtivoPorTarefa[t.id];
+    const diasT = diasRestantes(t.data || null);
+    const urgt = diasT !== null && diasT <= 2 && t.status !== 'Concluída';
+
+    const cronHtml = sessaoAtiva
+      ? `<button class="btn btn-danger btn-sm kanban-cron-btn"
+                 onclick="pararCronometro('${sessaoAtiva}');event.stopPropagation()"
+                 title="Parar cronômetro">
+           <svg width="10" height="10" viewBox="0 0 10 10" fill="none" style="margin-right:3px">
+             <rect x="1.5" y="1.5" width="7" height="7" rx="1" fill="currentColor"/>
+           </svg>${TIMERS[sessaoAtiva] ? fmtDuracao(Math.floor((Date.now()-new Date((TIMERS[sessaoAtiva].inicio||'').replace(' ','T')+'Z').getTime())/1000)) : ''}
+         </button>`
+      : podeCron
+        ? `<button class="btn btn-ghost btn-sm kanban-cron-btn"
+                   onclick="iniciarCronometro('${t.id}','${esc(t.nome)}');event.stopPropagation()"
+                   title="Iniciar cronômetro" style="color:var(--green)">
+             <svg width="10" height="10" viewBox="0 0 10 10" fill="none" style="margin-right:3px">
+               <path d="M3 1.5l5 3.5-5 3.5v-7z" fill="currentColor"/>
+             </svg>Iniciar
+           </button>`
+        : '';
+
+    const colabIds = t.colaboradores_ids || [];
+    const colabNomes = t.colaboradores_nomes || [];
+    const maxAvs = 3;
+    const todosIds = [t.dono_id, ...colabIds];
+    const todosNomes = [t.dono_nome, ...colabNomes];
+    const visiveis = todosIds.slice(0, maxAvs);
+    const extra = todosIds.length - maxAvs;
+    const tooltipExtra = extra > 0 ? todosNomes.slice(maxAvs).join(', ') : '';
+
+    const avsHtml = `<div class="kanban-avs">
+      ${visiveis.map((id, i) => {
+        const nome = todosNomes[i] || '?';
+        const isDono = id === t.dono_id;
+        return `<div class="avatar avatar-sm kanban-av${isDono?' kanban-av-dono':''}"
+                     style="margin-left:${i>0?'-6px':'0'};border:2px solid var(--bg2)"
+                     title="${esc(nome)}${isDono?' (dono)':''}">${iniciais(nome)}</div>`;
+      }).join('')}
+      ${extra > 0
+        ? `<div class="avatar avatar-sm kanban-av-more" title="${esc(tooltipExtra)}"
+               style="margin-left:-6px;border:2px solid var(--bg2)">+${extra}</div>`
+        : ''}
+    </div>`;
+
+    const borderStyle = t.foco && minha
+      ? 'border-left:3px solid var(--accent);border-radius:0 var(--r) var(--r) 0'
+      : t.status === 'Bloqueada'
+        ? 'border-left:3px solid var(--red);border-radius:0 var(--r) var(--r) 0'
+        : '';
+
+    const isConcluida = t.status === 'Concluída';
+
+    return `<div class="kanban-card" draggable="true" data-tarefa-id="${t.id}"
+                 style="${borderStyle}"
                  ondragstart="event.dataTransfer.setData('tarefaId',this.dataset.tarefaId)"
                  onclick="modalEditarTarefa('${t.id}')">
-      <div style="font-size:var(--fs-090);margin-bottom:6px">${esc(t.nome)}</div>
-      <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
-        ${avatar(t.dono_nome,'avatar-sm')}
-        <span style="font-size:var(--fs-075);color:var(--text3)">${esc(t.dono_nome||'')}</span>
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:6px;margin-bottom:6px">
+        <div style="font-size:var(--fs-090);color:${isConcluida?'var(--text3)':'var(--text)'};
+                    ${isConcluida?'text-decoration:line-through;':''}line-height:1.35;flex:1">
+          ${esc(t.nome)}
+        </div>
+        ${minha ? `<button class="foco-pin ${t.foco?'ativo':''}" style="font-size:14px;flex-shrink:0"
+                            onclick="toggleFoco('${t.id}',${!!t.foco});event.stopPropagation()"
+                            title="${t.foco?'Remover foco':'Marcar como foco'}">${t.foco?'★':'☆'}</button>` : ''}
+      </div>
+      <div style="display:flex;gap:5px;flex-wrap:wrap;align-items:center;margin-bottom:8px">
         ${tag(t.prioridade, PT[t.prioridade])}
-        ${data ? `<span class="mono" style="font-size:var(--fs-075);color:var(--text3);margin-left:auto">${data}</span>` : ''}
+        ${t.data
+          ? `<span class="tag ${urgt?(diasT<=0?'tag-red':'tag-yellow'):'tag-gray'} mono" style="font-size:var(--fs-075)">
+               ${urgt?`<svg width="9" height="9" viewBox="0 0 24 24" fill="none" style="vertical-align:-1px;margin-right:1px"><path d="M12 3.5l9 15.5H3l9-15.5z" stroke="currentColor" stroke-width="2"/><path d="M12 9v5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><circle cx="12" cy="16.7" r="1" fill="currentColor"/></svg>`:''}${diasT<=0?'vencida':prazoFmt(t.data,true)}
+             </span>`
+          : ''}
+      </div>
+      <div style="display:flex;align-items:center;justify-content:space-between;border-top:1px solid var(--border);padding-top:8px;gap:6px">
+        ${avsHtml}
+        <div style="display:flex;gap:4px;align-items:center" onclick="event.stopPropagation()">
+          ${cronHtml}
+          ${canEdit && !isConcluida ? `
+            <button class="btn btn-ghost btn-icon btn-sm"
+                    onclick="modalEditarTarefa('${t.id}');event.stopPropagation()"
+                    title="Editar">
+              <svg width="12" height="12" viewBox="0 0 13 13" fill="none">
+                <path d="M2 9.5V11h1.5l5.5-5.5-1.5-1.5L2 9.5zM10.85 2.65a1 1 0 0 0-1.42 0l-.79.79 1.42 1.42.79-.79a1 1 0 0 0 0-1.42z" fill="currentColor"/>
+              </svg>
+            </button>` : ''}
+        </div>
       </div>
     </div>`;
   }
 
-  const colsHtml = cols.map(col => {
-    const items = tarefas.filter(t => t.status === col);
-    return `<div class="kanban-col" data-status="${col}"
+  function inlineAddHtml(status) {
+    const canCreate = !projetoArquivado && (podeEditar(PROJETO) || isAdmin());
+    if (!canCreate) return '';
+    const inputId = `kb-add-${status.replace(/\s/g,'_')}`;
+    return `<div class="kb-inline-add">
+      <input type="text" id="${inputId}" class="kb-inline-input"
+             placeholder="+ Nova tarefa"
+             onkeydown="if(event.key==='Enter'&&this.value.trim()){
+               criarTarefaKanban(this.value.trim(),'${status}');this.value='';
+             } else if(event.key==='Escape'){this.blur();}"
+             onclick="event.stopPropagation()">
+    </div>`;
+  }
+
+  let kbConclExpand = sessionStorage.getItem('kb_concl_expand') === '1';
+
+  const colsHtml = cols.map(({ status, cor }) => {
+    const items = filtradas.filter(t => t.status === status);
+    const isConc = status === 'Concluída';
+    const mostrar = isConc ? items.slice(0, kbConclExpand ? undefined : 2) : items;
+    const extra = isConc && !kbConclExpand && items.length > 2 ? items.length - 2 : 0;
+
+    return `<div class="kanban-col" data-status="${status}"
                  ondragover="event.preventDefault();this.classList.add('drag-over')"
                  ondragleave="this.classList.remove('drag-over')"
-                 ondrop="this.classList.remove('drag-over');
-                         mudarStatus(event.dataTransfer.getData('tarefaId'),'${col}',null)">
-      <div class="kanban-col-header">${col}${items.length > 0 ? ` <span style="color:var(--text3)">${items.length}</span>` : ''}</div>
-      ${items.map(cardHtml).join('') || `<div style="color:var(--text3);font-size:var(--fs-080);padding:12px 0;text-align:center">Arraste tarefas aqui</div>`}
+                 ondrop="this.classList.remove('drag-over');mudarStatus(event.dataTransfer.getData('tarefaId'),'${status}',null)">
+      <div class="kanban-col-header" style="border-top-color:${cor}">
+        ${status}
+        ${items.length > 0 ? `<span style="color:var(--text3);font-weight:400">${items.length}</span>` : ''}
+      </div>
+      ${mostrar.map(cardHtml).join('')}
+      ${extra > 0 ? `<div style="text-align:center;font-size:var(--fs-075);color:var(--text3);padding:6px 0;cursor:pointer"
+                         onclick="sessionStorage.setItem('kb_concl_expand','1');renderKanbanInterno(this.closest('#tarefas-view-container,#aba'),TAREFAS)">
+                       + ${extra} mais
+                     </div>` : ''}
+      ${inlineAddHtml(status)}
     </div>`;
   }).join('');
 
-  el.innerHTML = `<div class="kanban-board">${colsHtml}</div>`;
+  el.innerHTML = `<div class="task-view-surface"><div class="kanban-board">${colsHtml}</div></div>`;
+}
+
+async function criarTarefaKanban(nome, status) {
+  if (!PROJETO?.id || !nome.trim()) return;
+  try {
+    await req('POST', `/projetos/${PROJETO.id}/tarefas`, {
+      nome: nome.trim(),
+      status,
+      prioridade: 'Média',
+      complexidade: 'Moderada',
+    });
+    await recarregarProjeto('tarefas');
+  } catch (e) { toast(e.message, 'err'); }
 }
 
 // ── LISTA ──
@@ -3717,34 +4094,39 @@ function renderColabsStack(ids = [], max = 3) {
   }</div>`;
 }
 
-function renderLista(el, tarefas) {
-  const projetoArquivado = !isAdmin() && (
+function renderListaInterna(el, tarefas) {
+  const projetoArquivado = (
     normalizarStatusProjeto(PROJETO?.status) === 'Arquivado' ||
     (PROJETO?.grupo_status || null) === 'Arquivado'
   );
-  const pendentes = tarefas.filter(t => t.status !== 'Concluída');
-  const concluidas = tarefas.filter(t => t.status === 'Concluída');
-
-  // Filtro por responsável
-  const responsaveis = [...new Map(tarefas.map(t => [t.dono_id, { id: t.dono_id, nome: t.dono_nome }])).values()];
-  const todasFiltradas = FILTRO_RESP_TAR
-    ? tarefas.filter(t => t.dono_id === FILTRO_RESP_TAR)
-    : tarefas;
-  
-  // Filtro por busca de tarefa
-  const tarefasFiltradas = BUSCA_TAREFA
-    ? todasFiltradas.filter(t => t.nome.toLowerCase().includes(BUSCA_TAREFA.toLowerCase()))
-    : todasFiltradas;
-  
+  const tarefasFiltradas = filtrarColecaoTarefas(tarefas);
   const pendFilt = tarefasFiltradas.filter(t => t.status !== 'Concluída');
   const concFilt = tarefasFiltradas.filter(t => t.status === 'Concluída');
-  const todas = [...pendFilt, ...concFilt];
 
-  // Mapa de timers ativos por tarefa
+  let pendOrdenadas = [...pendFilt];
+  let concOrdenadas = [...concFilt];
+  if (LISTA_SORT.col) {
+    const dir = LISTA_SORT.dir === 'asc' ? 1 : -1;
+    const comparar = (a, b) => {
+      if (LISTA_SORT.col === 'nome') return dir * a.nome.localeCompare(b.nome);
+      if (LISTA_SORT.col === 'prioridade') return dir * ((PO[a.prioridade] ?? 1) - (PO[b.prioridade] ?? 1));
+      if (LISTA_SORT.col === 'complexidade') return dir * ((DO[a.complexidade] ?? 1) - (DO[b.complexidade] ?? 1));
+      if (LISTA_SORT.col === 'data') {
+        const da = a.data || '9999-99-99';
+        const db = b.data || '9999-99-99';
+        return dir * da.localeCompare(db);
+      }
+      return 0;
+    };
+    pendOrdenadas.sort(comparar);
+    concOrdenadas.sort(comparar);
+  }
+  const todas = [...pendOrdenadas, ...concOrdenadas];
+
   const timerAtivoPorTarefa = {};
   Object.entries(TIMERS).forEach(([sid, timer]) => { timerAtivoPorTarefa[timer.tarefaId] = sid; });
 
-  const rows = todas.map(t => {
+  function rowHtml(t) {
     const minha = t.dono_id === EU?.id;
     const canEdit = !projetoArquivado && (minha || podeEditar(PROJETO) || isAdmin());
     const pin = minha
@@ -3773,7 +4155,7 @@ function renderLista(el, tarefas) {
       <td>${tag(t.complexidade, DT[t.complexidade])}</td>
       <td>${tag(t.prioridade, PT[t.prioridade])}</td>
       <td onclick="event.stopPropagation()">
-        ${(minha || podeEditar(PROJETO) || isAdmin()) ? `
+        ${canEdit ? `
           <select class="status-sel status-select" onchange="mudarStatus('${t.id}',this.value,this)">
             ${['A fazer','Em andamento','Bloqueada','Concluída'].map(s =>
               `<option value="${s}" ${s===t.status?'selected':''}>${s}</option>`
@@ -3797,20 +4179,24 @@ function renderLista(el, tarefas) {
         ${canEdit ? `<button class="btn btn-danger btn-icon btn-sm" onclick="deletarTarefa('${t.id}')" title="Excluir tarefa"><svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M1.5 1.5l9 9M10.5 1.5l-9 9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></button>` : ''}
       </div></td>
     </tr>`;
-  }).join('');
+  }
+
+  const rowsPend = pendOrdenadas.map(t => rowHtml(t)).join('');
+  const rowsConc = concOrdenadas.map(t => rowHtml(t)).join('');
+  const tbodyConc = concOrdenadas.length ? `
+    <tr class="concluidas-sep" onclick="LISTA_CONCLUIDAS_EXPANDIDA=!LISTA_CONCLUIDAS_EXPANDIDA;renderListaInterna(this.closest('table').parentElement.parentElement,TAREFAS)"
+        style="cursor:pointer">
+      <td colspan="9" style="padding:8px 12px;font-size:var(--fs-075);color:var(--text3);background:var(--bg3);user-select:none">
+        ${LISTA_CONCLUIDAS_EXPANDIDA ? '▼' : '▶'}
+        ${concOrdenadas.length} concluída${concOrdenadas.length!==1?'s':''}
+        — clique para ${LISTA_CONCLUIDAS_EXPANDIDA?'recolher':'expandir'}
+      </td>
+    </tr>
+    ${LISTA_CONCLUIDAS_EXPANDIDA ? rowsConc : ''}` : '';
 
   el.innerHTML = `
-    <div class="tarefas-toolbar">
-      <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
-        <div class="tarefas-info">${pendFilt.length} pendente${pendFilt.length!==1?'s':''} · ${concFilt.length} concluída${concFilt.length!==1?'s':''}</div>
-        <input type="search" class="search-tarefa" placeholder="Buscar tarefa..." value="${esc(BUSCA_TAREFA)}" oninput="filtrarTarefasBusca(this.value)">
-        ${responsaveis.length > 1 ? `<select class="resp-filter" onchange="FILTRO_RESP_TAR=this.value;renderLista(document.getElementById('aba'),TAREFAS)">
-          <option value="">Todos os responsáveis</option>
-          ${responsaveis.map(r => `<option value="${r.id}" ${FILTRO_RESP_TAR===r.id?'selected':''}>${esc(r.nome)}</option>`).join('')}
-        </select>` : ''}
-      </div>
-      ${!projetoArquivado ? `<button class="btn btn-primary btn-sm" onclick="modalNovaTarefa('${PROJETO?.id}')">+ Nova tarefa</button>` : ''}
-    </div>
+    <div class="task-view-surface">
+    <div class="tarefas-info">${pendFilt.length} pendente${pendFilt.length!==1?'s':''} · ${concFilt.length} concluída${concFilt.length!==1?'s':''}</div>
     ${!projetoArquivado ? `<form class="quick-add-form" onsubmit="quickAddTarefa(event,'${PROJETO?.id}')">
       <input
         type="text"
@@ -3836,15 +4222,31 @@ function renderLista(el, tarefas) {
         <button type="button" class="btn btn-ghost btn-sm" onclick="quickAddCancelar()">✕</button>
       </div>
     </form>` : ''}
+    <div class="task-table-shell">
     <div class="table-wrap">
       <table>
         <thead><tr>
-          <th></th><th>Tarefa</th><th>Origem</th>
-          <th>Complexidade</th><th>Prioridade</th><th>Status</th>
-          <th>Tempo</th><th>Data</th><th>Ações</th>
+          <th></th>
+          <th onclick="ordenarLista('nome')" style="cursor:pointer;user-select:none">
+            Tarefa ${LISTA_SORT.col==='nome' ? (LISTA_SORT.dir==='asc'?'↑':'↓') : ''}
+          </th>
+          <th>Origem</th>
+          <th onclick="ordenarLista('complexidade')" style="cursor:pointer;user-select:none">
+            Complexidade ${LISTA_SORT.col==='complexidade' ? (LISTA_SORT.dir==='asc'?'↑':'↓') : ''}
+          </th>
+          <th onclick="ordenarLista('prioridade')" style="cursor:pointer;user-select:none">
+            Prioridade ${LISTA_SORT.col==='prioridade' ? (LISTA_SORT.dir==='asc'?'↑':'↓') : ''}
+          </th>
+          <th>Status</th>
+          <th>Tempo</th>
+          <th onclick="ordenarLista('data')" style="cursor:pointer;user-select:none">
+            Data ${LISTA_SORT.col==='data' ? (LISTA_SORT.dir==='asc'?'↑':'↓') : ''}
+          </th>
+          <th>Ações</th>
         </tr></thead>
-        <tbody>${rows || `<tr><td colspan="9" style="text-align:center;color:var(--text3);padding:24px"><div style="font-style:italic">Nenhuma tarefa ainda.</div><div style="font-size:var(--fs-080);margin-top:8px;color:var(--text2)">Comece por uma tarefa principal, com prioridade e prazo.</div><button class="btn btn-sm btn-primary" style="margin-top:10px" onclick="modalNovaTarefa('${PROJETO?.id}')">+ Criar primeira tarefa</button></td></tr>`}</tbody>
+        <tbody>${rowsPend || `<tr><td colspan="9" style="text-align:center;color:var(--text3);padding:24px"><div style="font-style:italic">Nenhuma tarefa ainda.</div><div style="font-size:var(--fs-080);margin-top:8px;color:var(--text2)">Comece por uma tarefa principal, com prioridade e prazo.</div>${!projetoArquivado ? `<button class="btn btn-sm btn-primary" style="margin-top:10px" onclick="modalNovaTarefa('${PROJETO?.id}')">+ Criar primeira tarefa</button>` : ''}</td></tr>`}${tbodyConc}</tbody>
       </table>
+    </div>
     </div>
     <div class="tasks-cards">
       ${todas.map(t => {
@@ -3855,7 +4257,7 @@ function renderLista(el, tarefas) {
         Object.entries(TIMERS).forEach(([sid, timer]) => { timerAtivoPorTarefa[timer.tarefaId] = sid; });
         const sessaoAtiva = timerAtivoPorTarefa[t.id];
         const data = t.data ? prazoFmt(t.data, true) : '—';
-        const statusBtn = (minha || podeEditar(PROJETO) || isAdmin())
+        const statusBtn = canEdit
           ? `<select class="status-sel status-select" style="height:28px;padding:2px 4px;font-size:var(--fs-075)" onchange="mudarStatus('${t.id}',this.value,this)">
               ${['A fazer','Em andamento','Bloqueada','Concluída'].map(s =>
                 `<option value="${s}" ${s===t.status?'selected':''}>${s}</option>`
@@ -3886,39 +4288,105 @@ function renderLista(el, tarefas) {
             </div>
           </div>
         </div>`;
-      }).join('') || `<div style="text-align:center;color:var(--text3);padding:24px;background:var(--bg2);border:1px solid var(--border);border-radius:var(--r2)"><div style="font-style:italic">Nenhuma tarefa ainda.</div><div style="font-size:var(--fs-080);margin-top:8px;color:var(--text2)">Comece por uma tarefa principal, com prioridade e prazo.</div><button class="btn btn-sm btn-primary" style="margin-top:10px" onclick="modalNovaTarefa('${PROJETO?.id}')">+ Criar primeira tarefa</button></div>`}
+      }).join('') || `<div style="text-align:center;color:var(--text3);padding:24px;background:var(--bg2);border:1px solid var(--border);border-radius:var(--r2)"><div style="font-style:italic">Nenhuma tarefa ainda.</div><div style="font-size:var(--fs-080);margin-top:8px;color:var(--text2)">Comece por uma tarefa principal, com prioridade e prazo.</div>${!projetoArquivado ? `<button class="btn btn-sm btn-primary" style="margin-top:10px" onclick="modalNovaTarefa('${PROJETO?.id}')">+ Criar primeira tarefa</button>` : ''}</div>`}
+    </div>
     </div>`;
+}
+
+function ordenarLista(col) {
+  if (LISTA_SORT.col === col) {
+    LISTA_SORT.dir = LISTA_SORT.dir === 'asc' ? 'desc' : 'asc';
+  } else {
+    LISTA_SORT.col = col;
+    LISTA_SORT.dir = 'asc';
+  }
+  const el = document.getElementById('tarefas-view-container') || document.getElementById('aba');
+  if (el) renderListaInterna(el, TAREFAS);
 }
 
 // ── MAPA DE FOCO ──
 function renderMapa(el, tarefas) {
-  const pendentes = [...tarefas.filter(t => t.status !== 'Concluída')]
-    .sort((a,b) => { const p = PO[a.prioridade]-PO[b.prioridade]; return p || DO[a.complexidade]-DO[b.complexidade]; });
+  const pendentes = [...tarefas.filter(t => t.status !== 'Concluída' && t.status !== 'Bloqueada')]
+    .sort((a, b) => {
+      const p = (PO[a.prioridade]??1) - (PO[b.prioridade]??1);
+      if (p) return p;
+      const d = (DO[a.complexidade]??1) - (DO[b.complexidade]??1);
+      if (d) return d;
+      const da = a.data || '9999-99-99';
+      const db = b.data || '9999-99-99';
+      return da.localeCompare(db);
+    });
 
   if (!pendentes.length) {
     el.innerHTML = `<div class="empty-state"><div class="empty-icon" aria-hidden="true"><svg width="36" height="36" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.6"/><path d="M8 12.5l2.6 2.6L16.5 9.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></div><div class="empty-text">Todas as tarefas concluídas</div></div>`;
     return;
   }
 
+  const bloqueadas = tarefas.filter(t => t.status === 'Bloqueada');
   el.innerHTML = `
-    <div class="mapa-intro">Ordenado por prioridade e depois complexidade — a tarefa #01 é o melhor ponto de partida.</div>
-    <div class="mapa-list">
-      ${pendentes.map((t,i) => {
-        const diasT = diasRestantes(t.data || null);
-        const urgtT = diasT !== null && diasT <= 2 && t.status !== 'Concluída';
-        return `
-        <div class="mapa-item ${t.foco&&t.dono_id===EU?.id?'is-foco':''}">
-          <div class="mapa-rank">${String(i+1).padStart(2,'0')}</div>
-          <div class="mapa-nome">${esc(t.nome)}</div>
-          <div class="mapa-tags">
-            <div class="resp-chip">${avatar(t.dono_nome,'avatar-sm')}</div>
-            ${tag(t.prioridade, PT[t.prioridade])}
-            ${tag(t.complexidade, DT[t.complexidade])}
-            ${t.foco&&t.dono_id===EU?.id ? '<span class="tag tag-purple">Meu foco</span>' : ''}
-            ${urgtT ? `<span class="tag tag-red mono" style="font-size:var(--fs-075)">${diasT <= 0 ? 'vencida' : diasT + 'd'}</span>` : ''}
+    <div class="task-view-surface">
+      <div class="task-view-head">
+        <div>
+          <div class="task-view-eyebrow">Mapa de foco</div>
+          <div class="task-view-title">${pendentes.length} prioridade${pendentes.length !== 1 ? 's' : ''} em sequência</div>
+          <div class="task-view-copy">Ordenado por prioridade, complexidade e prazo. A tarefa #01 é o melhor ponto de partida.</div>
+        </div>
+        <div class="task-view-kpi">${bloqueadas.length} bloqueada${bloqueadas.length !== 1 ? 's' : ''}</div>
+      </div>
+      <div class="mapa-intro">Use esta fila para decidir a próxima tarefa a iniciar sem perder contexto.</div>
+      ${bloqueadas.length ? `
+        <div class="task-view-surface" style="padding:12px 14px;background:rgba(231,68,68,.06);border-color:rgba(231,68,68,.2);box-shadow:none">
+          <div class="task-view-eyebrow" style="color:var(--red)">Bloqueadas</div>
+          <div class="task-view-copy" style="color:var(--red)">Não iniciar agora:</div>
+          <div class="task-status-strip">
+            ${bloqueadas.map(t => `<span class="tag tag-red">${esc(t.nome)}</span>`).join('')}
           </div>
-        </div>`;
-      }).join('')}
+        </div>` : ''}
+      <div class="mapa-list">
+        ${pendentes.map((t, i) => {
+          const minha = t.dono_id === EU?.id;
+          const podeCron = minha || (t.colaboradores_ids||[]).includes(EU?.id) || isAdmin();
+          const sessaoAtiva = Object.entries(TIMERS).find(([,timer]) => timer.tarefaId === t.id)?.[0];
+          const diasT = diasRestantes(t.data || null);
+          const urgt = diasT !== null && diasT <= 2;
+
+          const cronHtml = sessaoAtiva
+            ? `<button class="btn btn-danger btn-sm"
+                       onclick="pararCronometro('${sessaoAtiva}');event.stopPropagation()"
+                       style="flex-shrink:0">
+                 <svg width="10" height="10" viewBox="0 0 10 10" fill="none" style="margin-right:3px">
+                   <rect x="1.5" y="1.5" width="7" height="7" rx="1" fill="currentColor"/>
+                 </svg>Parar
+               </button>`
+            : podeCron
+              ? `<button class="btn btn-ghost btn-sm"
+                         onclick="iniciarCronometro('${t.id}','${esc(t.nome)}');event.stopPropagation()"
+                         style="color:var(--green);flex-shrink:0">
+                   <svg width="10" height="10" viewBox="0 0 10 10" fill="none" style="margin-right:3px">
+                     <path d="M3 1.5l5 3.5-5 3.5v-7z" fill="currentColor"/>
+                   </svg>Iniciar
+                 </button>`
+              : '';
+
+          return `
+          <div class="mapa-item ${t.foco&&minha?'is-foco':''}">
+            <div class="mapa-rank">${String(i+1).padStart(2,'0')}</div>
+            <div class="mapa-body">
+              <div class="mapa-nome">${esc(t.nome)}</div>
+              <div class="mapa-sub">${esc(t.dono_nome || 'Sem responsável')}</div>
+            </div>
+            <div class="mapa-tags">
+              ${tag(t.prioridade, PT[t.prioridade])}
+              ${tag(t.complexidade, DT[t.complexidade])}
+              ${t.foco&&minha ? '<span class="tag tag-purple">Meu foco</span>' : ''}
+              ${urgt ? `<span class="tag ${diasT<=0?'tag-red':'tag-yellow'} mono" style="font-size:var(--fs-075)">
+                          ${diasT<=0?'vencida':diasT+'d'}
+                        </span>` : ''}
+              ${cronHtml}
+            </div>
+          </div>`;
+        }).join('')}
+      </div>
     </div>`;
 }
 
@@ -3968,15 +4436,40 @@ async function renderRelatorio(el, tarefas) {
         ${totalGrupo > 0 ? `<div class="rel-group-total">${fmtHoras(totalGrupo)}</div>` : ''}
       </div>
       ${lista.map(t => `
-        <div class="rel-item">
+        <div class="rel-item" style="cursor:pointer"
+             onclick="expandirSessoes('${t.id}')"
+             title="Ver detalhes de tempo desta tarefa">
           <div class="rel-nome">${esc(t.nome)}</div>
           <div class="resp-chip">${avatar(t.dono_nome,'avatar-sm')}</div>
           ${horasItem(t.id)}
+          <svg width="12" height="12" viewBox="0 0 12 12" fill="none" style="color:var(--text3);flex-shrink:0">
+            <path d="M4.5 2l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
         </div>`).join('')}
     </div>`;
   });
 
-  el.innerHTML = html || `<div class="empty-state"><div class="empty-icon" aria-hidden="true"><svg width="36" height="36" viewBox="0 0 24 24" fill="none"><rect x="7" y="4" width="10" height="15" rx="2" stroke="currentColor" stroke-width="1.6"/><path d="M10 4.5h4M10 9h4M10 12h4M10 15h4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></div><div class="empty-text">Nenhuma tarefa</div></div>`;
+  const exportBtn = PROJETO?.id && Object.values(resumoMap).some(r => r.length > 0)
+    ? `<button class="btn btn-sm" onclick="exportarTempoProjetoCSV('${PROJETO.id}')">
+         ↓ Exportar CSV
+       </button>`
+    : '';
+  const totalHorasProjeto = Object.values(resumoMap).reduce((sum, lista) =>
+    sum + (lista || []).reduce((acc, item) => acc + (parseFloat(item.horas_liquidas) || 0), 0)
+  , 0);
+
+  el.innerHTML = `
+    <div class="task-view-surface">
+      <div class="task-view-head">
+        <div>
+          <div class="task-view-eyebrow">Relatório do projeto</div>
+          <div class="task-view-title">${tarefas.length} tarefa${tarefas.length !== 1 ? 's' : ''}</div>
+          <div class="task-view-copy">Tempo registrado por status e por tarefa.</div>
+        </div>
+        ${exportBtn || `<div class="task-view-kpi">${fmtHoras(totalHorasProjeto)}</div>`}
+      </div>
+      ${html || `<div class="empty-state"><div class="empty-icon" aria-hidden="true"><svg width="36" height="36" viewBox="0 0 24 24" fill="none"><rect x="7" y="4" width="10" height="15" rx="2" stroke="currentColor" stroke-width="1.6"/><path d="M10 4.5h4M10 9h4M10 12h4M10 15h4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></div><div class="empty-text">Nenhuma tarefa</div></div>`}
+    </div>`;
 }
 
 // ── DECISÕES ──
@@ -4080,15 +4573,16 @@ async function deletarDecisao(id, projetoId) {
 
 async function recarregarProjeto(aba) {
   if (!PROJETO) return;
-  const abaAtiva = aba || document.querySelector('.aba.ativa')?.dataset.aba || 'lista';
+  const abaAtual = aba || document.querySelector('.aba.ativa')?.dataset.aba || 'tarefas';
+  const abaAtiva = ['tarefas', 'mapa', 'relatorio', 'aovivo'].includes(abaAtual) ? abaAtual : 'tarefas';
   const [proj, tarefas, decisoes, resumoHoras] = await Promise.all([
     req('GET', `/projetos/${PROJETO.id}`),
     req('GET', `/projetos/${PROJETO.id}/tarefas`),
     req('GET', `/projetos/${PROJETO.id}/decisoes`),
     req('GET', `/projetos/${PROJETO.id}/horas-por-usuario`).catch(() => []),
   ]);
-  PROJETO = proj; TAREFAS = tarefas;
-  renderProjeto(proj, tarefas, decisoes, abaAtiva, resumoHoras);
+  PROJETO = proj; TAREFAS = normalizarColaboradoresTarefas(tarefas);
+  renderProjeto(proj, TAREFAS, decisoes, abaAtiva, resumoHoras);
 }
 
 // ── MODAIS ──
@@ -4408,7 +4902,7 @@ function filtrarTarefasBusca(value) {
   clearTimeout(_buscaTarefaTick);
   _buscaTarefaTick = setTimeout(() => {
     BUSCA_TAREFA = value;
-    renderLista(document.getElementById('aba'), TAREFAS);
+    renderAbaTarefas(document.getElementById('aba'), TAREFAS);
   }, 180);
 }
 
@@ -4911,8 +5405,8 @@ function atualizarTempoListaVisivel() {
   const abaEl = document.getElementById('aba');
   if (!abaEl || !PROJETO) return;
   const abaAtiva = document.querySelector('.aba.ativa')?.dataset.aba;
-  if (abaAtiva !== 'lista') return;
-  renderLista(abaEl, TAREFAS);
+  if (abaAtiva !== 'tarefas' && abaAtiva !== 'lista' && abaAtiva !== 'kanban') return;
+  renderAbaTarefas(abaEl, TAREFAS);
 }
 
 async function iniciarCronometro(tarefaId, tarefaNome) {
