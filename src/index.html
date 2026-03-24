@@ -542,6 +542,8 @@ tr[data-status="Concluída"]    { border-left:2px solid var(--green); opacity:.7
 .task-toolbar-main{display:flex;align-items:center;gap:10px;flex-wrap:wrap;flex:1;min-width:0}
 .task-toolbar-actions{display:flex;align-items:center;gap:8px;flex-shrink:0}
 .task-toolbar-summary{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.task-mobile-secondary{width:100%}
+.task-mobile-filter-btn{display:none}
 .task-view-surface{background:linear-gradient(180deg, rgba(255,255,255,.05), rgba(255,255,255,.018)), var(--glass-bg);backdrop-filter:var(--glass-blur);-webkit-backdrop-filter:var(--glass-blur);border:1px solid var(--glass-border);border-radius:18px;box-shadow:var(--glass-shadow-soft);padding:14px 16px}
 .task-view-surface + .task-view-surface{margin-top:14px}
 .task-view-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:12px}
@@ -622,6 +624,9 @@ tr:hover .td-ações{opacity:1}
   .task-view-toolbar{top:56px}
   .task-toolbar-main,.task-toolbar-actions,.task-toolbar-summary{width:100%}
   .task-toolbar-actions{justify-content:space-between}
+  .task-mobile-filter-btn{display:inline-flex;width:auto!important}
+  .task-mobile-secondary{display:none}
+  .task-mobile-secondary.is-open{display:flex}
   .task-view-head,.task-live-item{flex-direction:column;align-items:flex-start}
   .task-live-aside{width:100%;justify-content:space-between}
   .tarefas-toolbar .search-tarefa{width:100%!important;flex:1}
@@ -1208,6 +1213,8 @@ let _gruposDash = [];
 let FILTRO_RESP_TAR = '';
 let FILTRO_ORIGEM_TAREFAS = 'todos';
 let FILTRO_STATUS_TAREFA = 'todos';
+let TASK_MOBILE_FILTERS_OPEN = false;
+let GRUPO_TASK_MOBILE_FILTERS_OPEN = false;
 let TAREFAS_VIEW = 'kanban'; // 'kanban' | 'lista'
 let LISTA_SORT = { col: null, dir: 'asc' };
 let LISTA_CONCLUIDAS_EXPANDIDA = false;
@@ -3484,9 +3491,12 @@ async function renderGrupoAbaTarefas(el) {
               <button class="segmented-btn" id="gt-origem-comp" onclick="window._gtFiltroOrigem='compartilhadas';window._gtAplicar();document.getElementById('gt-origem-comp').classList.add('ativo');document.getElementById('gt-origem-todos').classList.remove('ativo');document.getElementById('gt-origem-meus').classList.remove('ativo')">Compartilhadas${compartilhadas ? `<span class="seg-count">${compartilhadas}</span>` : ''}</button>
             </div>
           </div>
-          <div class="task-view-kpi">${tarefas.length} tarefa${tarefas.length!==1?'s':''}</div>
+          <div class="task-toolbar-actions">
+            <button class="btn btn-sm task-mobile-filter-btn" onclick="window._gtFiltersOpen=!window._gtFiltersOpen;window._gtAplicar()">Filtros</button>
+            <div class="task-view-kpi">${tarefas.length} tarefa${tarefas.length!==1?'s':''}</div>
+          </div>
         </div>
-        <div class="dash-toolbar-row">
+        <div class="dash-toolbar-row task-mobile-secondary ${window._gtFiltersOpen ? 'is-open' : ''}">
           <div class="task-toolbar-summary">
             ${projetosFiltro.length > 1 ? `<select class="select-control" onchange="window._gtFiltroProjeto=this.value;window._gtAplicar()">
               <option value="">Todos os projetos</option>
@@ -3521,6 +3531,7 @@ async function renderGrupoAbaTarefas(el) {
     window._gtFiltroResp = '';
     window._gtFiltroOrigem = 'todos';
     window._gtBusca = '';
+    window._gtFiltersOpen = false;
     aplicar();
   } catch (e) { el.innerHTML = `<div class="error-block">${esc(e.message)}</div>`; }
 }
@@ -3866,6 +3877,7 @@ function renderAbaTarefas(el, tarefas) {
           </div>
         </div>
         <div class="task-toolbar-actions">
+          <button class="btn btn-sm task-mobile-filter-btn" onclick="TASK_MOBILE_FILTERS_OPEN=!TASK_MOBILE_FILTERS_OPEN;renderAbaTarefas(document.getElementById('aba'),TAREFAS)">Filtros</button>
           <div class="view-toggle">
             <button class="view-toggle-btn ${TAREFAS_VIEW==='lista'?'ativo':''}"
                     onclick="TAREFAS_VIEW='lista';renderAbaTarefas(document.getElementById('aba'),TAREFAS)"
@@ -3889,21 +3901,21 @@ function renderAbaTarefas(el, tarefas) {
           ${!projetoArquivado ? `<button class="btn btn-primary btn-sm" onclick="modalNovaTarefa('${PROJETO?.id}')">+ Nova tarefa</button>` : ''}
         </div>
       </div>
-      <div class="dash-toolbar-row">
-        <div class="task-toolbar-summary">
-          ${responsaveis.length > 1 ? `
-            <select class="resp-filter select-control" onchange="FILTRO_RESP_TAR=this.value;renderAbaTarefas(document.getElementById('aba'),TAREFAS)">
-              <option value="">Todos os responsáveis</option>
-              ${responsaveis.map(r => `<option value="${r.id}" ${FILTRO_RESP_TAR===r.id?'selected':''}>${esc(r.nome)}</option>`).join('')}
-            </select>` : ''}
-          ${statusTabs.map(s => {
-            const label = s === 'todos' ? 'Todos' : s;
-            const cnt = statusCountMap[s] || 0;
-            return `<button class="filter-btn ${FILTRO_STATUS_TAREFA===s?'ativo':''}" onclick="FILTRO_STATUS_TAREFA='${esc(s)}';renderAbaTarefas(document.getElementById('aba'),TAREFAS)">${label}${cnt ? `<span class="seg-count">${cnt}</span>` : ''}</button>`;
-          }).join('')}
+      <div class="dash-toolbar-row task-mobile-secondary ${TASK_MOBILE_FILTERS_OPEN ? 'is-open' : ''}">
+          <div class="task-toolbar-summary">
+            ${responsaveis.length > 1 ? `
+              <select class="resp-filter select-control" onchange="FILTRO_RESP_TAR=this.value;renderAbaTarefas(document.getElementById('aba'),TAREFAS)">
+                <option value="">Todos os responsáveis</option>
+                ${responsaveis.map(r => `<option value="${r.id}" ${FILTRO_RESP_TAR===r.id?'selected':''}>${esc(r.nome)}</option>`).join('')}
+              </select>` : ''}
+            ${statusTabs.map(s => {
+              const label = s === 'todos' ? 'Todos' : s;
+              const cnt = statusCountMap[s] || 0;
+              return `<button class="filter-btn ${FILTRO_STATUS_TAREFA===s?'ativo':''}" onclick="FILTRO_STATUS_TAREFA='${esc(s)}';renderAbaTarefas(document.getElementById('aba'),TAREFAS)">${label}${cnt ? `<span class="seg-count">${cnt}</span>` : ''}</button>`;
+            }).join('')}
+          </div>
+          <div class="task-view-kpi">${pendentes} pendente${pendentes!==1?'s':''} · ${concluidas} concluída${concluidas!==1?'s':''}</div>
         </div>
-        <div class="task-view-kpi">${pendentes} pendente${pendentes!==1?'s':''} · ${concluidas} concluída${concluidas!==1?'s':''}</div>
-      </div>
     </div>`;
 
   el.innerHTML = toolbarHtml + `<div id="tarefas-view-container"></div>`;
