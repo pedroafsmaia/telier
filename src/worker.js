@@ -44,6 +44,8 @@ function err(msg, status = 400, cors = {}, extraHeaders = {}) {
 const PBKDF2_ITER = 10000; // mantido apenas para verificar hashes pbkdf2 legados
 const PBKDF2_ALGO = 'SHA-256';
 const LEGACY_PLAIN = 'legacy_plain';
+const MIN_PASSWORD = 8;
+const MAX_PASSWORD = 256;
 
 function toBase64(bytes) {
   let s = '';
@@ -139,6 +141,12 @@ async function verificarSenha(senha, stored) {
 
 const RATE_WINDOW_MS = 60000;
 const RATE_AUTH_LIMIT = 12;
+// ── RATE LIMITING ──
+// IMPORTANT: _rateBuckets is in-memory and local to each Worker instance.
+// Cloudflare may run multiple instances simultaneously, so these limits are
+// per-instance, not globally enforced. For production, migrate to a Durable
+// Object (see docs/context.md § rate-limiting) for consistent global limits.
+// Current implementation is adequate for small teams (single-instance traffic).
 const _rateBuckets = new Map();
 
 function getClientIp(request) {
@@ -149,6 +157,14 @@ function checkRateLimit(request, scope, limit = RATE_AUTH_LIMIT, windowMs = RATE
   const ip = getClientIp(request);
   const now = Date.now();
   const key = `${scope}:${ip}`;
+
+  // Prune expired entries periodically to prevent unbounded growth
+  if (_rateBuckets.size > 2000) {
+    for (const [k, b] of _rateBuckets) {
+      if (now > b.resetAt) _rateBuckets.delete(k);
+    }
+  }
+
   let bucket = _rateBuckets.get(key);
   if (!bucket || now > bucket.resetAt) {
     bucket = { count: 0, resetAt: now + windowMs };
@@ -370,6 +386,7 @@ async function ensureUserSecuritySchema(env) {
   // D1/SQLite does not support DEFAULT (expression) in ALTER TABLE ADD COLUMN — only literal values.
   // Existing rows that predate the column receive NULL; new rows use the DEFAULT defined in CREATE TABLE above.
   try { await env.DB.prepare('ALTER TABLE sessoes ADD COLUMN criado_em TEXT DEFAULT NULL').run(); } catch {}
+  try { await env.DB.prepare('CREATE INDEX IF NOT EXISTS idx_sessoes_id ON sessoes(id)').run(); } catch {}
   try { await env.DB.prepare('CREATE INDEX IF NOT EXISTS idx_sessoes_expira_em ON sessoes(expira_em)').run(); } catch {}
   try { await env.DB.prepare('CREATE INDEX IF NOT EXISTS idx_sessoes_usuario ON sessoes(usuario_id)').run(); } catch {}
   try { await env.DB.prepare('CREATE INDEX IF NOT EXISTS idx_permissoes_projeto_usuario ON permissoes_projeto(usuario_id)').run(); } catch {}
@@ -407,6 +424,9 @@ async function ensureUserSecuritySchema(env) {
       FOREIGN KEY (sessao_id) REFERENCES sessoes_tempo(id) ON DELETE CASCADE
     )
   `).run(); } catch {}
+  // Schedule periodic cleanup of expired sessions (best-effort, non-blocking)
+  // We do not await this — a failure here must never break the request.
+  env.DB.prepare("DELETE FROM sessoes WHERE expira_em < datetime('now', '-1 day')").run().catch(() => {});
   _userSecuritySchemaReady = true;
 }
 
@@ -496,6 +516,70 @@ async function ensureIndexes(env) {
   env._idxReady = true;
 }
 
+let _allSchemasReady = false;
+
+async function ensureAllSchemas(env) {
+  if (_allSchemasReady) return;
+  await Promise.all([
+    ensureUserSecuritySchema(env),
+    ensureGrupoSchema(env),
+    ensureShareSchema(env),
+    ensureTaskSchema(env),
+  ]);
+  await ensureIndexes(env); // must run after tables exist
+  _allSchemasReady = true;
+}
+
+const MAX_BODY_BYTES = 64 * 1024; // 64 KB
+
+async function readJsonBody(request) {
+  const ct = (request.headers.get('Content-Type') || '').split(';')[0].trim();
+  if (ct && ct !== 'application/json') {
+    throw Object.assign(new Error('Content-Type deve ser application/json'), { status: 415 });
+  }
+  const contentLength = Number(request.headers.get('Content-Length') || 0);
+  if (contentLength > MAX_BODY_BYTES) {
+    throw Object.assign(new Error('Payload too large'), { status: 413 });
+  }
+  const arrayBuf = await request.arrayBuffer();
+  if (arrayBuf.byteLength > MAX_BODY_BYTES) {
+    throw Object.assign(new Error('Payload too large'), { status: 413 });
+  }
+  try {
+    return JSON.parse(new TextDecoder().decode(arrayBuf));
+  } catch {
+    throw Object.assign(new Error('JSON inválido'), { status: 400 });
+  }
+}
+
+function clampStr(value, max, fieldName) {
+  if (value === undefined || value === null) return value;
+  const s = String(value);
+  if (s.length > max) throw Object.assign(
+    new Error(`Campo "${fieldName}" excede o limite de ${max} caracteres`),
+    { status: 400 }
+  );
+  return s;
+}
+
+function validateDate(value, fieldName) {
+  if (value === undefined || value === null || value === '') return null;
+  const s = String(value).trim();
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(s)) {
+    throw Object.assign(new Error(`Campo "${fieldName}" deve ser uma data válida (YYYY-MM-DD)`), { status: 400 });
+  }
+  return s;
+}
+
+function validatePositiveNumber(value, fieldName) {
+  if (value === undefined || value === null || value === '') return null;
+  const n = Number(value);
+  if (!Number.isFinite(n) || n < 0) {
+    throw Object.assign(new Error(`Campo "${fieldName}" deve ser um número positivo`), { status: 400 });
+  }
+  return n;
+}
+
 export default {
   async fetch(request, env) {
     const startedAt = Date.now();
@@ -504,22 +588,22 @@ export default {
     const path = url.pathname;
     const method = request.method;
     const cors = getCors(request, env);
-    const responseHeaders = { 'X-Request-Id': reqId };
+    const responseHeaders = {
+      'X-Request-Id': reqId,
+      'X-Content-Type-Options': 'nosniff',
+      'X-Frame-Options': 'DENY',
+      'Referrer-Policy': 'strict-origin-when-cross-origin',
+      'Permissions-Policy': 'camera=(), microphone=(), geolocation=()',
+    };
 
-    if (method === 'OPTIONS') return new Response(null, { headers: cors });
+    if (method === 'OPTIONS') return new Response(null, { headers: { ...cors, ...responseHeaders } });
 
     // Helper local para respostas com cors correto
-    const ok = (data, status = 200) => json(data, status, cors, responseHeaders);
+    const ok = (data, status = 200, extraHeaders = {}) => json(data, status, cors, { ...responseHeaders, ...extraHeaders });
     const fail = (msg, status = 400) => err(msg, status, cors, responseHeaders);
 
     try {
-    await ensureUserSecuritySchema(env);
-    await ensureIndexes(env);
-    if (env.AUTO_SCHEMA_SYNC === '1') {
-      await ensureGrupoSchema(env);
-      await ensureTaskSchema(env);
-      await ensureShareSchema(env);
-    }
+    await ensureAllSchemas(env);
 
     // ── NOTIFICAÇÕES ──
     if (path === '/notificacoes' && method === 'GET') {
@@ -565,13 +649,52 @@ export default {
       return ok({ ok: true });
     }
 
+    if (path === '/notificacoes/gerar-automaticas' && method === 'POST') {
+      const [u, e] = await requireAuth(request, env);
+      if (e) return fail('Não autorizado', 401);
+
+      const sessoes = await env.DB.prepare(`
+        SELECT st.id, st.tarefa_id, t.nome as tarefa_nome
+        FROM sessoes_tempo st
+        JOIN tarefas t ON t.id = st.tarefa_id
+        WHERE st.usuario_id = ?
+          AND st.fim IS NULL
+          AND (julianday('now') - julianday(st.inicio)) * 24 >= 4
+      `).bind(u.uid).all();
+
+      for (const s of sessoes.results || []) {
+        await criarNotificacaoCompartilhamento(env, {
+          usuarioId: u.uid,
+          tipo: 'timer_longo',
+          escopo: 'tarefa',
+          entidadeId: s.tarefa_id,
+          titulo: 'Cronômetro rodando há mais de 4h',
+          mensagem: s.tarefa_nome,
+          atorId: null,
+        });
+      }
+      return ok({ geradas: (sessoes.results || []).length });
+    }
+
     // ── SETUP ──
     if (path === '/auth/setup' && method === 'POST') {
-      if (!checkRateLimit(request, 'auth_setup', 6)) return fail('Muitas tentativas. Aguarde um minuto.', 429);
+      {
+        const ip = getClientIp(request);
+        const key = `auth_setup:${ip}`;
+        if (!checkRateLimit(request, 'auth_setup', 6)) {
+          const bucket = _rateBuckets.get(key);
+          const retryAfter = bucket ? Math.ceil((bucket.resetAt - Date.now()) / 1000) : 60;
+          return err('Muitas tentativas. Aguarde um minuto.', 429, cors, { ...responseHeaders, 'Retry-After': String(retryAfter) });
+        }
+      }
       const existing = await env.DB.prepare('SELECT id FROM usuarios WHERE papel = "admin"').first();
       if (existing) return fail('Admin já existe', 400);
-      const { nome, usuario_login, senha } = await request.json();
+      const _body = await readJsonBody(request);
+      const nome = clampStr(_body.nome, 200, 'nome');
+      const usuario_login = clampStr(_body.usuario_login, 60, 'usuario_login');
+      const senha = clampStr(_body.senha, MAX_PASSWORD, 'senha');
       if (!nome || !usuario_login || !senha) return fail('Preencha todos os campos');
+      if (senha.length < MIN_PASSWORD) return fail(`A senha deve ter no mínimo ${MIN_PASSWORD} caracteres`, 400);
       const login = usuario_login.toLowerCase().trim().replace(/\s+/g, '_');
       const loginExiste = await env.DB.prepare('SELECT id FROM usuarios WHERE login = ?').bind(login).first();
       if (loginExiste) return fail('Nome de usuário já existe');
@@ -589,9 +712,21 @@ export default {
 
     // ── AUTO CADASTRO (USUÁRIO COMUM) ──
     if (path === '/auth/register' && method === 'POST') {
-      if (!checkRateLimit(request, 'auth_register', 8)) return fail('Muitas tentativas. Aguarde um minuto.', 429);
-      const { nome, usuario_login, senha } = await request.json();
+      {
+        const ip = getClientIp(request);
+        const key = `auth_register:${ip}`;
+        if (!checkRateLimit(request, 'auth_register', 8)) {
+          const bucket = _rateBuckets.get(key);
+          const retryAfter = bucket ? Math.ceil((bucket.resetAt - Date.now()) / 1000) : 60;
+          return err('Muitas tentativas. Aguarde um minuto.', 429, cors, { ...responseHeaders, 'Retry-After': String(retryAfter) });
+        }
+      }
+      const _body = await readJsonBody(request);
+      const nome = clampStr(_body.nome, 200, 'nome');
+      const usuario_login = clampStr(_body.usuario_login, 60, 'usuario_login');
+      const senha = clampStr(_body.senha, MAX_PASSWORD, 'senha');
       if (!nome || !usuario_login || !senha) return fail('Preencha todos os campos');
+      if (senha.length < MIN_PASSWORD) return fail(`A senha deve ter no mínimo ${MIN_PASSWORD} caracteres`, 400);
       const login = usuario_login.toLowerCase().trim().replace(/\s+/g, '_');
       const existing = await env.DB.prepare('SELECT id FROM usuarios WHERE login = ?').bind(login).first();
       if (existing) return fail('Nome de usuário já existe');
@@ -605,8 +740,18 @@ export default {
 
     // ── LOGIN por usuario_login ──
     if (path === '/auth/login' && method === 'POST') {
-      if (!checkRateLimit(request, 'auth_login', 10)) return fail('Muitas tentativas de login. Aguarde um minuto.', 429);
-      const { usuario_login, senha } = await request.json();
+      {
+        const ip = getClientIp(request);
+        const key = `auth_login:${ip}`;
+        if (!checkRateLimit(request, 'auth_login', 10)) {
+          const bucket = _rateBuckets.get(key);
+          const retryAfter = bucket ? Math.ceil((bucket.resetAt - Date.now()) / 1000) : 60;
+          return err('Muitas tentativas de login. Aguarde um minuto.', 429, cors, { ...responseHeaders, 'Retry-After': String(retryAfter) });
+        }
+      }
+      const _body = await readJsonBody(request);
+      const usuario_login = clampStr(_body.usuario_login, 60, 'usuario_login');
+      const senha = clampStr(_body.senha, MAX_PASSWORD, 'senha');
       if (!usuario_login || !senha) return fail('Usuário e senha obrigatórios');
       const login = usuario_login.toLowerCase().trim().replace(/\s+/g, '_');
       const usuario = await env.DB.prepare(
@@ -664,9 +809,14 @@ export default {
     if (path === '/auth/trocar-senha' && method === 'POST') {
       const [u, e] = await requireAuth(request, env);
       if (e) return fail('Não autorizado', 401);
-      const { senha_atual, nova_senha } = await request.json();
-      if (!senha_atual || !nova_senha || String(nova_senha).length < 8) {
-        return fail('Informe senha atual e nova senha com no mínimo 8 caracteres', 400);
+      const _body = await readJsonBody(request);
+      const senha_atual = clampStr(_body.senha_atual, MAX_PASSWORD, 'senha_atual');
+      const nova_senha = clampStr(_body.nova_senha, MAX_PASSWORD, 'nova_senha');
+      if (!senha_atual || !nova_senha) {
+        return fail('Informe senha atual e nova senha', 400);
+      }
+      if (nova_senha.length < MIN_PASSWORD) {
+        return fail(`A senha deve ter no mínimo ${MIN_PASSWORD} caracteres`, 400);
       }
       const row = await env.DB.prepare('SELECT senha_hash FROM usuarios WHERE id = ?').bind(u.uid).first();
       if (!row) return fail('Usuário não encontrado', 404);
@@ -685,15 +835,20 @@ export default {
       const [u, e] = await requireAuth(request, env);
       if (e) return fail('Não autorizado', 401);
       const lista = await env.DB.prepare('SELECT id, nome, login as usuario_login, papel FROM usuarios ORDER BY nome').all();
-      return ok(lista.results);
+      return ok(lista.results, 200, { 'Cache-Control': 'private, max-age=30' });
     }
 
     if (path === '/usuarios' && method === 'POST') {
       const [u, e] = await requireAuth(request, env);
       if (e) return fail('Não autorizado', 401);
       if (!isAdmin(u)) return fail('Sem permissão', 403);
-      const { nome, usuario_login, senha, papel = 'membro' } = await request.json();
+      const _body = await readJsonBody(request);
+      const nome = clampStr(_body.nome, 200, 'nome');
+      const usuario_login = clampStr(_body.usuario_login, 60, 'usuario_login');
+      const senha = clampStr(_body.senha, MAX_PASSWORD, 'senha');
+      const papel = clampStr(_body.papel ?? 'membro', 80, 'papel');
       if (!nome || !usuario_login || !senha) return fail('Campos obrigatórios');
+      if (senha.length < MIN_PASSWORD) return fail(`A senha deve ter no mínimo ${MIN_PASSWORD} caracteres`, 400);
       const login = usuario_login.toLowerCase().trim().replace(/\s+/g, '_');
       const existing = await env.DB.prepare('SELECT id FROM usuarios WHERE login = ?').bind(login).first();
       if (existing) return fail('Nome de usuário já existe');
@@ -711,8 +866,11 @@ export default {
       if (e) return fail('Não autorizado', 401);
       if (!isAdmin(u)) return fail('Sem permissão', 403);
       const usuarioId = matchUsuarioSenha[1];
-      const { nova_senha, exigir_troca = true } = await request.json();
-      if (!nova_senha || String(nova_senha).length < 8) return fail('Nova senha deve ter no mínimo 8 caracteres', 400);
+      const _body = await readJsonBody(request);
+      const nova_senha = clampStr(_body.nova_senha, MAX_PASSWORD, 'nova_senha');
+      const exigir_troca = _body.exigir_troca === undefined ? true : !!_body.exigir_troca;
+      if (!nova_senha) return fail('Nova senha é obrigatória', 400);
+      if (nova_senha.length < MIN_PASSWORD) return fail(`A senha deve ter no mínimo ${MIN_PASSWORD} caracteres`, 400);
       const alvo = await env.DB.prepare('SELECT id FROM usuarios WHERE id = ?').bind(usuarioId).first();
       if (!alvo) return fail('Usuário não encontrado', 404);
       const hash = await hashSenha(nova_senha);
@@ -748,7 +906,7 @@ export default {
       return ok({
         colegas_ativos: colegas.results,
         notifs_nao_lidas: notifs.results[0]?.nao_lidas || 0,
-      });
+      }, 200, { 'Cache-Control': 'public, max-age=10' });
     }
 
     // ── CENTRAL ADMIN ──
@@ -996,18 +1154,58 @@ export default {
       return ok(linhas.results);
     }
 
+    if (path === '/admin/horas-por-grupo' && method === 'GET') {
+      const [u, e] = await requireAuth(request, env);
+      if (e) return fail('Não autorizado', 401);
+      if (!isAdmin(u)) return fail('Sem permissão', 403);
+
+      const de = url.searchParams.get('de') || null;
+      const ate = url.searchParams.get('ate') || null;
+
+      const rows = await env.DB.prepare(`
+        SELECT
+          COALESCE(g.nome, 'Sem grupo') as grupo_nome,
+          COALESCE(g.id, 'sem_grupo')   as grupo_id,
+          ROUND(SUM(
+            (CASE WHEN st.fim IS NULL
+              THEN (julianday('now') - julianday(st.inicio)) * 24
+              ELSE (julianday(st.fim) - julianday(st.inicio)) * 24
+            END)
+            - COALESCE((
+                SELECT SUM((julianday(i.fim) - julianday(i.inicio)) * 24)
+                FROM intervalos i
+                WHERE i.sessao_id = st.id AND i.fim IS NOT NULL
+              ), 0)
+          ), 2) as horas_liquidas
+        FROM sessoes_tempo st
+        JOIN tarefas t  ON t.id  = st.tarefa_id
+        JOIN projetos p ON p.id  = t.projeto_id
+        LEFT JOIN grupos_projetos g ON g.id = p.grupo_id
+        WHERE
+          (? IS NULL OR DATE(st.inicio) >= DATE(?))
+          AND (? IS NULL OR DATE(st.inicio) <= DATE(?))
+        GROUP BY COALESCE(g.id, 'sem_grupo'), COALESCE(g.nome, 'Sem grupo')
+        ORDER BY horas_liquidas DESC
+      `).bind(de, de, ate, ate).all();
+
+      return ok(rows.results);
+    }
+
     const matchUsuarioPapel = path.match(/^\/usuarios\/(usr_\w+)\/papel$/);
     if (matchUsuarioPapel && method === 'PUT') {
       const [u, e] = await requireAuth(request, env);
       if (e) return fail('Não autorizado', 401);
       if (!isAdmin(u)) return fail('Sem permissão', 403);
       const usuarioId = matchUsuarioPapel[1];
-      const { papel } = await request.json();
+      const _body = await readJsonBody(request);
+      const papel = clampStr(_body.papel, 80, 'papel');
       if (!['admin', 'membro'].includes(papel)) return fail('Papel inválido');
       const alvo = await env.DB.prepare('SELECT id, papel FROM usuarios WHERE id = ?').bind(usuarioId).first();
       if (!alvo) return fail('Usuário não encontrado', 404);
       if (alvo.id === u.uid && papel !== 'admin') return fail('Você não pode remover seu próprio papel admin');
       await env.DB.prepare('UPDATE usuarios SET papel = ? WHERE id = ?').bind(papel, usuarioId).run();
+      // Invalidate all existing sessions for this user after role change
+      await env.DB.prepare('DELETE FROM sessoes WHERE usuario_id = ?').bind(usuarioId).run();
       return ok({ ok: true, id: usuarioId, papel });
     }
 
@@ -1114,7 +1312,14 @@ export default {
     if (path === '/projetos' && method === 'POST') {
       const [u, e] = await requireAuth(request, env);
       if (e) return fail('Não autorizado', 401);
-      const { nome, fase, status, prioridade, prazo, area_m2, grupo_id } = await request.json();
+      const _body = await readJsonBody(request);
+      const nome = clampStr(_body.nome, 200, 'nome');
+      const fase = clampStr(_body.fase, 80, 'fase');
+      const status = clampStr(_body.status, 80, 'status');
+      const prioridade = clampStr(_body.prioridade, 80, 'prioridade');
+      const prazo = validateDate(_body.prazo, 'prazo');
+      const area_m2 = validatePositiveNumber(_body.area_m2, 'area_m2');
+      const grupo_id = _body.grupo_id;
       if (!nome?.trim()) return fail('Nome obrigatório');
       const statusProjeto = normalizarStatusProjeto(status || 'A fazer');
       if (!STATUS_PROJ_VALIDOS_SET.has(statusProjeto)) return fail('Status de projeto inválido', 400);
@@ -1248,13 +1453,16 @@ export default {
            ORDER BY g.ordem ASC, g.nome ASC`
         ).bind(u.uid, u.uid, u.uid, u.uid, u.uid, grupoFiltro, grupoFiltro).all();
       }
-      return ok(grupos.results);
+      return ok(grupos.results, 200, { 'Cache-Control': 'private, max-age=30' });
     }
 
     if (path === '/grupos' && method === 'POST') {
       const [u, e] = await requireAuth(request, env);
       if (e) return fail('Não autorizado', 401);
-      const { nome, status, descricao } = await request.json();
+      const _body = await readJsonBody(request);
+      const nome = clampStr(_body.nome, 200, 'nome');
+      const status = clampStr(_body.status, 80, 'status');
+      const descricao = clampStr(_body.descricao, 4000, 'descricao');
       if (!nome?.trim()) return fail('Nome obrigatório');
       const id = 'grp_' + uid();
       const ordemRow = await env.DB.prepare('SELECT COALESCE(MAX(ordem), 0) as max_ordem FROM grupos_projetos').first();
@@ -1404,7 +1612,10 @@ export default {
 
       if (method === 'PUT') {
         if (!podeGerenciar) return fail('Sem permissão', 403);
-        const { nome, status, descricao } = await request.json();
+        const _body = await readJsonBody(request);
+        const nome = clampStr(_body.nome, 200, 'nome');
+        const status = clampStr(_body.status, 80, 'status');
+        const descricao = clampStr(_body.descricao, 4000, 'descricao');
         if (!nome?.trim()) return fail('Nome obrigatório');
         await env.DB.prepare('UPDATE grupos_projetos SET nome = ?, status = ?, descricao = ? WHERE id = ?').bind(nome.trim(), status || 'Ativo', descricao || null, grupoId).run();
         return ok({ ok: true });
@@ -1412,7 +1623,7 @@ export default {
 
       if (method === 'PATCH') {
         if (!podeGerenciar) return fail('Sem permissão', 403);
-        const body = await request.json();
+        const body = await readJsonBody(request);
         if (typeof body.ordem === 'number') {
           await env.DB.prepare('UPDATE grupos_projetos SET ordem = ? WHERE id = ?').bind(body.ordem, grupoId).run();
         }
@@ -1446,7 +1657,8 @@ export default {
       const grupo = await env.DB.prepare('SELECT dono_id, nome FROM grupos_projetos WHERE id = ?').bind(grupoId).first();
       if (!grupo) return fail('Grupo não encontrado', 404);
       if (grupo.dono_id !== u.uid && !isAdmin(u)) return fail('Sem permissão', 403);
-      const { usuario_id } = await request.json();
+      const _body = await readJsonBody(request);
+      const usuario_id = _body.usuario_id;
       if (!usuario_id) return fail('Usuário obrigatório');
       await env.DB.prepare('INSERT OR REPLACE INTO permissoes_grupo (grupo_id, usuario_id) VALUES (?, ?)').bind(grupoId, usuario_id).run();
       await env.DB.prepare(
@@ -1516,7 +1728,7 @@ export default {
         const [u, e] = await requireAuth(request, env);
         if (e) return fail('Não autorizado', 401);
         if (!await podeEditarProjeto(env, projetoId, u.uid, u.papel)) return fail('Sem permissão', 403);
-        const body = await request.json();
+        const body = await readJsonBody(request);
         if ('grupo_id' in body) {
           const atual = await env.DB.prepare('SELECT grupo_id, dono_id FROM projetos WHERE id = ?').bind(projetoId).first();
           await env.DB.prepare('UPDATE projetos SET grupo_id = ? WHERE id = ?')
@@ -1530,48 +1742,47 @@ export default {
         const [u, e] = await requireAuth(request, env);
         if (e) return fail('Não autorizado', 401);
         if (!await podeEditarProjeto(env, projetoId, u.uid, u.papel)) return fail('Sem permissão', 403);
-        const projeto = await env.DB.prepare(
-          `SELECT p.*, pu.nome as dono_nome,
-            CASE
-              WHEN p.dono_id <> ?
-                AND NOT EXISTS (
-                  SELECT 1 FROM recusas_projeto rp WHERE rp.projeto_id = p.id AND rp.usuario_id = ?
-                )
-                AND (
-                  EXISTS (SELECT 1 FROM permissoes_projeto pp WHERE pp.projeto_id = p.id AND pp.usuario_id = ?)
-                  OR EXISTS (SELECT 1 FROM permissoes_grupo pg WHERE pg.grupo_id = p.grupo_id AND pg.usuario_id = ?)
-                )
-              THEN 1 ELSE 0
-            END as compartilhado_comigo,
-            CASE
-              WHEN p.dono_id <> ?
-                AND NOT EXISTS (
-                  SELECT 1 FROM recusas_projeto rp WHERE rp.projeto_id = p.id AND rp.usuario_id = ?
-                )
-                AND EXISTS (SELECT 1 FROM permissoes_grupo pg WHERE pg.grupo_id = p.grupo_id AND pg.usuario_id = ?)
-              THEN 'grupo'
-              WHEN p.dono_id <> ?
-                AND NOT EXISTS (
-                  SELECT 1 FROM recusas_projeto rp WHERE rp.projeto_id = p.id AND rp.usuario_id = ?
-                )
-                AND EXISTS (SELECT 1 FROM permissoes_projeto pp WHERE pp.projeto_id = p.id AND pp.usuario_id = ?)
-              THEN 'manual'
-              ELSE NULL
-            END as origem_compartilhamento
-           FROM projetos p
-           LEFT JOIN usuarios pu ON pu.id = p.dono_id
-           WHERE p.id = ?`
-        ).bind(
-          u.uid, u.uid, u.uid, u.uid,
-          u.uid, u.uid, u.uid,
-          u.uid, u.uid, u.uid,
-          projetoId,
-        ).first();
-        if (!projeto) return fail('Projeto não encontrado', 404);
-        const [perms, horasRow] = await Promise.all([
+        const [projetoRes, permsRes, horasRes] = await env.DB.batch([
+          env.DB.prepare(
+            `SELECT p.*, pu.nome as dono_nome,
+              CASE
+                WHEN p.dono_id <> ?
+                  AND NOT EXISTS (
+                    SELECT 1 FROM recusas_projeto rp WHERE rp.projeto_id = p.id AND rp.usuario_id = ?
+                  )
+                  AND (
+                    EXISTS (SELECT 1 FROM permissoes_projeto pp WHERE pp.projeto_id = p.id AND pp.usuario_id = ?)
+                    OR EXISTS (SELECT 1 FROM permissoes_grupo pg WHERE pg.grupo_id = p.grupo_id AND pg.usuario_id = ?)
+                  )
+                THEN 1 ELSE 0
+              END as compartilhado_comigo,
+              CASE
+                WHEN p.dono_id <> ?
+                  AND NOT EXISTS (
+                    SELECT 1 FROM recusas_projeto rp WHERE rp.projeto_id = p.id AND rp.usuario_id = ?
+                  )
+                  AND EXISTS (SELECT 1 FROM permissoes_grupo pg WHERE pg.grupo_id = p.grupo_id AND pg.usuario_id = ?)
+                THEN 'grupo'
+                WHEN p.dono_id <> ?
+                  AND NOT EXISTS (
+                    SELECT 1 FROM recusas_projeto rp WHERE rp.projeto_id = p.id AND rp.usuario_id = ?
+                  )
+                  AND EXISTS (SELECT 1 FROM permissoes_projeto pp WHERE pp.projeto_id = p.id AND pp.usuario_id = ?)
+                THEN 'manual'
+                ELSE NULL
+              END as origem_compartilhamento
+             FROM projetos p
+             LEFT JOIN usuarios pu ON pu.id = p.dono_id
+             WHERE p.id = ?`
+          ).bind(
+            u.uid, u.uid, u.uid, u.uid,
+            u.uid, u.uid, u.uid,
+            u.uid, u.uid, u.uid,
+            projetoId,
+          ),
           env.DB.prepare(
             'SELECT pp.usuario_id, pp.origem, u.nome, u.login as usuario_login FROM permissoes_projeto pp JOIN usuarios u ON u.id = pp.usuario_id WHERE pp.projeto_id = ? ORDER BY u.nome'
-          ).bind(projetoId).all(),
+          ).bind(projetoId),
           env.DB.prepare(`
             SELECT ROUND(COALESCE(SUM(
               (CASE WHEN st.fim IS NULL THEN (julianday('now') - julianday(st.inicio)) * 24
@@ -1582,17 +1793,26 @@ export default {
             FROM sessoes_tempo st
             INNER JOIN tarefas t ON t.id = st.tarefa_id
             WHERE t.projeto_id = ?
-          `).bind(projetoId).first(),
+          `).bind(projetoId),
         ]);
+        const projeto = projetoRes.results[0];
+        if (!projeto) return fail('Projeto não encontrado', 404);
         const podeEditar = await podeEditarProjeto(env, projetoId, u.uid, u.papel);
-        return ok({ ...projeto, editores: perms.results, pode_editar: podeEditar, total_horas: horasRow?.total_horas ?? 0 });
+        return ok({ ...projeto, editores: permsRes.results, pode_editar: podeEditar, total_horas: horasRes.results[0]?.total_horas ?? 0 });
       }
 
       if (method === 'PUT') {
         const [u, e] = await requireAuth(request, env);
         if (e) return fail('Não autorizado', 401);
         if (!await podeEditarProjeto(env, projetoId, u.uid, u.papel)) return fail('Sem permissão', 403);
-        const { nome, fase, status, prioridade, prazo, area_m2, grupo_id } = await request.json();
+        const _body = await readJsonBody(request);
+        const nome = clampStr(_body.nome, 200, 'nome');
+        const fase = clampStr(_body.fase, 80, 'fase');
+        const status = clampStr(_body.status, 80, 'status');
+        const prioridade = clampStr(_body.prioridade, 80, 'prioridade');
+        const prazo = validateDate(_body.prazo, 'prazo');
+        const area_m2 = validatePositiveNumber(_body.area_m2, 'area_m2');
+        const grupo_id = _body.grupo_id;
         if (!nome?.trim()) return fail('Nome obrigatório');
         const statusProjeto = normalizarStatusProjeto(status);
         if (!STATUS_PROJ_VALIDOS_SET.has(statusProjeto)) return fail('Status de projeto inválido', 400);
@@ -1630,7 +1850,8 @@ export default {
       const proj = await env.DB.prepare('SELECT dono_id, nome FROM projetos WHERE id = ?').bind(projetoId).first();
       if (!proj) return fail('Não encontrado', 404);
       if (proj.dono_id !== u.uid && !isAdmin(u)) return fail('Sem permissão', 403);
-      const { usuario_id } = await request.json();
+      const _body = await readJsonBody(request);
+      const usuario_id = _body.usuario_id;
       if (usuario_id === proj.dono_id) return fail('Usuário já é dono do projeto');
       await env.DB.prepare('DELETE FROM recusas_projeto WHERE projeto_id = ? AND usuario_id = ?').bind(projetoId, usuario_id).run();
       await env.DB.prepare(
@@ -1712,13 +1933,12 @@ export default {
       const [u, e] = await requireAuth(request, env);
       if (e) return fail('Não autorizado', 401);
       if (!isAdmin(u)) return fail('Somente admin pode criar templates', 403);
-      const {
-        nome,
-        status,
-        prioridade,
-        dificuldade,
-        descricao,
-      } = await request.json();
+      const _body = await readJsonBody(request);
+      const nome = clampStr(_body.nome, 200, 'nome');
+      const status = clampStr(_body.status, 80, 'status');
+      const prioridade = clampStr(_body.prioridade, 80, 'prioridade');
+      const dificuldade = clampStr(_body.dificuldade, 80, 'dificuldade');
+      const descricao = clampStr(_body.descricao, 4000, 'descricao');
       if (!nome?.trim()) return fail('Nome obrigatório');
       const id = 'tpl_' + uid();
       await env.DB.prepare(`
@@ -1744,13 +1964,12 @@ export default {
       if (e) return fail('Não autorizado', 401);
       if (!isAdmin(u)) return fail('Somente admin pode editar templates', 403);
       const templateId = matchTemplate[1];
-      const {
-        nome,
-        status,
-        prioridade,
-        dificuldade,
-        descricao,
-      } = await request.json();
+      const _body = await readJsonBody(request);
+      const nome = clampStr(_body.nome, 200, 'nome');
+      const status = clampStr(_body.status, 80, 'status');
+      const prioridade = clampStr(_body.prioridade, 80, 'prioridade');
+      const dificuldade = clampStr(_body.dificuldade, 80, 'dificuldade');
+      const descricao = clampStr(_body.descricao, 4000, 'descricao');
       if (!nome?.trim()) return fail('Nome obrigatório');
       const t = await env.DB.prepare('SELECT id FROM templates_tarefa WHERE id = ? AND ativo = 1').bind(templateId).first();
       if (!t) return fail('Template não encontrado', 404);
@@ -1808,16 +2027,15 @@ export default {
         const [u, e] = await requireAuth(request, env);
         if (e) return fail('Não autorizado', 401);
         if (!await podeEditarProjeto(env, projetoId, u.uid, u.papel)) return fail('Sem permissão', 403);
-        const {
-          nome,
-          status,
-          prioridade,
-          complexidade,
-          dificuldade,
-          data,
-          descricao,
-          template_id,
-        } = await request.json();
+        const _body = await readJsonBody(request);
+        const nome = clampStr(_body.nome, 200, 'nome');
+        const status = clampStr(_body.status, 80, 'status');
+        const prioridade = clampStr(_body.prioridade, 80, 'prioridade');
+        const complexidade = clampStr(_body.complexidade, 80, 'dificuldade');
+        const dificuldade = clampStr(_body.dificuldade, 80, 'dificuldade');
+        const data = validateDate(_body.data, 'prazo');
+        const descricao = clampStr(_body.descricao, 4000, 'descricao');
+        const template_id = _body.template_id;
         let template = null;
         if (template_id) {
           template = await env.DB.prepare(
@@ -1860,15 +2078,14 @@ export default {
         const [u, e] = await requireAuth(request, env);
         if (e) return fail('Não autorizado', 401);
         if (!await podeEditarTarefa(env, tarefaId, u.uid, u.papel)) return fail('Sem permissão', 403);
-        const {
-          nome,
-          status,
-          prioridade,
-          complexidade,
-          dificuldade,
-          data,
-          descricao,
-        } = await request.json();
+        const _body = await readJsonBody(request);
+        const nome = clampStr(_body.nome, 200, 'nome');
+        const status = clampStr(_body.status, 80, 'status');
+        const prioridade = clampStr(_body.prioridade, 80, 'prioridade');
+        const complexidade = clampStr(_body.complexidade, 80, 'dificuldade');
+        const dificuldade = clampStr(_body.dificuldade, 80, 'dificuldade');
+        const data = validateDate(_body.data, 'prazo');
+        const descricao = clampStr(_body.descricao, 4000, 'descricao');
         const complexidadeVal = complexidade || dificuldade || 'Moderada';
         if (!nome?.trim()) return fail('Nome obrigatório');
         await env.DB.prepare(
@@ -1897,7 +2114,8 @@ export default {
         if (!await podeCronometrar(env, tarefaId, u.uid, u.papel)) {
           return fail('Sem permissão — só o dono e colaboradores podem mudar o status', 403);
         }
-        const { status } = await request.json();
+        const _body = await readJsonBody(request);
+        const status = clampStr(_body.status, 80, 'status');
         if (!status) return fail('Status obrigatório');
         await env.DB.prepare(
           'UPDATE tarefas SET status=?, atualizado_em=datetime("now") WHERE id=?'
@@ -1996,7 +2214,9 @@ export default {
         const [u, e] = await requireAuth(request, env);
         if (e) return fail('Não autorizado', 401);
         if (!await podeEditarProjeto(env, projetoId, u.uid, u.papel)) return fail('Sem permissão', 403);
-        const { descricao, data } = await request.json();
+        const _body = await readJsonBody(request);
+        const descricao = clampStr(_body.descricao, 4000, 'descricao');
+        const data = validateDate(_body.data, 'prazo');
         if (!descricao?.trim()) return fail('Descrição obrigatória');
         const id = 'dec_' + uid();
         await env.DB.prepare(
@@ -2023,7 +2243,9 @@ export default {
       const d = await env.DB.prepare('SELECT dono_id, projeto_id FROM decisoes WHERE id = ?').bind(matchDecisao[1]).first();
       if (!d) return fail('Não encontrado', 404);
       if (d.dono_id !== u.uid && !await podeEditarProjeto(env, d.projeto_id, u.uid, u.papel)) return fail('Sem permissão', 403);
-      const { descricao, data } = await request.json();
+      const _body = await readJsonBody(request);
+      const descricao = clampStr(_body.descricao, 4000, 'descricao');
+      const data = validateDate(_body.data, 'prazo');
       if (!descricao?.trim()) return fail('Descrição obrigatória', 400);
       await env.DB.prepare('UPDATE decisoes SET descricao = ?, data = ? WHERE id = ?')
         .bind(descricao.trim(), data || null, matchDecisao[1]).run();
@@ -2060,7 +2282,8 @@ export default {
         ).bind(tarefaId).first();
         if (!tarefa) return fail('Tarefa não encontrada', 404);
         if (tarefa.dono_id !== u.uid && !isAdmin(u)) return fail('Sem permissão', 403);
-        const { usuario_id } = await request.json();
+        const _body = await readJsonBody(request);
+        const usuario_id = _body.usuario_id;
         if (usuario_id === tarefa.dono_id) return fail('Usuário já é dono da tarefa');
         await env.DB.prepare(
           'INSERT OR IGNORE INTO colaboradores_tarefa (tarefa_id, usuario_id) VALUES (?, ?)'
@@ -2142,12 +2365,14 @@ export default {
           ORDER BY st.usuario_id, st.inicio DESC
         `).bind(tarefaId, filtroUsuario, filtroUsuario).all();
 
-        const ids = (sessoes.results || []).map(s => s.id);
-        if (!ids.length) return ok([]);
-        const placeholders = ids.map(() => '?').join(',');
-        const intervalosQ = await env.DB.prepare(
-          `SELECT * FROM intervalos WHERE sessao_id IN (${placeholders}) ORDER BY sessao_id, inicio ASC`
-        ).bind(...ids).all();
+        if (!(sessoes.results || []).length) return ok([]);
+        const intervalosQ = await env.DB.prepare(`
+          SELECT i.*
+          FROM intervalos i
+          JOIN sessoes_tempo st ON st.id = i.sessao_id
+          WHERE st.tarefa_id = ? AND (? IS NULL OR st.usuario_id = ?)
+          ORDER BY i.sessao_id, i.inicio ASC
+        `).bind(tarefaId, filtroUsuario, filtroUsuario).all();
         const intervalosPorSessao = new Map();
         for (const it of (intervalosQ.results || [])) {
           if (!intervalosPorSessao.has(it.sessao_id)) intervalosPorSessao.set(it.sessao_id, []);
@@ -2161,7 +2386,8 @@ export default {
         if (!await podeCronometrar(env, tarefaId, u.uid, u.papel)) {
           return fail('Sem permissão — você precisa ser dono ou colaborador desta tarefa', 403);
         }
-        const { inicio } = await request.json();
+        const _body = await readJsonBody(request);
+        const inicio = _body.inicio;
         const id = 'ste_' + uid();
         const inicioStr = inicio || new Date().toISOString().slice(0, 19).replace('T', ' ');
         await env.DB.prepare(
@@ -2182,7 +2408,9 @@ export default {
       if (s.usuario_id !== u.uid && !isAdmin(u)) return fail('Sem permissão', 403);
 
       if (method === 'PUT') {
-        const { inicio, fim } = await request.json();
+        const _body = await readJsonBody(request);
+        const inicio = _body.inicio;
+        const fim = _body.fim;
         await env.DB.prepare('UPDATE sessoes_tempo SET inicio=?, fim=? WHERE id=?')
           .bind(inicio, fim || null, sessaoId).run();
         return ok({ ok: true });
@@ -2203,7 +2431,8 @@ export default {
       const s = await env.DB.prepare('SELECT usuario_id FROM sessoes_tempo WHERE id = ?').bind(sessaoId).first();
       if (!s) return fail('Sessão não encontrada', 404);
       if (s.usuario_id !== u.uid && !isAdmin(u)) return fail('Sem permissão', 403);
-      const { fim } = await request.json();
+      const _body = await readJsonBody(request);
+      const fim = _body.fim;
       const fimStr = fim || new Date().toISOString().slice(0, 19).replace('T', ' ');
       await env.DB.prepare('UPDATE sessoes_tempo SET fim=? WHERE id=?').bind(fimStr, sessaoId).run();
       return ok({ ok: true, fim: fimStr });
@@ -2297,6 +2526,34 @@ export default {
         ORDER BY st.fim DESC LIMIT 1
       `).bind(u.uid).first();
       return ok(row || null);
+    }
+
+    if (path === '/tempo/resumo-hoje' && method === 'GET') {
+      const [u, e] = await requireAuth(request, env);
+      if (e) return fail('Não autorizado', 401);
+
+      const row = await env.DB.prepare(`
+        SELECT
+          COUNT(DISTINCT st.id) as sessoes,
+          COUNT(DISTINCT st.tarefa_id) as tarefas,
+          ROUND(SUM(
+            (CASE WHEN st.fim IS NULL
+              THEN (julianday('now') - julianday(st.inicio)) * 24
+              ELSE (julianday(st.fim) - julianday(st.inicio)) * 24
+            END)
+            - COALESCE((
+                SELECT SUM((julianday(i.fim) - julianday(i.inicio)) * 24)
+                FROM intervalos i
+                WHERE i.sessao_id = st.id AND i.fim IS NOT NULL
+              ), 0)
+          ), 2) as horas_hoje,
+          SUM(CASE WHEN st.fim IS NULL THEN 1 ELSE 0 END) as timers_ativos
+        FROM sessoes_tempo st
+        WHERE st.usuario_id = ?
+          AND DATE(st.inicio) = DATE('now')
+      `).bind(u.uid).first();
+
+      return ok(row || { sessoes: 0, tarefas: 0, horas_hoje: 0, timers_ativos: 0 });
     }
 
     // ── PROJETO: HORAS POR USUÁRIO ──
@@ -2394,7 +2651,10 @@ export default {
       const s = await env.DB.prepare('SELECT usuario_id FROM sessoes_tempo WHERE id = ?').bind(sessaoId).first();
       if (!s) return fail('Sessão não encontrada', 404);
       if (s.usuario_id !== u.uid && !isAdmin(u)) return fail('Sem permissão', 403);
-      const { tipo, inicio, fim } = await request.json();
+      const _body = await readJsonBody(request);
+      const tipo = clampStr(_body.tipo, 100, 'tipo');
+      const inicio = _body.inicio;
+      const fim = _body.fim;
       if (!tipo?.trim()) return fail('Tipo obrigatório');
       const id = 'int_' + uid();
       const inicioStr = inicio || new Date().toISOString().slice(0, 19).replace('T', ' ');
@@ -2417,7 +2677,10 @@ export default {
       if (iv.usuario_id !== u.uid && !isAdmin(u)) return fail('Sem permissão', 403);
 
       if (method === 'PUT') {
-        const { tipo, inicio, fim } = await request.json();
+        const _body = await readJsonBody(request);
+        const tipo = clampStr(_body.tipo, 100, 'tipo');
+        const inicio = _body.inicio;
+        const fim = _body.fim;
         await env.DB.prepare('UPDATE intervalos SET tipo=?, inicio=?, fim=? WHERE id=?')
           .bind(tipo, inicio, fim || null, intervaloId).run();
         return ok({ ok: true });
@@ -2432,6 +2695,9 @@ export default {
     return fail('Rota não encontrada', 404);
 
     } catch (ex) {
+      if (ex?.status === 413) return err('Payload muito grande', 413, cors, responseHeaders);
+      if (ex?.status === 415) return err(ex.message, 415, cors, responseHeaders);
+      if (ex?.status === 400) return err(ex.message, 400, cors, responseHeaders);
       const duration = Date.now() - startedAt;
       console.error('[Worker Error]', { reqId, method, path, duration_ms: duration, message: ex?.message, stack: ex?.stack });
       return err('Erro interno do servidor', 500, getCors(request, env), responseHeaders);

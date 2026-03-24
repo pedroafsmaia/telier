@@ -212,8 +212,8 @@ label{font-size:var(--fs-080);color:var(--text2);display:block;margin-bottom:5px
 #page-app{display:flex;flex-direction:column;min-height:100vh}
 
 /* ── TOPBAR ── */
-.topbar{height:58px;border-bottom:1px solid var(--glass-border-soft);display:flex;align-items:center;padding:0 32px;gap:12px;position:sticky;top:0;z-index:100;background:linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.01)),var(--glass-bg-strong);backdrop-filter:var(--glass-blur);-webkit-backdrop-filter:var(--glass-blur);box-shadow:0 1px 0 rgba(255,255,255,.03),0 10px 34px rgba(0,0,0,.12)}
-.topbar-logo{font-family:var(--ff-mono);font-size:var(--fs-075);color:var(--text3);letter-spacing:.14em;text-transform:uppercase;cursor:pointer;transition:color .15s;font-weight:600}
+.topbar{display:flex;height:58px;border-bottom:1px solid var(--glass-border-soft);align-items:center;padding:0 12px;gap:10px;position:sticky;top:0;z-index:100;background:linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.01)),var(--glass-bg-strong);backdrop-filter:var(--glass-blur);-webkit-backdrop-filter:var(--glass-blur);box-shadow:0 1px 0 rgba(255,255,255,.03),0 10px 34px rgba(0,0,0,.12)}
+.topbar-logo{font-family:var(--ff-sans);font-size:var(--fs-100);color:var(--text2);letter-spacing:.02em;text-transform:none;cursor:pointer;transition:color .15s;font-weight:500}
 .topbar-logo:hover{color:var(--text2)}
 .topbar-breadcrumb{display:flex;align-items:center;gap:6px;font-size:var(--fs-090)}
 .topbar-crumb{color:var(--text3);cursor:pointer;transition:color .15s;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:200px}
@@ -231,9 +231,8 @@ label{font-size:var(--fs-080);color:var(--text2);display:block;margin-bottom:5px
 .topbar-actions .btn{height:33px;padding:0 12px;border-radius:10px;line-height:1}
 .topbar-actions .btn.btn-icon{width:33px;padding:0}
 .topbar-user-name{font-size:var(--fs-090);color:var(--text2)}
-
 /* ── CONTEÚDO ── */
-.content{flex:1;padding:52px 36px;max-width:1160px;width:100%;margin:0 auto}
+.content{flex:1;padding:48px 36px;max-width:none;width:100%;margin:0;overflow-y:auto}
 
 /* ── DASHBOARD ── */
 .dash-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
@@ -264,7 +263,7 @@ label{font-size:var(--fs-080);color:var(--text2);display:block;margin-bottom:5px
 .startday-toggle:hover{color:var(--text2);border-color:var(--border3)}
 .startday-wrap.collapsed{padding-bottom:12px}
 .startday-wrap.collapsed .startday-grid{display:none}
-.startday-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(240px,100%),1fr));gap:10px}
+.startday-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
 .startday-card{background:linear-gradient(180deg, rgba(255,255,255,.045), rgba(255,255,255,.015)), color-mix(in srgb, var(--bg2) 76%, transparent);border:1px solid var(--glass-border-soft);border-radius:14px;padding:14px;display:flex;flex-direction:column;gap:8px;min-height:132px;box-shadow:inset 0 1px 0 rgba(255,255,255,.04)}
 .startday-card h4{font-size:var(--fs-090);color:var(--text2);font-weight:500}
 .startday-main{font-size:var(--fs-100);color:var(--text);line-height:1.35}
@@ -844,7 +843,8 @@ body.has-presence #timer-dock {
   .proj-card:hover,
   .btn:hover { transform: none; }
 
-  .topbar { padding: 0 16px; }
+  .topbar-breadcrumb,
+  .topbar-sep{display:none}
   .content { padding: 28px 18px; }
   .proj-hero { padding: 22px; }
   th, td { padding: 10px 12px; }
@@ -871,6 +871,7 @@ body.has-presence #timer-dock {
   .cards-grid { grid-template-columns: 1fr; }
   .form-grid { grid-template-columns: 1fr; }
   .proj-hero-top { flex-direction: column; }
+  .startday-grid{grid-template-columns:1fr}
   .dash-filters { gap: 6px; }
   .search-dash { width: 100%; max-width: none; }
   .dash-toolbar-row{flex-direction:column;align-items:stretch}
@@ -1056,6 +1057,7 @@ let NOTIFS = [];
 let _notifTick = null;
 let _lastNotifSeen = 0;
 let NOTIF_TAB = 'compartilhamentos';
+const _prazoNotifShown = new Set();
 const STARTDAY_COLLAPSE_KEY = 'telier_startday_collapsed';
 const TIMER_AVISO_HORAS = 4;
 const DASH_FILTERS_KEY = 'telier_dash_filters_v1';
@@ -1183,12 +1185,16 @@ function atualizarBadgeNotificacoes(total) {
   if (!btn || !badge) return;
   btn.style.display = TOKEN ? 'inline-flex' : 'none';
   const n = Number(total || 0);
-  badge.textContent = n > 99 ? '99+' : String(n);
+  const txt = n > 99 ? '99+' : String(n);
+  badge.textContent = txt;
   badge.classList.toggle('hidden', n <= 0);
 }
 
 function filtrarNotificacoesPainel(itens) {
   if (NOTIF_TAB === 'todas') return itens;
+  if (NOTIF_TAB === 'prazos') {
+    return itens.filter(n => n.tipo === 'timer_longo');
+  }
   if (NOTIF_TAB === 'compartilhamentos') {
     return itens.filter(n => (n.tipo || '').includes('compartilhamento'));
   }
@@ -1220,6 +1226,7 @@ function renderPainelNotificacoes() {
     </div>
     <div class="notif-tabs">
       <button class="notif-tab ${NOTIF_TAB==='compartilhamentos'?'ativo':''}" onclick="NOTIF_TAB='compartilhamentos';renderPainelNotificacoes()">Compartilhamentos</button>
+      <button class="notif-tab ${NOTIF_TAB==='prazos'?'ativo':''}" onclick="NOTIF_TAB='prazos';renderPainelNotificacoes()">Alertas</button>
       <button class="notif-tab ${NOTIF_TAB==='todas'?'ativo':''}" onclick="NOTIF_TAB='todas';renderPainelNotificacoes()">Todas</button>
     </div>
     <div class="notif-panel-body">
@@ -1260,8 +1267,12 @@ async function carregarNotificacoes(silencioso = true) {
 function iniciarPollNotificacoes() {
   if (!TOKEN) return;
   if (_notifTick) clearInterval(_notifTick);
+  req('POST', '/notificacoes/gerar-automaticas').catch(() => {});
   carregarNotificacoes(true);
-  _notifTick = setInterval(() => carregarNotificacoes(false), 30000);
+  _notifTick = setInterval(() => {
+    req('POST', '/notificacoes/gerar-automaticas').catch(() => {});
+    carregarNotificacoes(false);
+  }, 30000);
 }
 
 async function carregarStatus() {
@@ -1783,7 +1794,7 @@ async function fazerLogout() {
   mostrar('login');
 }
 
-function renderInicioDia(projetos, ativas, ultimaSessao = null) {
+function renderInicioDia(projetos, ativas, ultimaSessao = null, resumoHoje = null) {
   const focoProjeto = projetos.find(p => p.minha_tarefa_foco);
   const urgentes = projetos.filter(p => {
     const dias = diasRestantes(p.prazo);
@@ -1858,6 +1869,16 @@ function renderInicioDia(projetos, ativas, ultimaSessao = null) {
                   : `<button class="btn btn-sm" disabled>Retomar tarefa</button>`}
           </div>
         </div>
+
+        ${resumoHoje && Number(resumoHoje.horas_hoje || 0) > 0 ? `
+        <div class="startday-card">
+          <h4>Hoje</h4>
+          <div class="startday-main">${parseFloat(resumoHoje.horas_hoje).toFixed(1)}h trabalhadas</div>
+          <div class="startday-sub">${resumoHoje.tarefas} tarefa${resumoHoje.tarefas !== 1 ? 's' : ''} · ${resumoHoje.sessoes} sess${resumoHoje.sessoes !== 1 ? 'ões' : 'ão'}</div>
+          <div class="startday-actions">
+            <button class="btn btn-sm" onclick="abrirCentralAdmin('tempo')">Ver relatório</button>
+          </div>
+        </div>` : ''}
       </div>
     </div>`;
 }
@@ -1910,16 +1931,28 @@ async function renderDash() {
     if (FILTRO_STATUS !== 'todos') params.set('status', FILTRO_STATUS);
     if (isAdminRole() && ADMIN_MODE === 'normal') params.set('as_member', '1');
     const qs = params.toString() ? `?${params.toString()}` : '';
-    const [projetos, ativas, grupos, ultimaSessao] = await Promise.all([
+    const [projetos, ativas, grupos, ultimaSessao, resumoHoje] = await Promise.all([
       fetchProjetos(params),
       req('GET', `/tempo/ativas${isAdminRole() && ADMIN_MODE === 'normal' ? '?as_member=1' : ''}`).catch(() => []),
       req('GET', `/grupos${isAdminRole() && ADMIN_MODE === 'normal' ? '?as_member=1' : ''}`).catch(() => []),
       req('GET', '/tempo/ultima-sessao').catch(() => null),
+      req('GET', '/tempo/resumo-hoje').catch(() => null),
     ]);
 
     _projsDash = projetos;
     _ativasDash = ativas;
     _gruposDash = grupos;
+    projetos.forEach(p => {
+      if (_prazoNotifShown.has(p.id)) return;
+      const dias = diasRestantes(p.prazo);
+      if (dias !== null && dias >= 0 && dias <= 3 && !projetoConcluido(p.status) && p.dono_id === EU?.id) {
+        _prazoNotifShown.add(p.id);
+        const msg = dias === 0
+          ? `"${p.nome}" vence hoje.`
+          : `"${p.nome}" vence em ${dias} dia${dias === 1 ? '' : 's'}.`;
+        toast(`Prazo próximo: ${msg}`, 'ok');
+      }
+    });
     const compartilhados = projetos.filter(p => Number(p.compartilhado_comigo) === 1);
     const emAndamento = projetos.filter(p => !['Concluído','Arquivado'].includes(normalizarStatusProjeto(p.status))).length;
     const meus = projetos.filter(p => Number(p.compartilhado_comigo) !== 1).length;
@@ -1927,7 +1960,7 @@ async function renderDash() {
     const statusCountMap = Object.fromEntries(filtros.map(f => [f, f === 'todos' ? projetos.length : projetos.filter(p => normalizarStatusProjeto(p.status) === f).length]));
 
     let html = `
-      ${renderInicioDia(projetos, ativas, ultimaSessao)}
+      ${renderInicioDia(projetos, ativas, ultimaSessao, resumoHoje)}
       <div class="dash-header" style="margin-top:22px">
         <div>
           <div class="dash-title">Projetos</div>
@@ -2559,6 +2592,7 @@ async function abrirCentralAdmin(aba = 'agora') {
         <button class="admin-tab ${aba==='usuarios'?'ativo':''}" onclick="abrirCentralAdmin('usuarios')">Usuários</button>
         <button class="admin-tab ${aba==='projetos'?'ativo':''}" onclick="abrirCentralAdmin('projetos')">Projetos</button>
         <button class="admin-tab ${aba==='tempo'?'ativo':''}" onclick="abrirCentralAdmin('tempo')">Tempo</button>
+        <button class="admin-tab ${aba==='grupos'?'ativo':''}" onclick="abrirCentralAdmin('grupos')">Grupos</button>
       </div>
       <div id="admin-body"><div class="loading"><div class="spinner"></div> Carregando painel admin...</div></div>
     </div>`;
@@ -2717,6 +2751,52 @@ async function abrirCentralAdmin(aba = 'agora') {
                 <span class="mono">${fmtHoras(Number(l.horas_liquidas||0))}</span>
               </div>
             </div>`).join('')}
+        </div>`;
+      return;
+    }
+
+    if (aba === 'grupos') {
+      const q = new URLSearchParams();
+      if (ADMIN_TEMPO_FILTRO.de) q.set('de', ADMIN_TEMPO_FILTRO.de);
+      if (ADMIN_TEMPO_FILTRO.ate) q.set('ate', ADMIN_TEMPO_FILTRO.ate);
+      const dados = await req('GET', `/admin/horas-por-grupo${q.toString() ? '?' + q.toString() : ''}`);
+      const totalGeral = dados.reduce((s, d) => s + parseFloat(d.horas_liquidas || 0), 0);
+      const maxHoras = Math.max(...dados.map(d => parseFloat(d.horas_liquidas || 0)), 1);
+      const rows = dados.map(d => {
+        const h = parseFloat(d.horas_liquidas || 0);
+        const pct = Math.round((h / maxHoras) * 100);
+        return `<tr>
+          <td>${esc(d.grupo_nome)}</td>
+          <td class="mono">${fmtHoras(h)}</td>
+          <td style="width:200px">
+            <div style="height:6px;background:var(--bg4);border-radius:3px;overflow:hidden">
+              <div style="height:100%;width:${pct}%;background:var(--accent);border-radius:3px"></div>
+            </div>
+          </td>
+        </tr>`;
+      }).join('');
+      body.innerHTML = `
+        <div class="admin-tools" style="margin-bottom:10px">
+          <div class="tool-field"><label>De</label><input type="date" id="adm-de" value="${esc(ADMIN_TEMPO_FILTRO.de)}"></div>
+          <div class="tool-field"><label>Até</label><input type="date" id="adm-ate" value="${esc(ADMIN_TEMPO_FILTRO.ate)}"></div>
+          <button class="btn btn-sm" onclick="aplicarFiltroTempoAdmin();abrirCentralAdmin('grupos')">Aplicar</button>
+          <button class="btn btn-sm" onclick="limparFiltroTempoAdmin();abrirCentralAdmin('grupos')">Limpar</button>
+        </div>
+        <div class="admin-grid" style="margin-bottom:10px">
+          <div class="admin-kpi">
+            <div class="admin-kpi-label">Total geral</div>
+            <div class="admin-kpi-val">${fmtHoras(totalGeral)}</div>
+          </div>
+          <div class="admin-kpi">
+            <div class="admin-kpi-label">Grupos com registro</div>
+            <div class="admin-kpi-val">${dados.length}</div>
+          </div>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Grupo</th><th>Horas líquidas</th><th>Proporção</th></tr></thead>
+            <tbody>${rows || '<tr><td colspan="3" class="table-empty">Sem registros no período.</td></tr>'}</tbody>
+          </table>
         </div>`;
       return;
     }
