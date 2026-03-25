@@ -279,32 +279,52 @@
 
   // src/modules/auth.js
   async function init() {
-    if (TOKEN) {
-      try {
-        const user = await endpoints.me();
-        setEU(user);
+    const renderTimeout = setTimeout(() => {
+      if (TOKEN) {
+        console.warn("Auth API timeout - showing app despite unverified token");
         mostrarApp();
-      } catch (erro) {
-        console.error("Auth error:", erro);
-        clearAuth();
+      } else {
+        console.warn("Auth API timeout - showing login");
         mostrarLogin();
       }
-    } else {
-      try {
-        const { precisa_setup } = await endpoints.needsSetup();
-        if (precisa_setup) {
-          mostrarSetup();
-        } else {
+    }, 3e4);
+    try {
+      if (TOKEN) {
+        try {
+          const user = await endpoints.me();
+          clearTimeout(renderTimeout);
+          setEU(user);
+          mostrarApp();
+        } catch (erro) {
+          clearTimeout(renderTimeout);
+          console.error("Auth error:", erro);
+          clearAuth();
           mostrarLogin();
         }
-      } catch {
-        mostrarLogin();
+      } else {
+        try {
+          const { precisa_setup } = await endpoints.needsSetup();
+          clearTimeout(renderTimeout);
+          if (precisa_setup) {
+            mostrarSetup();
+          } else {
+            mostrarLogin();
+          }
+        } catch (erro) {
+          clearTimeout(renderTimeout);
+          console.error("Setup check error:", erro);
+          mostrarLogin();
+        }
       }
+    } catch (erro) {
+      clearTimeout(renderTimeout);
+      console.error("Auth init error:", erro);
+      mostrarLogin();
     }
   }
   async function fazerLogin() {
-    const usuario = document.getElementById("login-usuario")?.value;
-    const senha = document.getElementById("login-senha")?.value;
+    const usuario = document.getElementById("l-login")?.value;
+    const senha = document.getElementById("l-senha")?.value;
     if (!usuario || !senha) {
       toast("Preencha usu\xE1rio e senha", "erro");
       return;
@@ -329,9 +349,9 @@
     }
   }
   async function fazerSetup(forceChange = false) {
-    const nome = document.getElementById("setup-nome")?.value;
-    const senha = document.getElementById("setup-senha")?.value;
-    const confirma = document.getElementById("setup-confirma")?.value;
+    const nome = document.getElementById("s-nome")?.value;
+    const senha = document.getElementById("s-senha")?.value;
+    const confirma = document.getElementById("s-confirma")?.value;
     if (!nome || !senha || !confirma) {
       toast("Preencha todos os campos", "erro");
       return;
