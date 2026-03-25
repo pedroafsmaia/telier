@@ -47,37 +47,67 @@ export function renderTimerDock() {
 
 // Modal to add interval to session
 export async function modalAdicionarIntervalo(sessaoId) {
-  // TODO: Implement interval addition modal
+  const { abrirModal } = window;
+  const html = `
+    <div style="padding: 24px;">
+      <h2>Adicionar Intervalo</h2>
+      <div style="color: var(--text3); margin: 16px 0;">
+        <strong>Funcionalidade em desenvolvimento</strong>
+        <p style="margin-top: 8px; font-size: 0.9rem;">Esta funcionalidade será implementada em breve.</p>
+      </div>
+    </div>
+  `;
+  abrirModal?.(html, { titulo: 'Adicionar Intervalo' });
 }
 
 export async function criarIntervalo(sessaoId) {
-  // TODO: Implement interval creation
+  toast('Funcionalidade em desenvolvimento', 'info');
 }
 
 // Session editing functions
 export async function editarSessao(sessaoId, inicio, fim) {
-  // TODO: Implement session editing
+  const { abrirModal } = window;
+  const html = `
+    <div style="padding: 24px;">
+      <h2>Editar Sessão</h2>
+      <div style="color: var(--text3); margin: 16px 0;">
+        <strong>Funcionalidade em desenvolvimento</strong>
+        <p style="margin-top: 8px; font-size: 0.9rem;">Esta funcionalidade será implementada em breve.</p>
+      </div>
+    </div>
+  `;
+  abrirModal?.(html, { titulo: 'Editar Sessão' });
 }
 
 export async function salvarSessao(sessaoId) {
-  // TODO: Save session changes
+  toast('Funcionalidade em desenvolvimento', 'info');
 }
 
 export async function deletarSessao(sessaoId, tarefaId) {
-  // TODO: Delete a session
+  toast('Funcionalidade em desenvolvimento', 'info');
 }
 
 // Interval editing
 export async function editarIntervalo(intervaloId) {
-  // TODO: Edit interval
+  const { abrirModal } = window;
+  const html = `
+    <div style="padding: 24px;">
+      <h2>Editar Intervalo</h2>
+      <div style="color: var(--text3); margin: 16px 0;">
+        <strong>Funcionalidade em desenvolvimento</strong>
+        <p style="margin-top: 8px; font-size: 0.9rem;">Esta funcionalidade será implementada em breve.</p>
+      </div>
+    </div>
+  `;
+  abrirModal?.(html, { titulo: 'Editar Intervalo' });
 }
 
 export async function salvarIntervalo(id) {
-  // TODO: Save interval
+  toast('Funcionalidade em desenvolvimento', 'info');
 }
 
 export async function deletarIntervalo(id, tarefaId) {
-  // TODO: Delete interval
+  toast('Funcionalidade em desenvolvimento', 'info');
 }
 
 // Render sessions for a task

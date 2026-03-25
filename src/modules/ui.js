@@ -154,3 +154,39 @@ export function escapeHtml(text) {
   };
   return String(text).replace(/[&<>"']/g, (m) => map[m]);
 }
+
+export function alternarTema() {
+  const html = document.documentElement;
+  const tema = html.getAttribute('data-theme') || 'dark';
+  const novoTema = tema === 'dark' ? 'light' : 'dark';
+  html.setAttribute('data-theme', novoTema);
+  localStorage.setItem('ea_tema', novoTema);
+}
+
+export function alternarPerfilAdmin() {
+  // Toggle admin mode
+  const { ADMIN_MODE, setAdminMode } = window;
+  if (typeof ADMIN_MODE !== 'undefined' && typeof setAdminMode === 'function') {
+    const novoMode = ADMIN_MODE === 'admin' ? 'normal' : 'admin';
+    setAdminMode(novoMode);
+    toast(`Modo: ${novoMode === 'admin' ? 'Administrador' : 'Membro'}`, 'ok');
+    window.renderDash?.();
+  }
+}
+
+export function mostrar(pagina) {
+  // Generic page show function for compatibility
+  if (pagina === 'setup') {
+    document.getElementById('page-login')?.classList.add('hidden');
+    document.getElementById('page-setup')?.classList.remove('hidden');
+    document.getElementById('page-app')?.classList.add('hidden');
+  } else if (pagina === 'app') {
+    document.getElementById('page-login')?.classList.add('hidden');
+    document.getElementById('page-setup')?.classList.add('hidden');
+    document.getElementById('page-app')?.classList.remove('hidden');
+  } else {
+    document.getElementById('page-login')?.classList.remove('hidden');
+    document.getElementById('page-setup')?.classList.add('hidden');
+    document.getElementById('page-app')?.classList.add('hidden');
+  }
+}

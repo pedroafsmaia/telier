@@ -229,27 +229,87 @@ function renderAbaGrupo(aba, projetos) {
 
 // Placeholder functions for modal handlers
 export async function modalNovoProjeto(preselectGrupoId = '') {
-  // TODO: Implement project creation modal
+  const { abrirModal, toast } = window;
+  const html = `
+    <div style="padding: 24px;">
+      <h2>Novo Projeto</h2>
+      <div style="color: var(--text3); margin: 16px 0;">
+        <strong>Funcionalidade em desenvolvimento</strong>
+        <p style="margin-top: 8px; font-size: 0.9rem;">Esta funcionalidade será implementada em breve.</p>
+      </div>
+    </div>
+  `;
+  abrirModal?.(html, { titulo: 'Novo Projeto' });
 }
 
 export async function modalEditarProjeto(id) {
-  // TODO: Implement project edit modal
+  const { abrirModal } = window;
+  const html = `
+    <div style="padding: 24px;">
+      <h2>Editar Projeto</h2>
+      <div style="color: var(--text3); margin: 16px 0;">
+        <strong>Funcionalidade em desenvolvimento</strong>
+        <p style="margin-top: 8px; font-size: 0.9rem;">Esta funcionalidade será implementada em breve.</p>
+      </div>
+    </div>
+  `;
+  abrirModal?.(html, { titulo: 'Editar Projeto' });
 }
 
 export async function modalPermissoes(projetoId) {
-  // TODO: Implement permissions modal
+  const { abrirModal } = window;
+  const html = `
+    <div style="padding: 24px;">
+      <h2>Permissões</h2>
+      <div style="color: var(--text3); margin: 16px 0;">
+        <strong>Funcionalidade em desenvolvimento</strong>
+        <p style="margin-top: 8px; font-size: 0.9rem;">Esta funcionalidade será implementada em breve.</p>
+      </div>
+    </div>
+  `;
+  abrirModal?.(html, { titulo: 'Permissões' });
 }
 
 export async function modalNovoGrupo() {
-  // TODO: Implement group creation modal
+  const { abrirModal } = window;
+  const html = `
+    <div style="padding: 24px;">
+      <h2>Novo Grupo</h2>
+      <div style="color: var(--text3); margin: 16px 0;">
+        <strong>Funcionalidade em desenvolvimento</strong>
+        <p style="margin-top: 8px; font-size: 0.9rem;">Esta funcionalidade será implementada em breve.</p>
+      </div>
+    </div>
+  `;
+  abrirModal?.(html, { titulo: 'Novo Grupo' });
 }
 
 export async function modalEditarGrupo(id) {
-  // TODO: Implement group edit modal
+  const { abrirModal } = window;
+  const html = `
+    <div style="padding: 24px;">
+      <h2>Editar Grupo</h2>
+      <div style="color: var(--text3); margin: 16px 0;">
+        <strong>Funcionalidade em desenvolvimento</strong>
+        <p style="margin-top: 8px; font-size: 0.9rem;">Esta funcionalidade será implementada em breve.</p>
+      </div>
+    </div>
+  `;
+  abrirModal?.(html, { titulo: 'Editar Grupo' });
 }
 
 export async function compartilharGrupo(id) {
-  // TODO: Implement group sharing
+  const { abrirModal } = window;
+  const html = `
+    <div style="padding: 24px;">
+      <h2>Compartilhar Grupo</h2>
+      <div style="color: var(--text3); margin: 16px 0;">
+        <strong>Funcionalidade em desenvolvimento</strong>
+        <p style="margin-top: 8px; font-size: 0.9rem;">Esta funcionalidade será implementada em breve.</p>
+      </div>
+    </div>
+  `;
+  abrirModal?.(html, { titulo: 'Compartilhar Grupo' });
 }
 
 // Expose globally

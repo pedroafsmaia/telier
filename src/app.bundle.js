@@ -276,30 +276,81 @@
     };
     return String(text).replace(/[&<>"']/g, (m) => map[m]);
   }
+  function alternarTema() {
+    const html = document.documentElement;
+    const tema = html.getAttribute("data-theme") || "dark";
+    const novoTema = tema === "dark" ? "light" : "dark";
+    html.setAttribute("data-theme", novoTema);
+    localStorage.setItem("ea_tema", novoTema);
+  }
+  function alternarPerfilAdmin() {
+    const { ADMIN_MODE: ADMIN_MODE2, setAdminMode } = window;
+    if (typeof ADMIN_MODE2 !== "undefined" && typeof setAdminMode === "function") {
+      const novoMode = ADMIN_MODE2 === "admin" ? "normal" : "admin";
+      setAdminMode(novoMode);
+      toast(`Modo: ${novoMode === "admin" ? "Administrador" : "Membro"}`, "ok");
+      window.renderDash?.();
+    }
+  }
+  function mostrar(pagina) {
+    if (pagina === "setup") {
+      document.getElementById("page-login")?.classList.add("hidden");
+      document.getElementById("page-setup")?.classList.remove("hidden");
+      document.getElementById("page-app")?.classList.add("hidden");
+    } else if (pagina === "app") {
+      document.getElementById("page-login")?.classList.add("hidden");
+      document.getElementById("page-setup")?.classList.add("hidden");
+      document.getElementById("page-app")?.classList.remove("hidden");
+    } else {
+      document.getElementById("page-login")?.classList.remove("hidden");
+      document.getElementById("page-setup")?.classList.add("hidden");
+      document.getElementById("page-app")?.classList.add("hidden");
+    }
+  }
 
   // src/modules/auth.js
   async function init() {
-    if (TOKEN) {
-      try {
-        const user = await endpoints.me();
-        setEU(user);
+    const renderTimeout = setTimeout(() => {
+      if (TOKEN) {
+        console.warn("Auth API timeout - showing app despite unverified token");
         mostrarApp();
-      } catch (erro) {
-        console.error("Auth error:", erro);
-        clearAuth();
+      } else {
+        console.warn("Auth API timeout - showing login");
         mostrarLogin();
       }
-    } else {
-      try {
-        const { precisa_setup } = await endpoints.needsSetup();
-        if (precisa_setup) {
-          mostrarSetup();
-        } else {
+    }, 3e4);
+    try {
+      if (TOKEN) {
+        try {
+          const user = await endpoints.me();
+          clearTimeout(renderTimeout);
+          setEU(user);
+          mostrarApp();
+        } catch (erro) {
+          clearTimeout(renderTimeout);
+          console.error("Auth error:", erro);
+          clearAuth();
           mostrarLogin();
         }
-      } catch {
-        mostrarLogin();
+      } else {
+        try {
+          const { precisa_setup } = await endpoints.needsSetup();
+          clearTimeout(renderTimeout);
+          if (precisa_setup) {
+            mostrarSetup();
+          } else {
+            mostrarLogin();
+          }
+        } catch (erro) {
+          clearTimeout(renderTimeout);
+          console.error("Setup check error:", erro);
+          mostrarLogin();
+        }
       }
+    } catch (erro) {
+      clearTimeout(renderTimeout);
+      console.error("Auth init error:", erro);
+      mostrarLogin();
     }
   }
   async function fazerLogin() {
@@ -1150,16 +1201,82 @@
     el.innerHTML = '<div class="loading"><div class="spinner"></div> Carregando...</div>';
   }
   async function modalNovoProjeto(preselectGrupoId = "") {
+    const { abrirModal: abrirModal2, toast: toast2 } = window;
+    const html = `
+    <div style="padding: 24px;">
+      <h2>Novo Projeto</h2>
+      <div style="color: var(--text3); margin: 16px 0;">
+        <strong>Funcionalidade em desenvolvimento</strong>
+        <p style="margin-top: 8px; font-size: 0.9rem;">Esta funcionalidade ser\xE1 implementada em breve.</p>
+      </div>
+    </div>
+  `;
+    abrirModal2?.(html, { titulo: "Novo Projeto" });
   }
   async function modalEditarProjeto(id) {
+    const { abrirModal: abrirModal2 } = window;
+    const html = `
+    <div style="padding: 24px;">
+      <h2>Editar Projeto</h2>
+      <div style="color: var(--text3); margin: 16px 0;">
+        <strong>Funcionalidade em desenvolvimento</strong>
+        <p style="margin-top: 8px; font-size: 0.9rem;">Esta funcionalidade ser\xE1 implementada em breve.</p>
+      </div>
+    </div>
+  `;
+    abrirModal2?.(html, { titulo: "Editar Projeto" });
   }
   async function modalPermissoes(projetoId) {
+    const { abrirModal: abrirModal2 } = window;
+    const html = `
+    <div style="padding: 24px;">
+      <h2>Permiss\xF5es</h2>
+      <div style="color: var(--text3); margin: 16px 0;">
+        <strong>Funcionalidade em desenvolvimento</strong>
+        <p style="margin-top: 8px; font-size: 0.9rem;">Esta funcionalidade ser\xE1 implementada em breve.</p>
+      </div>
+    </div>
+  `;
+    abrirModal2?.(html, { titulo: "Permiss\xF5es" });
   }
   async function modalNovoGrupo() {
+    const { abrirModal: abrirModal2 } = window;
+    const html = `
+    <div style="padding: 24px;">
+      <h2>Novo Grupo</h2>
+      <div style="color: var(--text3); margin: 16px 0;">
+        <strong>Funcionalidade em desenvolvimento</strong>
+        <p style="margin-top: 8px; font-size: 0.9rem;">Esta funcionalidade ser\xE1 implementada em breve.</p>
+      </div>
+    </div>
+  `;
+    abrirModal2?.(html, { titulo: "Novo Grupo" });
   }
   async function modalEditarGrupo(id) {
+    const { abrirModal: abrirModal2 } = window;
+    const html = `
+    <div style="padding: 24px;">
+      <h2>Editar Grupo</h2>
+      <div style="color: var(--text3); margin: 16px 0;">
+        <strong>Funcionalidade em desenvolvimento</strong>
+        <p style="margin-top: 8px; font-size: 0.9rem;">Esta funcionalidade ser\xE1 implementada em breve.</p>
+      </div>
+    </div>
+  `;
+    abrirModal2?.(html, { titulo: "Editar Grupo" });
   }
   async function compartilharGrupo(id) {
+    const { abrirModal: abrirModal2 } = window;
+    const html = `
+    <div style="padding: 24px;">
+      <h2>Compartilhar Grupo</h2>
+      <div style="color: var(--text3); margin: 16px 0;">
+        <strong>Funcionalidade em desenvolvimento</strong>
+        <p style="margin-top: 8px; font-size: 0.9rem;">Esta funcionalidade ser\xE1 implementada em breve.</p>
+      </div>
+    </div>
+  `;
+    abrirModal2?.(html, { titulo: "Compartilhar Grupo" });
   }
   if (typeof window !== "undefined") {
     window.abrirProjeto = abrirProjeto;
@@ -1365,16 +1482,62 @@
     return ids.slice(0, max).map((id) => `<span class="colab-avatar">${avatar("Colaborador", "xs")}</span>`).join("");
   }
   function ordenarLista(col) {
+    toast("Funcionalidade em desenvolvimento", "info");
   }
   function toggleListaConcluidas() {
+    toast("Funcionalidade em desenvolvimento", "info");
   }
   async function modalNovaTarefa(projetoId) {
+    const { abrirModal: abrirModal2 } = window;
+    const html = `
+    <div style="padding: 24px;">
+      <h2>Nova Tarefa</h2>
+      <div style="color: var(--text3); margin: 16px 0;">
+        <strong>Funcionalidade em desenvolvimento</strong>
+        <p style="margin-top: 8px; font-size: 0.9rem;">Esta funcionalidade ser\xE1 implementada em breve.</p>
+      </div>
+    </div>
+  `;
+    abrirModal2?.(html, { titulo: "Nova Tarefa" });
   }
   async function modalEditarTarefa(id) {
+    const { abrirModal: abrirModal2 } = window;
+    const html = `
+    <div style="padding: 24px;">
+      <h2>Editar Tarefa</h2>
+      <div style="color: var(--text3); margin: 16px 0;">
+        <strong>Funcionalidade em desenvolvimento</strong>
+        <p style="margin-top: 8px; font-size: 0.9rem;">Esta funcionalidade ser\xE1 implementada em breve.</p>
+      </div>
+    </div>
+  `;
+    abrirModal2?.(html, { titulo: "Editar Tarefa" });
   }
   async function abrirTarefa(id) {
+    const { abrirModal: abrirModal2 } = window;
+    const html = `
+    <div style="padding: 24px;">
+      <h2>Detalhes da Tarefa</h2>
+      <div style="color: var(--text3); margin: 16px 0;">
+        <strong>Funcionalidade em desenvolvimento</strong>
+        <p style="margin-top: 8px; font-size: 0.9rem;">Esta funcionalidade ser\xE1 implementada em breve.</p>
+      </div>
+    </div>
+  `;
+    abrirModal2?.(html, { titulo: "Detalhes da Tarefa" });
   }
   async function duplicarTarefa(id) {
+    const { abrirModal: abrirModal2 } = window;
+    const html = `
+    <div style="padding: 24px;">
+      <h2>Duplicar Tarefa</h2>
+      <div style="color: var(--text3); margin: 16px 0;">
+        <strong>Funcionalidade em desenvolvimento</strong>
+        <p style="margin-top: 8px; font-size: 0.9rem;">Esta funcionalidade ser\xE1 implementada em breve.</p>
+      </div>
+    </div>
+  `;
+    abrirModal2?.(html, { titulo: "Duplicar Tarefa" });
   }
   function dragTarefa(e, tarefaId) {
     e.dataTransfer.effectAllowed = "move";
@@ -1430,20 +1593,58 @@
     dock.innerHTML = "";
   }
   async function modalAdicionarIntervalo(sessaoId) {
+    const { abrirModal: abrirModal2 } = window;
+    const html = `
+    <div style="padding: 24px;">
+      <h2>Adicionar Intervalo</h2>
+      <div style="color: var(--text3); margin: 16px 0;">
+        <strong>Funcionalidade em desenvolvimento</strong>
+        <p style="margin-top: 8px; font-size: 0.9rem;">Esta funcionalidade ser\xE1 implementada em breve.</p>
+      </div>
+    </div>
+  `;
+    abrirModal2?.(html, { titulo: "Adicionar Intervalo" });
   }
   async function criarIntervalo(sessaoId) {
+    toast("Funcionalidade em desenvolvimento", "info");
   }
   async function editarSessao(sessaoId, inicio, fim) {
+    const { abrirModal: abrirModal2 } = window;
+    const html = `
+    <div style="padding: 24px;">
+      <h2>Editar Sess\xE3o</h2>
+      <div style="color: var(--text3); margin: 16px 0;">
+        <strong>Funcionalidade em desenvolvimento</strong>
+        <p style="margin-top: 8px; font-size: 0.9rem;">Esta funcionalidade ser\xE1 implementada em breve.</p>
+      </div>
+    </div>
+  `;
+    abrirModal2?.(html, { titulo: "Editar Sess\xE3o" });
   }
   async function salvarSessao(sessaoId) {
+    toast("Funcionalidade em desenvolvimento", "info");
   }
   async function deletarSessao(sessaoId, tarefaId) {
+    toast("Funcionalidade em desenvolvimento", "info");
   }
   async function editarIntervalo(intervaloId) {
+    const { abrirModal: abrirModal2 } = window;
+    const html = `
+    <div style="padding: 24px;">
+      <h2>Editar Intervalo</h2>
+      <div style="color: var(--text3); margin: 16px 0;">
+        <strong>Funcionalidade em desenvolvimento</strong>
+        <p style="margin-top: 8px; font-size: 0.9rem;">Esta funcionalidade ser\xE1 implementada em breve.</p>
+      </div>
+    </div>
+  `;
+    abrirModal2?.(html, { titulo: "Editar Intervalo" });
   }
   async function salvarIntervalo(id) {
+    toast("Funcionalidade em desenvolvimento", "info");
   }
   async function deletarIntervalo(id, tarefaId) {
+    toast("Funcionalidade em desenvolvimento", "info");
   }
   async function renderSessoesTarefa(tarefaId, containerEl) {
     if (!containerEl) return;
@@ -1520,6 +1721,7 @@
   async function dropProjeto(e, grupoId) {
     e.preventDefault();
     e.currentTarget.classList.remove("drag-over");
+    toast("Funcionalidade em desenvolvimento", "info");
   }
   function toggleGrupo(grupoId) {
     const collapsed = JSON.parse(localStorage.getItem("telier_grupos_collapsed") || "[]");
@@ -1527,6 +1729,7 @@
     if (idx >= 0) collapsed.splice(idx, 1);
     else collapsed.push(grupoId);
     localStorage.setItem("telier_grupos_collapsed", JSON.stringify(collapsed));
+    window.renderDash?.();
   }
   if (typeof window !== "undefined") {
     window.dragProjeto = dragProjeto;
@@ -1558,8 +1761,23 @@
     }
   }
   async function abrirUsuarioAdmin(usuarioId) {
+    toast("Funcionalidade em desenvolvimento", "info");
   }
   async function exportarTempoAdminCSV(projetoId) {
+    toast("Funcionalidade em desenvolvimento", "info");
+  }
+  async function modalNovoColega() {
+    const { abrirModal: abrirModal2 } = window;
+    const html = `
+    <div style="padding: 24px;">
+      <h2>Cadastrar Colega</h2>
+      <div style="color: var(--text3); margin: 16px 0;">
+        <strong>Funcionalidade em desenvolvimento</strong>
+        <p style="margin-top: 8px; font-size: 0.9rem;">Esta funcionalidade ser\xE1 implementada em breve.</p>
+      </div>
+    </div>
+  `;
+    abrirModal2?.(html, { titulo: "Cadastrar Colega" });
   }
   async function modalNovoColega() {
     toast("Fun\xE7\xE3o em desenvolvimento", "info");
@@ -1568,6 +1786,7 @@
     window.abrirCentralAdmin = abrirCentralAdmin;
     window.abrirUsuarioAdmin = abrirUsuarioAdmin;
     window.exportarTempoAdminCSV = exportarTempoAdminCSV;
+    window.modalNovoColega = modalNovoColega;
   }
 
   // src/modules/notifications.js
@@ -1603,6 +1822,7 @@
   function renderPainelNotificacoes() {
     const panel = document.getElementById("notif-panel");
     if (!panel) return;
+    panel.innerHTML = '<div style="padding: 16px; color: var(--text3); text-align: center;">Nenhuma notifica\xE7\xE3o</div>';
   }
   function abrirNotificacoes() {
     const panel = document.getElementById("notif-panel");
@@ -2001,6 +2221,9 @@
   window.syncEyeButton = syncEyeButton;
   window.atualizarBadgeNotificacoes = atualizarBadgeNotificacoes;
   window.escapeHtml = escapeHtml;
+  window.alternarTema = alternarTema;
+  window.alternarPerfilAdmin = alternarPerfilAdmin;
+  window.mostrar = mostrar;
   window.esc = esc;
   window.iniciais = iniciais;
   window.avatar = avatar;

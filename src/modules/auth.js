@@ -6,29 +6,51 @@ import { setToken, clearToken, setEU, clearEU, TOKEN, EU } from './state.js';
 import { toast } from './ui.js';
 
 export async function init() {
-  // Check if user is already logged in
-  if (TOKEN) {
-    try {
-      const user = await endpoints.me();
-      setEU(user);
+  // Ensure UI is rendered within 30 seconds even if API is slow
+  const renderTimeout = setTimeout(() => {
+    if (TOKEN) {
+      console.warn('Auth API timeout - showing app despite unverified token');
       mostrarApp();
-    } catch (erro) {
-      console.error('Auth error:', erro);
-      clearAuth();
+    } else {
+      console.warn('Auth API timeout - showing login');
       mostrarLogin();
     }
-  } else {
-    // Check if setup is needed
-    try {
-      const { precisa_setup } = await endpoints.needsSetup();
-      if (precisa_setup) {
-        mostrarSetup();
-      } else {
+  }, 30000);
+
+  try {
+    // Check if user is already logged in
+    if (TOKEN) {
+      try {
+        const user = await endpoints.me();
+        clearTimeout(renderTimeout);
+        setEU(user);
+        mostrarApp();
+      } catch (erro) {
+        clearTimeout(renderTimeout);
+        console.error('Auth error:', erro);
+        clearAuth();
         mostrarLogin();
       }
-    } catch {
-      mostrarLogin();
+    } else {
+      // Check if setup is needed
+      try {
+        const { precisa_setup } = await endpoints.needsSetup();
+        clearTimeout(renderTimeout);
+        if (precisa_setup) {
+          mostrarSetup();
+        } else {
+          mostrarLogin();
+        }
+      } catch (erro) {
+        clearTimeout(renderTimeout);
+        console.error('Setup check error:', erro);
+        mostrarLogin();
+      }
     }
+  } catch (erro) {
+    clearTimeout(renderTimeout);
+    console.error('Auth init error:', erro);
+    mostrarLogin();
   }
 }
 
