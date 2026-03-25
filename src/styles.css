@@ -197,7 +197,7 @@ label{font-size:var(--fs-080);color:var(--text2);display:block;margin-bottom:5px
 .colabs-stack-more { font-size:var(--fs-075); color:var(--text3); margin-left:4px; }
 
 /* ── MODAL ── */
-.modal-overlay{position:fixed;inset:0;background:rgba(3,5,10,.62);display:flex;align-items:center;justify-content:center;z-index:1000;backdrop-filter:blur(4px);animation:fadeIn .15s ease;padding:16px}
+.modal-overlay{position:fixed;inset:0;background:rgba(3,5,10,.62);display:flex;align-items:center;justify-content:center;z-index:1000;animation:fadeIn .15s ease;padding:16px}
 .modal{background:var(--bg2);border:1px solid var(--border2);border-radius:var(--r3);padding:clamp(18px,5vw,32px);width:min(100%,500px);max-height:92vh;overflow-y:auto;animation:popIn .15s ease-out}
 .modal-lg{width:min(100%,600px)}
 .modal h2{font-size:var(--fs-300);font-weight:500;margin-bottom:22px;color:var(--text);line-height:var(--lh-tight)}
@@ -1101,7 +1101,7 @@ body.has-presence #timer-dock {
 /* ── PAINEL DE NOTIFICAÇÕES ── */
 .notif-overlay{position:fixed;inset:0;background:rgba(4,6,10,.36);z-index:950;opacity:0;pointer-events:none;transition:opacity .2s}
 .notif-overlay.aberto{opacity:1;pointer-events:auto}
-.notif-panel{position:fixed;top:0;right:0;height:100vh;width:min(420px,100vw);background:linear-gradient(180deg, rgba(255,255,255,.08), rgba(255,255,255,.02)), var(--glass-bg-strong);border-left:1px solid var(--glass-border);box-shadow:var(--glass-shadow), -4px 0 20px rgba(0,0,0,.15);z-index:960;transform:translateX(100%);transition:transform .24s ease;display:flex;flex-direction:column;backdrop-filter:blur(22px) saturate(145%);-webkit-backdrop-filter:blur(22px) saturate(145%)}
+.notif-panel{position:fixed;top:0;right:0;height:100vh;width:min(420px,100vw);background:var(--glass-bg-strong);border-left:1px solid var(--glass-border);box-shadow:var(--glass-shadow), -4px 0 20px rgba(0,0,0,.15);z-index:960;transform:translateX(100%);transition:transform .24s ease;display:flex;flex-direction:column;backdrop-filter:blur(22px) saturate(145%);-webkit-backdrop-filter:blur(22px) saturate(145%)}
 .notif-panel.aberto{transform:translateX(0)}
 .notif-panel-head{display:flex;align-items:center;justify-content:space-between;padding:14px;border-bottom:1px solid var(--glass-border-soft)}
 .notif-panel-title{color:var(--text)}
