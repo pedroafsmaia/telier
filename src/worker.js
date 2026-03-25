@@ -1273,6 +1273,11 @@ export default {
             WHERE tt.projeto_id = p.id
           ) as total_horas,
           (
+            SELECT t2.id FROM tarefas t2
+            WHERE t2.projeto_id = p.id AND t2.foco = 1 AND t2.dono_id = ?
+            LIMIT 1
+          ) as minha_tarefa_foco_id,
+          (
             SELECT t2.nome FROM tarefas t2
             WHERE t2.projeto_id = p.id AND t2.foco = 1 AND t2.dono_id = ?
             LIMIT 1
