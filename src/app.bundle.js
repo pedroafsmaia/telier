@@ -158,7 +158,7 @@
     getUsers: () => req("GET", "/usuarios"),
     createUser: (data) => req("POST", "/usuarios", data),
     updateUser: (id, data) => req("PUT", `/usuarios/${id}`, data),
-    resetUserPassword: (id, novaSenha) => req("PUT", `/usuarios/${id}/reset-senha`, { nova_senha: novaSenha })
+    resetUserPassword: (id, novaSenha) => req("PUT", `/usuarios/${id}/senha`, { nova_senha: novaSenha })
   };
 
   // src/modules/ui.js
@@ -1059,7 +1059,7 @@
         req("GET", `/projetos/${id}`),
         req("GET", `/projetos/${id}/tarefas`),
         req("GET", `/projetos/${id}/decisoes`).catch(() => []),
-        req("GET", `/projetos/${id}/resumo-horas`).catch(() => [])
+        req("GET", `/projetos/${id}/horas-por-usuario`).catch(() => [])
       ]);
       const abaSalva = sessionStorage.getItem(`telier_proj_aba_${id}`) || "tarefas";
       slideContent2("right");
@@ -1570,7 +1570,7 @@
   }
   async function iniciarCronometro(tarefaId, tarefaNome) {
     try {
-      const sessao = await req("POST", "/tempo/iniciar", { tarefa_id: tarefaId });
+      const sessao = await req("POST", `/tarefas/${tarefaId}/tempo`, { inicio: (/* @__PURE__ */ new Date()).toISOString() });
       toast(`Cron\xF4metro iniciado: ${tarefaNome}`, "ok");
       renderTimerDock();
       return sessao;
@@ -1580,7 +1580,7 @@
   }
   async function pararCronometro(sessaoId) {
     try {
-      await req("POST", `/tempo/parar/${sessaoId}`, {});
+      await req("PUT", `/tempo/${sessaoId}/parar`, {});
       toast("Sess\xE3o finalizada", "ok");
       renderTimerDock();
     } catch (e) {
@@ -1649,7 +1649,7 @@
   async function renderSessoesTarefa(tarefaId, containerEl) {
     if (!containerEl) return;
     try {
-      const sessoes = await req("GET", `/tarefas/${tarefaId}/sessoes`);
+      const sessoes = await req("GET", `/tarefas/${tarefaId}/tempo`);
       if (!sessoes.length) {
         containerEl.innerHTML = '<div class="empty-small">Sem sess\xF5es de trabalho registradas</div>';
         return;
@@ -1805,7 +1805,7 @@
   }
   async function marcarNotifLida(id, abrirLink = null) {
     try {
-      await req("PATCH", `/notificacoes/${id}`, { lida: true });
+      await req("PUT", `/notificacoes/${id}/lida`, {});
       if (abrirLink) window.location.href = abrirLink;
     } catch (e) {
       toast(e.message, "erro");
@@ -1813,7 +1813,7 @@
   }
   async function marcarTodasNotifLidas() {
     try {
-      await req("POST", "/notificacoes/marcar-todas-lidas", {});
+      await req("PUT", "/notificacoes/lidas", {});
       toast("Notifica\xE7\xF5es marcadas como lidas", "ok");
     } catch (e) {
       toast(e.message, "erro");

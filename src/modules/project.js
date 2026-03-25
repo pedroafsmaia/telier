@@ -59,7 +59,7 @@ export async function abrirProjeto(id) {
       req('GET', `/projetos/${id}`),
       req('GET', `/projetos/${id}/tarefas`),
       req('GET', `/projetos/${id}/decisoes`).catch(() => []),
-      req('GET', `/projetos/${id}/resumo-horas`).catch(() => []),
+      req('GET', `/projetos/${id}/horas-por-usuario`).catch(() => []),
     ]);
     const abaSalva = sessionStorage.getItem(`telier_proj_aba_${id}`) || 'tarefas';
     slideContent('right');

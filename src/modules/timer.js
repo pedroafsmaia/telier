@@ -17,7 +17,7 @@ export async function carregarTimersAtivos() {
 // Start a timer for a task
 export async function iniciarCronometro(tarefaId, tarefaNome) {
   try {
-    const sessao = await req('POST', '/tempo/iniciar', { tarefa_id: tarefaId });
+    const sessao = await req('POST', `/tarefas/${tarefaId}/tempo`, { inicio: new Date().toISOString() });
     toast(`Cronômetro iniciado: ${tarefaNome}`, 'ok');
     renderTimerDock();
     return sessao;
@@ -29,7 +29,7 @@ export async function iniciarCronometro(tarefaId, tarefaNome) {
 // Stop a timer session
 export async function pararCronometro(sessaoId) {
   try {
-    await req('POST', `/tempo/parar/${sessaoId}`, {});
+    await req('PUT', `/tempo/${sessaoId}/parar`, {});
     toast('Sessão finalizada', 'ok');
     renderTimerDock();
   } catch (e) {
@@ -114,7 +114,7 @@ export async function deletarIntervalo(id, tarefaId) {
 export async function renderSessoesTarefa(tarefaId, containerEl) {
   if (!containerEl) return;
   try {
-    const sessoes = await req('GET', `/tarefas/${tarefaId}/sessoes`);
+    const sessoes = await req('GET', `/tarefas/${tarefaId}/tempo`);
     if (!sessoes.length) {
       containerEl.innerHTML = '<div class="empty-small">Sem sessões de trabalho registradas</div>';
       return;

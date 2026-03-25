@@ -113,5 +113,5 @@ export const endpoints = {
   getUsers: () => req('GET', '/usuarios'),
   createUser: (data) => req('POST', '/usuarios', data),
   updateUser: (id, data) => req('PUT', `/usuarios/${id}`, data),
-  resetUserPassword: (id, novaSenha) => req('PUT', `/usuarios/${id}/reset-senha`, { nova_senha: novaSenha }),
+  resetUserPassword: (id, novaSenha) => req('PUT', `/usuarios/${id}/senha`, { nova_senha: novaSenha }),
 };
