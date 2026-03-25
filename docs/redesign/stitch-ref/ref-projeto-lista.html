@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="pt-br"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Monolith Studio | Residência Silva</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&amp;family=DM+Mono:wght@400;500&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+            vertical-align: middle;
+        }
+        body {
+            background-color: #0e0e0e;
+            color: #e7e5e4;
+            font-family: 'Inter', sans-serif;
+        }
+        .mono {
+            font-family: 'DM+Mono', monospace;
+        }
+        /* Custom scrollbar for architectural precision */
+        ::-webkit-scrollbar { width: 4px; height: 4px; }
+        ::-webkit-scrollbar-track { background: #131313; }
+        ::-webkit-scrollbar-thumb { background: #2A2A2A; }
+        ::-webkit-scrollbar-thumb:hover { background: #0055FF; }
+    </style>
+<script id="tailwind-config">
+        tailwind.config = {
+          darkMode: "class",
+          theme: {
+            extend: {
+              colors: {
+                "surface-container-high": "#1f2020",
+                "background": "#0e0e0e",
+                "on-background": "#e7e5e4",
+                "surface-container": "#191a1a",
+                "primary-container": "#0039b3",
+                "secondary": "#9f9d9d",
+                "error": "#ec7c8a",
+                "surface-dim": "#0e0e0e",
+                "on-surface": "#e7e5e4",
+                "on-surface-variant": "#acabaa",
+                "outline-variant": "#484848",
+                "primary": "#b6c4ff",
+                "on-primary": "#0034a4",
+                "surface-container-low": "#131313",
+              },
+              fontFamily: {
+                "headline": ["Inter"],
+                "body": ["Inter"],
+                "label": ["Inter"]
+              },
+              borderRadius: {"DEFAULT": "0.125rem", "lg": "0.25rem", "xl": "0.5rem", "full": "0.75rem"},
+            },
+          },
+        }
+      </script>
+</head>
+<body class="flex min-h-screen">
+<!-- SideNavBar (Shared Component JSON Mapping) -->
+<aside class="w-[56px] h-screen border-r border-[#2A2A2A] fixed left-0 top-0 bg-[#131313] flex flex-col items-center py-4 z-50">
+<div class="mb-8">
+<span class="material-symbols-outlined text-[#0055FF] font-bold tracking-tighter text-2xl" data-icon="architecture">architecture</span>
+</div>
+<nav class="flex flex-col gap-6 items-center flex-1">
+<!-- Projects Active -->
+<button class="text-[#0055FF] border-l-2 border-[#0055FF] w-full py-2 flex justify-center scale-95 active:scale-90 transition-colors duration-150">
+<span class="material-symbols-outlined" data-icon="folder_open">folder_open</span>
+</button>
+<button class="text-gray-500 hover:text-gray-200 w-full py-2 flex justify-center hover:bg-[#191a1a] transition-colors duration-150">
+<span class="material-symbols-outlined" data-icon="check_circle">check_circle</span>
+</button>
+<button class="text-gray-500 hover:text-gray-200 w-full py-2 flex justify-center hover:bg-[#191a1a] transition-colors duration-150">
+<span class="material-symbols-outlined" data-icon="groups">groups</span>
+</button>
+<button class="text-gray-500 hover:text-gray-200 w-full py-2 flex justify-center hover:bg-[#191a1a] transition-colors duration-150">
+<span class="material-symbols-outlined" data-icon="payments">payments</span>
+</button>
+<button class="text-gray-500 hover:text-gray-200 w-full py-2 flex justify-center hover:bg-[#191a1a] transition-colors duration-150">
+<span class="material-symbols-outlined" data-icon="inventory_2">inventory_2</span>
+</button>
+</nav>
+<div class="flex flex-col gap-6 items-center pb-4">
+<button class="text-gray-500 hover:text-gray-200 transition-colors duration-150">
+<span class="material-symbols-outlined" data-icon="settings">settings</span>
+</button>
+<button class="text-gray-500 hover:text-gray-200 transition-colors duration-150">
+<span class="material-symbols-outlined" data-icon="help_outline">help_outline</span>
+</button>
+</div>
+</aside>
+<main class="flex-1 ml-[56px] flex flex-col">
+<!-- TopAppBar (Shared Component JSON Mapping) -->
+<header class="h-14 w-full border-b border-[#2A2A2A] sticky top-0 bg-[#0e0e0e] flex justify-between items-center px-6 z-40">
+<div class="flex items-center gap-2">
+<span class="font-['Inter'] font-semibold text-[10px] uppercase tracking-wider text-gray-400">Projetos</span>
+<span class="material-symbols-outlined text-[12px] text-gray-600" data-icon="chevron_right">chevron_right</span>
+<span class="font-['Inter'] font-semibold text-[10px] uppercase tracking-wider text-[#0055FF]">Residência Silva</span>
+</div>
+<div class="flex items-center gap-6">
+<nav class="flex gap-8">
+<a class="font-['Inter'] font-semibold text-sm uppercase tracking-wider text-[#0055FF] border-b border-[#0055FF] h-14 flex items-center" href="#">Overview</a>
+<a class="font-['Inter'] font-semibold text-sm uppercase tracking-wider text-gray-400 hover:text-white transition-opacity h-14 flex items-center" href="#">Schedule</a>
+<a class="font-['Inter'] font-semibold text-sm uppercase tracking-wider text-gray-400 hover:text-white transition-opacity h-14 flex items-center" href="#">Documents</a>
+</nav>
+<div class="flex items-center gap-4 ml-6 border-l border-[#2A2A2A] pl-6">
+<span class="material-symbols-outlined text-gray-400 cursor-pointer active:opacity-70" data-icon="notifications">notifications</span>
+<span class="material-symbols-outlined text-gray-400 cursor-pointer active:opacity-70" data-icon="more_vert">more_vert</span>
+<img alt="Profile" class="w-8 h-8 rounded-full border border-[#2A2A2A]" data-alt="close-up portrait of a professional architect in a dark studio setting with minimalist aesthetic" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBT_7Ff-nRI3b8npqG2UoOA1XQCZA4YoGV1Q-zK35rFCQ9GhUKc2NnUoi69HIo6xGIiCxYANbihIaPgsehJpRuQrH5FsDn1wvQerP_jOpgr0R66LGTeyI8mbIvF9QQKVXs5QJz0txNzM0-5r6EZc7QollIA0sgiyjz0zMeQJVLJWL9ZJTKeojxUdJY3yE-2yJUVOyh-Unx3vZxdPhkwKDDPgbtrw-eEg_UsNhXN0Mne6h67JOkJpAGK4hPNIh6NrHUyP5ZsEyPFCW4"/>
+</div>
+</div>
+</header>
+<!-- Page Canvas -->
+<div class="p-8 max-w-[1440px] mx-auto w-full">
+<!-- Project Header Section -->
+<section class="flex flex-col gap-6 mb-10">
+<div class="flex justify-between items-start">
+<div class="flex flex-col gap-2">
+<div class="flex items-center gap-3">
+<h1 class="text-2xl font-semibold tracking-tight text-white">Residência Silva</h1>
+<span class="px-2 py-0.5 bg-[#0055FF]/10 border border-[#0055FF]/20 text-[#0055FF] text-[10px] font-bold uppercase tracking-widest rounded-sm">Em andamento</span>
+</div>
+<div class="flex items-center gap-4">
+<div class="flex -space-x-2">
+<img class="w-6 h-6 rounded-full border border-[#0e0e0e]" data-alt="minimalist user avatar 1" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCBgZ0vkUsLhLrORPF1lYD7H3i5krOyZ8XTQhSNUc9nLu_QyHecwmLGhvIEteiQIUqvtpQKS0DRSu0Ejpxx6twmUQB2ZDeSb8909wquJf6_MTWhI72fiu5dhP7aKDuEhuZX71cSQTTVsktCKOEa_X90VZxnVGdkg8NYBRz92SAWgx1BFUCajSnAC9svnLdYwXvw1z6VeoDQkwpfqXcZ_gl5XweckJUpTn5x9EgoVb1TrMp7CAnAbyKJdefR4BQrixF1H8nw95HywDI"/>
+<img class="w-6 h-6 rounded-full border border-[#0e0e0e]" data-alt="minimalist user avatar 2" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCA2TazDG-gY2KxqSRpcqUogDU-g6AvM3GCc5mPlJDooUW9MsCyJJ8ORictfzJTgBWjIaAiZy_saxEd9RnOV8mRK3gA475Q8bdApCDjaRZMbEGixy556kLnmo2bB1IM4K4SjFzv1Y01CiFhiar_d2dzy501px1xGCHAb4yiJ_G_GMzw4Z8AEI2LSIQ9Don1C8farWO-PFtkKAocgWrS3AmIQCcrvuXYf3ecffC3aqgwap7xP-EP-IezUqDGuDQY8HyZXENtzMNVBtI"/>
+<div class="w-6 h-6 rounded-full bg-[#191a1a] border border-[#2A2A2A] flex items-center justify-center text-[8px] font-bold text-gray-500">+2</div>
+</div>
+<div class="flex items-center gap-3">
+<span class="mono text-xs text-gray-400">4/7 TAREFAS · 57%</span>
+<div class="w-32 h-1 bg-[#191a1a] rounded-full overflow-hidden">
+<div class="h-full bg-[#0055FF]" style="width: 57%"></div>
+</div>
+</div>
+</div>
+</div>
+<div class="flex gap-3">
+<button class="px-4 py-2 border border-[#484848] text-xs font-semibold uppercase tracking-wider hover:bg-white hover:text-black transition-colors">Editar</button>
+<button class="px-4 py-2 bg-[#0055FF] text-white text-xs font-semibold uppercase tracking-wider hover:bg-[#004be3] transition-colors">Adicionar Colaborador</button>
+</div>
+</div>
+<!-- Focus Banner -->
+<div class="bg-[#131313] border border-[#2A2A2A] p-4 flex justify-between items-center">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-[#0055FF] text-sm" data-icon="star" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="text-sm font-medium">Meu foco: <span class="text-white">Planta baixa pavimento térreo</span></span>
+</div>
+<button class="flex items-center gap-2 px-3 py-1 bg-[#0055FF]/10 text-[#0055FF] text-xs font-bold rounded-sm border border-[#0055FF]/20 hover:bg-[#0055FF]/20">
+<span class="material-symbols-outlined text-sm" data-icon="play_arrow" style="font-variation-settings: 'FILL' 1;">play_arrow</span>
+                        INICIAR TIMER
+                    </button>
+</div>
+</section>
+<!-- Navigation Tabs -->
+<div class="flex gap-8 border-b border-[#2A2A2A] mb-8">
+<button class="pb-3 border-b-2 border-[#0055FF] text-[#0055FF] text-xs font-bold uppercase tracking-widest">Tarefas</button>
+<button class="pb-3 border-b-2 border-transparent text-gray-500 hover:text-gray-300 text-xs font-bold uppercase tracking-widest transition-colors">Mapa de Foco</button>
+<button class="pb-3 border-b-2 border-transparent text-gray-500 hover:text-gray-300 text-xs font-bold uppercase tracking-widest transition-colors">Relatório</button>
+<button class="pb-3 border-b-2 border-transparent text-gray-500 hover:text-gray-300 text-xs font-bold uppercase tracking-widest transition-colors">Ao vivo</button>
+</div>
+<!-- Toolbar -->
+<section class="flex justify-between items-center mb-6">
+<div class="flex gap-4 items-center">
+<div class="relative">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 text-lg" data-icon="search">search</span>
+<input class="bg-[#131313] border border-[#2A2A2A] pl-10 pr-4 py-2 text-xs text-white placeholder-gray-600 focus:outline-none focus:border-[#0055FF] w-64 rounded-sm" placeholder="Buscar tarefas..." type="text"/>
+</div>
+<div class="flex border border-[#2A2A2A] divide-x divide-[#2A2A2A] rounded-sm bg-[#131313]">
+<button class="px-3 py-2 text-[10px] font-bold uppercase tracking-widest text-gray-400 flex items-center gap-2 hover:text-white">
+                            Responsável <span class="material-symbols-outlined text-sm" data-icon="expand_more">expand_more</span>
+</button>
+<button class="px-3 py-2 text-[10px] font-bold uppercase tracking-widest text-gray-400 flex items-center gap-2 hover:text-white">
+                            Status <span class="material-symbols-outlined text-sm" data-icon="expand_more">expand_more</span>
+</button>
+</div>
+</div>
+<div class="flex items-center gap-4">
+<div class="flex bg-[#131313] border border-[#2A2A2A] p-0.5 rounded-sm">
+<button class="px-3 py-1.5 text-[10px] font-bold uppercase tracking-widest text-gray-500 hover:text-white">Kanban</button>
+<button class="px-3 py-1.5 text-[10px] font-bold uppercase tracking-widest bg-[#2A2A2A] text-white">Lista</button>
+</div>
+<button class="bg-[#0055FF] px-4 py-2 text-[10px] font-bold uppercase tracking-widest text-white hover:bg-[#004be3] rounded-sm transition-colors">+ Nova Tarefa</button>
+</div>
+</section>
+<!-- Task Table -->
+<section class="border border-[#2A2A2A] rounded-sm overflow-hidden mb-12">
+<table class="w-full text-left border-collapse">
+<thead class="bg-[#131313] border-b border-[#2A2A2A]">
+<tr class="text-[10px] font-bold uppercase tracking-widest text-gray-500">
+<th class="px-4 py-3 w-10"><span class="material-symbols-outlined text-sm" data-icon="star">star</span></th>
+<th class="px-4 py-3">Nome</th>
+<th class="px-4 py-3">Responsável</th>
+<th class="px-4 py-3">Dificuldade</th>
+<th class="px-4 py-3">Prioridade</th>
+<th class="px-4 py-3">Status</th>
+<th class="px-4 py-3 w-16">Time</th>
+<th class="px-4 py-3 text-right">Data</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-[#2A2A2A]">
+<!-- Row 1 -->
+<tr class="hover:bg-[#191a1a] transition-colors group">
+<td class="px-4 py-4">
+<span class="material-symbols-outlined text-gray-700 group-hover:text-[#0055FF] text-sm cursor-pointer" data-icon="star">star</span>
+</td>
+<td class="px-4 py-4">
+<span class="text-xs font-medium text-white">Planta baixa pavimento térreo</span>
+</td>
+<td class="px-4 py-4">
+<div class="flex items-center gap-2">
+<img class="w-5 h-5 rounded-full" data-alt="avatar for architect Ana" src="https://lh3.googleusercontent.com/aida-public/AB6AXuB4T0FJQi04sGrUC0SipOIj6paubISy0pPWQ30DQWW8NHf1jJTKotWmvW7T3mLcFNFQNR8WZtnnxiSS5BBbaUQyH34XZlS-R9HdVPUmnk1M7ziZJAWE9WVZ1R07N3p_17CODSvysHSjr2PqvAB8aSdqUdrCAYMy0OXEDRmu2sMaO62xu_nGCZ1oxR3J5ZCMtPqFTYjlgucyX7GYeci-qFbNVaD4ibwvAToFWptNFHSPA-rxxT_k6ysFKmT3RMNqvaKy3aFL70Gjr7M"/>
+<span class="text-[10px] text-gray-400">Ana L.</span>
+</div>
+</td>
+<td class="px-4 py-4">
+<span class="px-2 py-0.5 border border-[#2A2A2A] text-[9px] font-bold text-gray-400 uppercase tracking-widest rounded-sm bg-[#191a1a]">Complexa</span>
+</td>
+<td class="px-4 py-4">
+<div class="flex items-center gap-1.5">
+<span class="material-symbols-outlined text-red-500 text-sm" data-icon="keyboard_double_arrow_up">keyboard_double_arrow_up</span>
+<span class="text-[10px] text-red-500 font-bold uppercase tracking-widest">Crítica</span>
+</div>
+</td>
+<td class="px-4 py-4">
+<div class="flex items-center gap-2 bg-[#0055FF]/10 px-2 py-1 border border-[#0055FF]/20 rounded-sm w-fit">
+<div class="w-1.5 h-1.5 rounded-full bg-[#0055FF]"></div>
+<span class="text-[9px] font-bold text-[#0055FF] uppercase tracking-widest">Em foco</span>
+</div>
+</td>
+<td class="px-4 py-4">
+<button class="w-6 h-6 flex items-center justify-center bg-[#0055FF] rounded-sm text-white">
+<span class="material-symbols-outlined text-xs" data-icon="play_arrow" style="font-variation-settings: 'FILL' 1;">play_arrow</span>
+</button>
+</td>
+<td class="px-4 py-4 text-right">
+<span class="mono text-[10px] text-gray-400">12.10.23</span>
+</td>
+</tr>
+<!-- Row 2 -->
+<tr class="hover:bg-[#191a1a] transition-colors group">
+<td class="px-4 py-4">
+<span class="material-symbols-outlined text-gray-700 text-sm cursor-pointer" data-icon="star">star</span>
+</td>
+<td class="px-4 py-4">
+<span class="text-xs font-medium text-white">Detalhamento de esquadrias - Sala</span>
+</td>
+<td class="px-4 py-4">
+<div class="flex items-center gap-2">
+<img class="w-5 h-5 rounded-full" data-alt="avatar for architect Bruno" src="https://lh3.googleusercontent.com/aida-public/AB6AXuB-PR2Eqzc66zHXgnsXWHaFrK8CLT0Wh5V6xj27vb4bSkK6fQCSXFUOfIN6v2xaJQgRdfzAitR8g-_ItCgYpWTfW5IUeQfiLboFVoFz4B5Z3-CRTilONw4XJRifiaUojs0ZEh1VVvaWVpk70Z2Jk8ChF0sCHIcly7OALc692vJT9vkbfzDRDyGEEUTjphWvRkW-3ZLQGWA84TaSgb5OBIDBBcIe8nF4402UVyYjM0aby_YMqDUYjhd19M1CF4igK72sowQDHnQ9KCA"/>
+<span class="text-[10px] text-gray-400">Bruno M.</span>
+</div>
+</td>
+<td class="px-4 py-4">
+<span class="px-2 py-0.5 border border-[#2A2A2A] text-[9px] font-bold text-gray-400 uppercase tracking-widest rounded-sm bg-[#191a1a]">Média</span>
+</td>
+<td class="px-4 py-4">
+<div class="flex items-center gap-1.5">
+<span class="material-symbols-outlined text-orange-400 text-sm" data-icon="keyboard_arrow_up">keyboard_arrow_up</span>
+<span class="text-[10px] text-orange-400 font-bold uppercase tracking-widest">Alta</span>
+</div>
+</td>
+<td class="px-4 py-4">
+<div class="flex items-center gap-2 bg-[#191a1a] px-2 py-1 border border-[#2A2A2A] rounded-sm w-fit">
+<div class="w-1.5 h-1.5 rounded-full bg-gray-600"></div>
+<span class="text-[9px] font-bold text-gray-500 uppercase tracking-widest">Pendente</span>
+</div>
+</td>
+<td class="px-4 py-4">
+<button class="w-6 h-6 flex items-center justify-center border border-[#2A2A2A] rounded-sm text-gray-500 hover:text-white">
+<span class="material-symbols-outlined text-xs" data-icon="play_arrow" style="font-variation-settings: 'FILL' 1;">play_arrow</span>
+</button>
+</td>
+<td class="px-4 py-4 text-right">
+<span class="mono text-[10px] text-gray-400">14.10.23</span>
+</td>
+</tr>
+</tbody>
+<!-- Completed Section Header -->
+<tbody class="bg-[#0e0e0e]">
+<tr class="bg-[#131313]/50 border-t border-b border-[#2A2A2A]">
+<td class="px-4 py-2" colspan="8">
+<button class="flex items-center gap-2 text-[10px] font-bold text-gray-500 uppercase tracking-[0.2em]">
+<span class="material-symbols-outlined text-sm" data-icon="keyboard_arrow_down">keyboard_arrow_down</span>
+                                    Concluídas (3)
+                                </button>
+</td>
+</tr>
+</tbody>
+<tbody class="divide-y divide-[#2A2A2A] opacity-40">
+<tr class="hover:bg-[#191a1a] transition-colors group">
+<td class="px-4 py-4"><span class="material-symbols-outlined text-gray-700 text-sm" data-icon="star">star</span></td>
+<td class="px-4 py-4 line-through text-xs font-medium">Levantamento topográfico preliminar</td>
+<td class="px-4 py-4">
+<div class="flex items-center gap-2">
+<img class="w-5 h-5 rounded-full" data-alt="avatar" src="https://lh3.googleusercontent.com/aida-public/AB6AXuC_9YhkIveUIV2dRUcnu8cEhvOw481VmZytudA7Kq0Gb_wY2nJkzwgxCW-k0Elejsd1uCHLjPpkR65xklBZ3XeNZ-N3O3VhOU2_vPGvdAlqOf3A8snrC-9Cd1M5r3ftl5jVwIAuEQZVJqMUi8KleEuFTfe63ARvIy_MXpA-NQsLQ2j5zYH0JZzjzrowSIo-AW8PrjNKZtVbx_JcawM57LxdeLMpP5g3tOoZ1k4CvRut7SQgb-aSEooD6JAYvpx1tkHN2-0sSEPZ4s8"/>
+<span class="text-[10px]">Ana L.</span>
+</div>
+</td>
+<td class="px-4 py-4">
+<span class="px-2 py-0.5 border border-[#2A2A2A] text-[9px] font-bold uppercase tracking-widest rounded-sm">Simples</span>
+</td>
+<td class="px-4 py-4">
+<div class="flex items-center gap-1.5">
+<span class="material-symbols-outlined text-gray-600 text-sm" data-icon="horizontal_rule">horizontal_rule</span>
+<span class="text-[10px] font-bold uppercase tracking-widest">Baixa</span>
+</div>
+</td>
+<td class="px-4 py-4">
+<div class="flex items-center gap-2 bg-emerald-500/10 px-2 py-1 border border-emerald-500/20 rounded-sm w-fit">
+<div class="w-1.5 h-1.5 rounded-full bg-emerald-500"></div>
+<span class="text-[9px] font-bold text-emerald-500 uppercase tracking-widest">Finalizada</span>
+</div>
+</td>
+<td class="px-4 py-4">
+<span class="mono text-[10px] text-emerald-500">2h 45m</span>
+</td>
+<td class="px-4 py-4 text-right">
+<span class="mono text-[10px]">05.10.23</span>
+</td>
+</tr>
+</tbody>
+</table>
+</section>
+<!-- Decisions & References Section -->
+<section class="mt-12">
+<div class="flex items-center justify-between mb-6">
+<h2 class="text-sm font-bold uppercase tracking-[0.15em] text-white">Decisões e Referências</h2>
+<span class="text-[10px] mono text-gray-500 uppercase">Registro Cronológico</span>
+</div>
+<div class="border border-[#2A2A2A] rounded-sm divide-y divide-[#2A2A2A]">
+<!-- Item 1 -->
+<div class="p-4 flex gap-6 hover:bg-[#131313] transition-colors">
+<div class="mono text-[10px] text-gray-500 w-20 pt-1">08 OUT 23</div>
+<div class="flex-1">
+<p class="text-xs text-gray-300 leading-relaxed">
+                                Alteração do revestimento da fachada sul para concreto aparente ripado, conforme reunião técnica de 07/10. Substitui a pedra anterior.
+                            </p>
+<div class="mt-2 flex items-center gap-2">
+<img class="w-4 h-4 rounded-full" data-alt="avatar for decision author" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBjzG8PyDNY1gGcPxhhtkQLG-aEh65DIzPQhGqtehKWEt8XnaBdAwxgVSuqDuZdEsYiZg6U5PLjaQJggDjkHxelX85I3i5zio34r2i-NX8PMVMKHsKgGtJW6A-_JO4Wupdzna0CSvxmu2Dlbk_kuoO16MTWYmh2azhB6izvyZtxtW3fYNHa63-2ON64b8LtiYJs1IiB1emw-nLcO1rOguU9nxBw5icRwXag7pbC0j1rirUmXp87tV7Yaf2sJ6p5gCBriaLmGM_4eyc"/>
+<span class="text-[9px] font-bold text-gray-500 uppercase">Carlos Monolith</span>
+</div>
+</div>
+</div>
+<!-- Item 2 -->
+<div class="p-4 flex gap-6 hover:bg-[#131313] transition-colors">
+<div class="mono text-[10px] text-gray-500 w-20 pt-1">02 OUT 23</div>
+<div class="flex-1">
+<p class="text-xs text-gray-300 leading-relaxed">
+                                Aprovado layout de luminotécnica do living. Aguardar confirmação de modelos de pendentes pelo cliente.
+                            </p>
+<div class="mt-2 flex items-center gap-2">
+<img class="w-4 h-4 rounded-full" data-alt="avatar" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBE787LD4-fCDhOM4ax4nfShNjSgWy05GWC0VM3XCji1JtnJHEhLyH70c7uAGU8v3vT1RDMwHYW8lyfIhotFjJecgl2g6uj-mPYfr0POoqv5FWJ_MxnEFo9qpRGUdDXNfk3lCgSI7CqCrGzqm_cS0zfDgxFrq9xOzanfSfEh2itNM0vTKh9GFO9LHbV9nXylB5ULslzlrfO6KCzWuXO5APN9QDDJ7_iSP1TWf-xp9_ArPHYUuKMP6r0p7-v_Zm9zedggIlN2tKkAtM"/>
+<span class="text-[9px] font-bold text-gray-500 uppercase">Ana L.</span>
+</div>
+</div>
+</div>
+<!-- Input Box -->
+<div class="p-4 bg-[#131313]">
+<div class="flex items-center gap-3 bg-[#0e0e0e] border border-[#484848] p-2 rounded-sm focus-within:border-[#0055FF] transition-colors">
+<input class="flex-1 bg-transparent border-none focus:ring-0 text-xs text-white placeholder-gray-600" placeholder="Adicionar nova decisão ou referência..." type="text"/>
+<div class="flex gap-2">
+<button class="text-gray-500 hover:text-white transition-colors">
+<span class="material-symbols-outlined text-xl" data-icon="attachment">attachment</span>
+</button>
+<button class="bg-[#0055FF] px-3 py-1 text-[9px] font-bold text-white uppercase tracking-widest rounded-sm">Salvar</button>
+</div>
+</div>
+</div>
+</div>
+</section>
+</div>
+<!-- Footer (Shared Component JSON Mapping) -->
+<footer class="w-full py-4 border-t border-[#2A2A2A] ml-0 bg-[#131313] flex flex-row justify-between items-center px-12 mt-auto">
+<span class="font-['DM_Mono'] text-[10px] uppercase tracking-widest text-gray-600">Project Management System | Monolith Studio</span>
+<div class="flex gap-8">
+<a class="font-['DM_Mono'] text-[10px] uppercase tracking-widest text-gray-600 hover:text-gray-300 underline-offset-4 hover:underline" href="#">Decisions Log</a>
+<a class="font-['DM_Mono'] text-[10px] uppercase tracking-widest text-gray-600 hover:text-gray-300 underline-offset-4 hover:underline" href="#">Stakeholder Approval</a>
+<a class="font-['DM_Mono'] text-[10px] uppercase tracking-widest text-gray-600 hover:text-gray-300 underline-offset-4 hover:underline" href="#">Archive Rules</a>
+</div>
+<div class="flex items-center gap-2">
+<span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+<span class="font-['DM_Mono'] text-[10px] uppercase tracking-widest text-gray-400">System Online</span>
+</div>
+</footer>
+</main>
+</body></html>

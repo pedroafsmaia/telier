@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Telier Studio - Residencial Alto da Serra</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=DM+Mono:wght@400;500&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "inverse-on-surface": "#565554",
+                        "on-tertiary-container": "#554e69",
+                        "surface-container-lowest": "#000000",
+                        "primary-fixed": "#dce1ff",
+                        "error": "#ec7c8a",
+                        "primary-fixed-dim": "#c9d2ff",
+                        "on-surface": "#e7e5e4",
+                        "inverse-primary": "#004eeb",
+                        "surface-container-low": "#131313",
+                        "surface-container": "#191a1a",
+                        "secondary-fixed": "#e4e2e1",
+                        "on-tertiary": "#5e5672",
+                        "surface-tint": "#b6c4ff",
+                        "on-tertiary-fixed-variant": "#5f5773",
+                        "tertiary-fixed-dim": "#dacff0",
+                        "primary": "#b6c4ff",
+                        "on-secondary-container": "#c1bfbe",
+                        "secondary": "#9f9d9d",
+                        "on-error": "#490013",
+                        "on-primary-fixed": "#0033a2",
+                        "tertiary": "#f6eeff",
+                        "on-secondary-fixed-variant": "#5c5b5b",
+                        "on-secondary": "#202020",
+                        "on-error-container": "#ff97a3",
+                        "surface-dim": "#0e0e0e",
+                        "on-primary-container": "#c4ceff",
+                        "on-primary": "#0034a4",
+                        "tertiary-fixed": "#e9ddff",
+                        "tertiary-container": "#e9ddff",
+                        "on-secondary-fixed": "#3f3f3f",
+                        "tertiary-dim": "#dacff0",
+                        "surface-variant": "#252626",
+                        "outline-variant": "#484848",
+                        "secondary-fixed-dim": "#d6d4d3",
+                        "error-container": "#7f2737",
+                        "secondary-dim": "#9f9d9d",
+                        "surface-container-high": "#1f2020",
+                        "on-primary-fixed-variant": "#004be3",
+                        "background": "#0e0e0e",
+                        "secondary-container": "#3b3b3b",
+                        "on-background": "#e7e5e4",
+                        "error-dim": "#b95463",
+                        "surface-bright": "#2c2c2c",
+                        "outline": "#767575",
+                        "surface-container-highest": "#252626",
+                        "primary-dim": "#a3b5ff",
+                        "primary-container": "#0039b3",
+                        "on-surface-variant": "#acabaa",
+                        "surface": "#0e0e0e",
+                        "on-tertiary-fixed": "#433b56",
+                        "inverse-surface": "#fcf8f8"
+                    },
+                    fontFamily: {
+                        "headline": ["Inter"],
+                        "body": ["Inter"],
+                        "label": ["Inter"],
+                        "mono": ["DM Mono"]
+                    },
+                    borderRadius: {"DEFAULT": "0.125rem", "lg": "0.25rem", "xl": "0.5rem", "full": "0.75rem"},
+                },
+            },
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+            vertical-align: middle;
+            font-size: 20px;
+        }
+        .digits { font-family: 'DM Mono', monospace; }
+        body { background-color: #0e0e0e; color: #e7e5e4; font-family: 'Inter', sans-serif; }
+    </style>
+</head>
+<body class="overflow-x-hidden">
+<!-- SideNavBar Shell -->
+<aside class="flex flex-col h-full z-50 h-screen w-[220px] fixed left-0 top-0 border-r border-[#2A2A2A] bg-[#131313] dark:bg-[#131313] font-['Inter'] font-normal text-sm tracking-tight">
+<div class="p-6">
+<div class="flex items-center gap-3 mb-8">
+<div class="w-8 h-8 bg-primary-container flex items-center justify-center rounded">
+<span class="material-symbols-outlined text-white" data-icon="architecture">architecture</span>
+</div>
+<div>
+<h1 class="text-xl font-bold tracking-tighter text-white uppercase">Telier</h1>
+<p class="text-[10px] text-gray-500 uppercase tracking-widest leading-none">Studio Management</p>
+</div>
+</div>
+<nav class="space-y-1">
+<a class="flex items-center gap-3 text-white border-l-2 border-[#0055FF] bg-[#191a1a] font-semibold pl-4 py-3 transition-all duration-150" href="#">
+<span class="material-symbols-outlined" data-icon="layers">layers</span>
+<span>Projects</span>
+</a>
+<a class="flex items-center gap-3 text-gray-500 hover:text-white pl-4 py-3 transition-colors hover:bg-[#191a1a]" href="#">
+<span class="material-symbols-outlined" data-icon="assignment">assignment</span>
+<span>Tasks</span>
+</a>
+<a class="flex items-center gap-3 text-gray-500 hover:text-white pl-4 py-3 transition-colors hover:bg-[#191a1a]" href="#">
+<span class="material-symbols-outlined" data-icon="center_focus_strong">center_focus_strong</span>
+<span>Focus Map</span>
+</a>
+<a class="flex items-center gap-3 text-gray-500 hover:text-white pl-4 py-3 transition-colors hover:bg-[#191a1a]" href="#">
+<span class="material-symbols-outlined" data-icon="analytics">analytics</span>
+<span>Report</span>
+</a>
+<a class="flex items-center gap-3 text-gray-500 hover:text-white pl-4 py-3 transition-colors hover:bg-[#191a1a]" href="#">
+<span class="material-symbols-outlined" data-icon="sensors">sensors</span>
+<span>Live</span>
+</a>
+</nav>
+</div>
+<div class="mt-auto p-4 border-t border-[#2A2A2A]">
+<div class="mb-6 px-2">
+<div class="bg-[#191a1a] border border-[#2A2A2A] p-3 rounded-lg">
+<p class="text-[10px] text-primary uppercase font-bold mb-1">Active Timer</p>
+<p class="digits text-white text-lg">02:45:12</p>
+</div>
+</div>
+<nav class="space-y-1">
+<a class="flex items-center gap-3 text-gray-500 hover:text-white px-2 py-2 transition-colors" href="#">
+<span class="material-symbols-outlined" data-icon="history">history</span>
+<span>Recent Projects</span>
+</a>
+<a class="flex items-center gap-3 text-gray-500 hover:text-white px-2 py-2 transition-colors" href="#">
+<span class="material-symbols-outlined" data-icon="account_circle">account_circle</span>
+<span>Profile</span>
+</a>
+<a class="flex items-center gap-3 text-gray-500 hover:text-white px-2 py-2 transition-colors" href="#">
+<span class="material-symbols-outlined" data-icon="logout">logout</span>
+<span>Logout</span>
+</a>
+</nav>
+</div>
+</aside>
+<!-- TopAppBar Shell -->
+<header class="flex justify-between items-center h-16 px-8 ml-[220px] z-40 fixed top-0 right-0 w-[calc(100%-220px)] border-b border-[#2A2A2A] bg-[#0e0e0e] dark:bg-[#0e0e0e] font-['Inter'] text-xs font-medium uppercase tracking-widest">
+<div class="flex items-center gap-6">
+<div class="flex items-center gap-2 text-gray-500">
+<a class="hover:text-white transition-colors" href="#">Studio</a>
+<span class="material-symbols-outlined text-[14px]" data-icon="chevron_right">chevron_right</span>
+<a class="hover:text-white transition-colors" href="#">Groups</a>
+<span class="material-symbols-outlined text-[14px]" data-icon="chevron_right">chevron_right</span>
+<span class="text-white font-bold border-b border-white pb-0.5">Group Detail</span>
+</div>
+</div>
+<div class="flex items-center gap-6">
+<div class="flex items-center gap-4 border-r border-[#2A2A2A] pr-6">
+<button class="text-gray-500 hover:text-white transition-colors">
+<span class="material-symbols-outlined" data-icon="notifications">notifications</span>
+</button>
+<button class="text-gray-500 hover:text-white transition-colors">
+<span class="material-symbols-outlined" data-icon="contrast">contrast</span>
+</button>
+</div>
+<div class="flex items-center gap-3">
+<span class="text-white normal-case font-semibold tracking-normal">Arch. Silva</span>
+<img alt="User Profile" class="w-8 h-8 rounded-full border border-outline-variant" data-alt="Close up portrait of a professional architect in a dark studio, neutral expression, dramatic lighting" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBq4OcmwgglSqBD3RWk49lQOgwEwpaLxavb0s_WBWQ1VSCJ8a7ROzgTjqPbQR5y3-ssENkr6QiejnZZ4-Ykv5UQo-GiWguwMiSMgGl96B4OKLEVI8Gi3O1Y3JgchA3YbZsqcJjfn9noVdNEtbi3DhseHkxb63N9_PhXvHSl8TqyHPXMROHEyCMeOosB8IjfTvQqAhOnaAqrvxCxtJL7H8v43SwGmfL8iStELlN70K9yZ-lIFgzR9Kbd0te0MmSdWlu2Gf3mvRuUylw"/>
+</div>
+</div>
+</header>
+<!-- Main Content Canvas -->
+<main class="ml-[220px] pt-16 min-h-screen">
+<div class="max-w-[1200px] mx-auto px-8 py-12">
+<!-- Page Header Section -->
+<section class="mb-12">
+<div class="flex justify-between items-start mb-6">
+<div>
+<h2 class="text-[1.5rem] font-semibold text-white mb-2 leading-tight">Residencial Alto da Serra</h2>
+<p class="text-on-surface-variant max-w-2xl">Complexo residencial multifamiliar com 4 blocos e áreas comuns. Foco em sustentabilidade e ventilação natural.</p>
+</div>
+<div class="flex gap-3">
+<button class="px-4 py-2 border border-outline-variant rounded-md text-xs font-medium uppercase tracking-wider hover:bg-surface-container transition-colors">
+                            Editar grupo
+                        </button>
+<button class="px-4 py-2 border border-outline-variant rounded-md text-xs font-medium uppercase tracking-wider hover:bg-surface-container transition-colors">
+                            Compartilhar grupo
+                        </button>
+</div>
+</div>
+<div class="flex flex-wrap items-center gap-6">
+<span class="bg-primary px-3 py-1 text-[#0034a4] text-[10px] font-bold uppercase tracking-widest rounded-sm">Ativo</span>
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-on-surface-variant" data-icon="list_alt">list_alt</span>
+<span class="text-on-surface-variant text-sm">4 projetos</span>
+</div>
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-on-surface-variant" data-icon="square_foot">square_foot</span>
+<span class="digits text-white text-sm">1.280 m²</span>
+</div>
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-on-surface-variant" data-icon="schedule">schedule</span>
+<span class="digits text-white text-sm">47.2h</span>
+</div>
+</div>
+</section>
+<!-- Tabs Navigation -->
+<div class="border-b border-outline-variant mb-10">
+<div class="flex gap-8">
+<button class="pb-4 border-b-2 border-primary text-white text-xs font-bold uppercase tracking-widest flex items-center gap-2">
+                        Projetos <span class="digits bg-surface-container px-1.5 py-0.5 rounded text-[10px]">4</span>
+</button>
+<button class="pb-4 text-on-surface-variant text-xs font-bold uppercase tracking-widest hover:text-white transition-colors">
+                        Tarefas
+                    </button>
+<button class="pb-4 text-on-surface-variant text-xs font-bold uppercase tracking-widest hover:text-white transition-colors">
+                        Mapa de Foco
+                    </button>
+<button class="pb-4 text-on-surface-variant text-xs font-bold uppercase tracking-widest hover:text-white transition-colors">
+                        Relatório
+                    </button>
+<button class="pb-4 text-on-surface-variant text-xs font-bold uppercase tracking-widest hover:text-white transition-colors">
+                        Ao vivo
+                    </button>
+</div>
+</div>
+<!-- Project Cards Grid -->
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+<!-- Card 1: Bloco A -->
+<div class="bg-surface-container border border-outline-variant rounded-lg overflow-hidden flex hover:border-primary-dim transition-colors group">
+<div class="w-[3px] bg-[#0055FF]"></div>
+<div class="p-5 flex-1 flex flex-col">
+<div class="flex justify-between items-start mb-4">
+<h3 class="font-medium text-white text-base">Bloco A</h3>
+<span class="bg-[#0055FF]/10 border border-[#0055FF]/20 text-[#0055FF] text-[9px] font-bold px-2 py-0.5 rounded uppercase tracking-tighter">Execução</span>
+</div>
+<img alt="Bloco A architectural render" class="w-full h-32 object-cover rounded-md mb-4 grayscale group-hover:grayscale-0 transition-all duration-300" data-alt="Modern minimalist concrete apartment building exterior with large glass windows at dusk, sharp architectural lines" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCmpdaLc21AL7GEecDn1gzCQkgUTmX-wNG7E6K85_4nURWrnrwcggw2PoSaini-PNuWzDoEg27kTGhnjTm-U2BYMatp35wf3Reahz4ZEKwerLIXZhPR6oGyaji2vKA3s2kjN4qICn0iJCjNzigD9uj5mqz7vjAvnUsCvYj7lm_e4Hdbzvyn4XiYtTsG0wgTKRno1uf3cb0P5YV2cNO_yXsmrRN-hA0CkPOJ2SaT0rwRzUial8QH3AzPGBfSFkhLAx_FWqHvnHi_mWM"/>
+<div class="space-y-3 mb-6">
+<div class="flex justify-between text-[10px] uppercase tracking-wider text-on-surface-variant">
+<span>Progresso</span>
+<span class="digits">65%</span>
+</div>
+<div class="h-[2px] w-full bg-outline-variant overflow-hidden">
+<div class="h-full bg-primary" style="width: 65%"></div>
+</div>
+</div>
+<div class="mt-auto flex justify-between items-center pt-4 border-t border-outline-variant/30">
+<div class="flex items-center gap-2">
+<img alt="Project Owner" class="w-6 h-6 rounded-full border border-outline-variant" data-alt="Profile photo of a professional male designer, high contrast black and white portrait" src="https://lh3.googleusercontent.com/aida-public/AB6AXuC8NbL_GXz57-D2IVBOcFrfvz-AExqPPHSx8pHNVlXYQQmpOXMchJB-HepdDVzLkf3Ased2uXU8svx8_v48ELB-OP9SeXXsey51Y7xURogPuv3hZZaMCgh4EfPJp5595Q3g5yxVUwsU2XgZb6Ze43UgQGJ7DdJ6lQu7MMXdrc3YM0LCZhJ8P_Ym_kNVk10_2Puoc2Pi31jOvUWLysJTTY2XTqPnV1resSz3-nIKEmNYCxdFzyNA9TM7Fdl4ZK0EHZXopuL_mXEtVZI"/>
+<span class="text-[11px] text-on-surface-variant">Arq. Junior</span>
+</div>
+<div class="flex items-center gap-1 text-on-surface-variant">
+<span class="material-symbols-outlined text-[14px]" data-icon="event">event</span>
+<span class="digits text-[11px]">12/08/2024</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Card 2: Bloco B -->
+<div class="bg-surface-container border border-outline-variant rounded-lg overflow-hidden flex hover:border-primary-dim transition-colors group">
+<div class="w-[3px] bg-[#0055FF]"></div>
+<div class="p-5 flex-1 flex flex-col">
+<div class="flex justify-between items-start mb-4">
+<h3 class="font-medium text-white text-base">Bloco B</h3>
+<span class="bg-[#0055FF]/10 border border-[#0055FF]/20 text-[#0055FF] text-[9px] font-bold px-2 py-0.5 rounded uppercase tracking-tighter">Execução</span>
+</div>
+<img alt="Bloco B architectural render" class="w-full h-32 object-cover rounded-md mb-4 grayscale group-hover:grayscale-0 transition-all duration-300" data-alt="Contemporary residential architecture with brutalist concrete elements and vertical wooden slats, cloudy sky background" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCwNQrTUZBDLoYCygtPo9uenIv2341s6guks6w3vEiDdtvaaV1Hf8zJkdIixQ9QYp2XCDTEAV0vrO9o3uA8knqXYzT9nwtTYTuNhrXNNZQaYka4yTUfVuuEoZg3MvZldJIqNYgZcQiMQ0xlIrnG-gniDKGZ4s4MRvOn1RJ3WZYaO7zpfoEHFaelAtyvSUXXE-ZfYl-uWPTTcqaqz2szKfkO4f5YNEg5x2Iazkf5J5fAN6jtfyYxJ5w8jGFfgF8IBlKaWyyLNAiDo9o"/>
+<div class="space-y-3 mb-6">
+<div class="flex justify-between text-[10px] uppercase tracking-wider text-on-surface-variant">
+<span>Progresso</span>
+<span class="digits">42%</span>
+</div>
+<div class="h-[2px] w-full bg-outline-variant overflow-hidden">
+<div class="h-full bg-primary" style="width: 42%"></div>
+</div>
+</div>
+<div class="mt-auto flex justify-between items-center pt-4 border-t border-outline-variant/30">
+<div class="flex items-center gap-2">
+<img alt="Project Owner" class="w-6 h-6 rounded-full border border-outline-variant" data-alt="Professional female architect portrait, studio lighting, looking directly into camera" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDkWn8MtqEPGM3fWBov8FYAKU3V3dOFtjJ7jgVJgL207zudhqQwr1E2iKOtCaLu3rBnW1aGNG3NocJb6JyKWQc1XW7HtRMF3vSMyL-6Mv_1FSABzzdu-OVRom-nexiaXZimWeN7jaP8IYhOdhmDhOXG5BlufkmqaGs9_zxpJlvztiXQOW0XyKOmP8CguLe2lbCRZcXev9WGoT_lEnoKYH9faMHemmKm5i39OGDhYqdbvdpjr7p6nMBn5fTAVRwTHwQ9gVuHLSWdbjU"/>
+<span class="text-[11px] text-on-surface-variant">Arq. Mariana</span>
+</div>
+<div class="flex items-center gap-1 text-on-surface-variant">
+<span class="material-symbols-outlined text-[14px]" data-icon="event">event</span>
+<span class="digits text-[11px]">15/09/2024</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Card 3: Área de lazer -->
+<div class="bg-surface-container border border-outline-variant rounded-lg overflow-hidden flex hover:border-primary-dim transition-colors group">
+<div class="w-[3px] bg-secondary"></div>
+<div class="p-5 flex-1 flex flex-col">
+<div class="flex justify-between items-start mb-4">
+<h3 class="font-medium text-white text-base">Área de lazer</h3>
+<span class="bg-secondary-container border border-outline-variant text-on-surface-variant text-[9px] font-bold px-2 py-0.5 rounded uppercase tracking-tighter">Draft</span>
+</div>
+<img alt="Leisure area architectural render" class="w-full h-32 object-cover rounded-md mb-4 grayscale group-hover:grayscale-0 transition-all duration-300" data-alt="Modern swimming pool area with minimalist lounge chairs and concrete decking, cinematic sunset lighting" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCyWGdf56fdK-ok6hf2s9zPD3Q14MpZEyhWyYvq9RO05D6rsVxIgsOC-2sXNv9JBIfO96KC5pLs92iZUIzcpwLNmiSg1Y6fdNtZH8YaYOJDaR0Pt3yZuJ-oMR0PM3F2RuOOk3HjS7oMj7bUW8e58O0MaV7xxG9yYob017JRLiAZsek-WU5A68A9XH-CPbpXraw0ChJpsWtLUKpCS1l1W8Ogi78VJ5P3XvWEpttBGt7rKziYBiQdBgJRQys5CMJKi_LEBAJivxRayUE"/>
+<div class="space-y-3 mb-6">
+<div class="flex justify-between text-[10px] uppercase tracking-wider text-on-surface-variant">
+<span>Progresso</span>
+<span class="digits">12%</span>
+</div>
+<div class="h-[2px] w-full bg-outline-variant overflow-hidden">
+<div class="h-full bg-secondary" style="width: 12%"></div>
+</div>
+</div>
+<div class="mt-auto flex justify-between items-center pt-4 border-t border-outline-variant/30">
+<div class="flex items-center gap-2">
+<img alt="Project Owner" class="w-6 h-6 rounded-full border border-outline-variant" data-alt="Professional man with glasses in studio environment, clean minimal background" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDqOR_Vg3ZIzziiBXkiVMXyfwU7rEwQbZmVYKRTRutsOKQF5giNy4K-XIooe4eM627fw_Wm8JTfwT4gvyU905xri-BvuA5QxfQBbID09z6g5K3uQCp6KID4EErzwH3qCLy5ZWoBEsRHVVMi_Lt3TKASFviG5bt9WC3Ro1z6tsndLDRA84iHY_wyY8ntKWP_kAeKCAPjpK2k-QbPChSRvTbZ1BQ2raTYzi1GjDU6QI5qxYjfPQ3oWJlbBebkXSpZ-jpwEmr7V7RdKes"/>
+<span class="text-[11px] text-on-surface-variant">Arq. Roberto</span>
+</div>
+<div class="flex items-center gap-1 text-on-surface-variant">
+<span class="material-symbols-outlined text-[14px]" data-icon="event">event</span>
+<span class="digits text-[11px]">20/12/2024</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Card 4: Guarita -->
+<div class="bg-surface-container border border-outline-variant rounded-lg overflow-hidden flex hover:border-primary-dim transition-colors group">
+<div class="w-[3px] bg-success-green"></div>
+<div class="p-5 flex-1 flex flex-col">
+<div class="flex justify-between items-start mb-4">
+<h3 class="font-medium text-white text-base">Guarita</h3>
+<span class="bg-[#22c55e]/10 border border-[#22c55e]/20 text-[#22c55e] text-[9px] font-bold px-2 py-0.5 rounded uppercase tracking-tighter">Concluído</span>
+</div>
+<img alt="Security gatehouse render" class="w-full h-32 object-cover rounded-md mb-4 grayscale group-hover:grayscale-0 transition-all duration-300" data-alt="Small modern glass and steel structure for a security station, sharp geometric design, bright daylight" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDQL8evbUy3fWu28epEMhiNf3OReaR6Ac4pNKYY_84KVVhDbzRSVk7rzaTcyxBmSwcGdAp2kh0jRirgdGIGd6_KuQPNHnTjfwn6E4I3ottPEsnaNTctg_uLFYrqAQesX7INMfWm8E2vTFaC2RPPekQ6NlFbdEsHXGaR0C6ewHYqTUkqzXzs5kqNeeG5lpzDIM7Brn1nP4gxztjxd60two3DGfDV_W6UYixwdoy5QBzpGnClw7DddDqABvqwVg2-47mr7kQdAtkOUlY"/>
+<div class="space-y-3 mb-6">
+<div class="flex justify-between text-[10px] uppercase tracking-wider text-on-surface-variant">
+<span>Progresso</span>
+<span class="digits">100%</span>
+</div>
+<div class="h-[2px] w-full bg-outline-variant overflow-hidden">
+<div class="h-full bg-[#22c55e]" style="width: 100%"></div>
+</div>
+</div>
+<div class="mt-auto flex justify-between items-center pt-4 border-t border-outline-variant/30">
+<div class="flex items-center gap-2">
+<img alt="Project Owner" class="w-6 h-6 rounded-full border border-outline-variant" data-alt="Architect profile photo, dark studio environment, moody lighting" src="https://lh3.googleusercontent.com/aida-public/AB6AXuC94wYJg2WC_lui3nmFdVV8ckcrzgTuW0EU0X_i4faSQ_6cFfRd4B6Y8psn4prM1ovdxnAeiCzXVxdmhAF-FoFHPUGOPpvmpmeXPVJwUQtDol08JG_VV8jnCqcl5D5EoSlhQqDfD1A8YUhcpDR-9-jUT3rBU8tuggjUg-9DdvikEZHsAV2OgeeBbYHk9S32Bdw3W7wHKeylEbkOVyBgStSc4UfZD1iICsstmpCnbEOAyXmAsG0eu5Ser_ATf1C8KdjzLf5kwcH1EDs"/>
+<span class="text-[11px] text-on-surface-variant">Arq. Silva</span>
+</div>
+<div class="flex items-center gap-1 text-on-surface-variant">
+<span class="material-symbols-outlined text-[14px]" data-icon="event">event</span>
+<span class="digits text-[11px]">01/06/2024</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Create New Project Placeholder -->
+<button class="border border-dashed border-outline-variant rounded-lg flex flex-col items-center justify-center p-8 hover:bg-surface-container-low hover:border-primary transition-all group">
+<div class="w-10 h-10 border border-outline-variant rounded-full flex items-center justify-center mb-4 group-hover:border-primary group-hover:bg-primary-container/10">
+<span class="material-symbols-outlined text-outline group-hover:text-primary" data-icon="add">add</span>
+</div>
+<span class="text-xs uppercase tracking-widest font-bold text-on-surface-variant group-hover:text-white">Novo Projeto</span>
+</button>
+</div>
+</div>
+</main>
+<!-- Contextual FAB - Suppression Logic: Hidden as per guidelines for Details screens -->
+</body></html>

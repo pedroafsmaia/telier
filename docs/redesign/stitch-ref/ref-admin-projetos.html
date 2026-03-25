@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="pt-BR"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Telier Central Admin - Projetos</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=DM+Mono:wght@400;500&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "on-surface": "#e7e5e4",
+                        "secondary-fixed": "#e4e2e1",
+                        "on-background": "#e7e5e4",
+                        "error": "#ec7c8a",
+                        "tertiary-container": "#e9ddff",
+                        "surface-tint": "#b6c4ff",
+                        "primary-fixed": "#dce1ff",
+                        "surface-bright": "#2c2c2c",
+                        "on-secondary-container": "#c1bfbe",
+                        "on-tertiary-container": "#554e69",
+                        "on-tertiary-fixed-variant": "#5f5773",
+                        "secondary-container": "#3b3b3b",
+                        "background": "#0e0e0e",
+                        "on-tertiary": "#5e5672",
+                        "inverse-surface": "#fcf8f8",
+                        "on-error": "#490013",
+                        "tertiary-fixed": "#e9ddff",
+                        "on-primary": "#0034a4",
+                        "surface-container-low": "#131313",
+                        "surface": "#0e0e0e",
+                        "surface-container-high": "#1f2020",
+                        "primary-fixed-dim": "#c9d2ff",
+                        "inverse-primary": "#004eeb",
+                        "tertiary-fixed-dim": "#dacff0",
+                        "outline-variant": "#484848",
+                        "primary-dim": "#a3b5ff",
+                        "on-surface-variant": "#acabaa",
+                        "outline": "#767575",
+                        "error-container": "#7f2737",
+                        "tertiary": "#f6eeff",
+                        "surface-variant": "#252626",
+                        "on-error-container": "#ff97a3",
+                        "on-secondary-fixed": "#3f3f3f",
+                        "secondary-fixed-dim": "#d6d4d3",
+                        "on-primary-container": "#c4ceff",
+                        "primary-container": "#0039b3",
+                        "on-primary-fixed-variant": "#004be3",
+                        "surface-container": "#191a1a",
+                        "on-secondary-fixed-variant": "#5c5b5b",
+                        "on-primary-fixed": "#0033a2",
+                        "secondary-dim": "#9f9d9d",
+                        "surface-container-highest": "#252626",
+                        "surface-dim": "#0e0e0e",
+                        "on-secondary": "#202020",
+                        "primary": "#0055FF",
+                        "inverse-on-surface": "#565554",
+                        "tertiary-dim": "#dacff0",
+                        "error-dim": "#b95463",
+                        "secondary": "#9f9d9d",
+                        "surface-container-lowest": "#000000",
+                        "on-tertiary-fixed": "#433b56"
+                    },
+                    fontFamily: {
+                        "headline": ["Inter"],
+                        "body": ["Inter"],
+                        "label": ["Inter"],
+                        "mono": ["DM Mono"]
+                    },
+                    borderRadius: {
+                        "DEFAULT": "0.125rem",
+                        "lg": "0.25rem",
+                        "xl": "0.5rem",
+                        "full": "0.75rem"
+                    },
+                },
+            },
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+            vertical-align: middle;
+            line-height: 1;
+        }
+        body {
+            background-color: #0e0e0e;
+            color: #e7e5e4;
+        }
+        .technical-border {
+            border: 1px solid #2A2A2A;
+        }
+    </style>
+</head>
+<body class="font-body selection:bg-primary selection:text-white overflow-hidden">
+<div class="flex h-screen w-full">
+<!-- SideNavBar -->
+<aside class="flex flex-col h-full overflow-y-auto bg-[#131313] w-[220px] border-r border-[#2A2A2A]">
+<div class="p-6">
+<div class="text-lg font-bold tracking-tighter text-white uppercase mb-1">Studio Admin</div>
+<div class="text-xs text-gray-500 font-mono tracking-widest">v1.0.4</div>
+</div>
+<nav class="flex-1 px-3 space-y-1">
+<a class="flex items-center gap-3 px-3 py-2 text-gray-400 hover:text-white transition-colors hover:bg-[#1f2020] rounded-lg" href="#">
+<span class="material-symbols-outlined" data-icon="dashboard">dashboard</span>
+<span class="font-['Inter'] text-sm tracking-tight">Dashboard</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 text-[#0055FF] font-semibold border-l-2 border-[#0055FF] bg-[#191a1a] rounded-r-lg" href="#">
+<span class="material-symbols-outlined" data-icon="architecture">architecture</span>
+<span class="font-['Inter'] text-sm tracking-tight">Projects</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 text-gray-400 hover:text-white transition-colors hover:bg-[#1f2020] rounded-lg" href="#">
+<span class="material-symbols-outlined" data-icon="group">group</span>
+<span class="font-['Inter'] text-sm tracking-tight">Clients</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 text-gray-400 hover:text-white transition-colors hover:bg-[#1f2020] rounded-lg" href="#">
+<span class="material-symbols-outlined" data-icon="group_work">group_work</span>
+<span class="font-['Inter'] text-sm tracking-tight">Team</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 text-gray-400 hover:text-white transition-colors hover:bg-[#1f2020] rounded-lg" href="#">
+<span class="material-symbols-outlined" data-icon="payments">payments</span>
+<span class="font-['Inter'] text-sm tracking-tight">Financial</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 text-gray-400 hover:text-white transition-colors hover:bg-[#1f2020] rounded-lg" href="#">
+<span class="material-symbols-outlined" data-icon="settings">settings</span>
+<span class="font-['Inter'] text-sm tracking-tight">Settings</span>
+</a>
+</nav>
+<div class="mt-auto p-4 border-t border-[#2A2A2A]">
+<button class="w-full bg-[#0055FF] text-white py-2.5 px-4 font-bold rounded-lg text-sm flex items-center justify-center gap-2 hover:opacity-90 transition-opacity">
+<span class="material-symbols-outlined text-sm" data-icon="add">add</span>
+                    New Project
+                </button>
+<div class="mt-4 space-y-1">
+<a class="flex items-center gap-3 px-3 py-2 text-gray-400 hover:text-white text-xs transition-colors" href="#">
+<span class="material-symbols-outlined text-sm" data-icon="description">description</span>
+                        Documentation
+                    </a>
+<a class="flex items-center gap-3 px-3 py-2 text-gray-400 hover:text-white text-xs transition-colors" href="#">
+<span class="material-symbols-outlined text-sm" data-icon="help_outline">help_outline</span>
+                        Support
+                    </a>
+</div>
+</div>
+</aside>
+<!-- Main Content Area -->
+<main class="flex-1 flex flex-col min-w-0 bg-[#0e0e0e]">
+<!-- TopNavBar -->
+<header class="w-full h-14 border-b border-[#2A2A2A] flex items-center justify-between px-6 sticky top-0 z-50 bg-[#0e0e0e]">
+<div class="flex items-center gap-4">
+<nav class="flex items-center gap-2 text-[10px] font-mono text-gray-500 uppercase tracking-widest">
+<span>Projetos</span>
+<span class="material-symbols-outlined text-[12px]" data-icon="chevron_right">chevron_right</span>
+<span class="text-white">Central admin</span>
+</nav>
+</div>
+<div class="flex items-center gap-6">
+<div class="flex items-center gap-4 text-xs font-medium uppercase tracking-widest text-gray-500">
+<a class="hover:text-[#0055FF] transition-colors" href="#">Projetos</a>
+<a class="hover:text-[#0055FF] transition-colors" href="#">Archives</a>
+<a class="hover:text-[#0055FF] transition-colors" href="#">Templates</a>
+<a class="hover:text-[#0055FF] transition-colors" href="#">Reports</a>
+</div>
+<div class="h-4 w-[1px] bg-[#2A2A2A]"></div>
+<div class="flex items-center gap-3">
+<button class="text-gray-500 hover:text-white transition-colors">
+<span class="material-symbols-outlined" data-icon="notifications">notifications</span>
+</button>
+<img alt="Administrator Profile" class="w-7 h-7 rounded-full border border-[#2A2A2A]" data-alt="professional portrait of an architect with glasses in a dark minimalist studio environment" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBVe7b3iWpO7LP0C03jfrJi-kLMVQlnkiMuxVDKz3m2PQnWCsKvNP8VXwFdds95V7Nlou6tN00jciqzubr86Yr1X-HWLQhRXwIjwzTpa_6-HZ5lM7-PSkrg9h3Lp7Us4JFUpbdWAK4Lkaa3abKbu-2AC08qMG9piAOlg7kRrI7NMpMiHQrH5wKoLgSgVxzQrbp6xockiWNI_HguhO7UvlGcwgs9ucBDidEy3IYZwvuNR8w8BojNW2Hw4lG5XpVI1cpSzq771Hhca3U"/>
+</div>
+</div>
+</header>
+<!-- Page Content -->
+<div class="p-8 flex flex-col h-full overflow-hidden">
+<div class="flex flex-col gap-6 mb-8">
+<h1 class="text-4xl font-semibold tracking-tight text-white">Central admin</h1>
+<!-- Tab Pills -->
+<div class="flex items-center gap-2">
+<button class="px-4 py-1.5 text-xs font-semibold uppercase tracking-wider text-gray-400 border border-[#2A2A2A] rounded-full hover:bg-[#191a1a] transition-all">Agora</button>
+<button class="px-4 py-1.5 text-xs font-semibold uppercase tracking-wider text-gray-400 border border-[#2A2A2A] rounded-full hover:bg-[#191a1a] transition-all">Usuários</button>
+<button class="px-4 py-1.5 text-xs font-semibold uppercase tracking-wider text-white bg-[#0055FF] border border-[#0055FF] rounded-full">Projetos</button>
+<button class="px-4 py-1.5 text-xs font-semibold uppercase tracking-wider text-gray-400 border border-[#2A2A2A] rounded-full hover:bg-[#191a1a] transition-all">Tempo</button>
+<button class="px-4 py-1.5 text-xs font-semibold uppercase tracking-wider text-gray-400 border border-[#2A2A2A] rounded-full hover:bg-[#191a1a] transition-all">Grupos</button>
+</div>
+</div>
+<!-- Projects Table Container -->
+<div class="flex-1 border border-[#2A2A2A] bg-[#131313] rounded-lg flex flex-col overflow-hidden">
+<div class="overflow-y-auto flex-1">
+<table class="w-full text-left border-collapse">
+<thead>
+<tr class="border-b border-[#2A2A2A] bg-[#191a1a] sticky top-0 z-10">
+<th class="px-6 py-4 text-[10px] font-bold uppercase tracking-widest text-gray-500">Nome do Projeto</th>
+<th class="px-6 py-4 text-[10px] font-bold uppercase tracking-widest text-gray-500">Dono</th>
+<th class="px-6 py-4 text-[10px] font-bold uppercase tracking-widest text-gray-500">Status</th>
+<th class="px-6 py-4 text-[10px] font-bold uppercase tracking-widest text-gray-500">Progresso</th>
+<th class="px-6 py-4 text-[10px] font-bold uppercase tracking-widest text-gray-500">Horas Totais</th>
+<th class="px-6 py-4 text-[10px] font-bold uppercase tracking-widest text-gray-500 text-right">Ação</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-[#2A2A2A]">
+<!-- Project Row 1 -->
+<tr class="hover:bg-[#191a1a] transition-colors cursor-pointer group">
+<td class="px-6 py-4 font-semibold text-sm text-white">Residência Silva</td>
+<td class="px-6 py-4">
+<div class="flex items-center gap-2">
+<img alt="Avatar" class="w-6 h-6 rounded-full" data-alt="minimalist user avatar icon circle" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBiHuOpQ-pJlkRmer0bm8UF_i1TBcCsf-hRuDgCEHupFSDs6yI6uIt-6yJa35A6a0jXMEUftGJpZV6IDVKe-w1OEj_bECEPL1IFResLUVE_iRoWMderAeRxpvIj0g52WQNjwFUpuy63L90ORFaD0r7qig37QwStXjBFwkHGzG5k_v8uQpiWRepGFDuN59MJkYaxyzXGUL0HJ88EodfaBZjKx-vCjKNY0yaDLg55Qjq6F2Xy-q2RAqzMuK3gpVycrGwKkMPXnxt8obo"/>
+<span class="text-xs text-gray-300">Carlos Mendes</span>
+</div>
+</td>
+<td class="px-6 py-4">
+<span class="px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider bg-[#0055FF15] border border-[#0055FF30] text-[#0055FF] rounded">Em andamento</span>
+</td>
+<td class="px-6 py-4 font-mono text-xs text-gray-400">4/7 (57%)</td>
+<td class="px-6 py-4 font-mono text-xs text-gray-400 text-on-surface">24.2h</td>
+<td class="px-6 py-4 text-right">
+<button class="px-3 py-1 text-[10px] font-bold uppercase tracking-widest border border-outline-variant hover:border-white transition-colors text-white rounded">Abrir</button>
+</td>
+</tr>
+<!-- Project Row 2 -->
+<tr class="hover:bg-[#191a1a] transition-colors cursor-pointer group">
+<td class="px-6 py-4 font-semibold text-sm text-white">Reforma Bloco B</td>
+<td class="px-6 py-4">
+<div class="flex items-center gap-2">
+<img alt="Avatar" class="w-6 h-6 rounded-full" data-alt="minimalist user avatar icon circle" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCMWMl-iO_-2q3-6HQdIUsHZHGBUD6j3Knj38r9ZY2eLY0O3-juG_ztYV-NoSNBhuph-JHp9HNTU_usIoFxVSbCT-HsKbpNLzPA9q5ZipchjHdGlHJhAJO27MMR6DmEoJiou7mxcChxyQYNBtW5320Mg9doO-a3BrDprn9FfrX0AdhWx2hPauz3wUIkxAHv_RowEUA2Js5pDf-TJBj-ZnyqEFSPGWkMpJiuBzBTQyBcEghBm57lSV8Wys8YXXvz7wdo0I3RgmohOa4"/>
+<span class="text-xs text-gray-300">Ana Beatriz</span>
+</div>
+</td>
+<td class="px-6 py-4">
+<span class="px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider bg-gray-500/10 border border-gray-500/20 text-gray-400 rounded">A fazer</span>
+</td>
+<td class="px-6 py-4 font-mono text-xs text-gray-400">0/12 (0%)</td>
+<td class="px-6 py-4 font-mono text-xs text-gray-400 text-on-surface">0.0h</td>
+<td class="px-6 py-4 text-right">
+<button class="px-3 py-1 text-[10px] font-bold uppercase tracking-widest border border-outline-variant hover:border-white transition-colors text-white rounded">Abrir</button>
+</td>
+</tr>
+<!-- Project Row 3 -->
+<tr class="hover:bg-[#191a1a] transition-colors cursor-pointer group">
+<td class="px-6 py-4 font-semibold text-sm text-white">Centro Comunitário</td>
+<td class="px-6 py-4">
+<div class="flex items-center gap-2">
+<img alt="Avatar" class="w-6 h-6 rounded-full" data-alt="minimalist user avatar icon circle" src="https://lh3.googleusercontent.com/aida-public/AB6AXuB5qES5lv2TntX2x7fmIhJV0zDK0nCmCUXA45E3721ovX4LKqMFu-A0iQGmUSref6hxMivBTM2fAybu5EKQhNwrj-fUBx4Tt7Q3BXAdY-MSM-wfs5EpeumEyWfHlgNRc_y7DyPbpHJ2CP-DmynvFG8QwWOjzuf7wLFwjmPNVgyusPmZS_3vMJFVfsSaXJ0lYUGNes1JwxCaFjELC9c6khxGIxUC1V5U9uJ8f_b9EnzTGzda2U-jj6hwfZAve5R610kniCSJ480Ugeg"/>
+<span class="text-xs text-gray-300">Roberto Lima</span>
+</div>
+</td>
+<td class="px-6 py-4">
+<span class="px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider bg-green-500/10 border border-green-500/20 text-[#22c55e] rounded">Concluído</span>
+</td>
+<td class="px-6 py-4 font-mono text-xs text-gray-400">15/15 (100%)</td>
+<td class="px-6 py-4 font-mono text-xs text-gray-400 text-on-surface">148.5h</td>
+<td class="px-6 py-4 text-right">
+<button class="px-3 py-1 text-[10px] font-bold uppercase tracking-widest border border-outline-variant hover:border-white transition-colors text-white rounded">Abrir</button>
+</td>
+</tr>
+<!-- Project Row 4 -->
+<tr class="hover:bg-[#191a1a] transition-colors cursor-pointer group">
+<td class="px-6 py-4 font-semibold text-sm text-white">Estacionamento Norte</td>
+<td class="px-6 py-4">
+<div class="flex items-center gap-2">
+<img alt="Avatar" class="w-6 h-6 rounded-full" data-alt="minimalist user avatar icon circle" src="https://lh3.googleusercontent.com/aida-public/AB6AXuARGX-JlhdD9fZGIn5R7xRbF5Qji1Qak7zbZLLOQJ9CwbIzALwxDrXoaPPkIccIZKTGQY0r4Mh9se-yE2MOQacCnY3m8U64HIgcEBYMJqlFMfrhwDpe_kLaCSjgSFqP8oT55If4Bc3CkKdqgrLXB2V__JBBz3-EH-7_bkxJ6Hge5iPGAQIp3zO5QYzb5XKKZUG6v-iHSZDKZiZSk_NJ-fP6SGVijj1Ypnl_m-YTD0ybHC55WSnKIJC6dm5NGfhLuQgzjWv65FIr4Dg"/>
+<span class="text-xs text-gray-300">Julia Faria</span>
+</div>
+</td>
+<td class="px-6 py-4">
+<span class="px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider bg-yellow-500/10 border border-yellow-500/20 text-yellow-500/80 rounded">Pausado</span>
+</td>
+<td class="px-6 py-4 font-mono text-xs text-gray-400">2/8 (25%)</td>
+<td class="px-6 py-4 font-mono text-xs text-gray-400 text-on-surface">12.0h</td>
+<td class="px-6 py-4 text-right">
+<button class="px-3 py-1 text-[10px] font-bold uppercase tracking-widest border border-outline-variant hover:border-white transition-colors text-white rounded">Abrir</button>
+</td>
+</tr>
+<!-- Project Row 5 -->
+<tr class="hover:bg-[#191a1a] transition-colors cursor-pointer group">
+<td class="px-6 py-4 font-semibold text-sm text-white">Paisagismo Praça</td>
+<td class="px-6 py-4">
+<div class="flex items-center gap-2">
+<img alt="Avatar" class="w-6 h-6 rounded-full" data-alt="minimalist user avatar icon circle" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDFZp7QAVvpVlvIiEJevAMq2DEFnVEZsyz4WaKkYQFJXLKF4rSZaxD_7l_mRCkT6mNcC6v46gIAzku__Yif3XWOaccyouSFmrHknxuX7ciV-kl5ILmG1Uig1mx6JEhypDQIFwk3PbpXnPzq_5xXZqwuie9GfzStk6v_ZsYEElLH5cjw5oBV_s3hJZg0SVL5M6_2OU-G0dFLAfx2RxHnhkk62Jq06WiFhyWSjm6ykgNDa8zqS-bQinXNO3IGDDySxTvgS0KYa0W1Vus"/>
+<span class="text-xs text-gray-300">Fernando Costa</span>
+</div>
+</td>
+<td class="px-6 py-4">
+<span class="px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider bg-[#0055FF15] border border-[#0055FF30] text-[#0055FF] rounded">Em andamento</span>
+</td>
+<td class="px-6 py-4 font-mono text-xs text-gray-400">8/10 (80%)</td>
+<td class="px-6 py-4 font-mono text-xs text-gray-400 text-on-surface">45.8h</td>
+<td class="px-6 py-4 text-right">
+<button class="px-3 py-1 text-[10px] font-bold uppercase tracking-widest border border-outline-variant hover:border-white transition-colors text-white rounded">Abrir</button>
+</td>
+</tr>
+<!-- Project Row 6 -->
+<tr class="hover:bg-[#191a1a] transition-colors cursor-pointer group">
+<td class="px-6 py-4 font-semibold text-sm text-white">Memorial descritivo</td>
+<td class="px-6 py-4">
+<div class="flex items-center gap-2">
+<img alt="Avatar" class="w-6 h-6 rounded-full" data-alt="minimalist user avatar icon circle" src="https://lh3.googleusercontent.com/aida-public/AB6AXuC_Gq-i0YYXU3OylTMq9pOza1HbCHTk90UdYeyHvRt6gapfQHTtHXKj2xk0F8NTsQ2MTVMVknWzyiEhLGIXoeHrOm7xJ_5BhiPDgSEF96vB2dIGHY-hIOBQy0pD7Pidl9gh02n_OgLYZcNNSLVh6CMnJkBm1B91NCGQwh0XofegZ9MLqYK46ymcXIOPGYA0JHqLw1xVWI-vO5PLmbFiAh11PplacVXq0XYeeZ7q9sx3VHSJmwGZEa1uW98NNqYX5T70jkLn8SZ3PfQ"/>
+<span class="text-xs text-gray-300">Carlos Mendes</span>
+</div>
+</td>
+<td class="px-6 py-4">
+<span class="px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider bg-green-500/10 border border-green-500/20 text-[#22c55e] rounded">Concluído</span>
+</td>
+<td class="px-6 py-4 font-mono text-xs text-gray-400">1/1 (100%)</td>
+<td class="px-6 py-4 font-mono text-xs text-gray-400 text-on-surface">8.5h</td>
+<td class="px-6 py-4 text-right">
+<button class="px-3 py-1 text-[10px] font-bold uppercase tracking-widest border border-outline-variant hover:border-white transition-colors text-white rounded">Abrir</button>
+</td>
+</tr>
+<!-- Project Row 7 -->
+<tr class="hover:bg-[#191a1a] transition-colors cursor-pointer group">
+<td class="px-6 py-4 font-semibold text-sm text-white">Edifício Aurora</td>
+<td class="px-6 py-4">
+<div class="flex items-center gap-2">
+<img alt="Avatar" class="w-6 h-6 rounded-full" data-alt="minimalist user avatar icon circle" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAebHB32tsILC-PeX17ndmFRXMCln2ADKrZYM9TAftC_Oi4EgPNQj4kPThOxDDa8C5OXwnKoKHbKIz7pr1m0_UDjqiWaVtEKnd6HV-YTcPlcAF6GXgef3f7eLChCKzLyFEX3ApUq7s7PBeaeRVLpt0psZ6p1_9mvOEdKv9OvvsXlcyy45QiNkWr3l96oxRI4rr5Sx9Omj5NPk4lgv8AXZQqwTcTuBvWo4wjFAjL8bxUbA35GpTfGQRB2VNHmRwqReS2vsvLF5MkKSI"/>
+<span class="text-xs text-gray-300">Luciana Martins</span>
+</div>
+</td>
+<td class="px-6 py-4">
+<span class="px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider bg-[#0055FF15] border border-[#0055FF30] text-[#0055FF] rounded">Em andamento</span>
+</td>
+<td class="px-6 py-4 font-mono text-xs text-gray-400">22/64 (34%)</td>
+<td class="px-6 py-4 font-mono text-xs text-gray-400 text-on-surface">312.0h</td>
+<td class="px-6 py-4 text-right">
+<button class="px-3 py-1 text-[10px] font-bold uppercase tracking-widest border border-outline-variant hover:border-white transition-colors text-white rounded">Abrir</button>
+</td>
+</tr>
+<!-- Project Row 8 -->
+<tr class="hover:bg-[#191a1a] transition-colors cursor-pointer group">
+<td class="px-6 py-4 font-semibold text-sm text-white">Loja Conceito</td>
+<td class="px-6 py-4">
+<div class="flex items-center gap-2">
+<img alt="Avatar" class="w-6 h-6 rounded-full" data-alt="minimalist user avatar icon circle" src="https://lh3.googleusercontent.com/aida-public/AB6AXuD2UstyL-OyhJc2acDefVif4mp_2Vd2VXdhJQg0D1dmNnu5lwrpNi24Hvh3n6xIUZ1VptBac_vzbg-z9LOUifnCsVDICiUNEkhryO-tPipvdDJBDQku1H6xwwcwaoCrh-NrDv2wrHSgD4rkQYCPv6qAFv76plGQu65a7zuBbBsZfiPFLObfQbMsBKXD6T5uw0L2cbOvjZBPbxS9QLMJPlfcrOjiYr2m4SoFxTG88zRygZXDKusL_NJE5C50Ca_5Inn0oXp7a3Zcd_Q"/>
+<span class="text-xs text-gray-300">Carlos Mendes</span>
+</div>
+</td>
+<td class="px-6 py-4">
+<span class="px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider bg-gray-500/10 border border-gray-500/20 text-gray-400 rounded">A fazer</span>
+</td>
+<td class="px-6 py-4 font-mono text-xs text-gray-400">0/5 (0%)</td>
+<td class="px-6 py-4 font-mono text-xs text-gray-400 text-on-surface">0.0h</td>
+<td class="px-6 py-4 text-right">
+<button class="px-3 py-1 text-[10px] font-bold uppercase tracking-widest border border-outline-variant hover:border-white transition-colors text-white rounded">Abrir</button>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<!-- Footer -->
+<div class="px-6 py-3 border-t border-[#2A2A2A] bg-[#191a1a] flex justify-between items-center">
+<span class="text-[10px] font-bold uppercase tracking-widest text-gray-500">Total de projetos: 8</span>
+<div class="flex gap-2">
+<button class="p-1 hover:text-white text-gray-500 transition-colors">
+<span class="material-symbols-outlined text-sm" data-icon="chevron_left">chevron_left</span>
+</button>
+<span class="text-[10px] font-mono text-white flex items-center">1 / 1</span>
+<button class="p-1 hover:text-white text-gray-500 transition-colors">
+<span class="material-symbols-outlined text-sm" data-icon="chevron_right">chevron_right</span>
+</button>
+</div>
+</div>
+</div>
+</div>
+</main>
+</div>
+</body></html>

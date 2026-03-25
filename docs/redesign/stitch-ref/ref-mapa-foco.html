@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="pt-BR"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=DM+Mono:wght@400;500&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+            font-size: 20px;
+        }
+        .mono { font-family: 'DM Mono', monospace; }
+        body { font-family: 'Inter', sans-serif; }
+    </style>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "on-primary-fixed": "#0033a2",
+                        "secondary-fixed-dim": "#d6d4d3",
+                        "on-primary": "#0034a4",
+                        "outline": "#767575",
+                        "surface-container-highest": "#252626",
+                        "on-secondary-fixed": "#3f3f3f",
+                        "primary-fixed-dim": "#c9d2ff",
+                        "surface-container-high": "#1f2020",
+                        "on-background": "#e7e5e4",
+                        "on-primary-fixed-variant": "#004be3",
+                        "primary-container": "#0039b3",
+                        "tertiary-container": "#e9ddff",
+                        "on-surface": "#e7e5e4",
+                        "on-secondary-fixed-variant": "#5c5b5b",
+                        "surface": "#0e0e0e",
+                        "secondary-dim": "#9f9d9d",
+                        "surface-container-lowest": "#000000",
+                        "tertiary-dim": "#dacff0",
+                        "tertiary-fixed-dim": "#dacff0",
+                        "surface-container": "#191a1a",
+                        "primary-dim": "#a3b5ff",
+                        "primary-fixed": "#dce1ff",
+                        "surface-dim": "#0e0e0e",
+                        "inverse-on-surface": "#565554",
+                        "on-tertiary-container": "#554e69",
+                        "error-container": "#7f2737",
+                        "surface-tint": "#b6c4ff",
+                        "surface-bright": "#2c2c2c",
+                        "on-tertiary-fixed": "#433b56",
+                        "on-tertiary": "#5e5672",
+                        "inverse-surface": "#fcf8f8",
+                        "tertiary-fixed": "#e9ddff",
+                        "on-secondary": "#202020",
+                        "background": "#0e0e0e",
+                        "error": "#ec7c8a",
+                        "on-tertiary-fixed-variant": "#5f5773",
+                        "on-error": "#490013",
+                        "secondary-container": "#3b3b3b",
+                        "on-surface-variant": "#acabaa",
+                        "outline-variant": "#484848",
+                        "surface-container-low": "#131313",
+                        "secondary": "#9f9d9d",
+                        "on-primary-container": "#c4ceff",
+                        "primary": "#0055FF",
+                        "error-dim": "#b95463",
+                        "inverse-primary": "#004eeb",
+                        "on-secondary-container": "#c1bfbe",
+                        "surface-variant": "#252626",
+                        "on-error-container": "#ff97a3",
+                        "tertiary": "#f6eeff",
+                        "secondary-fixed": "#e4e2e1"
+                    },
+                    fontFamily: {
+                        "headline": ["Inter"],
+                        "body": ["Inter"],
+                        "label": ["Inter"]
+                    },
+                    borderRadius: {"DEFAULT": "0.125rem", "lg": "0.25rem", "xl": "0.5rem", "full": "0.75rem"},
+                },
+            },
+        }
+    </script>
+</head>
+<body class="bg-background text-on-surface min-h-screen flex">
+<!-- SideNavBar (Authority: JSON) -->
+<nav class="fixed left-0 top-0 bottom-0 flex flex-col items-center py-4 bg-[#131313] w-[56px] h-screen border-r border-[#2A2A2A] z-50">
+<div class="mb-8">
+<span class="font-['Inter'] font-bold text-white tracking-tighter text-xl">T</span>
+</div>
+<div class="flex flex-col gap-6 flex-1">
+<button class="text-[#0055FF] border-l-2 border-[#0055FF] bg-[#191a1a] p-2 transition-all">
+<span class="material-symbols-outlined" data-icon="folder">folder</span>
+</button>
+<button class="text-gray-500 hover:text-white transition-colors p-2">
+<span class="material-symbols-outlined" data-icon="grid_view">grid_view</span>
+</button>
+<button class="text-gray-500 hover:text-white transition-colors p-2">
+<span class="material-symbols-outlined" data-icon="group">group</span>
+</button>
+<button class="text-gray-500 hover:text-white transition-colors p-2">
+<span class="material-symbols-outlined" data-icon="inventory_2">inventory_2</span>
+</button>
+</div>
+<div class="mt-auto">
+<button class="text-gray-500 hover:text-white transition-colors p-2">
+<span class="material-symbols-outlined" data-icon="settings">settings</span>
+</button>
+</div>
+</nav>
+<div class="flex flex-col flex-1 ml-[56px]">
+<!-- TopAppBar (Authority: JSON) -->
+<header class="flex items-center justify-between px-6 py-3 bg-[#0e0e0e] w-full border-b border-[#2A2A2A] sticky top-0 z-40">
+<div class="flex items-center gap-8">
+<span class="font-['DM_Mono'] font-medium text-[#0055FF] text-lg">Telier</span>
+<nav class="flex gap-6">
+<a class="font-['Inter'] text-sm uppercase tracking-widest text-gray-400 hover:text-white pb-2 transition-all" href="#">Overview</a>
+<a class="font-['Inter'] text-sm uppercase tracking-widest text-gray-400 hover:text-white pb-2 transition-all" href="#">Schedule</a>
+<a class="font-['Inter'] text-sm uppercase tracking-widest text-gray-400 hover:text-white pb-2 transition-all" href="#">Documents</a>
+<a class="font-['Inter'] text-sm uppercase tracking-widest text-white border-b-2 border-[#0055FF] pb-2 transition-all" href="#">Focus Map</a>
+</nav>
+</div>
+<div class="flex items-center gap-4">
+<button class="px-4 py-1.5 bg-[#0055FF] text-white text-xs font-semibold rounded-md hover:brightness-110 transition-all active:scale-95">Add Collaborator</button>
+<div class="flex items-center gap-2 text-gray-400">
+<span class="material-symbols-outlined cursor-pointer hover:text-white transition-all" data-icon="notifications">notifications</span>
+<span class="material-symbols-outlined cursor-pointer hover:text-white transition-all" data-icon="more_vert">more_vert</span>
+</div>
+</div>
+</header>
+<!-- Main Content Canvas -->
+<main class="p-8 max-w-6xl w-full mx-auto">
+<!-- Project Header -->
+<section class="flex flex-col gap-6 mb-12">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-4">
+<h1 class="text-2xl font-semibold tracking-tight text-on-surface">Residência Silva</h1>
+<span class="px-2 py-0.5 bg-primary/10 border border-primary/20 text-primary text-[10px] font-bold uppercase tracking-wider rounded">Em andamento</span>
+</div>
+<div class="flex items-center gap-3">
+<div class="flex flex-col items-end">
+<span class="text-xs text-on-surface-variant font-medium">Proprietário</span>
+<span class="text-sm font-semibold">Carlos Silva</span>
+</div>
+<img alt="Lead Architect" class="w-10 h-10 rounded-full border border-outline-variant" data-alt="professional portrait of a middle-aged man with short dark hair in a minimal architectural studio setting" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDt9ziiEWqqxPs5n05aC_sbGr6GdUin6ImIO_6iJge8_rcZHk7xVHN1SPJJGvObxJ_hKi7xMfLEpp0XAhOUAa9ZBiKhg-ZFsSLX1o24VOKqT6TSlgZQcHZf5yIY8SZxsSM437hk4Xe4QCnfjJWnpBs4usOAbyfkjUaQfRVQ6WOfURzY-Kl89Ozp0mWMhC3TxGcG2SRS3FcmXdtlJd_pnRDvPp3FDNmq02j7PxSUoRkVJC1Y8ae3ZdtNr-bgSjcomLtA5jHYddu8S40"/>
+</div>
+</div>
+<!-- Progress Section -->
+<div class="flex items-center gap-6 bg-surface-container-low border border-outline-variant p-4 rounded-xl">
+<div class="flex-1">
+<div class="flex justify-between items-center mb-2">
+<span class="text-xs font-['DM_Mono'] text-on-surface-variant">PROGRESSO DO PROJETO</span>
+<span class="text-xs font-['DM_Mono'] text-primary">57%</span>
+</div>
+<div class="h-1.5 w-full bg-surface-container-highest rounded-full overflow-hidden">
+<div class="h-full bg-primary w-[57%]"></div>
+</div>
+</div>
+<div class="border-l border-outline-variant h-10 px-6 flex flex-col justify-center">
+<span class="text-xl font-['DM_Mono'] leading-none">4/7</span>
+<span class="text-[10px] text-on-surface-variant uppercase tracking-widest mt-1">Tarefas</span>
+</div>
+</div>
+</section>
+<!-- Focus Header Card -->
+<section class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+<div class="md:col-span-2 bg-surface-container border border-outline-variant p-8 rounded-xl relative overflow-hidden">
+<span class="text-[10px] font-bold text-primary tracking-[0.2em] mb-4 block">MAPA DE FOCO</span>
+<h2 class="text-3xl font-bold tracking-tight mb-2">6 prioridades em sequência</h2>
+<p class="text-on-surface-variant max-w-lg leading-relaxed">Ordenado por prioridade, complexidade e prazo. A tarefa #01 é o melhor ponto de partida para o dia de hoje.</p>
+</div>
+<div class="bg-error-container/20 border border-error/30 p-8 rounded-xl flex flex-col justify-between">
+<div class="flex justify-between items-start">
+<span class="material-symbols-outlined text-error" data-icon="block">block</span>
+<span class="px-2 py-0.5 bg-error text-on-error text-[10px] font-bold uppercase tracking-widest rounded">Bloqueadas</span>
+</div>
+<div>
+<span class="text-4xl font-['DM_Mono'] font-bold text-error">02</span>
+<p class="text-xs text-error/80 mt-1">Ações requerem atenção imediata do gestor.</p>
+</div>
+</div>
+</section>
+<!-- Task List -->
+<section class="flex flex-col gap-1">
+<!-- Task 01 -->
+<div class="group flex items-center gap-6 bg-surface-container p-4 rounded-xl border border-primary/40 hover:border-primary transition-all">
+<span class="text-4xl font-['DM_Mono'] font-medium text-primary/40 group-hover:text-primary transition-colors w-16">01</span>
+<div class="flex-1 flex flex-col gap-1">
+<div class="flex items-center gap-3">
+<h3 class="font-semibold text-lg">Detalhamento de Marcenaria - Cozinha</h3>
+<span class="px-2 py-0.5 bg-[#7C3AED]/20 border border-[#7C3AED]/30 text-[#A78BFA] text-[10px] font-bold uppercase tracking-wider rounded">Meu foco</span>
+</div>
+<div class="flex items-center gap-2">
+<span class="text-xs text-on-surface-variant">Resp:</span>
+<span class="text-xs font-medium">Mariana Lopes</span>
+</div>
+</div>
+<div class="flex items-center gap-4">
+<div class="flex gap-2">
+<span class="px-2 py-1 bg-primary/10 border border-primary/20 text-primary text-[10px] font-bold uppercase tracking-wider rounded">Alta</span>
+<span class="px-2 py-1 bg-surface-container-highest border border-outline-variant text-on-surface-variant text-[10px] font-bold uppercase tracking-wider rounded">Médio</span>
+</div>
+<div class="flex items-center gap-2 ml-4">
+<button class="w-8 h-8 flex items-center justify-center rounded-md border border-outline-variant hover:bg-surface-container-high transition-colors">
+<span class="material-symbols-outlined text-on-surface" data-icon="play_arrow">play_arrow</span>
+</button>
+<button class="w-8 h-8 flex items-center justify-center rounded-md border border-outline-variant hover:bg-surface-container-high transition-colors">
+<span class="material-symbols-outlined text-on-surface" data-icon="stop">stop</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Task 02 -->
+<div class="flex items-center gap-6 bg-surface-container-low p-4 rounded-xl border border-outline-variant hover:bg-surface-container transition-all">
+<span class="text-4xl font-['DM_Mono'] font-medium text-outline-variant w-16">02</span>
+<div class="flex-1 flex flex-col gap-1">
+<div class="flex items-center gap-3">
+<h3 class="font-semibold text-lg">Revisão de Pontos Elétricos</h3>
+<span class="px-2 py-0.5 bg-error/10 border border-error/20 text-error text-[10px] font-bold uppercase tracking-wider rounded">vencida</span>
+</div>
+<div class="flex items-center gap-2">
+<span class="text-xs text-on-surface-variant">Resp:</span>
+<span class="text-xs font-medium">Ricardo M.</span>
+</div>
+</div>
+<div class="flex items-center gap-4">
+<div class="flex gap-2">
+<span class="px-2 py-1 bg-error/10 border border-error/20 text-error text-[10px] font-bold uppercase tracking-wider rounded">Urgente</span>
+<span class="px-2 py-1 bg-surface-container-highest border border-outline-variant text-on-surface-variant text-[10px] font-bold uppercase tracking-wider rounded">Complexo</span>
+</div>
+<div class="flex items-center gap-2 ml-4">
+<span class="text-xs font-['DM_Mono'] text-on-surface-variant">00:00:00</span>
+</div>
+</div>
+</div>
+<!-- Task 03 -->
+<div class="flex items-center gap-6 bg-surface-container-low p-4 rounded-xl border border-outline-variant hover:bg-surface-container transition-all">
+<span class="text-4xl font-['DM_Mono'] font-medium text-outline-variant w-16">03</span>
+<div class="flex-1 flex flex-col gap-1">
+<div class="flex items-center gap-3">
+<h3 class="font-semibold text-lg">Orçamento Revestimentos Áreas Molhadas</h3>
+<span class="px-2 py-0.5 bg-yellow-500/10 border border-yellow-500/20 text-yellow-500 text-[10px] font-bold uppercase tracking-wider rounded">2d</span>
+</div>
+<div class="flex items-center gap-2">
+<span class="text-xs text-on-surface-variant">Resp:</span>
+<span class="text-xs font-medium">Mariana Lopes</span>
+</div>
+</div>
+<div class="flex items-center gap-4">
+<div class="flex gap-2">
+<span class="px-2 py-1 bg-surface-container-highest border border-outline-variant text-on-surface-variant text-[10px] font-bold uppercase tracking-wider rounded">Média</span>
+<span class="px-2 py-1 bg-surface-container-highest border border-outline-variant text-on-surface-variant text-[10px] font-bold uppercase tracking-wider rounded">Baixo</span>
+</div>
+<div class="flex items-center gap-2 ml-4">
+<span class="text-xs font-['DM_Mono'] text-on-surface-variant">02:45:12</span>
+</div>
+</div>
+</div>
+<!-- Task 04 -->
+<div class="flex items-center gap-6 bg-surface-container-low p-4 rounded-xl border border-outline-variant opacity-60">
+<span class="text-4xl font-['DM_Mono'] font-medium text-outline-variant w-16">04</span>
+<div class="flex-1 flex flex-col gap-1">
+<h3 class="font-semibold text-lg">Aprovação de Layout de Gesso</h3>
+<div class="flex items-center gap-2">
+<span class="text-xs text-on-surface-variant">Resp:</span>
+<span class="text-xs font-medium">Carlos Silva</span>
+</div>
+</div>
+<div class="flex items-center gap-4">
+<span class="text-xs font-['DM_Mono'] text-error">BLOQUEADA</span>
+</div>
+</div>
+<!-- Task 05 -->
+<div class="flex items-center gap-6 bg-surface-container-low p-4 rounded-xl border border-outline-variant hover:bg-surface-container transition-all">
+<span class="text-4xl font-['DM_Mono'] font-medium text-outline-variant w-16">05</span>
+<div class="flex-1 flex flex-col gap-1">
+<h3 class="font-semibold text-lg">Especificação de Iluminação Técnica</h3>
+<div class="flex items-center gap-2">
+<span class="text-xs text-on-surface-variant">Resp:</span>
+<span class="text-xs font-medium">Ricardo M.</span>
+</div>
+</div>
+<div class="flex items-center gap-4">
+<div class="flex gap-2">
+<span class="px-2 py-1 bg-surface-container-highest border border-outline-variant text-on-surface-variant text-[10px] font-bold uppercase tracking-wider rounded">Média</span>
+</div>
+</div>
+</div>
+<!-- Task 06 -->
+<div class="flex items-center gap-6 bg-surface-container-low p-4 rounded-xl border border-outline-variant hover:bg-surface-container transition-all">
+<span class="text-4xl font-['DM_Mono'] font-medium text-outline-variant w-16">06</span>
+<div class="flex-1 flex flex-col gap-1">
+<h3 class="font-semibold text-lg">Cálculo Estrutural - Escada Principal</h3>
+<div class="flex items-center gap-2">
+<span class="text-xs text-on-surface-variant">Resp:</span>
+<span class="text-xs font-medium">Eng. Alberto</span>
+</div>
+</div>
+<div class="flex items-center gap-4">
+<div class="flex gap-2">
+<span class="px-2 py-1 bg-surface-container-highest border border-outline-variant text-on-surface-variant text-[10px] font-bold uppercase tracking-wider rounded">Alta</span>
+<span class="px-2 py-1 bg-surface-container-highest border border-outline-variant text-on-surface-variant text-[10px] font-bold uppercase tracking-wider rounded">Complexo</span>
+</div>
+</div>
+</div>
+</section>
+</main>
+</div>
+</body></html>

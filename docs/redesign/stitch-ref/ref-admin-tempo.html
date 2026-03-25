@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="pt-BR"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=DM+Mono:wght@400;500&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "on-surface": "#e7e5e4",
+                        "surface-dim": "#0e0e0e",
+                        "primary-fixed": "#dce1ff",
+                        "primary-container": "#0039b3",
+                        "secondary-fixed": "#e4e2e1",
+                        "error": "#ec7c8a",
+                        "secondary": "#9f9d9d",
+                        "surface": "#0e0e0e",
+                        "secondary-dim": "#9f9d9d",
+                        "on-secondary-fixed-variant": "#5c5b5b",
+                        "surface-tint": "#b6c4ff",
+                        "on-primary-fixed": "#0033a2",
+                        "tertiary-container": "#e9ddff",
+                        "surface-container-high": "#1f2020",
+                        "on-tertiary": "#5e5672",
+                        "on-background": "#e7e5e4",
+                        "on-error-container": "#ff97a3",
+                        "error-container": "#7f2737",
+                        "tertiary-dim": "#dacff0",
+                        "outline-variant": "#484848",
+                        "secondary-container": "#3b3b3b",
+                        "on-surface-variant": "#acabaa",
+                        "primary-fixed-dim": "#c9d2ff",
+                        "background": "#0e0e0e",
+                        "on-secondary-container": "#c1bfbe",
+                        "on-error": "#490013",
+                        "inverse-primary": "#004eeb",
+                        "secondary-fixed-dim": "#d6d4d3",
+                        "error-dim": "#b95463",
+                        "surface-variant": "#252626",
+                        "on-secondary-fixed": "#3f3f3f",
+                        "on-tertiary-fixed": "#433b56",
+                        "tertiary": "#f6eeff",
+                        "inverse-surface": "#fcf8f8",
+                        "on-tertiary-fixed-variant": "#5f5773",
+                        "surface-container-lowest": "#000000",
+                        "on-primary-fixed-variant": "#004be3",
+                        "tertiary-fixed-dim": "#dacff0",
+                        "on-primary": "#0034a4",
+                        "surface-bright": "#2c2c2c",
+                        "surface-container-highest": "#252626",
+                        "on-tertiary-container": "#554e69",
+                        "surface-container": "#191a1a",
+                        "inverse-on-surface": "#565554",
+                        "tertiary-fixed": "#e9ddff",
+                        "primary": "#b6c4ff",
+                        "on-secondary": "#202020",
+                        "on-primary-container": "#c4ceff",
+                        "outline": "#767575",
+                        "surface-container-low": "#131313",
+                        "primary-dim": "#a3b5ff"
+                    },
+                    fontFamily: {
+                        "headline": ["Inter"],
+                        "body": ["Inter"],
+                        "label": ["Inter"],
+                        "mono": ["DM Mono"]
+                    },
+                    borderRadius: {"DEFAULT": "0.125rem", "lg": "0.25rem", "xl": "0.5rem", "full": "0.75rem"},
+                },
+            },
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+            vertical-align: middle;
+        }
+        ::-webkit-calendar-picker-indicator {
+            filter: invert(1);
+        }
+    </style>
+</head>
+<body class="bg-background text-on-background font-body selection:bg-primary-container selection:text-white">
+<div class="flex min-h-screen">
+<!-- SideNavBar (Authority: JSON) -->
+<aside class="flex flex-col h-screen w-64 border-r border-[#2A2A2A] sticky top-0 left-0 bg-[#131313] font-['Inter'] text-sm tracking-tight p-4">
+<div class="mb-8 px-2">
+<span class="text-xl font-bold tracking-tighter text-white uppercase block">Telier</span>
+<span class="text-[10px] text-gray-500 uppercase tracking-widest mt-1">Studio Admin</span>
+</div>
+<nav class="flex-1 space-y-1">
+<button class="w-full flex items-center gap-3 px-3 py-2 rounded text-gray-400 hover:text-white transition-colors hover:bg-[#191a1a]">
+<span class="material-symbols-outlined" data-icon="architecture">architecture</span>
+<span>Projetos</span>
+</button>
+<button class="w-full flex items-center gap-3 px-3 py-2 rounded text-[#0055FF] font-semibold bg-[#0055FF]/10 border-r-2 border-[#0055FF]">
+<span class="material-symbols-outlined" data-icon="timer">timer</span>
+<span>Cronômetros</span>
+</button>
+<button class="w-full flex items-center gap-3 px-3 py-2 rounded text-gray-400 hover:text-white transition-colors hover:bg-[#191a1a]">
+<span class="material-symbols-outlined" data-icon="groups">groups</span>
+<span>Equipe</span>
+</button>
+<button class="w-full flex items-center gap-3 px-3 py-2 rounded text-gray-400 hover:text-white transition-colors hover:bg-[#191a1a]">
+<span class="material-symbols-outlined" data-icon="person_outline">person_outline</span>
+<span>Perfil</span>
+</button>
+</nav>
+<div class="mt-auto space-y-1 border-t border-[#2A2A2A] pt-4">
+<button class="w-full py-2 px-4 mb-4 bg-[#0055FF] text-white font-bold rounded hover:opacity-90 transition-opacity">
+                    Novo Projeto
+                </button>
+<button class="w-full flex items-center gap-3 px-3 py-2 rounded text-gray-400 hover:text-white transition-colors hover:bg-[#191a1a]">
+<span class="material-symbols-outlined" data-icon="settings">settings</span>
+<span>Configurações</span>
+</button>
+<button class="w-full flex items-center gap-3 px-3 py-2 rounded text-gray-400 hover:text-white transition-colors hover:bg-[#191a1a]">
+<span class="material-symbols-outlined" data-icon="logout">logout</span>
+<span>Sair</span>
+</button>
+<div class="flex items-center gap-3 p-3 mt-4 bg-surface-container rounded-lg border border-[#2A2A2A]">
+<img alt="User Profile Avatar" class="w-8 h-8 rounded-full object-cover" data-alt="Professional portrait of a male architect in a studio setting, soft side lighting, minimalist background" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCFzL9wD9D8zyaVb9VMXd8ekUy9XBRhWBW9jYM9DYlMQuHn5F7z9HWrXuwjbvKEBXZWphN1VBZyBHDY4hVi8P4TAYPpX7_hkwdIChnGTcHs00wpB-h__1ONyCaniHDMtJgkrBonIUF1lQW5O3L6mjTL-jaqKKQq9VdFp55nIfR79Q8dgGRIYkjstCWYKkTx5tFbTShIlMW3i2E5xQHnrliybed7AvAk0PQADd69hmaYEJv_uK5SaKKM4j5XTUx3VlpalB_mJ8HJ0oc"/>
+<div class="overflow-hidden">
+<p class="text-xs font-semibold text-white truncate">Marcus Vinícius</p>
+<p class="text-[10px] text-gray-500 truncate">Lead Architect</p>
+</div>
+</div>
+</div>
+</aside>
+<!-- Main Content Area -->
+<main class="flex-1 flex flex-col min-w-0 bg-[#0e0e0e]">
+<!-- TopAppBar (Authority: JSON & Context) -->
+<header class="w-full border-b border-[#2A2A2A] bg-[#0e0e0e] flex items-center justify-between px-6 py-3 font-['DM_Mono'] text-xs uppercase tracking-widest">
+<div class="flex items-center gap-4">
+<div class="flex items-center gap-2 text-gray-500">
+<span>Projetos</span>
+<span class="material-symbols-outlined text-[14px]">chevron_right</span>
+<span class="text-white">Central admin</span>
+</div>
+</div>
+<nav class="hidden md:flex items-center gap-8">
+<a class="text-gray-500 hover:text-white transition-colors" href="#">Agora</a>
+<a class="text-gray-500 hover:text-white transition-colors" href="#">Equipe</a>
+<a class="text-white border-b-2 border-[#0055FF] pb-2" href="#">Tempo</a>
+<a class="text-gray-500 hover:text-white transition-colors" href="#">Ferramentas</a>
+</nav>
+<div class="flex items-center gap-4">
+<div class="relative">
+<span class="material-symbols-outlined absolute left-2 top-1/2 -translate-y-1/2 text-gray-500 text-sm">search</span>
+<input class="bg-[#131313] border border-[#2A2A2A] rounded px-8 py-1 text-[10px] focus:outline-none focus:border-[#0055FF] w-48" placeholder="BUSCAR..." type="text"/>
+</div>
+<span class="material-symbols-outlined text-gray-400 cursor-pointer hover:text-white" data-icon="notifications">notifications</span>
+<span class="material-symbols-outlined text-gray-400 cursor-pointer hover:text-white" data-icon="help_outline">help_outline</span>
+</div>
+</header>
+<!-- Page Title & Section Nav -->
+<section class="px-8 pt-8 pb-4">
+<h1 class="text-3xl font-semibold tracking-tight text-white mb-6">Central admin</h1>
+<div class="flex gap-2">
+<button class="px-4 py-1.5 text-xs font-semibold rounded-full border border-outline-variant text-on-surface hover:bg-surface-container transition-colors">Agora</button>
+<button class="px-4 py-1.5 text-xs font-semibold rounded-full border border-outline-variant text-on-surface hover:bg-surface-container transition-colors">Equipe</button>
+<button class="px-4 py-1.5 text-xs font-semibold rounded-full bg-[#0055FF] text-white">Tempo</button>
+<button class="px-4 py-1.5 text-xs font-semibold rounded-full border border-outline-variant text-on-surface hover:bg-surface-container transition-colors">Ferramentas</button>
+</div>
+</section>
+<!-- Filter Toolbar -->
+<section class="px-8 py-4 border-b border-[#2A2A2A] bg-[#131313] flex flex-wrap items-center gap-4">
+<div class="flex items-center gap-2">
+<label class="text-[10px] uppercase tracking-widest text-gray-500 font-mono">De</label>
+<input class="bg-[#0e0e0e] border border-[#2A2A2A] text-xs font-mono px-3 py-1.5 rounded focus:ring-0 focus:border-[#0055FF] text-on-surface" type="date" value="2023-10-01"/>
+</div>
+<div class="flex items-center gap-2">
+<label class="text-[10px] uppercase tracking-widest text-gray-500 font-mono">Até</label>
+<input class="bg-[#0e0e0e] border border-[#2A2A2A] text-xs font-mono px-3 py-1.5 rounded focus:ring-0 focus:border-[#0055FF] text-on-surface" type="date" value="2023-10-31"/>
+</div>
+<div class="flex items-center gap-2">
+<label class="text-[10px] uppercase tracking-widest text-gray-500 font-mono">Usuário</label>
+<select class="bg-[#0e0e0e] border border-[#2A2A2A] text-xs px-3 py-1.5 rounded focus:ring-0 focus:border-[#0055FF] text-on-surface min-w-[140px]">
+<option>Todos</option>
+<option>Marcus Vinícius</option>
+<option>Ana Clara</option>
+<option>Roberto Dias</option>
+</select>
+</div>
+<div class="flex-1"></div>
+<button class="bg-[#0055FF] text-white text-xs font-bold px-6 py-2 rounded hover:opacity-90 transition-opacity">
+                    Filtrar
+                </button>
+<button class="bg-transparent border border-[#484848] text-on-surface text-xs font-bold px-6 py-2 rounded hover:bg-[#191a1a] transition-colors">
+                    Exportar CSV
+                </button>
+</section>
+<!-- Time Sessions Table -->
+<section class="flex-1 overflow-auto p-0 relative">
+<table class="w-full text-left border-collapse table-fixed">
+<thead class="sticky top-0 bg-[#0e0e0e] z-10 border-b border-[#2A2A2A]">
+<tr class="text-[10px] uppercase tracking-widest text-gray-500 font-mono">
+<th class="px-8 py-4 w-1/6 font-normal">Usuário</th>
+<th class="px-4 py-4 w-1/4 font-normal">Tarefa</th>
+<th class="px-4 py-4 w-1/6 font-normal">Projeto</th>
+<th class="px-4 py-4 w-1/8 font-normal">Início</th>
+<th class="px-4 py-4 w-1/8 font-normal">Fim</th>
+<th class="px-4 py-4 w-1/12 font-normal text-center">Intervalos</th>
+<th class="px-4 py-4 w-1/12 font-normal text-right pr-8">Líquido</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-[#1f2020]">
+<!-- Row 1 -->
+<tr class="group hover:bg-[#131313] transition-colors">
+<td class="px-8 py-3 flex items-center gap-3">
+<img class="w-6 h-6 rounded-full object-cover grayscale" data-alt="Close-up of a smiling young man in a grey workspace" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBIr5B7-IW0M4W-jsFMl3dJD6SxN_mq5t1BnLtrtaDLrLJieDYpmsgD7J28__APl-GWzjRH49I9pSHhF9pd_f-GVN-2DPul_fOD2XIUbRYNan6ScbRsfzu7oT5GV-k_clh8a12COXyLFQYt49FWPv3HJ2i6jumls2UUYP6z4zc-0lftT89azXNgvc5QKgRi-trV0yf70hdrPjwmxBkPHuKrxTZAQkbS0DkPnlPbNMqDB0PIfPVP1528tuZSdgt-0JrBjywRmnLYsjk"/>
+<span class="text-sm">Ana Clara</span>
+</td>
+<td class="px-4 py-3 text-sm truncate text-gray-300">Planta baixa pavimento térreo</td>
+<td class="px-4 py-3 text-sm text-gray-500">Residência Silva</td>
+<td class="px-4 py-3 text-xs font-mono text-gray-400">24/10 09:12</td>
+<td class="px-4 py-3 text-xs font-mono text-gray-400">24/10 12:45</td>
+<td class="px-4 py-3 text-xs font-mono text-center">0</td>
+<td class="px-4 py-3 text-sm font-mono text-[#22c55e] text-right pr-8">03:33</td>
+</tr>
+<!-- Row 2 -->
+<tr class="group hover:bg-[#131313] transition-colors">
+<td class="px-8 py-3 flex items-center gap-3">
+<img class="w-6 h-6 rounded-full object-cover grayscale" data-alt="Portrait of a mature architect with glasses" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBAanWu3tVJYLgDBe06v7xCoGAy1frumzDYfhfErP2lF724pp2YnfPS1fFAFB_giLl6TcfPJu-elolju0EiQrm-hM6lmmuh6116LQlJcVblitZHRhPhOPUNOu6u2rl923f-NyotvaLbNIa3B7MNpUXMB7-bgYapv8Fgf9lAV2v2u8VraTV_ey_ZoTf_E6QWR1qzMXlrZJbC8Jv6ibBm7UV1rgRCD5PFFUHempS_TeImqdsD2-yCtcZ7mDo-OX_m-igE6r5izckzVAs"/>
+<span class="text-sm">Roberto Dias</span>
+</td>
+<td class="px-4 py-3 text-sm truncate text-gray-300">Memorial descritivo estrutural</td>
+<td class="px-4 py-3 text-sm text-gray-500">Edifício Aurora</td>
+<td class="px-4 py-3 text-xs font-mono text-gray-400">24/10 14:00</td>
+<td class="px-4 py-3 text-xs font-mono text-gray-400">24/10 18:20</td>
+<td class="px-4 py-3 text-xs font-mono text-center">1</td>
+<td class="px-4 py-3 text-sm font-mono text-[#22c55e] text-right pr-8">04:20</td>
+</tr>
+<!-- Row 3 -->
+<tr class="group hover:bg-[#131313] transition-colors">
+<td class="px-8 py-3 flex items-center gap-3">
+<img class="w-6 h-6 rounded-full object-cover grayscale" data-alt="Portrait of a young man with beard" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCQlQ9P8IDdcKRgjecI-YOjJDl5TweSYRBIEXKXIgeNnyczpWwIrr8VRLq6c-0OB2PaGg5uLCL6w4NNnP5VNJ2_HI5eIIJSTkS7cZcbP-q9uo4R-TlPPtT7-f57EDpbI_pvP28IdXchUm2ZX2vdw6_1V3Jv9MqRtUEQDoms8iSar7mzQ9bZuw8wWqLUG_-KNChrQIBz2mu_hdqDMlWJd0kb0REOGptbWMASU83YVSg53w2jh8Gbdo_yvNLMdmbUiBEktBxCovCj3Pk"/>
+<span class="text-sm">Marcus V.</span>
+</td>
+<td class="px-4 py-3 text-sm truncate text-gray-300">Renderização interna suíte master</td>
+<td class="px-4 py-3 text-sm text-gray-500">Apartamento 402</td>
+<td class="px-4 py-3 text-xs font-mono text-gray-400">23/10 10:00</td>
+<td class="px-4 py-3 text-xs font-mono text-gray-400">23/10 17:30</td>
+<td class="px-4 py-3 text-xs font-mono text-center">2</td>
+<td class="px-4 py-3 text-sm font-mono text-[#22c55e] text-right pr-8">07:30</td>
+</tr>
+<!-- Row 4 -->
+<tr class="group hover:bg-[#131313] transition-colors">
+<td class="px-8 py-3 flex items-center gap-3">
+<img class="w-6 h-6 rounded-full object-cover grayscale" data-alt="Young professional man" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBc6PxIjenVfm7kBx8wWvvJgtLuOnJ1LnBf61LS_l98NFbJzRH1XEfRTibnoMBuRIHHWdDYdJySub2i_kCbTzDmheFyBN8kyaca6-mF0rwKp6T7uW5_rN-0L3FsnL0dfTbsqcIo7z4Pj7i7USLscZwJvMTozkj9Aa1IkLRt9_HGqPgV1Vtx46x_RbFhjQJcQllyPWD45NYMc17J03bxeG_7mlc0eKKXxYvmafOzDjBQsYl38CSPzj8yDpl7UF0KjTzjPEkJxCiynTE"/>
+<span class="text-sm">Ana Clara</span>
+</td>
+<td class="px-4 py-3 text-sm truncate text-gray-300">Detalhamento de marcenaria cozinha</td>
+<td class="px-4 py-3 text-sm text-gray-500">Residência Silva</td>
+<td class="px-4 py-3 text-xs font-mono text-gray-400">23/10 08:30</td>
+<td class="px-4 py-3 text-xs font-mono text-gray-400">23/10 12:00</td>
+<td class="px-4 py-3 text-xs font-mono text-center">0</td>
+<td class="px-4 py-3 text-sm font-mono text-[#22c55e] text-right pr-8">03:30</td>
+</tr>
+<!-- Row 5 -->
+<tr class="group hover:bg-[#131313] transition-colors">
+<td class="px-8 py-3 flex items-center gap-3">
+<img class="w-6 h-6 rounded-full object-cover grayscale" data-alt="Senior architect portrait" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAOxCAlVwhxBI2hvTdNS4uUHFROYiYP8zNcKjd-zyMQ937Lr6dLQLjTy8lTMnZM_ifO_C2ZjUJhG9K6-__JXbyclaCokaDtQBFW4xPmR2GK1LIB58RrfQLSyo6HGEnLeXj_qAPaUa5wxCt1aShsymZ_uGP7o4zRgUkjGwe0_RrHrq99B8XCDFJaup62ZDbKS5TPDC1LzAD2ALWDX-C1i0UiM52vAnvJ-0aas0K_AGLLNTl4kvO00fr61mBumJ94UrKM0S8J0oB-Dhw"/>
+<span class="text-sm">Roberto Dias</span>
+</td>
+<td class="px-4 py-3 text-sm truncate text-gray-300">Análise de legislação urbanística</td>
+<td class="px-4 py-3 text-sm text-gray-500">Condomínio Lagos</td>
+<td class="px-4 py-3 text-xs font-mono text-gray-400">22/10 14:15</td>
+<td class="px-4 py-3 text-xs font-mono text-gray-400">22/10 16:45</td>
+<td class="px-4 py-3 text-xs font-mono text-center">0</td>
+<td class="px-4 py-3 text-sm font-mono text-[#22c55e] text-right pr-8">02:30</td>
+</tr>
+<!-- Row 6 -->
+<tr class="group hover:bg-[#131313] transition-colors">
+<td class="px-8 py-3 flex items-center gap-3">
+<img class="w-6 h-6 rounded-full object-cover grayscale" data-alt="Professional profile photo" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCGGOQRYYkTcMb_9bVKLZoT926FbLdQxfA5gDMiZgFW_HndO-48BzfF_UxPpyIq4KymSH7R_AcokGPneHal9ZvyGC4mjD53dun8lYlacRx0N3Nx8Co1dqQaWzg1XklAjNQzkCXG_0hIrGqZv9lOvk0hxF1lkXKcIIIhNa7_WqqC2J5U2SnS0r7qjQ_SbbCHdL_JpREhMApAuRPnAn1s3uIkjSWRfgohmYPcdhxljB-GDkx3MWe_YA9U7EvgKGdRcXy8Pia53BnRNs8"/>
+<span class="text-sm">Marcus V.</span>
+</td>
+<td class="px-4 py-3 text-sm truncate text-gray-300">Reunião de alinhamento cliente</td>
+<td class="px-4 py-3 text-sm text-gray-500">Residência Silva</td>
+<td class="px-4 py-3 text-xs font-mono text-gray-400">22/10 09:00</td>
+<td class="px-4 py-3 text-xs font-mono text-gray-400">22/10 10:30</td>
+<td class="px-4 py-3 text-xs font-mono text-center">0</td>
+<td class="px-4 py-3 text-sm font-mono text-[#22c55e] text-right pr-8">01:30</td>
+</tr>
+<!-- Row 7 -->
+<tr class="group hover:bg-[#131313] transition-colors">
+<td class="px-8 py-3 flex items-center gap-3">
+<img class="w-6 h-6 rounded-full object-cover grayscale" data-alt="Portrait of a young woman" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDeuk5HLKBd-Vw9fJIhulPenslnBFjkxt3151I7MDKne-8ODG0JPy8I_PcT0taAYalmEPy1iD1MB3rPnziB8NcCV3IwA-CHfBuA5XQ7PLQXR8PToNWaSWi8f2UwPS0JbGtvsFwqHk26KqD97UkXeOLltasCt2z2AFTW9v2GBWLl_3n5Llkm0uBAxPlc00LYxBt_0v3AoEUgN1_elWXQZ03CRZf9JZmugoweoh3towDP9pIi_pHjFMjye5hsYk1oD6D38PjzEIExzAY"/>
+<span class="text-sm">Ana Clara</span>
+</td>
+<td class="px-4 py-3 text-sm truncate text-gray-300">Ajustes de layout conforme briefing</td>
+<td class="px-4 py-3 text-sm text-gray-500">Loja Conceito</td>
+<td class="px-4 py-3 text-xs font-mono text-gray-400">21/10 13:00</td>
+<td class="px-4 py-3 text-xs font-mono text-gray-400">21/10 19:00</td>
+<td class="px-4 py-3 text-xs font-mono text-center">1</td>
+<td class="px-4 py-3 text-sm font-mono text-[#22c55e] text-right pr-8">06:00</td>
+</tr>
+<!-- Row 8 -->
+<tr class="group hover:bg-[#131313] transition-colors">
+<td class="px-8 py-3 flex items-center gap-3">
+<img class="w-6 h-6 rounded-full object-cover grayscale" data-alt="Senior professional portrait" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBZ8-l79ylIW0ZjIDuWPydJG4ghb5-_VB4OPFAQwMr9M01jw1zl6nTVqDyMUc8vaKEsx2T5AeaPrk0MhVNuVlzs8wrpnGp6ZzNqDu0-X6Zj2U9Y3-1ofZjTJ320dA18_a9MBaVG0gsMR_lTzIYhkGbcMU9vUBUQzbk8Yxlu3UrZjt7Ey4lP9PYpJYvgahOdXJdIzcruG9XAHv0V09a66_JHT8eRzRx9WXDOcMHC6ihwyVhSPNSFHrEVx1DV7OEMThdZOMK1Bqpw4OE"/>
+<span class="text-sm">Roberto Dias</span>
+</td>
+<td class="px-4 py-3 text-sm truncate text-gray-300">Levantamento métrico in loco</td>
+<td class="px-4 py-3 text-sm text-gray-500">Reforma Loft</td>
+<td class="px-4 py-3 text-xs font-mono text-gray-400">21/10 08:00</td>
+<td class="px-4 py-3 text-xs font-mono text-gray-400">21/10 12:00</td>
+<td class="px-4 py-3 text-xs font-mono text-center">0</td>
+<td class="px-4 py-3 text-sm font-mono text-[#22c55e] text-right pr-8">04:00</td>
+</tr>
+<!-- Row 9 -->
+<tr class="group hover:bg-[#131313] transition-colors">
+<td class="px-8 py-3 flex items-center gap-3">
+<img class="w-6 h-6 rounded-full object-cover grayscale" data-alt="Male portrait in office" src="https://lh3.googleusercontent.com/aida-public/AB6AXuA71okro5GlhXz5zCWfO9AHGwZHbs1mvS4HMOdg91BnU1wUShaENLq4hCLWKt2304y8Emkagqnjq8LkpWR_Rhn15w7_t90mRELkXPBoZPtIKBanJFlZyOnAlQJK6ZECv5yXcfGRZClMSVQUaXM3GQ8j99v--TjGW2fJY9bQs1-aaQoM-RbXQO5DwMlqJGdm9MlnS3oIa8m1gIKVe1cbosKUsyMA1RyZfZuLPXq6Qo2vNKIX3toqwqLDjEgvDc0SQtqkMo1BHZ0bh-k"/>
+<span class="text-sm">Marcus V.</span>
+</td>
+<td class="px-4 py-3 text-sm truncate text-gray-300">Modelagem 3D volumétrica</td>
+<td class="px-4 py-3 text-sm text-gray-500">Edifício Aurora</td>
+<td class="px-4 py-3 text-xs font-mono text-gray-400">20/10 14:00</td>
+<td class="px-4 py-3 text-xs font-mono text-gray-400">20/10 19:30</td>
+<td class="px-4 py-3 text-xs font-mono text-center">1</td>
+<td class="px-4 py-3 text-sm font-mono text-[#22c55e] text-right pr-8">05:30</td>
+</tr>
+<!-- Row 10 -->
+<tr class="group hover:bg-[#131313] transition-colors">
+<td class="px-8 py-3 flex items-center gap-3">
+<img class="w-6 h-6 rounded-full object-cover grayscale" data-alt="Young female professional" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBNEaT94B9PDN611GUZCDEb1vvEy-nFa3lo6HPkTdQUjl7Q33TUGweoAQLY2Z9RDJXwSq0VxZe9IEnyCd4THL-NlN9Ob4lzh6yqYL8efyWJvUH2y8y5JyH5eJkHRCIogvYLMYHoUDkPWgvx1ETyi9UzMiNLXNEaT5TkNyHvpPTTAAMuibPdLpA2O_3gQdHCrMBtruFfc-llx9q8PeRyEs1PtVEiE5RZY4iFzqSy-dYKFDfWZ5shZk4uHxsZfHBWXGj1dvjBKx7OiCk"/>
+<span class="text-sm">Ana Clara</span>
+</td>
+<td class="px-4 py-3 text-sm truncate text-gray-300">Especificação de revestimentos</td>
+<td class="px-4 py-3 text-sm text-gray-500">Apartamento 402</td>
+<td class="px-4 py-3 text-xs font-mono text-gray-400">20/10 09:00</td>
+<td class="px-4 py-3 text-xs font-mono text-gray-400">20/10 13:12</td>
+<td class="px-4 py-3 text-xs font-mono text-center">0</td>
+<td class="px-4 py-3 text-sm font-mono text-[#22c55e] text-right pr-8">04:12</td>
+</tr>
+</tbody>
+</table>
+<!-- Hover Actions Placeholder (Logic implicitly shown via absolute overlay if interactive, here simulated with invisibility) -->
+<div class="hidden">
+<button class="material-symbols-outlined text-xs p-1">edit</button>
+<button class="material-symbols-outlined text-xs p-1">delete</button>
+</div>
+</section>
+<!-- Sticky Footer Total -->
+<footer class="sticky bottom-0 bg-[#131313] border-t border-[#2A2A2A] px-8 py-4 flex items-center justify-end">
+<div class="flex items-center gap-4">
+<span class="text-[10px] uppercase tracking-widest text-gray-500 font-mono">Total acumulado</span>
+<span class="text-2xl font-mono text-[#22c55e] font-medium tracking-tight">47.2h</span>
+</div>
+</footer>
+</main>
+</div>
+</body></html>

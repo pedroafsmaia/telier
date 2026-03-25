@@ -1,0 +1,87 @@
+# Telier Drafting System: Design System Specification
+
+## 1. Overview & Creative North Star
+"The Architectural Monolith."
+Telier is designed for the precise, demanding environment of architectural practice. The visual language is sober, functional, and purely structural. It avoids decoration in favor of clarity and technical precision, drawing inspiration from high-performance tools like Linear and Notion.
+
+---
+
+## 2. Foundation: Visual & Space
+
+### 2.1 Color Palette (Dark Theme Primary)
+| Role | Hex | Usage |
+| :--- | :--- | :--- |
+| **Background (Base)** | `#0e0e0e` | Main application background. |
+| **Surface (Card/Sidebar)** | `#131313` | Secondary surfaces, sidebars, and card backgrounds. |
+| **Border (Subtle)** | `#2A2A2A` | 1px solid borders for containers and components. |
+| **Primary (Action)** | `#0055FF` | Active states, primary buttons, and focus indicators. |
+| **Success** | `#22C55E` | Active timers, "Concluído" status, and positive growth. |
+| **Warning** | `#FACC15` | Near deadlines and pending alerts. |
+| **Error/Alert** | `#EF4444` | Blocked tasks, "Atrasado" status, and destructive actions. |
+| **Text (Primary)** | `#FFFFFF` | Main headings and high-emphasis content. |
+| **Text (Secondary)** | `#888888` | Labels, descriptions, and low-emphasis metadata. |
+
+### 2.2 Typography
+We use a dual-font system to separate interface navigation from technical data.
+- **Primary Font:** `Inter`
+  - **Weights:** 400 (Regular), 500 (Medium), 600 (Semi-Bold), 700 (Bold). *Never use Light/300.*
+  - **Usage:** All UI labels, headers, and body text.
+- **Secondary Font:** `DM Mono`
+  - **Weights:** 400, 500.
+  - **Usage:** Numbers, timers, IDs, handles (@user), and all technical data points.
+
+### 2.3 Spacing & Radius
+- **Grid:** 4px/8px baseline grid.
+- **Container Radius:** 8px to 12px for cards and panels.
+- **Component Radius:** 6px for buttons, inputs, and small pills.
+- **Borders:** Strictly 1px solid `#2A2A2A`. No shadows, no blur, no glassmorphism.
+
+---
+
+## 3. Components
+
+### 3.1 Buttons
+- **Primary:** Solid `#0055FF` background, white text. No gradients.
+- **Secondary:** Transparent background, 1px `#2A2A2A` border.
+- **Ghost:** Transparent background, text-only. Used for utility actions (Edit, X).
+- **Touch Targets:** Minimum 44px height for interactive elements.
+
+### 3.2 Form Inputs
+- **Base:** `#0e0e0e` background with 1px border.
+- **Labels:** Normal case (sentence case), weight 500, small size.
+- **Focus State:** 1px border shift to `#0055FF`.
+- **Date Pickers:** Standardized internal calendar picker with DM Mono for days.
+
+### 3.3 Status Tags & Badges
+- **Pills:** Low-opacity background color (10-15%) with solid color text.
+- **Status Indicators:** 3px vertical color bar on the left edge of cards.
+  - **Blue:** Em andamento.
+  - **Gray:** A fazer.
+  - **Green:** Concluído.
+  - **Red:** Bloqueado.
+
+### 3.4 Tables & Lists
+- **Density:** High. Otimized for rapid data reading.
+- **Interaction:** Subtle background shift on hover. Contextual actions (Delete/Edit) appear on hover.
+- **Grouping:** Use collapsible headers for grouped data (e.g., "Concluídas").
+
+---
+
+## 4. Layout Patterns
+
+### 4.1 Global Structure
+- **Sidebar:** 220px fixed (expanded) or 56px (collapsed). Contains brand wordmark, primary nav, and global timers.
+- **Topbar:** 48px high. Contains breadcrumbs, global search, and system utilities.
+- **Content Area:** Centralized column (max-width 1200px) on desktop.
+
+### 4.2 Modals & Overlays
+- **Side Panels:** 420px to 480px width, sliding in from the right. Used for creation/editing tasks.
+- **Central Modals:** 600px width. Used for management tasks (e.g., Collaborators).
+- **Overlays:** Dark semi-transparent layer (`rgba(0,0,0,0.6)`) to focus user attention.
+
+---
+
+## 5. Mobile (iPhone 375px)
+- **Navigation:** Sidebar is replaced by a Topbar with a hamburger menu.
+- **Layout:** Vertical stack. Grid cards become single-column list items.
+- **Timers:** Persistent floating widget at the bottom-right for active tracking.

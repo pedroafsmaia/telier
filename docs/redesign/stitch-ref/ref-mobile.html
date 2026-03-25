@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="pt-BR"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=DM+Mono:wght@400;500&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "background": "#0e0e0e",
+                        "surface-container-high": "#1f2020",
+                        "on-secondary-fixed": "#3f3f3f",
+                        "primary-fixed": "#dce1ff",
+                        "surface-container": "#191a1a",
+                        "secondary-fixed-dim": "#d6d4d3",
+                        "primary-dim": "#a3b5ff",
+                        "on-tertiary-fixed-variant": "#5f5773",
+                        "on-background": "#e7e5e4",
+                        "tertiary": "#f6eeff",
+                        "tertiary-dim": "#dacff0",
+                        "surface-dim": "#0e0e0e",
+                        "error": "#ec7c8a",
+                        "secondary": "#9f9d9d",
+                        "error-dim": "#b95463",
+                        "surface-tint": "#b6c4ff",
+                        "primary-container": "#0039b3",
+                        "on-secondary": "#202020",
+                        "on-primary-container": "#c4ceff",
+                        "secondary-fixed": "#e4e2e1",
+                        "secondary-dim": "#9f9d9d",
+                        "on-surface-variant": "#acabaa",
+                        "on-tertiary": "#5e5672",
+                        "on-surface": "#e7e5e4",
+                        "primary-fixed-dim": "#c9d2ff",
+                        "on-error-container": "#ff97a3",
+                        "on-primary-fixed-variant": "#004be3",
+                        "tertiary-fixed-dim": "#dacff0",
+                        "tertiary-container": "#e9ddff",
+                        "outline": "#767575",
+                        "surface-container-highest": "#252626",
+                        "surface": "#0e0e0e",
+                        "secondary-container": "#3b3b3b",
+                        "on-secondary-container": "#c1bfbe",
+                        "on-error": "#490013",
+                        "surface-container-lowest": "#000000",
+                        "on-secondary-fixed-variant": "#5c5b5b",
+                        "inverse-on-surface": "#565554",
+                        "outline-variant": "#484848",
+                        "error-container": "#7f2737",
+                        "on-primary-fixed": "#0033a2",
+                        "on-tertiary-container": "#554e69",
+                        "tertiary-fixed": "#e9ddff",
+                        "inverse-primary": "#004eeb",
+                        "surface-container-low": "#131313",
+                        "surface-bright": "#2c2c2c",
+                        "primary": "#b6c4ff",
+                        "on-primary": "#0034a4",
+                        "surface-variant": "#252626",
+                        "on-tertiary-fixed": "#433b56",
+                        "inverse-surface": "#fcf8f8"
+                    },
+                    fontFamily: {
+                        "headline": ["Inter"],
+                        "body": ["Inter"],
+                        "label": ["Inter"],
+                        "mono": ["DM Mono"]
+                    },
+                    borderRadius: {"DEFAULT": "0.125rem", "lg": "0.25rem", "xl": "0.5rem", "full": "0.75rem"},
+                },
+            },
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+            display: inline-block;
+            line-height: 1;
+            text-transform: none;
+            letter-spacing: normal;
+            word-wrap: normal;
+            white-space: nowrap;
+            direction: ltr;
+        }
+        body {
+            background-color: #0e0e0e;
+            color: #e7e5e4;
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="font-body selection:bg-primary-container selection:text-on-primary-container">
+<!-- TopAppBar -->
+<header class="fixed top-0 w-full z-50 bg-[#0e0e0e] border-b border-[#2A2A2A] flex justify-between items-center px-6 h-16">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-[#0055FF]" data-icon="architecture">architecture</span>
+<h1 class="font-mono font-bold tracking-tighter text-xl text-white">TELIER</h1>
+</div>
+<button class="w-11 h-11 flex items-center justify-end active:opacity-80 transition-opacity">
+<span class="material-symbols-outlined text-on-surface" data-icon="menu">menu</span>
+</button>
+</header>
+<main class="pt-20 pb-24 px-4 min-h-screen">
+<!-- Page Title -->
+<section class="mb-6">
+<h2 class="text-2xl font-bold font-headline tracking-tight text-on-surface">Meus Projetos</h2>
+</section>
+<!-- Filter Row -->
+<section class="flex gap-2 mb-8">
+<div class="relative flex-grow">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant text-sm" data-icon="search">search</span>
+<input class="w-full bg-surface-container-low border border-outline-variant rounded-md py-2.5 pl-9 pr-4 text-sm font-body focus:border-primary-container focus:ring-0 text-on-surface placeholder:text-on-surface-variant" placeholder="Buscar projeto..." type="text"/>
+</div>
+<button class="flex items-center gap-2 px-4 bg-surface-container-low border border-outline-variant rounded-md min-h-[44px] hover:bg-surface-container transition-colors">
+<span class="text-xs font-semibold uppercase tracking-widest text-on-surface-variant">Status</span>
+<span class="material-symbols-outlined text-on-surface-variant text-sm" data-icon="expand_more">expand_more</span>
+</button>
+</section>
+<!-- Project List -->
+<div class="flex flex-col gap-4">
+<!-- Project Card 1: Active -->
+<div class="relative bg-surface-container border border-outline-variant rounded-lg overflow-hidden flex min-h-[100px] hover:border-primary transition-colors">
+<div class="w-[3px] bg-[#0055FF]"></div>
+<div class="flex-grow p-4 flex flex-col gap-3">
+<div class="flex justify-between items-start">
+<h3 class="font-medium text-on-surface text-base leading-tight">Residência Vale do Sol</h3>
+<span class="bg-primary-container/10 border border-primary-container/20 text-[#0055FF] text-[10px] font-mono px-2 py-0.5 rounded">4/10 TAREFAS</span>
+</div>
+<div class="space-y-1.5">
+<div class="flex justify-between text-[10px] font-mono text-on-surface-variant">
+<span>PROGRESSO</span>
+<span>40%</span>
+</div>
+<div class="h-1 w-full bg-surface-container-highest rounded-full overflow-hidden">
+<div class="h-full bg-[#0055FF] w-[40%]"></div>
+</div>
+</div>
+<div class="flex justify-between items-center mt-1">
+<div class="flex items-center gap-2">
+<img class="w-6 h-6 rounded-full border border-outline-variant object-cover" data-alt="portrait of a professional male architect in a modern studio environment" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCzUSdFoZOPv8utIhH0MybRfhUyG4cNj2fPfIfpcM_KZB29LbQmjLxjepucQn49UnVU7Frfj5tk3PJOz6JagXHbUAh_0ffAaR3bW73obgMrSQnHXfElnAh1TmmH1c9vrn-zfr3Hjs7dhNjXgXbplf9QVkPV_b89B8-N7nogs3n1vPQukZNPB55Ynhjy_-ySeD-ppkLVrX-Uk6mA8oJY9fEnKR4Ao7g4MsZ41E5Z7_uzlwr4E9bINJrPDFtVNgg9SFpURUEzo0pSDOo"/>
+<span class="text-[11px] font-mono text-on-surface-variant uppercase">MARCUS V.</span>
+</div>
+<div class="flex items-center gap-1.5 text-on-surface-variant">
+<span class="material-symbols-outlined text-sm" data-icon="event">event</span>
+<span class="text-[11px] font-mono">12 OUT 24</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Project Card 2: Completed -->
+<div class="relative bg-surface-container border border-outline-variant rounded-lg overflow-hidden flex min-h-[100px]">
+<div class="w-[3px] bg-[#22c55e]"></div>
+<div class="flex-grow p-4 flex flex-col gap-3 opacity-80">
+<div class="flex justify-between items-start">
+<h3 class="font-medium text-on-surface text-base leading-tight">Escritório Central Hub</h3>
+<span class="bg-secondary-container/30 border border-outline-variant text-on-surface-variant text-[10px] font-mono px-2 py-0.5 rounded uppercase">Concluído</span>
+</div>
+<div class="space-y-1.5">
+<div class="flex justify-between text-[10px] font-mono text-on-surface-variant">
+<span>PROGRESSO</span>
+<span>100%</span>
+</div>
+<div class="h-1 w-full bg-surface-container-highest rounded-full overflow-hidden">
+<div class="h-full bg-[#22c55e] w-full"></div>
+</div>
+</div>
+<div class="flex justify-between items-center mt-1">
+<div class="flex items-center gap-2">
+<img class="w-6 h-6 rounded-full border border-outline-variant object-cover" data-alt="portrait of a female creative director with glasses in a minimalist workspace" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBqPQnzLEzgS7RmZIkhrKkKzbW4ba9476c5RHJiRZzY3wJulrrbIZ93sjLmbEmi7PQmj1GJbzCeUZL6tu8XRNTK-hxonV9_oEDTibXx7028c9gcTSZw9TugzWeMVe2pgGB60ROi0oSpZ0ljtFnyJzu8YaRHKq8LnqjF9181TLT0yuizzCUCPCk-1I_ET03O_QDeSuqUxFeSBG_neJ3BFkpOu4kAN-QSXg5jarH6dgQOVK9nSg68O5s1V0wKhE7qMOg3P2og7AQgY9U"/>
+<span class="text-[11px] font-mono text-on-surface-variant uppercase">ALICE R.</span>
+</div>
+<div class="flex items-center gap-1.5 text-on-surface-variant">
+<span class="material-symbols-outlined text-sm" data-icon="event">event</span>
+<span class="text-[11px] font-mono">01 SET 24</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Project Card 3: Draft/Pending -->
+<div class="relative bg-surface-container border border-outline-variant rounded-lg overflow-hidden flex min-h-[100px]">
+<div class="w-[3px] bg-[#484848]"></div>
+<div class="flex-grow p-4 flex flex-col gap-3">
+<div class="flex justify-between items-start">
+<h3 class="font-medium text-on-surface text-base leading-tight">Reforma Loft J.B.</h3>
+<span class="bg-surface-container-highest border border-outline-variant text-on-surface-variant text-[10px] font-mono px-2 py-0.5 rounded">1/12 TAREFAS</span>
+</div>
+<div class="space-y-1.5">
+<div class="flex justify-between text-[10px] font-mono text-on-surface-variant">
+<span>PROGRESSO</span>
+<span>8%</span>
+</div>
+<div class="h-1 w-full bg-surface-container-highest rounded-full overflow-hidden">
+<div class="h-full bg-outline w-[8%]"></div>
+</div>
+</div>
+<div class="flex justify-between items-center mt-1">
+<div class="flex items-center gap-2">
+<div class="w-6 h-6 rounded-full border border-outline-variant bg-surface-container-highest flex items-center justify-center">
+<span class="text-[9px] font-bold text-on-surface-variant">RV</span>
+</div>
+<span class="text-[11px] font-mono text-on-surface-variant uppercase">RODRIGO V.</span>
+</div>
+<div class="flex items-center gap-1.5 text-on-surface-variant">
+<span class="material-symbols-outlined text-sm" data-icon="event">event</span>
+<span class="text-[11px] font-mono">22 NOV 24</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+</main>
+<!-- Floating Timer Widget -->
+<div class="fixed bottom-24 right-4 z-40 bg-surface-container-highest border border-primary/30 rounded-full shadow-2xl pl-2 pr-5 py-2 flex items-center gap-3 active:scale-95 transition-transform">
+<div class="w-9 h-9 bg-primary-container rounded-full flex items-center justify-center">
+<span class="material-symbols-outlined text-white text-base" data-icon="timer">timer</span>
+</div>
+<div class="flex flex-col">
+<span class="text-[8px] font-mono text-primary uppercase tracking-widest leading-none mb-0.5">Timer Ativo</span>
+<span class="text-lg font-mono text-[#22c55e] leading-none">01:23:45</span>
+</div>
+</div>
+<!-- BottomNavBar -->
+<nav class="fixed bottom-0 w-full z-50 bg-[#0e0e0e] border-t border-[#2A2A2A] flex justify-around items-center h-20 px-4 pb-safe">
+<!-- Projects (Active) -->
+<a class="flex flex-col items-center justify-center text-[#0055FF] border-t-2 border-[#0055FF] pt-2 w-full h-full" href="#">
+<span class="material-symbols-outlined" data-icon="grid_view">grid_view</span>
+<span class="font-['Inter'] text-[10px] font-semibold tracking-widest uppercase mt-1">Projects</span>
+</a>
+<!-- Drafts -->
+<a class="flex flex-col items-center justify-center text-[#484848] pt-2 w-full h-full hover:text-white transition-all" href="#">
+<span class="material-symbols-outlined" data-icon="architecture">architecture</span>
+<span class="font-['Inter'] text-[10px] font-semibold tracking-widest uppercase mt-1">Drafts</span>
+</a>
+<!-- Teams -->
+<a class="flex flex-col items-center justify-center text-[#484848] pt-2 w-full h-full hover:text-white transition-all" href="#">
+<span class="material-symbols-outlined" data-icon="group">group</span>
+<span class="font-['Inter'] text-[10px] font-semibold tracking-widest uppercase mt-1">Teams</span>
+</a>
+<!-- Settings -->
+<a class="flex flex-col items-center justify-center text-[#484848] pt-2 w-full h-full hover:text-white transition-all" href="#">
+<span class="material-symbols-outlined" data-icon="settings">settings</span>
+<span class="font-['Inter'] text-[10px] font-semibold tracking-widest uppercase mt-1">Settings</span>
+</a>
+</nav>
+</body></html>

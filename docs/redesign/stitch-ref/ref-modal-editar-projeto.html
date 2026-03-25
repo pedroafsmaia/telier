@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="pt-br"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=DM+Mono:wght@400;500&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              "on-secondary-container": "#c1bfbe",
+              "inverse-primary": "#004eeb",
+              "surface-container-highest": "#252626",
+              "background": "#0e0e0e",
+              "tertiary-fixed-dim": "#dacff0",
+              "on-tertiary-container": "#554e69",
+              "tertiary-fixed": "#e9ddff",
+              "on-tertiary-fixed-variant": "#5f5773",
+              "secondary": "#9f9d9d",
+              "surface-container-high": "#1f2020",
+              "secondary-dim": "#9f9d9d",
+              "surface-container-low": "#131313",
+              "error-dim": "#b95463",
+              "error-container": "#7f2737",
+              "surface-dim": "#0e0e0e",
+              "secondary-fixed": "#e4e2e1",
+              "error": "#ec7c8a",
+              "on-primary-container": "#c4ceff",
+              "inverse-surface": "#fcf8f8",
+              "surface-container-lowest": "#000000",
+              "tertiary-dim": "#dacff0",
+              "secondary-container": "#3b3b3b",
+              "on-secondary": "#202020",
+              "primary-container": "#0039b3",
+              "primary-dim": "#a3b5ff",
+              "tertiary": "#f6eeff",
+              "on-primary": "#0034a4",
+              "surface-variant": "#252626",
+              "secondary-fixed-dim": "#d6d4d3",
+              "on-surface-variant": "#acabaa",
+              "on-surface": "#e7e5e4",
+              "on-tertiary-fixed": "#433b56",
+              "inverse-on-surface": "#565554",
+              "primary-fixed": "#dce1ff",
+              "surface-container": "#191a1a",
+              "primary-fixed-dim": "#c9d2ff",
+              "outline": "#767575",
+              "on-tertiary": "#5e5672",
+              "surface-tint": "#b6c4ff",
+              "primary": "#0055FF",
+              "on-secondary-fixed": "#3f3f3f",
+              "on-error-container": "#ff97a3",
+              "outline-variant": "#484848",
+              "on-secondary-fixed-variant": "#5c5b5b",
+              "on-primary-fixed": "#0033a2",
+              "surface-bright": "#2c2c2c",
+              "on-background": "#e7e5e4",
+              "tertiary-container": "#e9ddff",
+              "on-primary-fixed-variant": "#004be3",
+              "on-error": "#490013",
+              "surface": "#0e0e0e"
+            },
+            fontFamily: {
+              "headline": ["Inter", "sans-serif"],
+              "body": ["Inter", "sans-serif"],
+              "label": ["Inter", "sans-serif"],
+              "mono": ["DM Mono", "monospace"]
+            },
+            borderRadius: {"DEFAULT": "0.125rem", "lg": "0.25rem", "xl": "0.5rem", "full": "0.75rem"},
+          },
+        },
+      }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        body { font-family: 'Inter', sans-serif; }
+        .font-mono { font-family: 'DM Mono', monospace; }
+    </style>
+</head>
+<body class="bg-background text-on-surface overflow-hidden">
+<!-- Background Content (Dimmed Project Details) -->
+<div class="fixed inset-0 flex transition-opacity duration-300">
+<!-- SideNavBar Anchor -->
+<aside class="fixed left-0 top-0 h-screen w-64 flex flex-col py-8 bg-[#131313] border-r border-[#2A2A2A] z-0">
+<div class="px-6 mb-12">
+<div class="text-[#0055FF] font-mono font-bold tracking-tight text-lg">PROJECT_VIEWPORT</div>
+<div class="text-[10px] text-outline font-mono mt-1">V.2024.01</div>
+</div>
+<nav class="flex-1 px-4 space-y-2">
+<div class="flex items-center gap-3 px-4 py-3 text-white border-l-2 border-[#0055FF] bg-[#191a1a]">
+<span class="material-symbols-outlined text-sm">architecture</span>
+<span class="text-[11px] font-semibold uppercase tracking-wider">Active Projects</span>
+</div>
+<div class="flex items-center gap-3 px-4 py-3 text-[#484848] hover:text-white transition-colors cursor-pointer">
+<span class="material-symbols-outlined text-sm">dashboard</span>
+<span class="text-[11px] font-semibold uppercase tracking-wider">Dashboard</span>
+</div>
+</nav>
+</aside>
+<!-- Main Content Canvas (Dimmed) -->
+<main class="ml-64 flex-1 p-8 opacity-20">
+<header class="mb-12">
+<div class="flex items-center gap-4 mb-2">
+<span class="text-[#0055FF] font-mono text-sm">PRJ-2024-082</span>
+<span class="w-2 h-2 rounded-full bg-[#0055FF]"></span>
+<span class="text-on-surface-variant font-mono text-sm uppercase">Em andamento</span>
+</div>
+<h1 class="text-5xl font-bold tracking-tighter text-on-surface">Residência Silva</h1>
+</header>
+<div class="grid grid-cols-12 gap-8">
+<div class="col-span-8 aspect-video bg-surface-container border border-outline-variant rounded-xl overflow-hidden relative">
+<img class="w-full h-full object-cover" data-alt="Modern minimalist architectural visualization of a luxury residence with clean lines, large glass windows, and concrete textures at dusk" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDJOKxeRq1fS-jtp-UGFTfYCRnLKpJtdji32EpjWIB870Eq6iniwrOqGuX4TTel7LnnNuATgeBx_Vk9MTm4g4OsawePPiQCBnS2izjzNXSLJqhCG9XxJAoBj2PQaXzsiXyoQ1NOHp9GoJCdw3KArrDI000igotRQBHiCYOekhGhzfdjZQgELSX4le4HKD2RYzyAhQZXkq0FfzwVf6wFN9Nz74vuYOC-j73gn4nkLXza4ELrx7wegMYXktgFDjIM6cYwaNrcDF1ivpw"/>
+</div>
+<div class="col-span-4 space-y-6">
+<div class="p-6 bg-surface-container border border-outline-variant rounded-xl">
+<h3 class="text-xs font-semibold uppercase tracking-widest text-on-surface-variant mb-4">Project Data</h3>
+<div class="space-y-4">
+<div>
+<p class="text-[10px] text-outline uppercase font-semibold">Total Area</p>
+<p class="text-2xl font-mono">420.00 m²</p>
+</div>
+<div>
+<p class="text-[10px] text-outline uppercase font-semibold">Deadline</p>
+<p class="text-2xl font-mono">12.12.2024</p>
+</div>
+</div>
+</div>
+</div>
+</div>
+</main>
+</div>
+<!-- Overlay Back-drop -->
+<div class="fixed inset-0 bg-black/60 z-10"></div>
+<!-- Edit Project Slide-in Panel -->
+<section class="fixed top-0 right-0 h-full w-[480px] bg-surface-container-low border-l border-outline-variant shadow-2xl z-20 flex flex-col overflow-hidden">
+<!-- Header -->
+<header class="h-16 flex items-center justify-between px-6 border-b border-outline-variant">
+<h2 class="text-lg font-medium text-on-surface">Editar projeto</h2>
+<button class="w-8 h-8 flex items-center justify-center text-on-surface-variant hover:text-white hover:bg-surface-container-high transition-all rounded-md">
+<span class="material-symbols-outlined" data-icon="close">close</span>
+</button>
+</header>
+<!-- Form Content -->
+<form class="flex-1 overflow-y-auto p-6 space-y-8">
+<!-- Project Name -->
+<div class="space-y-2">
+<label class="block text-sm font-medium text-on-surface">Nome do projeto</label>
+<input class="w-full h-11 bg-surface-container border border-outline-variant rounded-md px-4 text-on-surface focus:border-primary focus:ring-0 transition-colors placeholder-outline" type="text" value="Residência Silva"/>
+</div>
+<!-- Phase and Status Grid -->
+<div class="grid grid-cols-2 gap-4">
+<div class="space-y-2">
+<label class="block text-sm font-medium text-on-surface">Fase</label>
+<div class="relative">
+<select class="w-full h-11 bg-surface-container border border-outline-variant rounded-md px-4 text-on-surface focus:border-primary focus:ring-0 appearance-none transition-colors">
+<option>Estudo preliminar</option>
+<option selected="">Anteprojeto</option>
+<option>Projeto básico</option>
+<option>Projeto executivo</option>
+<option>Em obra</option>
+</select>
+<span class="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-outline pointer-events-none" data-icon="expand_more">expand_more</span>
+</div>
+</div>
+<div class="space-y-2">
+<label class="block text-sm font-medium text-on-surface">Status</label>
+<div class="relative">
+<select class="w-full h-11 bg-surface-container border border-outline-variant rounded-md px-4 text-on-surface focus:border-primary focus:ring-0 appearance-none transition-colors">
+<option>A fazer</option>
+<option selected="">Em andamento</option>
+<option>Em revisão</option>
+<option>Pausado</option>
+<option>Concluído</option>
+<option>Arquivado</option>
+</select>
+<span class="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-outline pointer-events-none" data-icon="expand_more">expand_more</span>
+</div>
+</div>
+</div>
+<!-- Priority and Deadline Grid -->
+<div class="grid grid-cols-2 gap-4">
+<div class="space-y-2">
+<label class="block text-sm font-medium text-on-surface">Prioridade</label>
+<div class="relative">
+<select class="w-full h-11 bg-surface-container border border-outline-variant rounded-md px-4 text-on-surface focus:border-primary focus:ring-0 appearance-none transition-colors">
+<option>Baixa</option>
+<option>Média</option>
+<option selected="">Alta</option>
+<option>Crítica</option>
+</select>
+<span class="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-outline pointer-events-none" data-icon="expand_more">expand_more</span>
+</div>
+</div>
+<div class="space-y-2">
+<label class="block text-sm font-medium text-on-surface">Prazo</label>
+<div class="relative group">
+<input class="w-full h-11 bg-surface-container border border-outline-variant rounded-md px-4 text-on-surface font-mono focus:border-primary focus:ring-0 transition-colors" type="text" value="12/12/2024"/>
+<span class="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-outline group-focus-within:text-primary transition-colors" data-icon="calendar_today">calendar_today</span>
+</div>
+</div>
+</div>
+<!-- Area -->
+<div class="space-y-2">
+<label class="block text-sm font-medium text-on-surface">Área m²</label>
+<div class="relative">
+<input class="w-full h-11 bg-surface-container border border-outline-variant rounded-md px-4 text-on-surface font-mono focus:border-primary focus:ring-0 transition-colors" type="text" value="420.00"/>
+<span class="absolute right-4 top-1/2 -translate-y-1/2 text-[10px] text-outline font-bold tracking-widest uppercase">SQM</span>
+</div>
+</div>
+<!-- Group -->
+<div class="space-y-2">
+<label class="block text-sm font-medium text-on-surface">Grupo</label>
+<div class="relative">
+<select class="w-full h-11 bg-surface-container border border-outline-variant rounded-md px-4 text-on-surface focus:border-primary focus:ring-0 appearance-none transition-colors">
+<option selected="">— Sem grupo —</option>
+<option>Comercial</option>
+<option>Residencial</option>
+<option>Urbanismo</option>
+</select>
+<span class="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-outline pointer-events-none" data-icon="expand_more">expand_more</span>
+</div>
+</div>
+<!-- Visual Decorative Separator -->
+<div class="pt-4 border-t border-[#2A2A2A]">
+<div class="flex items-center gap-2 mb-4">
+<span class="w-1.5 h-1.5 bg-[#0055FF] rounded-full"></span>
+<span class="text-[10px] font-mono text-outline uppercase tracking-widest">Metadata info</span>
+</div>
+<div class="p-4 bg-surface-container border border-dashed border-outline-variant rounded-lg">
+<div class="flex justify-between items-center text-[11px] font-mono text-on-surface-variant">
+<span>CREATED_BY</span>
+<span>ARCH_MANAGER_01</span>
+</div>
+<div class="flex justify-between items-center text-[11px] font-mono text-on-surface-variant mt-2">
+<span>LAST_MODIFIED</span>
+<span>24.05.2024 | 14:32</span>
+</div>
+</div>
+</div>
+</form>
+<!-- Footer -->
+<footer class="h-20 px-6 border-t border-outline-variant flex items-center justify-between bg-surface-container-low shrink-0">
+<button class="flex items-center gap-2 text-error hover:bg-error/10 px-4 py-2 rounded-md transition-colors font-medium">
+<span class="material-symbols-outlined text-sm" data-icon="delete">delete</span>
+                Excluir
+            </button>
+<div class="flex items-center gap-3">
+<button class="px-5 py-2 text-on-surface-variant hover:text-white transition-colors font-medium">
+                    Cancelar
+                </button>
+<button class="px-8 py-2.5 bg-primary hover:bg-[#004be3] text-white rounded-md transition-all font-semibold active:scale-[0.98]">
+                    Salvar
+                </button>
+</div>
+</footer>
+</section>
+</body></html>

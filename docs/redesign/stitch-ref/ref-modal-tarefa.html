@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="pt-BR"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=DM+Mono:wght@400;500&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              "surface-variant": "#252626",
+              "on-secondary-fixed": "#3f3f3f",
+              "on-primary-fixed": "#0033a2",
+              "tertiary-dim": "#dacff0",
+              "on-background": "#e7e5e4",
+              "inverse-on-surface": "#565554",
+              "surface-bright": "#2c2c2c",
+              "on-surface": "#e7e5e4",
+              "secondary-fixed-dim": "#d6d4d3",
+              "on-tertiary-fixed-variant": "#5f5773",
+              "surface-dim": "#0e0e0e",
+              "on-primary-container": "#c4ceff",
+              "surface-container-lowest": "#000000",
+              "secondary-container": "#3b3b3b",
+              "surface-container-high": "#1f2020",
+              "error-dim": "#b95463",
+              "surface": "#0e0e0e",
+              "inverse-surface": "#fcf8f8",
+              "on-tertiary-fixed": "#433b56",
+              "surface-container-low": "#131313",
+              "surface-container": "#191a1a",
+              "primary-fixed": "#dce1ff",
+              "primary-dim": "#a3b5ff",
+              "on-tertiary": "#5e5672",
+              "primary-container": "#0039b3",
+              "surface-tint": "#b6c4ff",
+              "on-surface-variant": "#acabaa",
+              "inverse-primary": "#004eeb",
+              "error": "#ec7c8a",
+              "error-container": "#7f2737",
+              "background": "#0e0e0e",
+              "secondary-dim": "#9f9d9d",
+              "tertiary-fixed-dim": "#dacff0",
+              "tertiary-fixed": "#e9ddff",
+              "on-secondary": "#202020",
+              "on-secondary-fixed-variant": "#5c5b5b",
+              "tertiary-container": "#e9ddff",
+              "on-error-container": "#ff97a3",
+              "primary": "#b6c4ff",
+              "on-secondary-container": "#c1bfbe",
+              "on-primary-fixed-variant": "#004be3",
+              "primary-fixed-dim": "#c9d2ff",
+              "tertiary": "#f6eeff",
+              "secondary": "#9f9d9d",
+              "on-error": "#490013",
+              "surface-container-highest": "#252626",
+              "secondary-fixed": "#e4e2e1",
+              "outline-variant": "#484848",
+              "outline": "#767575",
+              "on-primary": "#0034a4",
+              "on-tertiary-container": "#554e69"
+            },
+            fontFamily: {
+              "headline": ["Inter"],
+              "body": ["Inter"],
+              "label": ["Inter"],
+              "mono": ["DM Mono"]
+            },
+            borderRadius: {"DEFAULT": "0.125rem", "lg": "0.25rem", "xl": "0.5rem", "full": "0.75rem"},
+          },
+        },
+      }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+            font-size: 20px;
+        }
+        input::-webkit-calendar-picker-indicator {
+            filter: invert(1);
+        }
+    </style>
+</head>
+<body class="bg-surface text-on-surface font-body overflow-hidden">
+<!-- Background Project Content (Simulated Screen 2) -->
+<div class="fixed inset-0 flex flex-col opacity-40 pointer-events-none">
+<!-- TopAppBar Placeholder -->
+<header class="bg-[#0e0e0e] border-b border-[#2A2A2A] flex justify-between items-center px-6 py-3 w-full font-['Inter'] antialiased tracking-tight">
+<div class="text-xl font-bold tracking-tighter text-white uppercase">STUDIO_PRO</div>
+<div class="flex gap-8">
+<span class="text-[#0055FF] font-semibold border-b-2 border-[#0055FF] pb-1">Projects</span>
+<span class="text-gray-400">Blueprint</span>
+<span class="text-gray-400">Analytics</span>
+<span class="text-gray-400">Team</span>
+</div>
+<div class="flex items-center gap-4">
+<span class="material-symbols-outlined">notifications</span>
+<span class="material-symbols-outlined">settings</span>
+<div class="w-8 h-8 rounded-full bg-surface-container-highest"></div>
+</div>
+</header>
+<main class="p-12 space-y-8 overflow-hidden">
+<div class="flex justify-between items-end border-b border-[#2A2A2A] pb-6">
+<div>
+<h1 class="text-5xl font-bold tracking-tight mb-2">PROJETO_042</h1>
+<p class="text-on-surface-variant font-mono text-sm">COORDINATES: 45.52306, -122.67648</p>
+</div>
+<div class="flex gap-4">
+<div class="px-3 py-1 border border-outline-variant rounded-lg text-xs font-mono">STATUS: ACTIVE</div>
+<div class="px-3 py-1 border border-outline-variant rounded-lg text-xs font-mono">PHASE: SCHEMATIC</div>
+</div>
+</div>
+<div class="grid grid-cols-12 gap-6 h-full">
+<div class="col-span-8 bg-surface-container border border-[#2A2A2A] rounded-xl p-8">
+<div class="aspect-video w-full bg-surface-container-low border border-[#2A2A2A] flex items-center justify-center">
+<span class="text-on-surface-variant font-mono">3D_VIEWPORT_RENDER</span>
+</div>
+</div>
+<div class="col-span-4 space-y-6">
+<div class="bg-surface-container border border-[#2A2A2A] rounded-xl p-6">
+<h3 class="font-bold mb-4 uppercase tracking-widest text-xs">Project Metadata</h3>
+<div class="space-y-4 font-mono text-sm">
+<div class="flex justify-between border-b border-[#2A2A2A] pb-2">
+<span class="text-on-surface-variant">TOTAL AREA</span>
+<span>12,450 SQFT</span>
+</div>
+<div class="flex justify-between border-b border-[#2A2A2A] pb-2">
+<span class="text-on-surface-variant">BUDGET</span>
+<span>$4.2M</span>
+</div>
+<div class="flex justify-between">
+<span class="text-on-surface-variant">DEADLINE</span>
+<span>24.08.2024</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+</main>
+</div>
+<!-- Semi-transparent Overlay -->
+<div class="fixed inset-0 bg-black/60 z-40"></div>
+<!-- NavigationDrawer / New Task Panel -->
+<aside class="fixed right-0 top-0 h-full w-[480px] bg-[#131313] border-l border-[#2A2A2A] z-50 flex flex-col shadow-2xl">
+<!-- Header -->
+<div class="flex justify-between items-center px-8 py-8 border-b border-[#2A2A2A]">
+<div>
+<h2 class="text-[1.1rem] font-medium text-white">Nova tarefa</h2>
+<p class="font-mono text-[10px] tracking-widest text-on-surface-variant mt-1">PROJETO_042</p>
+</div>
+<button class="w-10 h-10 flex items-center justify-center hover:bg-[#191a1a] transition-all rounded-md">
+<span class="material-symbols-outlined text-on-surface">close</span>
+</button>
+</div>
+<!-- Form Content -->
+<div class="flex-1 overflow-y-auto px-8 py-8 space-y-8">
+<!-- Task Name -->
+<div class="space-y-2">
+<label class="block text-sm font-medium text-on-surface-variant">Nome da tarefa</label>
+<input class="w-full bg-surface-container-low border border-outline-variant rounded-md px-4 py-3 text-on-surface placeholder:text-on-secondary-fixed focus:border-primary-container focus:ring-0 transition-all font-body" placeholder="Ex: Detalhamento de caixilharia" type="text"/>
+</div>
+<!-- Double Column -->
+<div class="grid grid-cols-2 gap-6">
+<!-- Priority -->
+<div class="space-y-2">
+<label class="block text-sm font-medium text-on-surface-variant">Prioridade</label>
+<div class="relative">
+<select class="w-full appearance-none bg-surface-container-low border border-outline-variant rounded-md px-4 py-3 text-on-surface focus:border-primary-container focus:ring-0 transition-all font-body">
+<option>Baixa</option>
+<option selected="">Média</option>
+<option>Alta</option>
+<option>Crítica</option>
+</select>
+<span class="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-on-surface-variant">expand_more</span>
+</div>
+</div>
+<!-- Difficulty -->
+<div class="space-y-2">
+<label class="block text-sm font-medium text-on-surface-variant">Dificuldade</label>
+<div class="relative">
+<select class="w-full appearance-none bg-surface-container-low border border-outline-variant rounded-md px-4 py-3 text-on-surface focus:border-primary-container focus:ring-0 transition-all font-body">
+<option>Simples</option>
+<option>Intermediária</option>
+<option>Complexa</option>
+</select>
+<span class="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-on-surface-variant">expand_more</span>
+</div>
+</div>
+</div>
+<!-- Date Picker -->
+<div class="space-y-2">
+<label class="block text-sm font-medium text-on-surface-variant">Data</label>
+<div class="relative">
+<input class="w-full bg-surface-container-low border border-outline-variant rounded-md px-4 py-3 text-on-surface focus:border-primary-container focus:ring-0 transition-all font-mono" type="date" value="2024-05-12"/>
+</div>
+</div>
+<!-- Description -->
+<div class="space-y-2">
+<label class="block text-sm font-medium text-on-surface-variant">Descrição</label>
+<textarea class="w-full bg-surface-container-low border border-outline-variant rounded-md px-4 py-3 text-on-surface placeholder:text-on-secondary-fixed focus:border-primary-container focus:ring-0 transition-all font-body resize-none" placeholder="Descreva os requisitos técnicos e referências..." rows="4"></textarea>
+</div>
+<!-- Responsible -->
+<div class="space-y-2">
+<label class="block text-sm font-medium text-on-surface-variant">Responsável</label>
+<div class="relative">
+<select class="w-full appearance-none bg-surface-container-low border border-outline-variant rounded-md pl-12 pr-4 py-3 text-on-surface focus:border-primary-container focus:ring-0 transition-all font-body">
+<option>Mariana Silva</option>
+<option selected="">Ricardo Weber</option>
+<option>Elena Protasova</option>
+<option>David Chen</option>
+</select>
+<div class="absolute left-3 top-1/2 -translate-y-1/2 w-6 h-6 rounded-full overflow-hidden border border-[#2A2A2A]">
+<img class="w-full h-full object-cover" data-alt="portrait of a male architect with a serious professional expression, minimalist grey background, studio lighting" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDgKZqnOSNu_PJDOyRb2wuzaLVGICiksDI411FtJ_PXLfv2LHnrkC4J7UnLMmrh4vxLqNYGLUzndt2PYPduc2qfInEIfXhKe0uqMeeawKytyO6zLT06nVrv6_THE0Ko_sjhGv82e5wUNuzXxp7zB2r4N0qZAqnOwxdLwMAzokXmgdq9sC_Di-FyRN4X8vVjqb_cFkAY9iu7JocZaTGZ8Mhursxj9xxsrDp6pRn4obtho-D5MIPPVPWf_AfEgwTL_TmOcukdl0lN_Ow"/>
+</div>
+<span class="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-on-surface-variant">expand_more</span>
+</div>
+</div>
+</div>
+<!-- Fixed Footer -->
+<div class="px-8 py-8 border-t border-[#2A2A2A] grid grid-cols-2 gap-4">
+<button class="px-6 py-3 border border-outline-variant rounded-md text-on-surface font-medium hover:bg-[#191a1a] transition-all active:scale-[0.98] duration-150 text-sm">
+                Cancelar
+            </button>
+<button class="px-6 py-3 bg-[#0055FF] text-white rounded-md font-medium hover:brightness-110 transition-all active:scale-[0.98] duration-150 text-sm">
+                Criar tarefa
+            </button>
+</div>
+<!-- Semantic Navigation Tabs (as described in JSON for drawer) -->
+<nav class="border-t border-[#2A2A2A] flex justify-around py-4 px-2">
+<div class="flex flex-col items-center gap-1 cursor-pointer group">
+<span class="material-symbols-outlined text-gray-500 group-hover:text-gray-200">dashboard</span>
+<span class="text-[10px] font-['Inter'] uppercase tracking-widest text-gray-500 group-hover:text-gray-200">Visão Geral</span>
+</div>
+<div class="flex flex-col items-center gap-1 cursor-pointer group">
+<span class="material-symbols-outlined text-gray-500 group-hover:text-gray-200">event_note</span>
+<span class="text-[10px] font-['Inter'] uppercase tracking-widest text-gray-500 group-hover:text-gray-200">Cronograma</span>
+</div>
+<div class="flex flex-col items-center gap-1 cursor-pointer group">
+<span class="material-symbols-outlined text-gray-500 group-hover:text-gray-200">folder_open</span>
+<span class="text-[10px] font-['Inter'] uppercase tracking-widest text-gray-500 group-hover:text-gray-200">Arquivos</span>
+</div>
+<div class="flex flex-col items-center gap-1 cursor-pointer group">
+<span class="material-symbols-outlined text-[#0055FF]">assignment</span>
+<span class="text-[10px] font-['Inter'] uppercase tracking-widest text-[#0055FF]">Tarefas</span>
+</div>
+<div class="flex flex-col items-center gap-1 cursor-pointer group">
+<span class="material-symbols-outlined text-gray-500 group-hover:text-gray-200">help_outline</span>
+<span class="text-[10px] font-['Inter'] uppercase tracking-widest text-gray-500 group-hover:text-gray-200">Suporte</span>
+</div>
+</nav>
+</aside>
+</body></html>

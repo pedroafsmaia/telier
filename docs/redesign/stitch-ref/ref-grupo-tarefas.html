@@ -1,0 +1,514 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="pt-BR"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=DM+Mono:wght@400;500&amp;family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+            vertical-align: middle;
+            line-height: 1;
+        }
+        .mono { font-family: 'DM Mono', monospace; }
+        body { font-family: 'Inter', sans-serif; background-color: #0e0e0e; color: #e7e5e4; }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    </style>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "on-error": "#490013",
+                        "surface-tint": "#b6c4ff",
+                        "error": "#ec7c8a",
+                        "on-surface-variant": "#acabaa",
+                        "primary-fixed": "#dce1ff",
+                        "outline": "#767575",
+                        "surface-container-lowest": "#000000",
+                        "on-secondary-fixed": "#3f3f3f",
+                        "tertiary-fixed-dim": "#dacff0",
+                        "primary": "#0055FF",
+                        "on-error-container": "#ff97a3",
+                        "primary-fixed-dim": "#c9d2ff",
+                        "inverse-surface": "#fcf8f8",
+                        "surface-variant": "#252626",
+                        "on-primary": "#ffffff",
+                        "inverse-on-surface": "#565554",
+                        "surface-container-low": "#131313",
+                        "tertiary-dim": "#dacff0",
+                        "surface-container-high": "#1f2020",
+                        "background": "#0e0e0e",
+                        "on-tertiary": "#5e5672",
+                        "on-tertiary-fixed-variant": "#5f5773",
+                        "error-dim": "#b95463",
+                        "primary-container": "#0039b3",
+                        "secondary-fixed": "#e4e2e1",
+                        "primary-dim": "#a3b5ff",
+                        "surface": "#0e0e0e",
+                        "secondary-fixed-dim": "#d6d4d3",
+                        "secondary-container": "#3b3b3b",
+                        "surface-container-highest": "#252626",
+                        "secondary-dim": "#9f9d9d",
+                        "secondary": "#9f9d9d",
+                        "tertiary-container": "#e9ddff",
+                        "on-secondary": "#202020",
+                        "on-tertiary-container": "#554e69",
+                        "on-surface": "#e7e5e4",
+                        "inverse-primary": "#004eeb",
+                        "surface-bright": "#2c2c2c",
+                        "error-container": "#7f2737",
+                        "on-primary-fixed": "#0033a2",
+                        "surface-dim": "#0e0e0e",
+                        "on-background": "#e7e5e4",
+                        "surface-container": "#191a1a",
+                        "on-tertiary-fixed": "#433b56",
+                        "on-secondary-fixed-variant": "#5c5b5b",
+                        "tertiary": "#f6eeff",
+                        "on-primary-fixed-variant": "#004be3",
+                        "on-primary-container": "#c4ceff",
+                        "tertiary-fixed": "#e9ddff",
+                        "on-secondary-container": "#c1bfbe",
+                        "outline-variant": "#484848"
+                    },
+                    fontFamily: {
+                        "headline": ["Inter"],
+                        "body": ["Inter"],
+                        "label": ["Inter"]
+                    },
+                    borderRadius: {"DEFAULT": "0.125rem", "lg": "0.25rem", "xl": "0.5rem", "full": "0.75rem"},
+                },
+            },
+        }
+    </script>
+</head>
+<body class="bg-background text-on-surface overflow-hidden flex">
+<!-- SideNavBar -->
+<aside class="fixed left-0 top-0 h-full flex flex-col h-screen w-64 border-r border-[#2A2A2A] bg-[#131313] z-50">
+<div class="p-6">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 bg-primary flex items-center justify-center rounded-lg">
+<span class="material-symbols-outlined text-white text-sm" data-icon="architecture">architecture</span>
+</div>
+<div>
+<h1 class="text-xl font-bold tracking-tight text-white">Telier</h1>
+<p class="text-[10px] text-gray-500 uppercase tracking-widest">Studio Management</p>
+</div>
+</div>
+</div>
+<nav class="flex-1 px-3 space-y-1">
+<a class="flex items-center gap-3 px-3 py-2 text-[#0055FF] font-semibold border-r-2 border-[#0055FF] bg-[#1a1a1a] transition-colors duration-150" href="#">
+<span class="material-symbols-outlined" data-icon="folder">folder</span>
+<span class="text-sm">Projetos</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 text-gray-400 hover:text-white hover:bg-[#191a1a] transition-colors duration-150" href="#">
+<span class="material-symbols-outlined" data-icon="assignment">assignment</span>
+<span class="text-sm">Tarefas</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 text-gray-400 hover:text-white hover:bg-[#191a1a] transition-colors duration-150" href="#">
+<span class="material-symbols-outlined" data-icon="grid_view">grid_view</span>
+<span class="text-sm">Mapa de Foco</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 text-gray-400 hover:text-white hover:bg-[#191a1a] transition-colors duration-150" href="#">
+<span class="material-symbols-outlined" data-icon="analytics">analytics</span>
+<span class="text-sm">Relatório</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 text-gray-400 hover:text-white hover:bg-[#191a1a] transition-colors duration-150" href="#">
+<span class="material-symbols-outlined" data-icon="sensors">sensors</span>
+<span class="text-sm">Ao vivo</span>
+</a>
+</nav>
+<div class="px-6 py-4">
+<button class="w-full bg-primary text-white py-2.5 rounded-md text-sm font-semibold flex items-center justify-center gap-2 hover:opacity-90 transition-opacity active:scale-[0.98]">
+<span class="material-symbols-outlined text-sm" data-icon="add">add</span>
+                Novo Projeto
+            </button>
+</div>
+<div class="mt-auto border-t border-[#2A2A2A] p-3 space-y-1">
+<a class="flex items-center gap-3 px-3 py-2 text-gray-400 hover:text-white hover:bg-[#191a1a] transition-colors duration-150" href="#">
+<span class="material-symbols-outlined" data-icon="timer">timer</span>
+<span class="text-sm">Timers</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 text-gray-400 hover:text-white hover:bg-[#191a1a] transition-colors duration-150" href="#">
+<span class="material-symbols-outlined" data-icon="settings">settings</span>
+<span class="text-sm">Configurações</span>
+</a>
+<div class="flex items-center gap-3 px-3 py-4 mt-2">
+<img alt="User Profile" class="w-8 h-8 rounded-full border border-[#2A2A2A]" data-alt="Close up portrait of a professional architect in a modern office, minimalist background" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCkvWX21leE5lrhMAj8GsBDYAaN2mNXvYcoRAvVrINSWHl9wAV6lfB7wSSvSgipmZuDRHmCtWMTeZXL7Oh-ZPNEOVoAe6buPsaJFnPouRfZR5IqsbLMnOJx1yEIAeqfVich4QxBMjaxph3rTiZNFyI-LsafxafswlywZvnMack6gXc7WuvEHapxuW7lCsLn2mCVTUO-gO-DD86wAoHHGoET3ytp0u4OFS-UyaMX7InKVgXrUOjvlKW7CgnWhE5rkmb-5B7nF5Q_Mek"/>
+<div class="overflow-hidden">
+<p class="text-sm font-medium text-white truncate">Arthur Niemeyer</p>
+<p class="text-xs text-gray-500 truncate">Lead Architect</p>
+</div>
+</div>
+</div>
+</aside>
+<!-- Main Content -->
+<main class="flex-1 ml-64 flex flex-col h-screen overflow-hidden">
+<!-- TopAppBar -->
+<header class="flex items-center justify-between px-6 w-full h-14 border-b border-[#2A2A2A] bg-[#0e0e0e] z-40">
+<div class="flex items-center gap-2 text-sm">
+<span class="text-gray-500">Projetos</span>
+<span class="material-symbols-outlined text-gray-600 text-xs" data-icon="chevron_right">chevron_right</span>
+<span class="text-white font-medium">Residencial Alto da Serra</span>
+</div>
+<div class="flex items-center gap-4">
+<div class="relative">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 text-sm" data-icon="search">search</span>
+<input class="bg-[#131313] border border-[#2A2A2A] rounded-md pl-9 pr-4 py-1.5 text-xs text-white focus:outline-none focus:border-primary w-64" placeholder="Procurar em Residencial..." type="text"/>
+</div>
+<button class="text-gray-400 hover:text-white transition-colors">
+<span class="material-symbols-outlined" data-icon="notifications">notifications</span>
+</button>
+<div class="h-4 w-px bg-[#2A2A2A]"></div>
+<button class="text-gray-400 hover:text-white transition-colors">
+<span class="material-symbols-outlined" data-icon="help_outline">help_outline</span>
+</button>
+</div>
+</header>
+<!-- Content Area -->
+<div class="flex-1 overflow-y-auto no-scrollbar bg-[#0e0e0e]">
+<!-- Group Header -->
+<section class="px-8 pt-8 pb-4">
+<div class="flex justify-between items-start mb-6">
+<div>
+<div class="flex items-center gap-3 mb-2">
+<h2 class="text-2xl font-semibold text-white tracking-tight">Residencial Alto da Serra</h2>
+<span class="px-2 py-0.5 bg-[#0055FF]/10 border border-[#0055FF]/20 text-[#0055FF] text-[10px] font-bold rounded uppercase tracking-wider">Ativo</span>
+</div>
+<p class="text-gray-400 text-sm max-w-2xl">Condomínio residencial de alto padrão em terreno acidentado. Fase de detalhamento executivo e compatibilização de sistemas.</p>
+</div>
+<div class="flex gap-2">
+<button class="px-4 py-2 border border-[#484848] text-white text-sm font-medium rounded-md hover:bg-[#191a1a] transition-colors">Editar grupo</button>
+<button class="px-4 py-2 border border-[#484848] text-white text-sm font-medium rounded-md hover:bg-[#191a1a] transition-colors flex items-center gap-2">
+<span class="material-symbols-outlined text-sm" data-icon="share">share</span>
+                            Compartilhar
+                        </button>
+</div>
+</div>
+<!-- Technical Metadata -->
+<div class="flex gap-8 border-b border-[#2A2A2A] pb-8">
+<div class="space-y-1">
+<p class="text-[10px] uppercase text-gray-500 tracking-wider font-semibold">Projetos</p>
+<p class="mono text-lg text-white font-medium">04</p>
+</div>
+<div class="space-y-1">
+<p class="text-[10px] uppercase text-gray-500 tracking-wider font-semibold">Área Total</p>
+<p class="mono text-lg text-white font-medium">1.280 m²</p>
+</div>
+<div class="space-y-1">
+<p class="text-[10px] uppercase text-gray-500 tracking-wider font-semibold">Tempo Alocado</p>
+<p class="mono text-lg text-white font-medium">47.2h</p>
+</div>
+<div class="space-y-1">
+<p class="text-[10px] uppercase text-gray-500 tracking-wider font-semibold">Equipe</p>
+<div class="flex -space-x-2">
+<img alt="Team member" class="w-6 h-6 rounded-full border-2 border-background" data-alt="Portrait of a female designer in a professional studio setting" src="https://lh3.googleusercontent.com/aida-public/AB6AXuC8m1omlpX6Oknc7aHhqiWMIXqforbT-1AZNFT5L2ABXpRAs7b9K9ZbPlvorNl_1zA4DLe0fRc3bZzfi94vDIlvz0Ih3ZOIyccXonGmoMqmVyOhrBeBy3FrlmPkGU-O1X3wKcwOXXbTQ5SuLQo9CXNPRC_o-Wcvz3JrjWImxcdjoyXj6HBSY7z4576fqRztv8qbjnzU1lmJNgsWmwPNn7WaXeB2AOiY9iiFr12rIj7aMeeRyGfPm9avD7vI-dCpQ6I5LXkOvqTqL6I"/>
+<img alt="Team member" class="w-6 h-6 rounded-full border-2 border-background" data-alt="Portrait of a male engineer wearing professional glasses" src="https://lh3.googleusercontent.com/aida-public/AB6AXuA5_QDYm3dtb8ez--MAXSvBlb6z0yS3Lq9XpCEWRHTJ9EIRZvv5WGcdseqRi5khLAVHjzVWbD1u8eLCmJXlBYsxQJbO8cIILU8u4kLYzzTpy3YT0oam0R67o-xCmoa4drS5_18ZOMZGMYT1xl132eTLxmj34KallcptiVYKvKoDN3RdwQncafsth0gQJDi5R4V3VkVcNGNOCkXgF83zUntWJVQIoL8Gx3qPJQd3cL2UTQm2qkdg7un-xkXaQdXcgCN-H_eRe3F5QEg"/>
+<img alt="Team member" class="w-6 h-6 rounded-full border-2 border-background" data-alt="Portrait of a female project manager in modern workspace" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCsHhtIHxIlaE64dxhxhb9WM1aH52wHsrPtxPdl-gTbxXYba-8mCnmUIvvK7bHl0W_lN7_0lUB4iVvsc2CpCtRKuBx_rDhFK9SgDSw7IYeUPoEAjqZp_k36iLSYtNA3WPLldThWJpgYadtsBAHiWkOdiS_5D56hhjTM31Fh7DNISmstCpaVs2gzVEKlDdH3Y1nJetET5B8GVpmtPbnj7NsxKgI4DkIGetjeG-yG-yA0nC60zUIrMq0SWrWN3nYdNIfw2FateLreqyQ"/>
+<div class="w-6 h-6 rounded-full bg-[#191a1a] border-2 border-background flex items-center justify-center text-[10px] text-gray-400 font-bold">+2</div>
+</div>
+</div>
+</div>
+<!-- Tabs Navigation -->
+<nav class="flex gap-8 mt-4">
+<a class="pb-4 text-sm font-medium text-gray-500 hover:text-white transition-colors flex items-center gap-2" href="#">
+                        Projetos <span class="mono text-[10px] bg-gray-800 px-1 rounded text-gray-400">4</span>
+</a>
+<a class="pb-4 text-sm font-medium text-white border-b-2 border-[#0055FF] flex items-center gap-2" href="#">
+                        Tarefas <span class="mono text-[10px] bg-primary/20 px-1 rounded text-[#0055FF]">12</span>
+</a>
+<a class="pb-4 text-sm font-medium text-gray-500 hover:text-white transition-colors" href="#">Mapa de Foco</a>
+<a class="pb-4 text-sm font-medium text-gray-500 hover:text-white transition-colors" href="#">Relatório</a>
+<a class="pb-4 text-sm font-medium text-gray-500 hover:text-white transition-colors" href="#">Ao vivo</a>
+</nav>
+</section>
+<!-- Tasks Workspace -->
+<section class="px-8 pb-12">
+<!-- Toolbar -->
+<div class="flex items-center justify-between py-4 gap-4">
+<div class="flex flex-1 items-center gap-2">
+<div class="relative w-72">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 text-sm" data-icon="search">search</span>
+<input class="w-full bg-[#131313] border border-[#2A2A2A] rounded-md pl-9 pr-4 py-2 text-xs text-white focus:outline-none focus:border-primary" placeholder="Filtrar tarefas..." type="text"/>
+</div>
+<button class="px-3 py-2 bg-[#131313] border border-[#2A2A2A] rounded-md text-xs text-gray-400 flex items-center gap-2 hover:bg-[#191a1a] transition-colors">
+                            Projeto <span class="material-symbols-outlined text-xs" data-icon="keyboard_arrow_down">keyboard_arrow_down</span>
+</button>
+<button class="px-3 py-2 bg-[#131313] border border-[#2A2A2A] rounded-md text-xs text-gray-400 flex items-center gap-2 hover:bg-[#191a1a] transition-colors">
+                            Responsável <span class="material-symbols-outlined text-xs" data-icon="keyboard_arrow_down">keyboard_arrow_down</span>
+</button>
+<button class="px-3 py-2 bg-[#131313] border border-[#2A2A2A] rounded-md text-xs text-gray-400 flex items-center gap-2 hover:bg-[#191a1a] transition-colors">
+                            Status <span class="material-symbols-outlined text-xs" data-icon="keyboard_arrow_down">keyboard_arrow_down</span>
+</button>
+</div>
+<button class="px-4 py-2 bg-primary text-white text-sm font-semibold rounded-md flex items-center gap-2 hover:opacity-90 transition-opacity">
+<span class="material-symbols-outlined text-sm" data-icon="add">add</span>
+                        Nova tarefa
+                    </button>
+</div>
+<!-- Unified Tasks Table -->
+<div class="border border-[#2A2A2A] rounded-lg overflow-hidden">
+<table class="w-full border-collapse">
+<thead>
+<tr class="bg-[#131313] border-b border-[#2A2A2A]">
+<th class="w-10 px-4 py-3 text-left"><span class="material-symbols-outlined text-sm text-gray-500" data-icon="star">star</span></th>
+<th class="px-4 py-3 text-left text-[10px] uppercase text-gray-500 tracking-wider font-semibold">Nome da Tarefa</th>
+<th class="px-4 py-3 text-left text-[10px] uppercase text-gray-500 tracking-wider font-semibold">Projeto</th>
+<th class="px-4 py-3 text-left text-[10px] uppercase text-gray-500 tracking-wider font-semibold">Responsável</th>
+<th class="px-4 py-3 text-left text-[10px] uppercase text-gray-500 tracking-wider font-semibold">Prioridade</th>
+<th class="px-4 py-3 text-left text-[10px] uppercase text-gray-500 tracking-wider font-semibold">Status</th>
+<th class="px-4 py-3 text-right text-[10px] uppercase text-gray-500 tracking-wider font-semibold">Data</th>
+<th class="w-12 px-4 py-3"></th>
+</tr>
+</thead>
+<tbody class="divide-y divide-[#2A2A2A]">
+<!-- Task 1 -->
+<tr class="hover:bg-[#131313] transition-colors group">
+<td class="px-4 py-3"><span class="material-symbols-outlined text-sm text-[#0055FF]" data-icon="star" style="font-variation-settings: 'FILL' 1;">star</span></td>
+<td class="px-4 py-3 text-sm text-white font-medium">Revisão do Layout Hidráulico</td>
+<td class="px-4 py-3 text-xs text-gray-400">Bloco A</td>
+<td class="px-4 py-3">
+<div class="flex items-center gap-2">
+<img alt="Arthur" class="w-5 h-5 rounded-full" data-alt="Portrait of a male designer" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBtxxfN0glvFi1Dg06LSySDa8XFEP1FSKOsLvagi5QyutUWBtoz_9TBDFJvRNIIG3XlWEEEp1UhhRQTm201Wb0JXyszSAtk0Fi4E8nGfCmjiM5ZLZB13VI1SbD7BMEbuRygZWyeELvg8zEDfr8N_EsytqQz0NfFKswqK52-sXWnKIPgFhm4qEzw8_Lv1aIKD5-IEfIy2MB9CzvvhdNTDqITWlQKRtbPXOTphpQhQpOhc3Rxy9oplQoSN6oqX5t6Pqvx8I-YxVQVvsI"/>
+<span class="text-xs text-gray-300">Arthur N.</span>
+</div>
+</td>
+<td class="px-4 py-3">
+<span class="text-[10px] font-bold text-error uppercase border border-error/20 px-1.5 py-0.5 rounded bg-error/5">Crítica</span>
+</td>
+<td class="px-4 py-3">
+<div class="flex items-center gap-2 text-xs text-[#0055FF]">
+<div class="w-1.5 h-1.5 rounded-full bg-[#0055FF]"></div>
+                                        Em Execução
+                                    </div>
+</td>
+<td class="px-4 py-3 text-right mono text-xs text-gray-400">24/10/24</td>
+<td class="px-4 py-3 text-right">
+<button class="p-1.5 bg-primary/10 text-primary rounded hover:bg-primary/20 transition-colors">
+<span class="material-symbols-outlined text-sm" data-icon="play_arrow" style="font-variation-settings: 'FILL' 1;">play_arrow</span>
+</button>
+</td>
+</tr>
+<!-- Task 2 -->
+<tr class="hover:bg-[#131313] transition-colors group">
+<td class="px-4 py-3"><span class="material-symbols-outlined text-sm text-gray-700 hover:text-gray-400 cursor-pointer" data-icon="star">star</span></td>
+<td class="px-4 py-3 text-sm text-white font-medium">Detalhamento de Esquadrias</td>
+<td class="px-4 py-3 text-xs text-gray-400">Bloco B</td>
+<td class="px-4 py-3">
+<div class="flex items-center gap-2">
+<img alt="Leticia" class="w-5 h-5 rounded-full" data-alt="Portrait of a female designer" src="https://lh3.googleusercontent.com/aida-public/AB6AXuA7ESA7elRFtnXsxgLestj2YBxnCj9aoCvDjcImahCmfoDVHvUt5GAIVzkVWD5mmkKdo7WSraQCkGAzOrA4-ku0SnQROb3vwLbf60lqa3pKKthRndZ-hay0hyeUWnpdZSJcuw-JlDBLkpIC6nQ-fBvXVT-zzTXmgLnWPuLTX6jl4OrOcH-h1rc8eoXl_md2YWRzfZkPhklYEFEEnHSelRXwUqysy8N3PHFcBVrRmUNQecJmzsyHAIZasrLkhNLtuPIfdlMTIrWDtoY"/>
+<span class="text-xs text-gray-300">Leticia M.</span>
+</div>
+</td>
+<td class="px-4 py-3">
+<span class="text-[10px] font-bold text-gray-400 uppercase border border-gray-400/20 px-1.5 py-0.5 rounded">Média</span>
+</td>
+<td class="px-4 py-3">
+<div class="flex items-center gap-2 text-xs text-gray-400">
+<div class="w-1.5 h-1.5 rounded-full bg-gray-600"></div>
+                                        Aguardando
+                                    </div>
+</td>
+<td class="px-4 py-3 text-right mono text-xs text-gray-400">26/10/24</td>
+<td class="px-4 py-3 text-right">
+<button class="p-1.5 text-gray-600 hover:text-white transition-colors">
+<span class="material-symbols-outlined text-sm" data-icon="play_arrow">play_arrow</span>
+</button>
+</td>
+</tr>
+<!-- Task 3 -->
+<tr class="hover:bg-[#131313] transition-colors group">
+<td class="px-4 py-3"><span class="material-symbols-outlined text-sm text-[#0055FF]" data-icon="star" style="font-variation-settings: 'FILL' 1;">star</span></td>
+<td class="px-4 py-3 text-sm text-white font-medium">Render Final Área Gourmet</td>
+<td class="px-4 py-3 text-xs text-gray-400">Área de Lazer</td>
+<td class="px-4 py-3">
+<div class="flex items-center gap-2">
+<img alt="Ricardo" class="w-5 h-5 rounded-full" data-alt="Portrait of a professional man" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAKhYhjFz_7XQbE7rbrMy4aYPvgCCsBsSCinfEfzhdbGSWBPvPVlZqkMl2JHhcvNeRzNtpjbpeXVer9Yyu_M_bEb0ikJ2dLdDGSq3ZFUYMKNCnpnNzlXKD4fgp4mcqVkDh4sjpOjzPZfI4ZpZxTUDyq-ufS6o0YxqZT9yDL3yURjsK43IoU_VFPq8-J01wZr__fziHKuEaCfPUlaYVDKY0h_5qRUKF1fKiJiDla9ztSAxYex6IIyNEkCTCjJskIzoyAxqbgbJE1aZ0"/>
+<span class="text-xs text-gray-300">Ricardo S.</span>
+</div>
+</td>
+<td class="px-4 py-3">
+<span class="text-[10px] font-bold text-blue-400 uppercase border border-blue-400/20 px-1.5 py-0.5 rounded bg-blue-400/5">Alta</span>
+</td>
+<td class="px-4 py-3">
+<div class="flex items-center gap-2 text-xs text-[#0055FF]">
+<div class="w-1.5 h-1.5 rounded-full bg-[#0055FF]"></div>
+                                        Em Execução
+                                    </div>
+</td>
+<td class="px-4 py-3 text-right mono text-xs text-gray-400">25/10/24</td>
+<td class="px-4 py-3 text-right">
+<div class="flex items-center gap-2 justify-end">
+<span class="mono text-[10px] text-primary">02:14:45</span>
+<button class="p-1.5 bg-primary text-white rounded hover:opacity-90 transition-colors">
+<span class="material-symbols-outlined text-sm" data-icon="pause" style="font-variation-settings: 'FILL' 1;">pause</span>
+</button>
+</div>
+</td>
+</tr>
+<!-- Task 4 -->
+<tr class="hover:bg-[#131313] transition-colors group">
+<td class="px-4 py-3"><span class="material-symbols-outlined text-sm text-gray-700" data-icon="star">star</span></td>
+<td class="px-4 py-3 text-sm text-white font-medium">Planta de Cobertura - V1</td>
+<td class="px-4 py-3 text-xs text-gray-400">Guarita</td>
+<td class="px-4 py-3">
+<div class="flex items-center gap-2">
+<div class="w-5 h-5 rounded-full bg-gray-800 flex items-center justify-center text-[10px] text-gray-500">?</div>
+<span class="text-xs text-gray-500">Sem atribuição</span>
+</div>
+</td>
+<td class="px-4 py-3">
+<span class="text-[10px] font-bold text-gray-500 uppercase border border-gray-500/20 px-1.5 py-0.5 rounded">Baixa</span>
+</td>
+<td class="px-4 py-3">
+<div class="flex items-center gap-2 text-xs text-gray-400">
+<div class="w-1.5 h-1.5 rounded-full bg-gray-600"></div>
+                                        Pendente
+                                    </div>
+</td>
+<td class="px-4 py-3 text-right mono text-xs text-gray-400">30/10/24</td>
+<td class="px-4 py-3 text-right">
+<button class="p-1.5 text-gray-600 hover:text-white transition-colors">
+<span class="material-symbols-outlined text-sm" data-icon="play_arrow">play_arrow</span>
+</button>
+</td>
+</tr>
+<!-- Task 5 -->
+<tr class="hover:bg-[#131313] transition-colors group">
+<td class="px-4 py-3"><span class="material-symbols-outlined text-sm text-gray-700" data-icon="star">star</span></td>
+<td class="px-4 py-3 text-sm text-white font-medium">Especificação de Revestimentos</td>
+<td class="px-4 py-3 text-xs text-gray-400">Bloco A</td>
+<td class="px-4 py-3">
+<div class="flex items-center gap-2">
+<img alt="Leticia" class="w-5 h-5 rounded-full" data-alt="Portrait of a female designer" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCRZF8m71VdCjBY6UaEjH_MmpSoCnhKxEPlL4cZENcCs0oIRaAtNF0GcE2xtZzQk0VoesTRlc7wSsaGLQcObvPllk5DohdbwhY7wmA9PClVv7ZBRpqlX_3_4fqWYDFJyviAEP4X1XIJ4jKDlPmpj2-HP8YEJPOeyLIUTzk8FWKCOj0gkvmptYOh1-eh1_3mjCMNx58Csz4kMVbPA_TXhCB24z3LmfbNzshR04x0Y-JxmELLPKQFn4gE9AAjxwUqxnSxjBULIpxTUz8"/>
+<span class="text-xs text-gray-300">Leticia M.</span>
+</div>
+</td>
+<td class="px-4 py-3">
+<span class="text-[10px] font-bold text-blue-400 uppercase border border-blue-400/20 px-1.5 py-0.5 rounded bg-blue-400/5">Alta</span>
+</td>
+<td class="px-4 py-3">
+<div class="flex items-center gap-2 text-xs text-[#0055FF]">
+<div class="w-1.5 h-1.5 rounded-full bg-[#0055FF]"></div>
+                                        Em Execução
+                                    </div>
+</td>
+<td class="px-4 py-3 text-right mono text-xs text-gray-400">28/10/24</td>
+<td class="px-4 py-3 text-right">
+<button class="p-1.5 text-gray-600 hover:text-white transition-colors">
+<span class="material-symbols-outlined text-sm" data-icon="play_arrow">play_arrow</span>
+</button>
+</td>
+</tr>
+<!-- Completed Section Header -->
+<tr class="bg-[#131313]/50">
+<td class="px-4 py-2 text-[10px] uppercase text-gray-600 tracking-widest font-bold" colspan="8">Concluídas</td>
+</tr>
+<!-- Task Completed 1 -->
+<tr class="opacity-40 transition-colors group">
+<td class="px-4 py-3"><span class="material-symbols-outlined text-sm text-gray-700" data-icon="star">star</span></td>
+<td class="px-4 py-3 text-sm text-gray-400 line-through">Levantamento Planialtimétrico</td>
+<td class="px-4 py-3 text-xs text-gray-500">Guarita</td>
+<td class="px-4 py-3">
+<div class="flex items-center gap-2">
+<img alt="Arthur" class="w-5 h-5 rounded-full grayscale" data-alt="Grayscale portrait of a male designer" src="https://lh3.googleusercontent.com/aida-public/AB6AXuC6u3CTC7LtSJku6HRHZblTnACnMMV_a9b_E9ChzQaCCsrmdRK0NVQtvAMmqUd8M90HDQTt8jfqL6Myi6I9912e_qx2R9I_Gke8gtugC0omYIaYX96gLbDeb-tJa2QMB-o4UGDZFdsyUs7B16UvLTKgBBvxev0VCobvlXcfD94TdUTUhN8RDtVL4QjaQ4nB2iLzxxC2KcBJRpc6vbI0v1o6oueBX5BYgyQsFssTKMt6weIkvfhsEdmP8QR5S0fdoOrzjwoRXGfs8BA"/>
+<span class="text-xs text-gray-500">Arthur N.</span>
+</div>
+</td>
+<td class="px-4 py-3">
+<span class="text-[10px] font-bold text-gray-600 uppercase border border-gray-600/20 px-1.5 py-0.5 rounded">Média</span>
+</td>
+<td class="px-4 py-3">
+<div class="flex items-center gap-2 text-xs text-success">
+<span class="material-symbols-outlined text-xs" data-icon="check_circle" style="font-variation-settings: 'FILL' 1;">check_circle</span>
+                                        Finalizado
+                                    </div>
+</td>
+<td class="px-4 py-3 text-right mono text-xs text-gray-500">18/10/24</td>
+<td class="px-4 py-3 text-right">
+<span class="material-symbols-outlined text-gray-700 text-sm" data-icon="lock">lock</span>
+</td>
+</tr>
+<!-- Task Completed 2 -->
+<tr class="opacity-40 transition-colors group">
+<td class="px-4 py-3"><span class="material-symbols-outlined text-sm text-gray-700" data-icon="star">star</span></td>
+<td class="px-4 py-3 text-sm text-gray-400 line-through">Cálculo de Carga Térmica</td>
+<td class="px-4 py-3 text-xs text-gray-500">Bloco B</td>
+<td class="px-4 py-3">
+<div class="flex items-center gap-2">
+<img alt="Ricardo" class="w-5 h-5 rounded-full grayscale" data-alt="Grayscale portrait of a male designer" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCsRlen6lVgAMo42HKEvbei8SOKvGRmiQaojnsA5pCt7n2Ow7MiKyGfi_d9G8bv7hkdFxPyu_cBwagnM7jxbidI-11q1AgaLb752DejwM7c33ycBr6bQegXdOyLPshcP64veLBThfMd0LIQlMsPsVOfIxavxhTprGrqslJHEenXQFzBhdSkWAvYVpLjqBTC127Zs_FNZIWkUY_RHG6DlhYnLfMbdLUGNI5LETWWvVDiMlm-ki1Ze3vjV8X_8eqrOQ3PricUjmH4SFY"/>
+<span class="text-xs text-gray-500">Ricardo S.</span>
+</div>
+</td>
+<td class="px-4 py-3">
+<span class="text-[10px] font-bold text-gray-600 uppercase border border-gray-600/20 px-1.5 py-0.5 rounded">Alta</span>
+</td>
+<td class="px-4 py-3">
+<div class="flex items-center gap-2 text-xs text-success">
+<span class="material-symbols-outlined text-xs" data-icon="check_circle" style="font-variation-settings: 'FILL' 1;">check_circle</span>
+                                        Finalizado
+                                    </div>
+</td>
+<td class="px-4 py-3 text-right mono text-xs text-gray-500">15/10/24</td>
+<td class="px-4 py-3 text-right">
+<span class="material-symbols-outlined text-gray-700 text-sm" data-icon="lock">lock</span>
+</td>
+</tr>
+<!-- Task Completed 3 -->
+<tr class="opacity-40 transition-colors group">
+<td class="px-4 py-3"><span class="material-symbols-outlined text-sm text-gray-700" data-icon="star">star</span></td>
+<td class="px-4 py-3 text-sm text-gray-400 line-through">Design de Paisagismo - Conceito</td>
+<td class="px-4 py-3 text-xs text-gray-500">Área de Lazer</td>
+<td class="px-4 py-3">
+<div class="flex items-center gap-2">
+<img alt="Leticia" class="w-5 h-5 rounded-full grayscale" data-alt="Grayscale portrait of a female designer" src="https://lh3.googleusercontent.com/aida-public/AB6AXuA87qRXmqQFlvR33naK2M3b1zW0AJbh0YMYG--n4NOn_P08sPPi3Rm8xPSr1Nj0WnsfYmuXPAYy2C7bo9E72Ds17HB-hGchV4Zrp5CP-Dz5tFIEBS87ozZNgzPPTBC-l-OJ95MHsXWqazLrGkbxDdTP531qyFo4ELTdxeCvMlxgR9-RQuTmLZbD1FbuwjYzxsagTdMzjIKNrW7YHwdu4ynMUHELQTmJ6L4Vh8zUl2wVeyi-0HPitERdHoR7GuG1VPK0hgOOnn1aKeU"/>
+<span class="text-xs text-gray-500">Leticia M.</span>
+</div>
+</td>
+<td class="px-4 py-3">
+<span class="text-[10px] font-bold text-gray-600 uppercase border border-gray-600/20 px-1.5 py-0.5 rounded">Média</span>
+</td>
+<td class="px-4 py-3">
+<div class="flex items-center gap-2 text-xs text-success">
+<span class="material-symbols-outlined text-xs" data-icon="check_circle" style="font-variation-settings: 'FILL' 1;">check_circle</span>
+                                        Finalizado
+                                    </div>
+</td>
+<td class="px-4 py-3 text-right mono text-xs text-gray-500">12/10/24</td>
+<td class="px-4 py-3 text-right">
+<span class="material-symbols-outlined text-gray-700 text-sm" data-icon="lock">lock</span>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</section>
+</div>
+<!-- Sticky Timer Footer (Mockup of Active Work) -->
+<div class="h-12 border-t border-[#2A2A2A] bg-[#131313] px-6 flex items-center justify-between">
+<div class="flex items-center gap-4">
+<span class="text-[10px] uppercase text-gray-500 font-bold tracking-widest">Trabalhando agora</span>
+<div class="h-4 w-px bg-[#2A2A2A]"></div>
+<div class="flex items-center gap-2">
+<span class="text-xs text-white font-medium">Render Final Área Gourmet</span>
+<span class="text-[10px] text-gray-500 mono">Residencial Alto da Serra &gt; Área de Lazer</span>
+</div>
+</div>
+<div class="flex items-center gap-6">
+<div class="flex items-center gap-3">
+<span class="mono text-sm text-primary font-bold">02:14:45</span>
+<button class="w-8 h-8 flex items-center justify-center bg-primary text-white rounded-full">
+<span class="material-symbols-outlined text-sm" data-icon="pause" style="font-variation-settings: 'FILL' 1;">pause</span>
+</button>
+<button class="w-8 h-8 flex items-center justify-center border border-[#484848] text-white rounded-full">
+<span class="material-symbols-outlined text-sm" data-icon="stop" style="font-variation-settings: 'FILL' 1;">stop</span>
+</button>
+</div>
+</div>
+</div>
+</main>
+</body></html>

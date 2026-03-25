@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="pt-BR"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&amp;family=DM+Mono:wght@400;500&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<style>
+        body { font-family: 'Inter', sans-serif; background-color: #0e0e0e; color: #e7e5e4; }
+        .font-mono { font-family: 'DM Mono', monospace; }
+        .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
+    </style>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary-fixed": "#dce1ff",
+                        "on-secondary-container": "#c1bfbe",
+                        "on-primary-fixed": "#0033a2",
+                        "surface-container": "#191a1a",
+                        "on-tertiary": "#5e5672",
+                        "inverse-surface": "#fcf8f8",
+                        "on-secondary": "#202020",
+                        "surface-container-high": "#1f2020",
+                        "on-surface": "#e7e5e4",
+                        "on-error": "#490013",
+                        "on-tertiary-fixed": "#433b56",
+                        "primary-container": "#0039b3",
+                        "primary-fixed-dim": "#c9d2ff",
+                        "tertiary-fixed": "#e9ddff",
+                        "tertiary": "#f6eeff",
+                        "primary": "#b6c4ff",
+                        "background": "#0e0e0e",
+                        "surface-container-highest": "#252626",
+                        "secondary-fixed-dim": "#d6d4d3",
+                        "surface-container-low": "#131313",
+                        "surface-bright": "#2c2c2c",
+                        "error": "#ec7c8a",
+                        "secondary-dim": "#9f9d9d",
+                        "tertiary-container": "#e9ddff",
+                        "secondary-fixed": "#e4e2e1",
+                        "tertiary-dim": "#dacff0",
+                        "on-tertiary-fixed-variant": "#5f5773",
+                        "inverse-on-surface": "#565554",
+                        "surface-tint": "#b6c4ff",
+                        "on-primary-fixed-variant": "#004be3",
+                        "on-tertiary-container": "#554e69",
+                        "error-container": "#7f2737",
+                        "surface-dim": "#0e0e0e",
+                        "tertiary-fixed-dim": "#dacff0",
+                        "inverse-primary": "#004eeb",
+                        "on-error-container": "#ff97a3",
+                        "surface-variant": "#252626",
+                        "surface": "#0e0e0e",
+                        "on-surface-variant": "#acabaa",
+                        "on-primary-container": "#c4ceff",
+                        "on-primary": "#0034a4",
+                        "secondary-container": "#3b3b3b",
+                        "on-secondary-fixed-variant": "#5c5b5b",
+                        "outline-variant": "#484848",
+                        "surface-container-lowest": "#000000",
+                        "secondary": "#9f9d9d",
+                        "error-dim": "#b95463",
+                        "on-background": "#e7e5e4",
+                        "on-secondary-fixed": "#3f3f3f",
+                        "primary-dim": "#a3b5ff",
+                        "outline": "#767575"
+                    },
+                    fontFamily: {
+                        "headline": ["Inter"],
+                        "body": ["Inter"],
+                        "label": ["Inter"]
+                    },
+                    borderRadius: {"DEFAULT": "0.125rem", "lg": "0.25rem", "xl": "0.5rem", "full": "0.75rem"},
+                },
+            },
+        }
+    </script>
+</head>
+<body class="bg-background text-on-background antialiased flex">
+<!-- SideNavBar (from Shared Components) -->
+<aside class="flex flex-col h-screen fixed left-0 top-0 z-40 bg-[#131313] w-64 border-r border-[#2A2A2A]">
+<div class="p-6">
+<div class="flex items-center gap-3 mb-8">
+<div class="w-8 h-8 bg-primary-container rounded flex items-center justify-center">
+<span class="material-symbols-outlined text-white text-sm" data-icon="group">group</span>
+</div>
+<div>
+<h1 class="text-xl font-bold text-white tracking-tight">Studio Alpha</h1>
+<p class="text-[10px] text-on-surface-variant font-mono uppercase tracking-widest">Management Group</p>
+</div>
+</div>
+<button class="w-full bg-[#0055FF] text-white py-2.5 px-4 rounded font-semibold text-sm flex items-center justify-center gap-2 mb-8 hover:bg-blue-600 transition-colors">
+<span class="material-symbols-outlined text-sm" data-icon="add">add</span>
+                Novo Projeto
+            </button>
+<nav class="space-y-1">
+<a class="flex items-center gap-3 px-3 py-2 text-gray-400 hover:text-white transition-colors hover:bg-[#191a1a] rounded" href="#">
+<span class="material-symbols-outlined" data-icon="folder_open">folder_open</span>
+<span class="text-sm">Projetos</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 text-gray-400 hover:text-white transition-colors hover:bg-[#191a1a] rounded" href="#">
+<span class="material-symbols-outlined" data-icon="assignment_turned_in">assignment_turned_in</span>
+<span class="text-sm">Tarefas</span>
+</a>
+<!-- Active Navigation State for "Mapa de Foco" -->
+<a class="flex items-center gap-3 px-3 py-2 text-[#0055FF] font-semibold bg-[#0055FF]/10 border-r-2 border-[#0055FF] rounded-l" href="#">
+<span class="material-symbols-outlined" data-icon="adjust">adjust</span>
+<span class="text-sm">Mapa de Foco</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 text-gray-400 hover:text-white transition-colors hover:bg-[#191a1a] rounded" href="#">
+<span class="material-symbols-outlined" data-icon="analytics">analytics</span>
+<span class="text-sm">Relatório</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 text-gray-400 hover:text-white transition-colors hover:bg-[#191a1a] rounded" href="#">
+<span class="material-symbols-outlined" data-icon="sensors">sensors</span>
+<span class="text-sm">Ao vivo</span>
+</a>
+</nav>
+</div>
+<div class="mt-auto p-6 border-t border-[#2A2A2A]">
+<nav class="space-y-1">
+<a class="flex items-center gap-3 px-3 py-2 text-gray-400 hover:text-white transition-colors hover:bg-[#191a1a] rounded" href="#">
+<span class="material-symbols-outlined" data-icon="settings">settings</span>
+<span class="text-sm">Configurações</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 text-gray-400 hover:text-white transition-colors hover:bg-[#191a1a] rounded" href="#">
+<span class="material-symbols-outlined" data-icon="help_outline">help_outline</span>
+<span class="text-sm">Suporte</span>
+</a>
+</nav>
+</div>
+</aside>
+<!-- Main Content Area -->
+<main class="ml-64 w-[calc(100%-16rem)] min-h-screen">
+<!-- TopAppBar (from Shared Components) -->
+<header class="flex justify-between items-center h-16 px-8 bg-[#0e0e0e] border-b border-[#2A2A2A] sticky top-0 z-30">
+<div class="flex items-center gap-6">
+<span class="text-lg font-bold text-white uppercase tracking-wider">Studio Alpha</span>
+<nav class="hidden md:flex gap-6">
+<a class="text-gray-500 hover:text-[#0055FF] transition-colors text-sm font-medium" href="#">Portfolio</a>
+<a class="text-gray-500 hover:text-[#0055FF] transition-colors text-sm font-medium" href="#">Equipe</a>
+<a class="text-gray-500 hover:text-[#0055FF] transition-colors text-sm font-medium" href="#">Financeiro</a>
+</nav>
+</div>
+<div class="flex items-center gap-4">
+<div class="relative">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 text-sm" data-icon="search">search</span>
+<input class="bg-[#191a1a] border border-[#2A2A2A] rounded-md pl-10 pr-4 py-1.5 text-xs focus:ring-1 focus:ring-[#0055FF] outline-none text-on-surface" placeholder="Buscar no grupo..." type="text"/>
+</div>
+<button class="bg-[#0055FF] text-white px-4 py-1.5 rounded text-xs font-semibold scale-95 active:scale-100 transition-transform">Relatório PDF</button>
+<div class="flex items-center gap-2 border-l border-[#2A2A2A] pl-4 ml-2">
+<span class="material-symbols-outlined text-gray-400 cursor-pointer" data-icon="notifications">notifications</span>
+<div class="w-8 h-8 rounded-full bg-[#252626] border border-[#484848] overflow-hidden">
+<img class="w-full h-full object-cover" data-alt="close-up portrait of a professional male architect in a modern office with natural light and industrial background" src="https://lh3.googleusercontent.com/aida-public/AB6AXuC14GO0KGgSP9RmxPyVNwlWfMqI5_bVMk4IVOzZPoLqfoHhQdJqexdsxDHMDFSAbWhl7-02Rk1goxo3Q5xBJBLPaw8AH5lRsTq3eWUkDqELkeh5-NS0En3Xa4XeN9CLf5otW68LdZpZ1PuT935h5Dx0AK1bO7BtfINeJLYSW3swlJ_3YZR-htcGP2zioPXXmEnRjw04P0egcvrYLzCu4I0tqt_znqlqHWZ9n5JRTOndHxRQqxjFABfVW1KviB4i2dFj9lNstjb1k9g"/>
+</div>
+</div>
+</div>
+</header>
+<!-- Page Content -->
+<div class="p-8">
+<!-- Group Header -->
+<div class="mb-10">
+<div class="flex items-center gap-3 mb-2">
+<h2 class="text-2xl font-semibold text-on-surface tracking-tight">Residencial Alto da Serra</h2>
+<span class="px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-primary/10 text-primary border border-primary/20">Ativo</span>
+</div>
+<div class="flex items-center gap-6 text-on-surface-variant">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-sm" data-icon="layers">layers</span>
+<span class="font-mono text-sm">4 projetos</span>
+</div>
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-sm" data-icon="square_foot">square_foot</span>
+<span class="font-mono text-sm">1.280 m²</span>
+</div>
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-sm" data-icon="schedule">schedule</span>
+<span class="font-mono text-sm">47.2h</span>
+</div>
+</div>
+</div>
+<!-- Focus Map Section -->
+<div class="grid grid-cols-12 gap-8">
+<!-- Main Task List (Column 8) -->
+<div class="col-span-12 lg:col-span-8">
+<div class="bg-surface-container border border-outline-variant rounded-xl overflow-hidden mb-8">
+<div class="px-6 py-4 border-b border-outline-variant flex justify-between items-center bg-surface-container-high">
+<div>
+<h3 class="text-xs font-bold text-primary tracking-widest uppercase mb-1">MAPA DE FOCO</h3>
+<p class="text-lg font-semibold">6 prioridades em sequência</p>
+</div>
+<div class="flex gap-2">
+<button class="p-2 border border-outline-variant rounded hover:bg-surface-container-highest transition-colors">
+<span class="material-symbols-outlined" data-icon="filter_list">filter_list</span>
+</button>
+<button class="p-2 border border-outline-variant rounded hover:bg-surface-container-highest transition-colors">
+<span class="material-symbols-outlined" data-icon="more_vert">more_vert</span>
+</button>
+</div>
+</div>
+<!-- Task List -->
+<div class="divide-y divide-outline-variant">
+<!-- Task #01 (Active Focus) -->
+<div class="p-6 flex items-start gap-6 bg-primary/5 group">
+<span class="font-mono text-4xl font-bold text-primary/40 mt-1">01</span>
+<div class="flex-grow">
+<div class="flex items-center gap-3 mb-1">
+<h4 class="text-base font-semibold">Detalhamento de escadaria helicoidal</h4>
+<span class="px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-purple-500/10 text-purple-400 border border-purple-500/20">Meu foco</span>
+</div>
+<p class="text-xs text-on-surface-variant uppercase tracking-wide mb-3">Projeto: Bloco A</p>
+<div class="flex gap-2 items-center">
+<span class="px-2 py-0.5 rounded text-[10px] font-bold uppercase bg-error/10 text-error border border-error/20">Alta</span>
+<span class="px-2 py-0.5 rounded text-[10px] font-bold uppercase bg-on-surface-variant/10 text-on-surface-variant border border-on-surface-variant/20">Complexo</span>
+</div>
+</div>
+<div class="flex flex-col items-end gap-3">
+<span class="font-mono text-sm text-error">vencida</span>
+<button class="w-10 h-10 rounded-full bg-primary flex items-center justify-center text-on-primary">
+<span class="material-symbols-outlined fill-current" data-icon="play_arrow" style="font-variation-settings: 'FILL' 1;">play_arrow</span>
+</button>
+</div>
+</div>
+<!-- Task #02 -->
+<div class="p-6 flex items-start gap-6 hover:bg-surface-container-highest transition-colors group">
+<span class="font-mono text-4xl font-bold text-on-surface-variant/20 mt-1">02</span>
+<div class="flex-grow">
+<div class="flex items-center gap-3 mb-1">
+<h4 class="text-base font-semibold">Revisão estrutural de vigas</h4>
+</div>
+<p class="text-xs text-on-surface-variant uppercase tracking-wide mb-3">Projeto: Bloco B</p>
+<div class="flex gap-2 items-center">
+<span class="px-2 py-0.5 rounded text-[10px] font-bold uppercase bg-primary/10 text-primary border border-primary/20">Média</span>
+<span class="px-2 py-0.5 rounded text-[10px] font-bold uppercase bg-on-surface-variant/10 text-on-surface-variant border border-on-surface-variant/20">Técnico</span>
+</div>
+</div>
+<div class="flex flex-col items-end gap-3">
+<span class="font-mono text-sm">2d</span>
+<button class="w-10 h-10 rounded-full border border-outline-variant flex items-center justify-center text-on-surface-variant hover:border-primary hover:text-primary">
+<span class="material-symbols-outlined" data-icon="play_arrow">play_arrow</span>
+</button>
+</div>
+</div>
+<!-- Task #03 -->
+<div class="p-6 flex items-start gap-6 hover:bg-surface-container-highest transition-colors group">
+<span class="font-mono text-4xl font-bold text-on-surface-variant/20 mt-1">03</span>
+<div class="flex-grow">
+<div class="flex items-center gap-3 mb-1">
+<h4 class="text-base font-semibold">Aprovação de layout guarita</h4>
+</div>
+<p class="text-xs text-on-surface-variant uppercase tracking-wide mb-3">Projeto: Guarita</p>
+<div class="flex gap-2 items-center">
+<span class="px-2 py-0.5 rounded text-[10px] font-bold uppercase bg-secondary-container text-on-secondary-container border border-outline-variant">Baixa</span>
+</div>
+</div>
+<div class="flex flex-col items-end gap-3">
+<span class="font-mono text-sm">4d</span>
+<button class="w-10 h-10 rounded-full border border-outline-variant flex items-center justify-center text-on-surface-variant hover:border-primary hover:text-primary">
+<span class="material-symbols-outlined" data-icon="play_arrow">play_arrow</span>
+</button>
+</div>
+</div>
+<!-- Task #04 -->
+<div class="p-6 flex items-start gap-6 hover:bg-surface-container-highest transition-colors group">
+<span class="font-mono text-4xl font-bold text-on-surface-variant/20 mt-1">04</span>
+<div class="flex-grow">
+<div class="flex items-center gap-3 mb-1">
+<h4 class="text-base font-semibold">Cálculo de impermeabilização</h4>
+</div>
+<p class="text-xs text-on-surface-variant uppercase tracking-wide mb-3">Projeto: Área de Lazer</p>
+<div class="flex gap-2 items-center">
+<span class="px-2 py-0.5 rounded text-[10px] font-bold uppercase bg-primary/10 text-primary border border-primary/20">Média</span>
+</div>
+</div>
+<div class="flex flex-col items-end gap-3">
+<span class="font-mono text-sm text-error">vencida</span>
+<button class="w-10 h-10 rounded-full border border-outline-variant flex items-center justify-center text-on-surface-variant hover:border-primary hover:text-primary">
+<span class="material-symbols-outlined" data-icon="play_arrow">play_arrow</span>
+</button>
+</div>
+</div>
+<!-- Task #05 -->
+<div class="p-6 flex items-start gap-6 hover:bg-surface-container-highest transition-colors group">
+<span class="font-mono text-4xl font-bold text-on-surface-variant/20 mt-1">05</span>
+<div class="flex-grow">
+<div class="flex items-center gap-3 mb-1">
+<h4 class="text-base font-semibold">Especificação de luminárias zenitais</h4>
+</div>
+<p class="text-xs text-on-surface-variant uppercase tracking-wide mb-3">Projeto: Bloco A</p>
+<div class="flex gap-2 items-center">
+<span class="px-2 py-0.5 rounded text-[10px] font-bold uppercase bg-secondary-container text-on-secondary-container border border-outline-variant">Baixa</span>
+</div>
+</div>
+<div class="flex flex-col items-end gap-3">
+<span class="font-mono text-sm">1w</span>
+<button class="w-10 h-10 rounded-full border border-outline-variant flex items-center justify-center text-on-surface-variant hover:border-primary hover:text-primary">
+<span class="material-symbols-outlined" data-icon="play_arrow">play_arrow</span>
+</button>
+</div>
+</div>
+<!-- Task #06 -->
+<div class="p-6 flex items-start gap-6 hover:bg-surface-container-highest transition-colors group">
+<span class="font-mono text-4xl font-bold text-on-surface-variant/20 mt-1">06</span>
+<div class="flex-grow">
+<div class="flex items-center gap-3 mb-1">
+<h4 class="text-base font-semibold">Desenho de bancadas gourmet</h4>
+</div>
+<p class="text-xs text-on-surface-variant uppercase tracking-wide mb-3">Projeto: Área de Lazer</p>
+<div class="flex gap-2 items-center">
+<span class="px-2 py-0.5 rounded text-[10px] font-bold uppercase bg-primary/10 text-primary border border-primary/20">Alta</span>
+</div>
+</div>
+<div class="flex flex-col items-end gap-3">
+<span class="font-mono text-sm">3d</span>
+<button class="w-10 h-10 rounded-full border border-outline-variant flex items-center justify-center text-on-surface-variant hover:border-primary hover:text-primary">
+<span class="material-symbols-outlined" data-icon="play_arrow">play_arrow</span>
+</button>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Blocked Sidebar (Column 4) -->
+<div class="col-span-12 lg:col-span-4">
+<div class="bg-error-container/10 border border-error/20 rounded-xl overflow-hidden sticky top-24">
+<div class="px-6 py-4 border-b border-error/20 bg-error-container/20 flex items-center gap-2">
+<span class="material-symbols-outlined text-error text-sm" data-icon="block">block</span>
+<h3 class="text-xs font-bold text-error tracking-widest uppercase">BLOQUEADAS</h3>
+</div>
+<div class="p-4 space-y-4">
+<div class="p-4 bg-surface-container border border-outline-variant rounded hover:border-error/40 transition-colors">
+<div class="flex justify-between mb-2">
+<span class="text-[10px] font-mono text-on-surface-variant">#BLQ-09</span>
+<span class="text-[10px] font-mono text-error">Aguardando cliente</span>
+</div>
+<h4 class="text-sm font-semibold mb-1">Aprovação de Revestimento (Área Molhada)</h4>
+<p class="text-[11px] text-on-surface-variant mb-3">O catálogo de pedras não foi entregue pela marmoraria.</p>
+<div class="flex justify-between items-center">
+<div class="flex -space-x-2">
+<div class="w-6 h-6 rounded-full border border-background bg-secondary-container overflow-hidden">
+<img class="w-full h-full object-cover" data-alt="portrait of a focused female engineer in a professional setting" src="https://lh3.googleusercontent.com/aida-public/AB6AXuByfWp6f9i0vFzGjJHLW5LJK5se03BFDAyAqMJJhfgGWTI4yBGKBvfEeC1T1WNOOhOgXyDGN75_hMaHeUvKUMEBRbDIwmYk0K7rEOGEibqEZBF369LpYh_iRQnkCmB3e0uB7mJAthmzfyhaNxVJAfxV1PVpVIDF_2ClrZ8f6zfsmsQGxJF14Z0FnPiUviTzgnozVB24BX3StVXz9h9ia59VeGNWU6KZbYbk-BRKbF75vVmUQ2oOoOhXHR8o7VaZZ-IskCpR5Y2NZxs"/>
+</div>
+</div>
+<span class="font-mono text-[10px] text-on-surface-variant">3 dias parado</span>
+</div>
+</div>
+<div class="p-4 bg-surface-container border border-outline-variant rounded hover:border-error/40 transition-colors">
+<div class="flex justify-between mb-2">
+<span class="text-[10px] font-mono text-on-surface-variant">#BLQ-12</span>
+<span class="text-[10px] font-mono text-error">Impedimento Técnico</span>
+</div>
+<h4 class="text-sm font-semibold mb-1">Cálculo de Carga (Guarita)</h4>
+<p class="text-[11px] text-on-surface-variant mb-3">Necessária sondagem complementar do solo no terreno inclinado.</p>
+<div class="flex justify-between items-center">
+<div class="flex -space-x-2">
+<div class="w-6 h-6 rounded-full border border-background bg-secondary-container overflow-hidden">
+<img class="w-full h-full object-cover" data-alt="professional portrait of a senior architect with architectural drawings in the background" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDPwmnBtjjzAQnYWEt0fOVHi3kcplbeUCLeEcCWKpI_yaGNrjN90S-FL5RiUsd8j0dB2iiQ7NvBWYTaBbFeKLC1X1pPWbBUOM_094KD8Vme4J1AOnaZwUmcJJpgm1f99Y-8v9KtQuZjsD8wF3kl7p3PH-qUNi8bGAw9curOCNgyafJOpQ1-Pb9pkRPXLyl6ycLm-EJHjd8sp0_hhruvtFZGaMfBQSHTVL-xqE0yHDY4sbeRp8NMaeuF3VU4XBSMuDiSgXknSfsdx8c"/>
+</div>
+</div>
+<span class="font-mono text-[10px] text-on-surface-variant">5 dias parado</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Small Stat Widget -->
+<div class="mt-8 bg-surface-container border border-outline-variant rounded-xl p-6">
+<h4 class="text-[10px] font-bold text-on-surface-variant tracking-widest uppercase mb-4">DESEMPENHO DO GRUPO</h4>
+<div class="space-y-4">
+<div>
+<div class="flex justify-between text-[11px] mb-1.5">
+<span>Conclusão de Sprint</span>
+<span class="font-mono">72%</span>
+</div>
+<div class="h-1 bg-[#2A2A2A] rounded-full overflow-hidden">
+<div class="h-full bg-primary" style="width: 72%"></div>
+</div>
+</div>
+<div class="grid grid-cols-2 gap-4 pt-2">
+<div class="p-3 border border-outline-variant rounded bg-surface-container-low">
+<p class="text-[10px] text-on-surface-variant uppercase mb-1">Entregas</p>
+<p class="font-mono text-lg font-bold">14/20</p>
+</div>
+<div class="p-3 border border-outline-variant rounded bg-surface-container-low">
+<p class="text-[10px] text-on-surface-variant uppercase mb-1">Gargalos</p>
+<p class="font-mono text-lg font-bold text-error">02</p>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</main>
+</body></html>

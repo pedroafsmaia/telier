@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="pt-BR"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=DM+Mono:wght@400;500&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "surface": "#0e0e0e",
+                        "primary": "#b6c4ff",
+                        "background": "#0e0e0e",
+                        "primary-dim": "#a3b5ff",
+                        "error-dim": "#b95463",
+                        "outline": "#767575",
+                        "surface-variant": "#252626",
+                        "on-background": "#e7e5e4",
+                        "on-primary-fixed": "#0033a2",
+                        "surface-tint": "#b6c4ff",
+                        "surface-dim": "#0e0e0e",
+                        "tertiary-dim": "#dacff0",
+                        "on-surface-variant": "#acabaa",
+                        "secondary-fixed": "#e4e2e1",
+                        "on-tertiary-container": "#554e69",
+                        "secondary-container": "#3b3b3b",
+                        "tertiary-fixed-dim": "#dacff0",
+                        "tertiary": "#f6eeff",
+                        "on-primary-fixed-variant": "#004be3",
+                        "on-error-container": "#ff97a3",
+                        "on-primary": "#0034a4",
+                        "surface-container": "#191a1a",
+                        "on-surface": "#e7e5e4",
+                        "inverse-on-surface": "#565554",
+                        "tertiary-fixed": "#e9ddff",
+                        "primary-fixed-dim": "#c9d2ff",
+                        "on-error": "#490013",
+                        "secondary-dim": "#9f9d9d",
+                        "on-secondary-fixed": "#3f3f3f",
+                        "secondary": "#9f9d9d",
+                        "on-secondary-container": "#c1bfbe",
+                        "on-secondary-fixed-variant": "#5c5b5b",
+                        "error": "#ec7c8a",
+                        "on-tertiary": "#5e5672",
+                        "inverse-primary": "#004eeb",
+                        "surface-container-high": "#1f2020",
+                        "primary-container": "#0039b3",
+                        "tertiary-container": "#e9ddff",
+                        "primary-fixed": "#dce1ff",
+                        "on-tertiary-fixed-variant": "#5f5773",
+                        "surface-container-low": "#131313",
+                        "surface-container-highest": "#252626",
+                        "on-primary-container": "#c4ceff",
+                        "inverse-surface": "#fcf8f8",
+                        "on-tertiary-fixed": "#433b56",
+                        "surface-container-lowest": "#000000",
+                        "error-container": "#7f2737",
+                        "outline-variant": "#484848",
+                        "surface-bright": "#2c2c2c",
+                        "on-secondary": "#202020",
+                        "secondary-fixed-dim": "#d6d4d3"
+                    },
+                    fontFamily: {
+                        "headline": ["Inter"],
+                        "body": ["Inter"],
+                        "label": ["Inter"],
+                        "mono": ["DM Mono"]
+                    },
+                    borderRadius: {"DEFAULT": "0.125rem", "lg": "0.25rem", "xl": "0.5rem", "full": "0.75rem"},
+                },
+            },
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+            vertical-align: middle;
+        }
+        body { font-family: 'Inter', sans-serif; }
+        .mono-text { font-family: 'DM Mono', monospace; }
+    </style>
+</head>
+<body class="bg-surface text-on-surface overflow-hidden">
+<!-- Top Navigation Bar -->
+<header class="fixed top-0 w-full border-b border-[#2A2A2A] bg-[#0e0e0e] flex justify-between items-center h-14 px-6 z-40">
+<div class="flex items-center gap-8">
+<span class="text-xl font-bold tracking-tighter text-white uppercase font-headline">Studio.Arch</span>
+<nav class="hidden md:flex items-center gap-6 font-medium text-sm tracking-tight text-gray-400">
+<a class="hover:text-white transition-colors duration-150 text-[#0055FF] border-b-2 border-[#0055FF] pb-1" href="#">Projects</a>
+<a class="hover:text-white transition-colors duration-150" href="#">Assets</a>
+<a class="hover:text-white transition-colors duration-150" href="#">Team</a>
+<a class="hover:text-white transition-colors duration-150" href="#">Settings</a>
+</nav>
+</div>
+<div class="flex items-center gap-4">
+<span class="material-symbols-outlined text-on-surface-variant cursor-pointer">notifications</span>
+<span class="material-symbols-outlined text-on-surface-variant cursor-pointer">account_circle</span>
+</div>
+</header>
+<!-- Side Navigation Bar -->
+<aside class="fixed left-0 top-14 h-[calc(100vh-3.5rem)] w-64 border-r border-[#2A2A2A] bg-[#131313] z-30 flex flex-col py-4 gap-2">
+<div class="px-6 mb-6">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 bg-primary-container rounded flex items-center justify-center">
+<span class="material-symbols-outlined text-white text-sm">architecture</span>
+</div>
+<div>
+<div class="text-white font-bold text-sm">Project Alpha</div>
+<div class="mono-text text-[11px] text-on-surface-variant">ID: 2940-X</div>
+</div>
+</div>
+</div>
+<nav class="flex flex-col gap-1">
+<div class="px-4 py-2 flex items-center gap-3 text-white bg-[#191a1a] border-l-4 border-[#0055FF]">
+<span class="material-symbols-outlined text-lg">dashboard</span>
+<span class="text-xs font-semibold">Dashboard</span>
+</div>
+<div class="px-4 py-2 flex items-center gap-3 text-gray-500 hover:bg-[#1f2020] hover:text-white transition-all cursor-pointer">
+<span class="material-symbols-outlined text-lg">architecture</span>
+<span class="text-xs font-semibold">Floor Plans</span>
+</div>
+<div class="px-4 py-2 flex items-center gap-3 text-gray-500 hover:bg-[#1f2020] hover:text-white transition-all cursor-pointer">
+<span class="material-symbols-outlined text-lg">layers</span>
+<span class="text-xs font-semibold">3D Models</span>
+</div>
+<div class="px-4 py-2 flex items-center gap-3 text-gray-500 hover:bg-[#1f2020] hover:text-white transition-all cursor-pointer">
+<span class="material-symbols-outlined text-lg">description</span>
+<span class="text-xs font-semibold">Documents</span>
+</div>
+<div class="px-4 py-2 flex items-center gap-3 text-white bg-[#191a1a] border-l-4 border-[#0055FF]">
+<span class="material-symbols-outlined text-lg">group</span>
+<span class="text-xs font-semibold">Collaborators</span>
+</div>
+</nav>
+<div class="mt-auto px-4 flex flex-col gap-1">
+<div class="px-4 py-2 flex items-center gap-3 text-gray-500 hover:bg-[#1f2020] hover:text-white transition-all cursor-pointer">
+<span class="material-symbols-outlined text-lg">archive</span>
+<span class="text-xs font-semibold">Archive</span>
+</div>
+<div class="px-4 py-2 flex items-center gap-3 text-gray-500 hover:bg-[#1f2020] hover:text-white transition-all cursor-pointer">
+<span class="material-symbols-outlined text-lg">help</span>
+<span class="text-xs font-semibold">Support</span>
+</div>
+</div>
+</aside>
+<!-- Main Content Canvas (Project Details) -->
+<main class="ml-64 mt-14 p-8 h-[calc(100vh-3.5rem)] overflow-y-auto bg-surface">
+<div class="max-w-6xl mx-auto">
+<!-- Breadcrumbs -->
+<div class="flex items-center gap-2 mb-6 text-xs font-mono text-on-surface-variant tracking-wider uppercase">
+<span>Projects</span>
+<span class="material-symbols-outlined text-xs">chevron_right</span>
+<span class="text-white">Residência Silva</span>
+</div>
+<!-- Project Hero Section -->
+<div class="grid grid-cols-12 gap-8 mb-12">
+<div class="col-span-8">
+<h1 class="text-5xl font-bold tracking-tight mb-4 text-on-surface">Residência Silva</h1>
+<p class="text-on-surface-variant text-lg max-w-2xl leading-relaxed">Single-family residential project located in the hills of Nova Lima. Focus on concrete brutalism and integrated landscape architecture.</p>
+</div>
+<div class="col-span-4 flex flex-col justify-end items-end gap-2">
+<div class="flex items-center gap-2 bg-[#191a1a] border border-outline-variant px-3 py-1 rounded">
+<span class="w-2 h-2 rounded-full bg-[#0055FF]"></span>
+<span class="text-xs font-mono uppercase tracking-widest">In Progress</span>
+</div>
+<div class="text-right">
+<span class="text-xs text-on-surface-variant uppercase font-semibold">Last updated:</span>
+<span class="block mono-text text-sm">2023.10.24 14:30</span>
+</div>
+</div>
+</div>
+<!-- Visual Content Grid -->
+<div class="grid grid-cols-3 gap-6 mb-12">
+<div class="aspect-video bg-surface-container border border-outline-variant overflow-hidden rounded-lg group relative">
+<img class="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all duration-500" data-alt="Modern minimalist architectural house with concrete walls and large glass windows at twilight" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDIpTziQ7ZnCFpbZ5YitxBiZBOACs1Vae1g1etUb4Xi8Q5v8KN8-mape_ftZjU5f-9ZAZskQrEsRO_EgV0sJEdkaPBLrQP24Q7O8sg_u0J728nlnyyjiX49qnIpDQzzpPXyHHGLwqpvfae0FQj_lKmrP_IIS5XD_7Itw1DyHyomxO-FCLS6lC6ePouEKQLa9Kz5fNN5pyw523Ha_Reu8x5wlFf7PpO7UdPD9wN8Q9LKNpewpMu7by02_OSzSJM14zZyy_lnFms0InQ"/>
+<div class="absolute bottom-4 left-4 font-mono text-[10px] bg-black/60 px-2 py-1">EXT_01.JPG</div>
+</div>
+<div class="aspect-video bg-surface-container border border-outline-variant overflow-hidden rounded-lg group relative">
+<img class="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all duration-500" data-alt="Interior architectural shot of a minimalist living room with raw concrete columns and warm wood floors" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDR68wieV34ItIk3YICcsGVJZGEY4LJbC2VdEbni8l_6t142cc82U5AjY2ildhghl3Cl-m7RXR6r5ny-oRwBhVSKgIsob8ao6wu-aNpz4Fq_x03uFI5tGDPyT_4XpJgnG8ggN-R6eocBQRTZlnIHRTjf6pdoQcQX2zDOLdQWYBeIbi1Y9caymwplORC9rNZCvXt8kuBtgYWe-urvPDfUV7dsIvOEY7cr90IljO4yJV7m4pB2ie3HmAybt58aia85xEXYksYEo17wa8"/>
+<div class="absolute bottom-4 left-4 font-mono text-[10px] bg-black/60 px-2 py-1">INT_04.JPG</div>
+</div>
+<div class="aspect-video bg-surface-container border border-outline-variant overflow-hidden rounded-lg group relative">
+<img class="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all duration-500" data-alt="Architectural site plan drawing with technical lines and measurements on a dark screen" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDghUZel6TNgT0gFgzOiJd92QyXivyMDx8jMYOyi3Gj2GLyBQTZkn8TomU6Hie0s-hb_oPwEMMgmj9Hk2NtZ2Yn56gRy5JberrwPamjDXpnq43XCIS3LWNR6M8UkJtdIgb3UWqfvqUeTESvzeosr5vnEmn1VfzIi2RjSf3kG3spdE98eSutlqgH0TDPkCEE8KIMt8fsBWVHiqKLo-yIJPvnZ-3cyK0O-hMynv01s4uSPaHbmS0Cc46kUsJek1A3myeUQneeb676qwQ"/>
+<div class="absolute bottom-4 left-4 font-mono text-[10px] bg-black/60 px-2 py-1">SITE_PLAN_V2.DWG</div>
+</div>
+</div>
+<!-- Bento Grid Stats -->
+<div class="grid grid-cols-4 gap-4">
+<div class="p-6 border border-outline-variant bg-surface-container rounded-lg">
+<div class="text-xs uppercase text-on-surface-variant font-semibold mb-2">Area Total</div>
+<div class="mono-text text-3xl font-medium">450.00 <span class="text-sm">m²</span></div>
+</div>
+<div class="p-6 border border-outline-variant bg-surface-container rounded-lg">
+<div class="text-xs uppercase text-on-surface-variant font-semibold mb-2">Budget Status</div>
+<div class="mono-text text-3xl font-medium">72%</div>
+<div class="w-full bg-surface-container-high h-1 mt-3">
+<div class="bg-primary h-full w-[72%]"></div>
+</div>
+</div>
+<div class="p-6 border border-outline-variant bg-surface-container rounded-lg">
+<div class="text-xs uppercase text-on-surface-variant font-semibold mb-2">Deadlines</div>
+<div class="mono-text text-3xl font-medium">04</div>
+<div class="text-[10px] text-error mt-2 font-mono">1 CRITICAL</div>
+</div>
+<div class="p-6 border border-outline-variant bg-surface-container rounded-lg">
+<div class="text-xs uppercase text-on-surface-variant font-semibold mb-2">Revision</div>
+<div class="mono-text text-3xl font-medium">v1.2</div>
+</div>
+</div>
+</div>
+</main>
+<!-- MODAL OVERLAY -->
+<div class="fixed inset-0 z-[60] flex items-center justify-center bg-black/80 backdrop-blur-none">
+<div class="w-full max-w-[600px] bg-surface-container-high border border-outline-variant rounded-xl overflow-hidden animate-in fade-in zoom-in duration-200 shadow-2xl">
+<!-- Modal Header -->
+<div class="px-8 pt-8 pb-4">
+<h2 class="text-2xl font-bold tracking-tight text-white mb-2 font-headline">Colaboradores do projeto</h2>
+<p class="text-on-surface-variant text-sm leading-relaxed">
+                    Acesso manual vale só neste projeto. Acesso herdado vem do grupo atual e deve ser gerenciado na janela do grupo.
+                </p>
+</div>
+<!-- Collaborator List -->
+<div class="px-8 py-4 space-y-4">
+<!-- User 1 -->
+<div class="flex items-center justify-between py-2">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-full bg-surface-container-highest flex items-center justify-center border border-outline-variant">
+<span class="text-xs font-bold">JS</span>
+</div>
+<div>
+<div class="text-sm font-semibold text-white">João Silva</div>
+<div class="mono-text text-[11px] text-[#0055FF]">@joao.silva</div>
+</div>
+</div>
+<div class="flex items-center gap-4">
+<span class="px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-primary-container/20 border border-primary-container/40 text-primary-dim">Manual</span>
+<button class="text-on-surface-variant hover:text-error transition-colors">
+<span class="material-symbols-outlined text-lg">close</span>
+</button>
+</div>
+</div>
+<!-- User 2 -->
+<div class="flex items-center justify-between py-2">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-full bg-surface-container-highest flex items-center justify-center border border-outline-variant">
+<span class="text-xs font-bold">MC</span>
+</div>
+<div>
+<div class="text-sm font-semibold text-white">Maria Costa</div>
+<div class="mono-text text-[11px] text-[#0055FF]">@maria.c</div>
+</div>
+</div>
+<div class="flex items-center gap-4">
+<div class="text-right">
+<span class="px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-secondary-container border border-outline-variant text-secondary-dim">Herdado do grupo</span>
+<div class="text-[9px] text-on-surface-variant mt-1">Remova no grupo para revogar</div>
+</div>
+</div>
+</div>
+<!-- User 3 -->
+<div class="flex items-center justify-between py-2">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-full bg-surface-container-highest flex items-center justify-center border border-outline-variant">
+<span class="text-xs font-bold">PO</span>
+</div>
+<div>
+<div class="text-sm font-semibold text-white">Pedro Oliveira</div>
+<div class="mono-text text-[11px] text-[#0055FF]">@pedro.o</div>
+</div>
+</div>
+<div class="flex items-center gap-4">
+<span class="px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-primary-container/20 border border-primary-container/40 text-primary-dim">Manual</span>
+<button class="text-on-surface-variant hover:text-error transition-colors">
+<span class="material-symbols-outlined text-lg">close</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Separator -->
+<div class="border-t border-outline-variant mx-8 my-2"></div>
+<!-- Add Collaborator Section -->
+<div class="px-8 py-6">
+<label class="block text-xs font-bold uppercase tracking-widest text-on-surface-variant mb-3">Adicionar colaborador</label>
+<div class="flex gap-3">
+<div class="relative flex-1">
+<div class="w-full bg-surface-container-low border border-outline-variant rounded-lg h-12 flex items-center px-4 gap-3 cursor-pointer hover:border-primary transition-colors">
+<div class="w-7 h-7 rounded-full bg-surface-container flex items-center justify-center border border-outline-variant">
+<span class="material-symbols-outlined text-sm text-on-surface-variant">person_add</span>
+</div>
+<div class="flex-1">
+<span class="text-sm text-on-surface-variant">Selecione ou busque...</span>
+</div>
+<span class="material-symbols-outlined text-on-surface-variant">expand_more</span>
+</div>
+</div>
+<button class="bg-primary text-on-primary font-bold px-6 rounded-lg hover:bg-primary-dim transition-colors h-12 flex items-center">
+                        Adicionar
+                    </button>
+</div>
+</div>
+<!-- Modal Footer -->
+<div class="px-8 py-6 bg-surface-container flex justify-end">
+<button class="px-6 py-2 rounded-lg border border-outline-variant text-white font-semibold hover:bg-surface-container-high transition-colors">
+                    Fechar
+                </button>
+</div>
+</div>
+</div>
+</body></html>

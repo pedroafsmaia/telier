@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="pt-br"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=DM+Mono:wght@400;500&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "on-secondary": "#202020",
+                        "outline-variant": "#484848",
+                        "surface-container-highest": "#252626",
+                        "background": "#0e0e0e",
+                        "on-primary": "#0034a4",
+                        "surface-variant": "#252626",
+                        "on-secondary-fixed-variant": "#5c5b5b",
+                        "secondary-container": "#3b3b3b",
+                        "inverse-primary": "#004eeb",
+                        "surface": "#0e0e0e",
+                        "tertiary-fixed-dim": "#dacff0",
+                        "secondary-dim": "#9f9d9d",
+                        "outline": "#767575",
+                        "on-secondary-fixed": "#3f3f3f",
+                        "secondary-fixed-dim": "#d6d4d3",
+                        "on-tertiary-container": "#554e69",
+                        "error-dim": "#b95463",
+                        "tertiary": "#f6eeff",
+                        "surface-container-low": "#131313",
+                        "on-secondary-container": "#c1bfbe",
+                        "on-tertiary-fixed": "#433b56",
+                        "surface-dim": "#0e0e0e",
+                        "tertiary-dim": "#dacff0",
+                        "inverse-surface": "#fcf8f8",
+                        "tertiary-container": "#e9ddff",
+                        "secondary": "#9f9d9d",
+                        "primary-fixed": "#dce1ff",
+                        "on-primary-fixed": "#0033a2",
+                        "primary-container": "#0039b3",
+                        "surface-container-lowest": "#000000",
+                        "error": "#ec7c8a",
+                        "on-error": "#490013",
+                        "surface-container-high": "#1f2020",
+                        "primary-dim": "#a3b5ff",
+                        "on-surface": "#e7e5e4",
+                        "error-container": "#7f2737",
+                        "on-tertiary": "#5e5672",
+                        "on-error-container": "#ff97a3",
+                        "on-tertiary-fixed-variant": "#5f5773",
+                        "primary": "#b6c4ff",
+                        "primary-fixed-dim": "#c9d2ff",
+                        "surface-bright": "#2c2c2c",
+                        "tertiary-fixed": "#e9ddff",
+                        "on-primary-container": "#c4ceff",
+                        "secondary-fixed": "#e4e2e1",
+                        "inverse-on-surface": "#565554",
+                        "on-background": "#e7e5e4",
+                        "on-primary-fixed-variant": "#004be3",
+                        "surface-tint": "#b6c4ff",
+                        "on-surface-variant": "#acabaa",
+                        "surface-container": "#191a1a"
+                    },
+                    fontFamily: {
+                        "headline": ["Inter"],
+                        "body": ["Inter"],
+                        "label": ["Inter"],
+                        "mono": ["DM Mono"]
+                    },
+                    borderRadius: {"DEFAULT": "0.125rem", "lg": "0.25rem", "xl": "0.5rem", "full": "0.75rem"},
+                },
+            },
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+            vertical-align: middle;
+        }
+        .timeline-grid {
+            background-image: linear-gradient(to right, #2A2A2A 1px, transparent 1px);
+            background-size: calc(100% / 6) 100%;
+        }
+    </style>
+</head>
+<body class="bg-background text-on-surface font-body selection:bg-primary selection:text-on-primary">
+<!-- SideNavBar Shell -->
+<aside class="fixed left-0 top-0 h-full flex flex-col bg-[#131313] h-screen w-64 border-r border-[#2A2A2A] z-50">
+<div class="p-6 flex flex-col gap-1">
+<span class="text-xl font-bold tracking-tighter text-white">TELIER</span>
+<span class="text-[10px] text-gray-500 font-mono tracking-widest uppercase">Studio Admin</span>
+</div>
+<nav class="flex-1 px-2 space-y-1">
+<a class="flex items-center gap-3 py-3 text-gray-400 hover:text-white pl-4 transition-colors hover:bg-[#191a1a] transition-all" href="#">
+<span class="material-symbols-outlined" data-icon="dashboard">dashboard</span>
+<span class="text-sm font-medium">Dashboard</span>
+</a>
+<a class="flex items-center gap-3 py-3 text-gray-400 hover:text-white pl-4 transition-colors hover:bg-[#191a1a] transition-all" href="#">
+<span class="material-symbols-outlined" data-icon="architecture">architecture</span>
+<span class="text-sm font-medium">Projects</span>
+</a>
+<a class="flex items-center gap-3 py-3 text-gray-400 hover:text-white pl-4 transition-colors hover:bg-[#191a1a] transition-all" href="#">
+<span class="material-symbols-outlined" data-icon="analytics">analytics</span>
+<span class="text-sm font-medium">Resource Library</span>
+</a>
+<a class="flex items-center gap-3 py-3 text-gray-400 hover:text-white pl-4 transition-colors hover:bg-[#191a1a] transition-all" href="#">
+<span class="material-symbols-outlined" data-icon="payments">payments</span>
+<span class="text-sm font-medium">Financials</span>
+</a>
+<a class="flex items-center gap-3 py-3 text-gray-400 hover:text-white pl-4 transition-colors hover:bg-[#191a1a] transition-all" href="#">
+<span class="material-symbols-outlined" data-icon="group">group</span>
+<span class="text-sm font-medium">Staffing</span>
+</a>
+<a class="flex items-center gap-3 py-3 text-[#0055FF] font-bold border-l-2 border-[#0055FF] pl-4 bg-[#191a1a]/50" href="#">
+<span class="material-symbols-outlined" data-icon="settings">settings</span>
+<span class="text-sm font-medium">Settings</span>
+</a>
+</nav>
+<div class="mt-auto p-4 space-y-2 border-t border-[#2A2A2A]">
+<button class="w-full bg-[#0055FF] text-white py-2 px-4 rounded-lg text-sm font-bold flex items-center justify-center gap-2 mb-4 transition-transform active:scale-95">
+<span class="material-symbols-outlined text-sm" data-icon="add">add</span>
+                New Project
+            </button>
+<a class="flex items-center gap-3 py-2 text-gray-500 hover:text-white text-xs transition-colors" href="#">
+<span class="material-symbols-outlined text-base" data-icon="help">help</span>
+                Support
+            </a>
+<a class="flex items-center gap-3 py-2 text-gray-500 hover:text-white text-xs transition-colors" href="#">
+<span class="material-symbols-outlined text-base" data-icon="logout">logout</span>
+                Sign Out
+            </a>
+</div>
+</aside>
+<!-- TopAppBar Shell -->
+<header class="flex items-center justify-between px-8 ml-64 w-[calc(100%-16rem)] w-full h-16 border-b border-[#2A2A2A] bg-[#0e0e0e] z-40 fixed top-0">
+<div class="flex items-center gap-6">
+<div class="flex items-center text-xs text-on-surface-variant font-medium gap-2">
+<span>Projetos</span>
+<span class="material-symbols-outlined text-xs" data-icon="chevron_right">chevron_right</span>
+<span class="text-on-surface">Central admin</span>
+</div>
+</div>
+<div class="flex items-center gap-4">
+<span class="material-symbols-outlined text-on-surface-variant hover:text-white cursor-pointer" data-icon="history">history</span>
+<span class="material-symbols-outlined text-on-surface-variant hover:text-white cursor-pointer" data-icon="notifications">notifications</span>
+<div class="w-8 h-8 rounded-full overflow-hidden border border-outline-variant">
+<img alt="Administrator Profile" class="w-full h-full object-cover" data-alt="professional portrait of a senior architect in a minimalist studio setting with architectural models in background" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDMCBRJBc9qrLQjphzCPi3l_yB6KMgRPASjmPDSUsf-HpMnq7w2lNs0sKzFuWHdVvOMjHtuXnu5R8D5jwlFu2kZGMjD77PdQFQNMtrEo8d5zY3XSXjegA9kiQoXHw8sJ4pvvOEhosP-66bTRtC7_sqBWcUng8xa6Cir28wlD6-Pg55pzgVpb1BBsG6slxn-DH2_I1sxLBjVJQvuWJO42WUKvR8AqZmAktIYTAR7MIF_KqSFY52jlHsBwPgz4UfG4GGjOocgE19qzB0"/>
+</div>
+</div>
+</header>
+<!-- Main Content Canvas -->
+<main class="ml-64 mt-16 p-8 min-h-screen">
+<!-- Header Section -->
+<div class="mb-8">
+<h1 class="text-3xl font-semibold tracking-tight text-white mb-6">Central admin</h1>
+<!-- Tabs Navigation -->
+<div class="flex border-b border-outline-variant gap-8 overflow-x-auto scrollbar-hide">
+<button class="pb-4 text-sm font-medium border-b-2 border-[#0055FF] text-[#0055FF] px-1 transition-colors whitespace-nowrap">Agora</button>
+<button class="pb-4 text-sm font-medium border-b-2 border-transparent text-on-surface-variant hover:text-on-surface px-1 transition-colors whitespace-nowrap">Usuários</button>
+<button class="pb-4 text-sm font-medium border-b-2 border-transparent text-on-surface-variant hover:text-on-surface px-1 transition-colors whitespace-nowrap">Projetos</button>
+<button class="pb-4 text-sm font-medium border-b-2 border-transparent text-on-surface-variant hover:text-on-surface px-1 transition-colors whitespace-nowrap">Tempo</button>
+<button class="pb-4 text-sm font-medium border-b-2 border-transparent text-on-surface-variant hover:text-on-surface px-1 transition-colors whitespace-nowrap">Grupos</button>
+</div>
+</div>
+<!-- KPI Grid -->
+<div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-10">
+<div class="bg-surface-container border border-outline-variant p-5 rounded-lg">
+<p class="text-[10px] uppercase tracking-widest text-on-surface-variant mb-2">Sessões ativas</p>
+<div class="flex items-baseline gap-2">
+<span class="text-3xl font-mono font-medium text-[#22c55e]">3</span>
+<span class="w-2 h-2 rounded-full bg-[#22c55e] animate-pulse"></span>
+</div>
+</div>
+<div class="bg-surface-container border border-outline-variant p-5 rounded-lg">
+<p class="text-[10px] uppercase tracking-widest text-on-surface-variant mb-2">Horas hoje</p>
+<span class="text-3xl font-mono font-medium text-on-surface">12.4h</span>
+</div>
+<div class="bg-surface-container border border-outline-variant p-5 rounded-lg">
+<p class="text-[10px] uppercase tracking-widest text-on-surface-variant mb-2">Projetos ativos</p>
+<span class="text-3xl font-mono font-medium text-on-surface">8</span>
+</div>
+<div class="bg-surface-container border border-outline-variant p-5 rounded-lg">
+<p class="text-[10px] uppercase tracking-widest text-on-surface-variant mb-2">Tarefas em andamento</p>
+<span class="text-3xl font-mono font-medium text-on-surface">23</span>
+</div>
+</div>
+<div class="grid grid-cols-1 xl:grid-cols-3 gap-8">
+<!-- Timeline Section -->
+<div class="xl:col-span-2 space-y-4">
+<div class="flex items-center justify-between mb-4">
+<h2 class="text-sm font-bold uppercase tracking-widest text-on-surface-variant">Timeline do dia</h2>
+<span class="text-[10px] font-mono text-outline uppercase tracking-tighter">Hoje, 24 Out</span>
+</div>
+<div class="bg-surface-container border border-outline-variant rounded-lg p-6">
+<div class="relative">
+<!-- User Rows -->
+<div class="space-y-6">
+<!-- Joao Silva -->
+<div class="flex items-center">
+<span class="w-[120px] text-xs font-medium text-on-surface truncate pr-4">Joao Silva</span>
+<div class="flex-1 h-3 bg-surface-container-low relative timeline-grid rounded-full overflow-hidden">
+<div class="absolute left-[10%] w-[35%] h-full bg-[#0055FF]"></div>
+<div class="absolute left-[50%] w-[15%] h-full bg-[#22c55e]"></div>
+</div>
+<span class="w-[60px] text-right font-mono text-xs text-on-surface-variant pl-4">6.2h</span>
+</div>
+<!-- Maria Oliveira -->
+<div class="flex items-center">
+<span class="w-[120px] text-xs font-medium text-on-surface truncate pr-4">Maria Oliveira</span>
+<div class="flex-1 h-3 bg-surface-container-low relative timeline-grid rounded-full overflow-hidden">
+<div class="absolute left-[5%] w-[45%] h-full bg-[#ec7c8a]"></div>
+<div class="absolute left-[60%] w-[20%] h-full bg-[#0055FF]"></div>
+</div>
+<span class="w-[60px] text-right font-mono text-xs text-on-surface-variant pl-4">5.8h</span>
+</div>
+<!-- Ricardo Weber -->
+<div class="flex items-center">
+<span class="w-[120px] text-xs font-medium text-on-surface truncate pr-4">Ricardo Weber</span>
+<div class="flex-1 h-3 bg-surface-container-low relative timeline-grid rounded-full overflow-hidden">
+<div class="absolute left-[15%] w-[25%] h-full bg-[#dacff0]"></div>
+<div class="absolute left-[45%] w-[35%] h-full bg-[#0055FF]"></div>
+</div>
+<span class="w-[60px] text-right font-mono text-xs text-on-surface-variant pl-4">4.1h</span>
+</div>
+<!-- Ana Pereira -->
+<div class="flex items-center">
+<span class="w-[120px] text-xs font-medium text-on-surface truncate pr-4">Ana Pereira</span>
+<div class="flex-1 h-3 bg-surface-container-low relative timeline-grid rounded-full overflow-hidden">
+<div class="absolute left-[0%] w-[30%] h-full bg-[#0055FF]"></div>
+<div class="absolute left-[70%] w-[10%] h-full bg-[#22c55e]"></div>
+</div>
+<span class="w-[60px] text-right font-mono text-xs text-on-surface-variant pl-4">3.4h</span>
+</div>
+</div>
+<!-- Time Axis -->
+<div class="mt-6 pt-4 border-t border-[#2A2A2A] flex justify-between ml-[120px] mr-[60px]">
+<span class="text-[10px] font-mono text-outline">08h</span>
+<span class="text-[10px] font-mono text-outline">10h</span>
+<span class="text-[10px] font-mono text-outline">12h</span>
+<span class="text-[10px] font-mono text-outline">14h</span>
+<span class="text-[10px] font-mono text-outline">16h</span>
+<span class="text-[10px] font-mono text-outline">18h</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Active Sessions List -->
+<div class="space-y-4">
+<h2 class="text-sm font-bold uppercase tracking-widest text-on-surface-variant">Sessões ativas agora</h2>
+<div class="space-y-3">
+<!-- Session Item 1 -->
+<div class="bg-surface-container border border-outline-variant p-4 rounded-lg flex items-center justify-between group hover:border-[#0055FF]/40 transition-colors">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-lg overflow-hidden border border-outline-variant">
+<img alt="Joao Silva" class="w-full h-full object-cover" data-alt="close up headshot of a professional man wearing designer glasses in a studio with soft geometric lighting" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBcyoX66cQZ3FFsfCWRBsGJgbyRwqDQkzzu2fkfXK9YH-5VSVkZN2YwaBKyf0aVRm5ykOHFLlgiX-uRuTBvk_yu2OEeMQkzpml2eXqoJvYMHKgVinOR1HcpT9-ekPTbilnvsVZqvBRsiVBj_6cEDWr0Is_u1UHpZ6a7PGfNSKWPV5f6NCKlF8HCSJeLgLTnSLMkHWEQiph8FdMTM44Wasjix6SnkSkVIEZRa4WaoaI8gDXJ1VF_8NSNM9ClYrqWQr4FY60f-07to9E"/>
+</div>
+<div>
+<h4 class="text-sm font-semibold text-white">Joao Silva</h4>
+<p class="text-xs text-[#0055FF]">Detalhamento Executivo</p>
+<p class="text-[10px] text-on-surface-variant">Residência Vale do Sol</p>
+</div>
+</div>
+<div class="text-right flex flex-col items-end gap-1">
+<div class="flex items-center gap-2">
+<span class="w-2 h-2 rounded-full bg-[#22c55e] animate-pulse"></span>
+<span class="font-mono text-sm text-[#22c55e]">02:45:12</span>
+</div>
+<span class="text-[9px] font-mono text-outline uppercase tracking-tighter">Iniciou às 14:12</span>
+</div>
+</div>
+<!-- Session Item 2 -->
+<div class="bg-surface-container border border-outline-variant p-4 rounded-lg flex items-center justify-between group hover:border-[#0055FF]/40 transition-colors">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-lg overflow-hidden border border-outline-variant">
+<img alt="Ana Pereira" class="w-full h-full object-cover" data-alt="modern minimalist portrait of a woman architect with clean composition and dramatic architectural shadow play" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCPRhvMV6iZzKJ_pe4tGvG73KDxoJXZPzAan0JyKNP5ywpKTR5ybvZ-Vbf3R8MDU77tRexXcTPsyCliGxDrjz7cZSnbUwHkf6bnWTfQa3JPeW3zrrkzSmyJtZS-S6YYbrr7sV1q753xsq113LYWuLEuasu1NsP4moqO_HGeA6o0u8vr-MM1ShM1xZr6e890_lN7JV-ZuD0hqx48T4hiUghlL7pXLLx8yPt7BdfbJJo3BU9ZUYtM4q3t2YQX5Z9jlgHCM-Dt8AqnJQ8"/>
+</div>
+<div>
+<h4 class="text-sm font-semibold text-white">Ana Pereira</h4>
+<p class="text-xs text-[#0055FF]">Modelagem 3D</p>
+<p class="text-[10px] text-on-surface-variant">Edifício Monumental</p>
+</div>
+</div>
+<div class="text-right flex flex-col items-end gap-1">
+<div class="flex items-center gap-2">
+<span class="w-2 h-2 rounded-full bg-[#22c55e] animate-pulse"></span>
+<span class="font-mono text-sm text-[#22c55e]">00:15:44</span>
+</div>
+<span class="text-[9px] font-mono text-outline uppercase tracking-tighter">Iniciou às 16:41</span>
+</div>
+</div>
+<!-- Session Item 3 -->
+<div class="bg-surface-container border border-outline-variant p-4 rounded-lg flex items-center justify-between group hover:border-[#0055FF]/40 transition-colors opacity-90">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-lg overflow-hidden border border-outline-variant">
+<img alt="Maria Oliveira" class="w-full h-full object-cover" data-alt="professional architectural designer working at a clean desk with blueprints, soft high-key lighting" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAlK6IisWjepCDELLLwmbpO4KWfWMstu75a5dPmgP4W_onOU1MxoCgeIlEx5OLoHQmoD6r_FD5nMck-G_-Lid0tQNe0O4iWJVUP87_8s3gahO0N0NzoChf0y6ILfzvgD03rgyAE4_H5D37xgkGwL4lM_QoQJ_myvJraVMqlabgS0WmgVSMF2BnBA9nJytcAQ_u0FL7K75dKuP5nrrYBjLkfwVnQyvlA6RfRXqi3i8FhGTD94JGcRcAf6THhacwGR_Ow_B6TCl08hgA"/>
+</div>
+<div>
+<h4 class="text-sm font-semibold text-white">Maria Oliveira</h4>
+<p class="text-xs text-[#0055FF]">Revisão de Plantas</p>
+<p class="text-[10px] text-on-surface-variant">Condomínio Vertical</p>
+</div>
+</div>
+<div class="text-right flex flex-col items-end gap-1">
+<div class="flex items-center gap-2">
+<span class="w-2 h-2 rounded-full bg-[#22c55e] animate-pulse"></span>
+<span class="font-mono text-sm text-[#22c55e]">05:22:01</span>
+</div>
+<span class="text-[9px] font-mono text-outline uppercase tracking-tighter">Iniciou às 11:34</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+</main>
+</body></html>

@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="pt-BR"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Studio Alpha | Residencial Alto da Serra - Ao Vivo</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&amp;family=DM+Mono:wght@400;500&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary-fixed": "#dce1ff",
+                        "on-secondary-container": "#c1bfbe",
+                        "on-primary-fixed": "#0033a2",
+                        "surface-container": "#191a1a",
+                        "on-tertiary": "#5e5672",
+                        "inverse-surface": "#fcf8f8",
+                        "on-secondary": "#202020",
+                        "surface-container-high": "#1f2020",
+                        "on-surface": "#e7e5e4",
+                        "on-error": "#490013",
+                        "on-tertiary-fixed": "#433b56",
+                        "primary-container": "#0039b3",
+                        "primary-fixed-dim": "#c9d2ff",
+                        "tertiary-fixed": "#e9ddff",
+                        "tertiary": "#f6eeff",
+                        "primary": "#b6c4ff",
+                        "background": "#0e0e0e",
+                        "surface-container-highest": "#252626",
+                        "secondary-fixed-dim": "#d6d4d3",
+                        "surface-container-low": "#131313",
+                        "surface-bright": "#2c2c2c",
+                        "error": "#ec7c8a",
+                        "secondary-dim": "#9f9d9d",
+                        "tertiary-container": "#e9ddff",
+                        "secondary-fixed": "#e4e2e1",
+                        "tertiary-dim": "#dacff0",
+                        "on-tertiary-fixed-variant": "#5f5773",
+                        "inverse-on-surface": "#565554",
+                        "surface-tint": "#b6c4ff",
+                        "on-primary-fixed-variant": "#004be3",
+                        "on-tertiary-container": "#554e69",
+                        "error-container": "#7f2737",
+                        "surface-dim": "#0e0e0e",
+                        "tertiary-fixed-dim": "#dacff0",
+                        "inverse-primary": "#004eeb",
+                        "on-error-container": "#ff97a3",
+                        "surface-variant": "#252626",
+                        "surface": "#0e0e0e",
+                        "on-surface-variant": "#acabaa",
+                        "on-primary-container": "#c4ceff",
+                        "on-primary": "#0034a4",
+                        "secondary-container": "#3b3b3b",
+                        "on-secondary-fixed-variant": "#5c5b5b",
+                        "outline-variant": "#484848",
+                        "surface-container-lowest": "#000000",
+                        "secondary": "#9f9d9d",
+                        "error-dim": "#b95463",
+                        "on-background": "#e7e5e4",
+                        "on-secondary-fixed": "#3f3f3f",
+                        "primary-dim": "#a3b5ff",
+                        "outline": "#767575"
+                    },
+                    fontFamily: {
+                        "headline": ["Inter"],
+                        "body": ["Inter"],
+                        "label": ["Inter"],
+                        "mono": ["DM Mono"]
+                    },
+                    borderRadius: { "DEFAULT": "0.125rem", "lg": "0.25rem", "xl": "0.5rem", "full": "0.75rem" },
+                },
+            },
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .active-glow {
+            box-shadow: 0 0 8px rgba(34, 197, 94, 0.4);
+        }
+    </style>
+</head>
+<body class="bg-background text-on-surface font-body overflow-hidden">
+<!-- SideNavBar -->
+<aside class="flex flex-col h-screen fixed left-0 top-0 z-40 bg-[#131313] w-64 border-r border-[#2A2A2A]">
+<div class="p-6 flex items-center gap-3">
+<div class="w-8 h-8 bg-primary-container flex items-center justify-center rounded">
+<span class="material-symbols-outlined text-white text-sm">architecture</span>
+</div>
+<div>
+<h2 class="text-xl font-bold text-white tracking-tight">Studio Alpha</h2>
+<p class="text-[10px] text-on-surface-variant uppercase tracking-widest">Management Group</p>
+</div>
+</div>
+<nav class="flex-1 px-4 space-y-1 mt-4">
+<a class="flex items-center gap-3 px-3 py-2 text-gray-400 hover:text-white transition-colors hover:bg-[#191a1a] rounded" href="#">
+<span class="material-symbols-outlined" data-icon="folder_open">folder_open</span>
+<span class="font-medium">Projetos</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 text-gray-400 hover:text-white transition-colors hover:bg-[#191a1a] rounded" href="#">
+<span class="material-symbols-outlined" data-icon="assignment_turned_in">assignment_turned_in</span>
+<span class="font-medium">Tarefas</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 text-gray-400 hover:text-white transition-colors hover:bg-[#191a1a] rounded" href="#">
+<span class="material-symbols-outlined" data-icon="adjust">adjust</span>
+<span class="font-medium">Mapa de Foco</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 text-gray-400 hover:text-white transition-colors hover:bg-[#191a1a] rounded" href="#">
+<span class="material-symbols-outlined" data-icon="analytics">analytics</span>
+<span class="font-medium">Relatório</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 text-[#0055FF] font-semibold bg-[#0055FF]/10 border-r-2 border-[#0055FF] transition-all duration-150 ease-in-out" href="#">
+<span class="material-symbols-outlined" data-icon="sensors">sensors</span>
+<span class="font-medium">Ao vivo</span>
+</a>
+</nav>
+<div class="p-4 border-t border-[#2A2A2A]">
+<button class="w-full bg-[#0055FF] text-white py-2 rounded-md font-bold text-sm hover:opacity-90 transition-all">
+                Novo Projeto
+            </button>
+</div>
+<div class="px-4 py-6 space-y-1">
+<a class="flex items-center gap-3 px-3 py-2 text-gray-400 hover:text-white transition-colors hover:bg-[#191a1a] rounded" href="#">
+<span class="material-symbols-outlined" data-icon="settings">settings</span>
+<span class="text-sm">Configurações</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 text-gray-400 hover:text-white transition-colors hover:bg-[#191a1a] rounded" href="#">
+<span class="material-symbols-outlined" data-icon="help_outline">help_outline</span>
+<span class="text-sm">Suporte</span>
+</a>
+</div>
+</aside>
+<!-- TopAppBar -->
+<header class="flex justify-between items-center h-16 px-6 ml-64 w-[calc(100%-16rem)] bg-[#0e0e0e] border-b border-[#2A2A2A] fixed top-0 z-30">
+<div class="flex items-center gap-8">
+<h1 class="text-lg font-bold text-white uppercase tracking-wider">Studio Alpha</h1>
+<nav class="hidden md:flex gap-6">
+<a class="text-gray-500 hover:text-[#0055FF] transition-colors text-sm font-medium" href="#">Portfolio</a>
+<a class="text-gray-500 hover:text-[#0055FF] transition-colors text-sm font-medium" href="#">Equipe</a>
+<a class="text-gray-500 hover:text-[#0055FF] transition-colors text-sm font-medium" href="#">Financeiro</a>
+</nav>
+</div>
+<div class="flex items-center gap-6">
+<div class="relative hidden lg:block">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-outline text-sm">search</span>
+<input class="bg-surface-container-low border border-outline-variant rounded-md pl-10 pr-4 py-1.5 text-sm focus:border-primary focus:ring-0 w-64 transition-all" placeholder="Pesquisar..." type="text"/>
+</div>
+<div class="flex items-center gap-3 border-l border-outline-variant pl-6">
+<button class="text-gray-500 hover:text-white transition-transform scale-95 active:scale-100">
+<span class="material-symbols-outlined" data-icon="notifications">notifications</span>
+</button>
+<div class="flex items-center gap-2 cursor-pointer group">
+<img alt="User Profile" class="w-8 h-8 rounded-full border border-outline-variant" data-alt="professional portrait of an architect in a black turtleneck against a neutral studio background" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDBKn_2urQY_IQtPRwFn89ej3h8CEN0is31U4nP_gHSeVIsJcX7AuA2gw3zpPRph3-FQQvHUBZrMGjizHESAWNa56b2w8Y0ZFmCqjNDlUAPS-L16poiuBI911Ccq59Ard9kKqCWDDLbln2eeKquIm07OOCjT8mLL0dzRtBDRgbvln31lwPppLo6p-T1Io_MuwnJaQhZP5x57U4Psel1zHo5RKjsfZYwCSScN3XjrAA1jEQUvF6Elam3FbKyfNKzxapuQbRuVirfnn4"/>
+<span class="material-symbols-outlined text-gray-500 group-hover:text-white transition-colors" data-icon="account_circle">account_circle</span>
+</div>
+</div>
+</div>
+</header>
+<!-- Main Content -->
+<main class="ml-64 mt-16 p-8 h-[calc(100vh-4rem)] overflow-y-auto bg-background">
+<!-- Header Section -->
+<div class="mb-10">
+<nav class="flex items-center gap-2 text-[10px] text-outline font-mono uppercase tracking-widest mb-2">
+<span>Grupos</span>
+<span class="material-symbols-outlined text-[12px]">chevron_right</span>
+<span class="text-on-surface">Residencial Alto da Serra</span>
+</nav>
+<div class="flex justify-between items-end">
+<div>
+<h2 class="text-4xl font-bold tracking-tight text-white font-headline">Residencial Alto da Serra</h2>
+<p class="text-on-surface-variant mt-1">Status global do grupo de projetos imobiliários.</p>
+</div>
+<div class="flex gap-3">
+<button class="flex items-center gap-2 px-4 py-2 border border-outline-variant text-sm font-semibold hover:bg-surface-container transition-colors rounded-md">
+<span class="material-symbols-outlined text-sm">share</span>
+                        Compartilhar
+                    </button>
+<button class="flex items-center gap-2 px-4 py-2 bg-primary-container text-white text-sm font-semibold hover:opacity-90 transition-transform scale-95 active:scale-100 rounded-md">
+<span class="material-symbols-outlined text-sm">picture_as_pdf</span>
+                        Relatório PDF
+                    </button>
+</div>
+</div>
+</div>
+<!-- Live Content Card -->
+<section class="grid grid-cols-12 gap-8">
+<div class="col-span-12">
+<div class="bg-surface-container border border-outline-variant rounded-xl overflow-hidden">
+<div class="p-6 border-b border-outline-variant flex justify-between items-center bg-surface-container-low">
+<div>
+<div class="flex items-center gap-2 mb-1">
+<span class="flex h-2 w-2 rounded-full bg-[#22c55e] animate-pulse active-glow"></span>
+<span class="text-[11px] font-bold text-[#22c55e] uppercase tracking-[0.2em] font-headline">Ao vivo do grupo</span>
+</div>
+<h3 class="text-xl font-bold text-white tracking-tight">Tarefas em execução dentro deste grupo</h3>
+</div>
+<div class="text-right">
+<span class="text-[10px] text-outline uppercase font-mono tracking-widest block mb-1">Total de Sessões</span>
+<span class="text-2xl font-mono text-primary font-medium tracking-tighter">04</span>
+</div>
+</div>
+<!-- Task List -->
+<div class="divide-y divide-outline-variant">
+<!-- Item 1 -->
+<div class="p-6 flex items-center justify-between hover:bg-surface-container-high transition-colors group">
+<div class="flex items-center gap-6">
+<div class="relative">
+<img alt="User" class="w-12 h-12 rounded-lg object-cover border border-[#2A2A2A]" data-alt="headshot of a young male designer with glasses in a professional setting" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCCpDN06URMG-vCisg1MBPB6bCm0zKUq3Es1U59ypIWnbrtM6nM3_I913NxHnNUBbG8ZtblBS24IXIM3HiZbiguVPCrJaFvsS6U68uWz-aUHkPMTjuSUQcrHaA9JeZ9-Tp6zBom_vZiS5yZqOi9kEq3pXrxr7RQKCeQNq_FjUQzGDDTaWRR3j407V49tn7YWhDJCeXTYtib0Vodl9jdMmsMFIK-PkOVAtymF1Hg7-GLawq3FSglLJ1Wa3_7tebxHSWRCsJnz9eiNtI"/>
+<span class="absolute -bottom-1 -right-1 flex h-3 w-3 rounded-full bg-[#22c55e] border-2 border-surface-container"></span>
+</div>
+<div>
+<h4 class="text-white font-bold text-lg leading-tight group-hover:text-primary transition-colors">Detalhamento de Fachada - Bloco A</h4>
+<div class="flex items-center gap-2 mt-1">
+<span class="text-sm text-on-surface">Lucas Mendes</span>
+<span class="w-1 h-1 rounded-full bg-outline-variant"></span>
+<span class="text-[11px] text-on-surface-variant font-mono uppercase tracking-widest">Residencial Alto da Serra / Bloco A</span>
+</div>
+</div>
+</div>
+<div class="flex flex-col items-end gap-1">
+<span class="text-xs text-outline font-mono">TEMPO DECORRIDO</span>
+<span class="text-2xl font-mono text-[#22c55e] font-medium tracking-tighter">02:45:12</span>
+</div>
+</div>
+<!-- Item 2 -->
+<div class="p-6 flex items-center justify-between hover:bg-surface-container-high transition-colors group">
+<div class="flex items-center gap-6">
+<div class="relative">
+<img alt="User" class="w-12 h-12 rounded-lg object-cover border border-[#2A2A2A]" data-alt="portrait of a professional woman smiling in an architectural studio" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBGWdJAMgIpRaCbGb6cK9y4mXQH2pwJ5UrXSOiriFpeVHW9LTEZp_ccqU3ihqg_Q-7In4hxk-iQ_quldZMVrBJT5qS7nC6Fyo4APrvGWr-LRKEVPgA5IuqC6FqdwDr5EcnwIjwEXt3esoHgyeSIURK-E1VfTm7V_Lxcj1AgxZJGjIx3-niIupCY_uEcR71TFUM5WrZbXgnit1g5Tnl2q3aBu-GofkA9ewgWgatiaKpZ6NafbZyOeK3zi8Y3cXdoID-2PLicxYU-1iY"/>
+<span class="absolute -bottom-1 -right-1 flex h-3 w-3 rounded-full bg-[#22c55e] border-2 border-surface-container"></span>
+</div>
+<div>
+<h4 class="text-white font-bold text-lg leading-tight group-hover:text-primary transition-colors">Revisão de Cálculo Estrutural</h4>
+<div class="flex items-center gap-2 mt-1">
+<span class="text-sm text-on-surface">Fernanda Rocha</span>
+<span class="w-1 h-1 rounded-full bg-outline-variant"></span>
+<span class="text-[11px] text-on-surface-variant font-mono uppercase tracking-widest">Residencial Alto da Serra / Infraestrutura</span>
+</div>
+</div>
+</div>
+<div class="flex flex-col items-end gap-1">
+<span class="text-xs text-outline font-mono">TEMPO DECORRIDO</span>
+<span class="text-2xl font-mono text-[#22c55e] font-medium tracking-tighter">00:58:34</span>
+</div>
+</div>
+<!-- Item 3 -->
+<div class="p-6 flex items-center justify-between hover:bg-surface-container-high transition-colors group">
+<div class="flex items-center gap-6">
+<div class="relative">
+<img alt="User" class="w-12 h-12 rounded-lg object-cover border border-[#2A2A2A]" data-alt="profile photo of a senior male engineer looking thoughtful in a creative office" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBTco3rTnTj-WsOncfGLK-ZEJK_obYCLHgM2U864Lyo7JM5fjt3y4Zc6ggT8FpMxl899Hq71i8CR3vhnMaam66EaYVKQWl3V1GrHkg2ypQJUh74R0z2uWXBM_Vw_ExnN66B3NxQ__NV2LXfFCSRw5A8WZ3_9HERMcAggnaMgEoksGRaBQExQr6ItVSRGMcdFOT1qY3ouQUcPREQGpVNSaI54zZUIOWYNwDfPsDOP8Nv6enz1BQUn87IzQA6RDFAWUzKvnbCYYl9rYU"/>
+<span class="absolute -bottom-1 -right-1 flex h-3 w-3 rounded-full bg-[#22c55e] border-2 border-surface-container"></span>
+</div>
+<div>
+<h4 class="text-white font-bold text-lg leading-tight group-hover:text-primary transition-colors">Ajuste de Planta Baixa - Unidades Tipo</h4>
+<div class="flex items-center gap-2 mt-1">
+<span class="text-sm text-on-surface">Ricardo Silva</span>
+<span class="w-1 h-1 rounded-full bg-outline-variant"></span>
+<span class="text-[11px] text-on-surface-variant font-mono uppercase tracking-widest">Residencial Alto da Serra / Bloco B</span>
+</div>
+</div>
+</div>
+<div class="flex flex-col items-end gap-1">
+<span class="text-xs text-outline font-mono">TEMPO DECORRIDO</span>
+<span class="text-2xl font-mono text-[#22c55e] font-medium tracking-tighter">01:12:05</span>
+</div>
+</div>
+<!-- Item 4 -->
+<div class="p-6 flex items-center justify-between hover:bg-surface-container-high transition-colors group">
+<div class="flex items-center gap-6">
+<div class="relative">
+<img alt="User" class="w-12 h-12 rounded-lg object-cover border border-[#2A2A2A]" data-alt="professional woman working at a computer desk with focus" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBfVBQb-1s_CJwFD-KLdZ9ZSoIbmR70ahX0DcHipV-2fX-BdgVJXurTu62G8sCPSxKmrL6hTbFam7-b-P3ee7VJ9pVj9XEnSclDFOU1OZLOrb8sfFLlSzO74I71yDuDN6ndc59eEbnR63MjlwVBVqCUtuRhhqqoD4PinCdzT_Y-WgBrOkbjY7B1xm6yWIZLFY_GUhaEEgsFrFohEhATqRDiiK-aBJSFWqrIsyVDrAEtuMs_F97sadIFpB1MhTS4moyY4ohO5OEtnMw"/>
+<span class="absolute -bottom-1 -right-1 flex h-3 w-3 rounded-full bg-[#22c55e] border-2 border-surface-container"></span>
+</div>
+<div>
+<h4 class="text-white font-bold text-lg leading-tight group-hover:text-primary transition-colors">Renderização de Áreas Comuns</h4>
+<div class="flex items-center gap-2 mt-1">
+<span class="text-sm text-on-surface">Camila Torres</span>
+<span class="w-1 h-1 rounded-full bg-outline-variant"></span>
+<span class="text-[11px] text-on-surface-variant font-mono uppercase tracking-widest">Residencial Alto da Serra / Lazer</span>
+</div>
+</div>
+</div>
+<div class="flex flex-col items-end gap-1">
+<span class="text-xs text-outline font-mono">TEMPO DECORRIDO</span>
+<span class="text-2xl font-mono text-[#22c55e] font-medium tracking-tighter">00:15:44</span>
+</div>
+</div>
+</div>
+<div class="p-4 bg-surface-container-low flex justify-center border-t border-outline-variant">
+<button class="text-[10px] text-outline uppercase font-mono tracking-[0.2em] hover:text-white transition-colors">
+                            Ver histórico de sessões hoje
+                        </button>
+</div>
+</div>
+</div>
+<!-- Contextual Information -->
+<div class="col-span-12 grid grid-cols-1 md:grid-cols-3 gap-8">
+<div class="bg-surface-container border border-outline-variant p-6 rounded-xl">
+<span class="text-[10px] text-outline uppercase font-mono tracking-widest block mb-4">Carga de Trabalho</span>
+<div class="flex items-end gap-2 mb-2">
+<span class="text-4xl font-mono text-white leading-none">82%</span>
+<span class="text-sm text-[#22c55e] font-medium">+5% vs ontem</span>
+</div>
+<div class="w-full bg-surface-container-highest h-1 rounded-full overflow-hidden">
+<div class="bg-primary h-full w-[82%]"></div>
+</div>
+</div>
+<div class="bg-surface-container border border-outline-variant p-6 rounded-xl">
+<span class="text-[10px] text-outline uppercase font-mono tracking-widest block mb-4">Eficiência do Grupo</span>
+<div class="flex items-end gap-2 mb-2">
+<span class="text-4xl font-mono text-white leading-none">0.94</span>
+<span class="text-sm text-outline">Índice Operacional</span>
+</div>
+<p class="text-xs text-on-surface-variant leading-relaxed">Alta concentração detectada em tarefas de Detalhamento Técnico.</p>
+</div>
+<div class="bg-surface-container border border-outline-variant p-6 rounded-xl flex flex-col justify-between">
+<div>
+<span class="text-[10px] text-outline uppercase font-mono tracking-widest block mb-4">Próxima Entrega</span>
+<h5 class="text-white font-bold leading-tight">Aprovação Prefeitura - Bloco A</h5>
+<p class="text-xs text-error mt-1 font-mono">Em 48 horas</p>
+</div>
+<button class="mt-4 text-[10px] text-primary uppercase font-bold tracking-widest self-start hover:underline">Ir para marcos</button>
+</div>
+</div>
+</section>
+</main>
+</body></html>

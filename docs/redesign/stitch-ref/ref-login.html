@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="pt-BR"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=DM+Mono:wght@400;500&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              "on-secondary-container": "#c1bfbe",
+              "on-surface-variant": "#acabaa",
+              "on-primary-fixed-variant": "#004be3",
+              "on-secondary": "#202020",
+              "on-primary": "#0034a4",
+              "tertiary-fixed-dim": "#dacff0",
+              "secondary-dim": "#9f9d9d",
+              "secondary-fixed-dim": "#d6d4d3",
+              "tertiary-fixed": "#e9ddff",
+              "tertiary-dim": "#dacff0",
+              "on-background": "#e7e5e4",
+              "secondary-fixed": "#e4e2e1",
+              "inverse-surface": "#fcf8f8",
+              "outline-variant": "#484848",
+              "on-tertiary-fixed": "#433b56",
+              "tertiary": "#f6eeff",
+              "on-secondary-fixed-variant": "#5c5b5b",
+              "surface-bright": "#2c2c2c",
+              "surface-container-lowest": "#000000",
+              "on-tertiary-fixed-variant": "#5f5773",
+              "on-error": "#490013",
+              "on-error-container": "#ff97a3",
+              "primary-dim": "#a3b5ff",
+              "on-primary-fixed": "#0033a2",
+              "error-dim": "#b95463",
+              "on-surface": "#e7e5e4",
+              "tertiary-container": "#e9ddff",
+              "primary-fixed-dim": "#c9d2ff",
+              "surface-tint": "#b6c4ff",
+              "secondary-container": "#3b3b3b",
+              "error-container": "#7f2737",
+              "secondary": "#9f9d9d",
+              "primary-container": "#0039b3",
+              "surface-dim": "#0e0e0e",
+              "surface-container-highest": "#252626",
+              "primary": "#b6c4ff",
+              "on-primary-container": "#c4ceff",
+              "surface": "#0e0e0e",
+              "primary-fixed": "#dce1ff",
+              "outline": "#767575",
+              "on-secondary-fixed": "#3f3f3f",
+              "inverse-on-surface": "#565554",
+              "surface-container-low": "#131313",
+              "error": "#ec7c8a",
+              "background": "#0e0e0e",
+              "surface-container": "#191a1a",
+              "on-tertiary-container": "#554e69",
+              "surface-container-high": "#1f2020",
+              "inverse-primary": "#004eeb",
+              "surface-variant": "#252626",
+              "on-tertiary": "#5e5672",
+              "brand-blue": "#0055FF",
+              "brand-border": "#2A2A2A"
+            },
+            fontFamily: {
+              "headline": ["Inter"],
+              "body": ["Inter"],
+              "label": ["Inter"],
+              "mono": ["DM Mono"]
+            },
+            borderRadius: {"DEFAULT": "0.125rem", "lg": "0.25rem", "xl": "0.5rem", "full": "0.75rem"},
+          },
+        },
+      }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 24;
+            font-size: 20px;
+        }
+        body {
+            background-color: #0e0e0e;
+            color: #e7e5e4;
+        }
+    </style>
+</head>
+<body class="font-body flex flex-col min-h-screen">
+<!-- Top Navigation Bar (Suppressed on Login per Rules, but following Brand Anchors if needed for logo/help) -->
+<header class="bg-[#0e0e0e] text-[#0055FF] font-['Inter'] font-bold tracking-tight fixed top-0 w-full border-b border-[#2A2A2A] flex justify-between items-center h-16 px-6 z-50">
+<div class="font-['DM_Mono'] text-xl font-medium tracking-tighter text-white uppercase">
+            TELIER
+        </div>
+<div class="flex items-center gap-4 text-gray-400">
+<button class="hover:text-white transition-colors duration-200 ease-in-out flex items-center">
+<span class="material-symbols-outlined" data-icon="help_outline">help_outline</span>
+</button>
+</div>
+</header>
+<main class="flex-grow flex items-center justify-center pt-16 pb-12">
+<!-- Central Login Card -->
+<div class="w-full max-w-[380px] bg-[#131313] border border-[#2A2A2A] rounded-xl p-8 mx-4">
+<!-- Branding Header -->
+<div class="mb-8">
+<p class="font-mono text-[10px] uppercase tracking-[0.2em] text-on-surface-variant mb-4">
+                    TELIER
+                </p>
+<h1 class="text-[1.25rem] font-semibold text-on-surface leading-tight mb-1">
+                    Entrar
+                </h1>
+<p class="text-sm text-on-surface-variant font-body">
+                    Bem-vindo de volta
+                </p>
+</div>
+<!-- Login Form -->
+<form class="space-y-5">
+<!-- Username Field -->
+<div class="space-y-2">
+<label class="block font-mono text-[10px] uppercase tracking-wider text-on-secondary-container" for="username">
+                        Usuário
+                    </label>
+<div class="relative">
+<input class="w-full bg-surface-container-low border border-outline-variant rounded-md px-4 py-2.5 text-sm font-mono text-on-surface placeholder:text-outline focus:ring-1 focus:ring-brand-blue focus:border-brand-blue outline-none transition-all" id="username" placeholder="seu.nome@studio.com" type="text"/>
+</div>
+</div>
+<!-- Password Field -->
+<div class="space-y-2">
+<div class="flex justify-between items-center">
+<label class="block font-mono text-[10px] uppercase tracking-wider text-on-secondary-container" for="password">
+                            Senha
+                        </label>
+</div>
+<div class="relative">
+<input class="w-full bg-surface-container-low border border-outline-variant rounded-md px-4 py-2.5 text-sm font-mono text-on-surface placeholder:text-outline focus:ring-1 focus:ring-brand-blue focus:border-brand-blue outline-none transition-all" id="password" placeholder="••••••••" type="password"/>
+<button class="absolute right-3 top-1/2 -translate-y-1/2 text-outline-variant hover:text-on-surface transition-colors" type="button">
+<span class="material-symbols-outlined" data-icon="visibility">visibility</span>
+</button>
+</div>
+</div>
+<!-- Action Button -->
+<button class="w-full bg-brand-blue hover:bg-on-primary-fixed-variant text-white font-semibold py-3 px-4 rounded-md transition-all duration-200 text-sm mt-4" type="submit">
+                    Entrar
+                </button>
+<!-- Footer Link -->
+<div class="pt-4 text-center">
+<a class="text-xs text-on-surface-variant hover:text-brand-blue transition-colors font-body tracking-tight" href="#">
+                        Criar minha conta
+                    </a>
+</div>
+</form>
+</div>
+</main>
+<!-- Footer Component -->
+<footer class="bg-[#0e0e0e] text-[#0055FF] font-['DM_Mono'] text-[10px] uppercase tracking-widest fixed bottom-0 w-full border-t border-[#2A2A2A] flex justify-between items-center h-12 px-8 z-50">
+<div class="text-gray-500">
+            © 2024 TELIER ARCHITECTURAL SYSTEMS
+        </div>
+<div class="flex gap-6 text-gray-500">
+<a class="hover:text-[#0055FF] transition-colors duration-150" href="#">Privacy Policy</a>
+<a class="hover:text-[#0055FF] transition-colors duration-150" href="#">Terms of Service</a>
+<a class="hover:text-[#0055FF] transition-colors duration-150" href="#">System Status</a>
+</div>
+</footer>
+</body></html>
