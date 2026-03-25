@@ -2,7 +2,7 @@
 // Notifications, presence, and messaging
 
 import { req } from './api.js';
-import { NOTIFS } from './state.js';
+import { NOTIFS, TOKEN } from './state.js';
 import { toast } from './ui.js';
 import { esc } from './utils.js';
 
@@ -10,18 +10,40 @@ let _pollNotifTimer = null;
 let _pollStatusTimer = null;
 
 export async function carregarNotificacoes(silencioso = true) {
+  // Guard: don't make requests if no token
+  if (!TOKEN) {
+    if (!silencioso) console.warn('Cannot load notifications: no authentication token');
+    return [];
+  }
+
   try {
     const notifs = await req('GET', '/notificacoes');
     // TODO: Update state
     return notifs;
   } catch (e) {
-    if (!silencioso) toast(e.message, 'erro');
+    // Don't silencear 401 errors - they indicate auth problems
+    if (e.message?.includes('401') || e.status === 401) {
+      console.error('Notifications 401 error - user may be unauthorized:', e);
+      // Could trigger re-login here if needed
+    } else if (!silencioso) {
+      toast(e.message, 'erro');
+    }
     return [];
   }
 }
 
 export function iniciarPollNotificacoes(intervalo = 10000) {
-  _pollNotifTimer = setInterval(carregarNotificacoes, intervalo);
+  // Guard: only start polling if authenticated
+  if (!TOKEN) {
+    console.warn('Cannot start notifications polling: no authentication token');
+    return;
+  }
+
+  // Clear any existing timer first
+  if (_pollNotifTimer) clearInterval(_pollNotifTimer);
+
+  console.log('Starting notifications polling...');
+  _pollNotifTimer = setInterval(() => carregarNotificacoes(true), intervalo);
 }
 
 export function pararPollNotificacoes() {

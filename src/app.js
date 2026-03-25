@@ -23,9 +23,11 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Load dashboard filters
     dashboard.carregarFiltrosDash?.();
     // Initialize auth and render appropriate view
-    await auth.init();
-    // Start notifications polling
-    notifications.iniciarPollNotificacoes?.();
+    const authSuccess = await auth.init();
+    // Start notifications polling only if auth succeeded
+    if (authSuccess) {
+      notifications.iniciarPollNotificacoes?.();
+    }
   } catch (error) {
     console.error('App initialization error:', error);
   }

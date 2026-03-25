@@ -1,27 +1,15 @@
 (() => {
+  var __defProp = Object.defineProperty;
+  var __getOwnPropNames = Object.getOwnPropertyNames;
+  var __esm = (fn, res) => function __init() {
+    return fn && (res = (0, fn[__getOwnPropNames(fn)[0]])(fn = 0)), res;
+  };
+  var __export = (target, all) => {
+    for (var name in all)
+      __defProp(target, name, { get: all[name], enumerable: true });
+  };
+
   // src/modules/state.js
-  var API = "https://telier-api.pedroafsmaia.workers.dev";
-  var TOKEN = localStorage.getItem("ea_token");
-  var EU = JSON.parse(localStorage.getItem("ea_user") || "null");
-  var PROJETO = null;
-  var GRUPO_ATUAL = null;
-  var VISTA_ATUAL = "dash";
-  var TAREFAS = [];
-  var ADMIN_MODE_KEY = "ea_admin_mode";
-  var ADMIN_MODE = localStorage.getItem(ADMIN_MODE_KEY) || "admin";
-  var FILTRO_STATUS = "todos";
-  var FILTRO_ORIGEM_DASH = "todos";
-  var FILTRO_GRUPO_DASH = "todos";
-  var BUSCA_DASH = "";
-  var _projsDash = [];
-  var _ativasDash = [];
-  var _gruposDash = [];
-  var LISTA_CONCLUIDAS_EXPANDIDA = false;
-  var _prazoNotifShown = /* @__PURE__ */ new Set();
-  var STARTDAY_COLLAPSE_KEY = "telier_startday_collapsed";
-  var REQ_TIMEOUT_MS = 15e3;
-  var PROJ_CACHE_KEY = "telier_proj_cache";
-  var PROJ_CACHE_TTL = 1e4;
   function setToken(t) {
     TOKEN = t;
     localStorage.setItem("ea_token", t);
@@ -71,6 +59,33 @@
   function setGruposDash(g) {
     _gruposDash = g;
   }
+  var API, TOKEN, EU, PROJETO, GRUPO_ATUAL, VISTA_ATUAL, TAREFAS, ADMIN_MODE_KEY, ADMIN_MODE, FILTRO_STATUS, FILTRO_ORIGEM_DASH, FILTRO_GRUPO_DASH, BUSCA_DASH, _projsDash, _ativasDash, _gruposDash, LISTA_CONCLUIDAS_EXPANDIDA, _prazoNotifShown, STARTDAY_COLLAPSE_KEY, REQ_TIMEOUT_MS, PROJ_CACHE_KEY, PROJ_CACHE_TTL;
+  var init_state = __esm({
+    "src/modules/state.js"() {
+      API = "https://telier-api.pedroafsmaia.workers.dev";
+      TOKEN = localStorage.getItem("ea_token");
+      EU = JSON.parse(localStorage.getItem("ea_user") || "null");
+      PROJETO = null;
+      GRUPO_ATUAL = null;
+      VISTA_ATUAL = "dash";
+      TAREFAS = [];
+      ADMIN_MODE_KEY = "ea_admin_mode";
+      ADMIN_MODE = localStorage.getItem(ADMIN_MODE_KEY) || "admin";
+      FILTRO_STATUS = "todos";
+      FILTRO_ORIGEM_DASH = "todos";
+      FILTRO_GRUPO_DASH = "todos";
+      BUSCA_DASH = "";
+      _projsDash = [];
+      _ativasDash = [];
+      _gruposDash = [];
+      LISTA_CONCLUIDAS_EXPANDIDA = false;
+      _prazoNotifShown = /* @__PURE__ */ new Set();
+      STARTDAY_COLLAPSE_KEY = "telier_startday_collapsed";
+      REQ_TIMEOUT_MS = 15e3;
+      PROJ_CACHE_KEY = "telier_proj_cache";
+      PROJ_CACHE_TTL = 1e4;
+    }
+  });
 
   // src/modules/api.js
   async function req(method, path, body) {
@@ -117,49 +132,55 @@
     }
     return data;
   }
-  var endpoints = {
-    // Auth
-    login: (usuario, senha) => req("POST", "/auth/login", { usuario_login: usuario, senha }),
-    logout: () => req("POST", "/auth/logout"),
-    register: (nome, email, senha) => req("POST", "/auth/register", { nome, email, senha }),
-    setup: (nome, senha) => req("POST", "/auth/setup", { nome, senha }),
-    me: () => req("GET", "/auth/me"),
-    needsSetup: () => req("GET", "/auth/needs-setup"),
-    // Projects
-    getProjects: (params = "") => fetchProjetos(params),
-    getProject: (id) => req("GET", `/projetos/${id}`),
-    createProject: (data) => req("POST", "/projetos", data),
-    updateProject: (id, data) => req("PUT", `/projetos/${id}`, data),
-    deleteProject: (id) => req("DELETE", `/projetos/${id}`),
-    // Tasks
-    createTask: (projetoId, data) => req("POST", `/projetos/${projetoId}/tarefas`, data),
-    getTasks: (projetoId) => req("GET", `/projetos/${projetoId}/tarefas`),
-    updateTask: (id, data) => req("PUT", `/tarefas/${id}`, data),
-    patchTask: (id, data) => req("PATCH", `/tarefas/${id}`, data),
-    deleteTask: (id) => req("DELETE", `/tarefas/${id}`),
-    setTaskFocus: (id) => req("PUT", `/tarefas/${id}/foco`),
-    clearTaskFocus: (id) => req("DELETE", `/tarefas/${id}/foco`),
-    // Timer/Sessões
-    getTaskSessions: (tarefaId) => req("GET", `/tarefas/${tarefaId}/tempo`),
-    startTimer: (tarefaId, data) => req("POST", `/tarefas/${tarefaId}/tempo`, data),
-    stopTimer: (sessaoId, data) => req("PUT", `/tempo/${sessaoId}/parar`, data),
-    getActiveSessions: () => req("GET", "/tempo/ativas"),
-    getLastSession: () => req("GET", "/tempo/ultima-sessao"),
-    getDayResum: () => req("GET", "/tempo/resumo-hoje"),
-    // Groups
-    getGroups: () => req("GET", "/grupos"),
-    createGroup: (data) => req("POST", "/grupos", data),
-    updateGroup: (id, data) => req("PUT", `/grupos/${id}`, data),
-    deleteGroup: (id) => req("DELETE", `/grupos/${id}`),
-    // Notifications
-    getNotifications: () => req("GET", "/notificacoes"),
-    markNotifAsRead: (id) => req("PUT", `/notificacoes/${id}/lida`),
-    // Admin
-    getUsers: () => req("GET", "/usuarios"),
-    createUser: (data) => req("POST", "/usuarios", data),
-    updateUser: (id, data) => req("PUT", `/usuarios/${id}`, data),
-    resetUserPassword: (id, novaSenha) => req("PUT", `/usuarios/${id}/senha`, { nova_senha: novaSenha })
-  };
+  var endpoints;
+  var init_api = __esm({
+    "src/modules/api.js"() {
+      init_state();
+      endpoints = {
+        // Auth
+        login: (usuario, senha) => req("POST", "/auth/login", { usuario_login: usuario, senha }),
+        logout: () => req("POST", "/auth/logout"),
+        register: (nome, email, senha) => req("POST", "/auth/register", { nome, email, senha }),
+        setup: (nome, senha) => req("POST", "/auth/setup", { nome, senha }),
+        me: () => req("GET", "/auth/me"),
+        needsSetup: () => req("GET", "/auth/needs-setup"),
+        // Projects
+        getProjects: (params = "") => fetchProjetos(params),
+        getProject: (id) => req("GET", `/projetos/${id}`),
+        createProject: (data) => req("POST", "/projetos", data),
+        updateProject: (id, data) => req("PUT", `/projetos/${id}`, data),
+        deleteProject: (id) => req("DELETE", `/projetos/${id}`),
+        // Tasks
+        createTask: (projetoId, data) => req("POST", `/projetos/${projetoId}/tarefas`, data),
+        getTasks: (projetoId) => req("GET", `/projetos/${projetoId}/tarefas`),
+        updateTask: (id, data) => req("PUT", `/tarefas/${id}`, data),
+        patchTask: (id, data) => req("PATCH", `/tarefas/${id}`, data),
+        deleteTask: (id) => req("DELETE", `/tarefas/${id}`),
+        setTaskFocus: (id) => req("PUT", `/tarefas/${id}/foco`),
+        clearTaskFocus: (id) => req("DELETE", `/tarefas/${id}/foco`),
+        // Timer/Sessões
+        getTaskSessions: (tarefaId) => req("GET", `/tarefas/${tarefaId}/tempo`),
+        startTimer: (tarefaId, data) => req("POST", `/tarefas/${tarefaId}/tempo`, data),
+        stopTimer: (sessaoId, data) => req("PUT", `/tempo/${sessaoId}/parar`, data),
+        getActiveSessions: () => req("GET", "/tempo/ativas"),
+        getLastSession: () => req("GET", "/tempo/ultima-sessao"),
+        getDayResum: () => req("GET", "/tempo/resumo-hoje"),
+        // Groups
+        getGroups: () => req("GET", "/grupos"),
+        createGroup: (data) => req("POST", "/grupos", data),
+        updateGroup: (id, data) => req("PUT", `/grupos/${id}`, data),
+        deleteGroup: (id) => req("DELETE", `/grupos/${id}`),
+        // Notifications
+        getNotifications: () => req("GET", "/notificacoes"),
+        markNotifAsRead: (id) => req("PUT", `/notificacoes/${id}/lida`),
+        // Admin
+        getUsers: () => req("GET", "/usuarios"),
+        createUser: (data) => req("POST", "/usuarios", data),
+        updateUser: (id, data) => req("PUT", `/usuarios/${id}`, data),
+        resetUserPassword: (id, novaSenha) => req("PUT", `/usuarios/${id}/senha`, { nova_senha: novaSenha })
+      };
+    }
+  });
 
   // src/modules/ui.js
   function toast(msg, tipo = "ok") {
@@ -307,203 +328,10 @@
       document.getElementById("page-app")?.classList.add("hidden");
     }
   }
-
-  // src/modules/auth.js
-  async function init() {
-    const renderTimeout = setTimeout(() => {
-      if (TOKEN) {
-        console.warn("Auth API timeout - showing app despite unverified token");
-        mostrarApp();
-      } else {
-        console.warn("Auth API timeout - showing login");
-        mostrarLogin();
-      }
-    }, 3e4);
-    try {
-      if (TOKEN) {
-        try {
-          const user = await endpoints.me();
-          clearTimeout(renderTimeout);
-          setEU(user);
-          mostrarApp();
-        } catch (erro) {
-          clearTimeout(renderTimeout);
-          console.error("Auth error:", erro);
-          clearAuth();
-          mostrarLogin();
-        }
-      } else {
-        try {
-          const { precisa_setup } = await endpoints.needsSetup();
-          clearTimeout(renderTimeout);
-          if (precisa_setup) {
-            mostrarSetup();
-          } else {
-            mostrarLogin();
-          }
-        } catch (erro) {
-          clearTimeout(renderTimeout);
-          console.error("Setup check error:", erro);
-          mostrarLogin();
-        }
-      }
-    } catch (erro) {
-      clearTimeout(renderTimeout);
-      console.error("Auth init error:", erro);
-      mostrarLogin();
+  var init_ui = __esm({
+    "src/modules/ui.js"() {
     }
-  }
-  async function fazerLogin() {
-    const usuario = document.getElementById("l-login")?.value;
-    const senha = document.getElementById("l-senha")?.value;
-    if (!usuario || !senha) {
-      toast("Preencha usu\xE1rio e senha", "erro");
-      return;
-    }
-    try {
-      const btnLogin = document.getElementById("btn-login");
-      btnLogin.classList.add("btn-loading");
-      btnLogin.disabled = true;
-      const { token, usuario: user } = await endpoints.login(usuario, senha);
-      setToken(token);
-      setEU(user);
-      if (user.deve_trocar_senha) {
-        mostrarSetup(true);
-      } else {
-        mostrarApp();
-      }
-    } catch (erro) {
-      toast(`Erro ao fazer login: ${erro.message}`, "erro");
-    } finally {
-      document.getElementById("btn-login")?.classList.remove("btn-loading");
-      document.getElementById("btn-login").disabled = false;
-    }
-  }
-  async function fazerSetup(forceChange = false) {
-    const nome = document.getElementById("s-nome")?.value;
-    const senha = document.getElementById("s-senha")?.value;
-    const confirma = document.getElementById("s-confirma")?.value;
-    if (!nome || !senha || !confirma) {
-      toast("Preencha todos os campos", "erro");
-      return;
-    }
-    if (senha !== confirma) {
-      toast("Senhas n\xE3o conferem", "erro");
-      return;
-    }
-    if (senha.length < 6) {
-      toast("Senha deve ter pelo menos 6 caracteres", "erro");
-      return;
-    }
-    try {
-      const btnSetup = document.getElementById("btn-setup");
-      btnSetup.classList.add("btn-loading");
-      btnSetup.disabled = true;
-      if (forceChange) {
-        await req("POST", "/auth/trocar-senha", { nova_senha: senha });
-        setEU({ ...EU, deve_trocar_senha: 0 });
-        toast("Senha alterada com sucesso", "ok");
-        mostrarApp();
-      } else {
-        const { token, usuario: user } = await endpoints.setup(nome, senha);
-        setToken(token);
-        setEU(user);
-        toast("Setup realizado com sucesso", "ok");
-        mostrarApp();
-      }
-    } catch (erro) {
-      toast(`Erro ao fazer setup: ${erro.message}`, "erro");
-    } finally {
-      document.getElementById("btn-setup")?.classList.remove("btn-loading");
-      document.getElementById("btn-setup").disabled = false;
-    }
-  }
-  async function fazerLogout() {
-    try {
-      await endpoints.logout();
-    } catch {
-    }
-    clearAuth();
-    mostrarLogin();
-    toast("Logout realizado", "ok");
-  }
-  async function modalCadastroPublico() {
-    const html = `
-    <form style="display: flex; flex-direction: column; gap: 12px;">
-      <input type="text" id="cadastro-nome" placeholder="Nome completo" class="input-control" />
-      <input type="email" id="cadastro-email" placeholder="Email" class="input-control" />
-      <input type="password" id="cadastro-senha" placeholder="Senha" class="input-control" />
-      <input type="password" id="cadastro-confirma" placeholder="Confirmar senha" class="input-control" />
-      <button type="button" class="btn btn-primary" onclick="fazerCadastroPublico()" id="btn-cadastro">
-        Cadastrar
-      </button>
-    </form>
-  `;
-    console.log("Modal cadastro p\xFAblico preparado");
-  }
-  async function fazerCadastroPublico() {
-    const nome = document.getElementById("cadastro-nome")?.value;
-    const email = document.getElementById("cadastro-email")?.value;
-    const senha = document.getElementById("cadastro-senha")?.value;
-    const confirma = document.getElementById("cadastro-confirma")?.value;
-    if (!nome || !email || !senha || !confirma) {
-      toast("Preencha todos os campos", "erro");
-      return;
-    }
-    if (senha !== confirma) {
-      toast("Senhas n\xE3o conferem", "erro");
-      return;
-    }
-    try {
-      const btnCadastro = document.getElementById("btn-cadastro");
-      btnCadastro.classList.add("btn-loading");
-      btnCadastro.disabled = true;
-      await endpoints.register(nome, email, senha);
-      toast("Cadastro realizado! Fa\xE7a login para continuar.", "ok");
-      document.querySelector(".modal-overlay")?.remove();
-    } catch (erro) {
-      toast(`Erro ao cadastrar: ${erro.message}`, "erro");
-    } finally {
-      document.getElementById("btn-cadastro")?.classList.remove("btn-loading");
-      document.getElementById("btn-cadastro").disabled = false;
-    }
-  }
-  function clearAuth() {
-    clearToken();
-    clearEU();
-  }
-  function isAdminRole() {
-    return EU?.papel === "admin";
-  }
-  function isAdmin() {
-    return isAdminRole();
-  }
-  function mostrarLogin() {
-    document.getElementById("page-login")?.classList.remove("hidden");
-    document.getElementById("page-setup")?.classList.add("hidden");
-    document.getElementById("page-app")?.classList.add("hidden");
-  }
-  function mostrarSetup(forceChange = false) {
-    document.getElementById("page-login")?.classList.add("hidden");
-    document.getElementById("page-setup")?.classList.remove("hidden");
-    document.getElementById("page-app")?.classList.add("hidden");
-    if (forceChange) {
-      const setupTitle = document.querySelector("#page-setup h1");
-      if (setupTitle) setupTitle.textContent = "Alterar Senha";
-    }
-  }
-  function mostrarApp() {
-    document.getElementById("page-login")?.classList.add("hidden");
-    document.getElementById("page-setup")?.classList.add("hidden");
-    document.getElementById("page-app")?.classList.remove("hidden");
-  }
-  if (typeof window !== "undefined") {
-    window.fazerLogin = fazerLogin;
-    window.fazerSetup = fazerSetup;
-    window.fazerLogout = fazerLogout;
-    window.fazerCadastroPublico = fazerCadastroPublico;
-    window.isAdmin = isAdmin;
-  }
+  });
 
   // src/modules/utils.js
   function esc(s) {
@@ -596,8 +424,336 @@
       timer = setTimeout(() => fn(...args), ms);
     };
   }
+  var init_utils = __esm({
+    "src/modules/utils.js"() {
+    }
+  });
+
+  // src/modules/notifications.js
+  var notifications_exports = {};
+  __export(notifications_exports, {
+    abrirNotificacoes: () => abrirNotificacoes,
+    carregarNotificacoes: () => carregarNotificacoes,
+    carregarStatus: () => carregarStatus,
+    fecharPainelNotificacoes: () => fecharPainelNotificacoes,
+    iniciarPollNotificacoes: () => iniciarPollNotificacoes,
+    iniciarStatusPoll: () => iniciarStatusPoll,
+    marcarNotifLida: () => marcarNotifLida,
+    marcarTodasNotifLidas: () => marcarTodasNotifLidas,
+    pararPollNotificacoes: () => pararPollNotificacoes,
+    renderPainelNotificacoes: () => renderPainelNotificacoes
+  });
+  async function carregarNotificacoes(silencioso = true) {
+    if (!TOKEN) {
+      if (!silencioso) console.warn("Cannot load notifications: no authentication token");
+      return [];
+    }
+    try {
+      const notifs = await req("GET", "/notificacoes");
+      return notifs;
+    } catch (e) {
+      if (e.message?.includes("401") || e.status === 401) {
+        console.error("Notifications 401 error - user may be unauthorized:", e);
+      } else if (!silencioso) {
+        toast(e.message, "erro");
+      }
+      return [];
+    }
+  }
+  function iniciarPollNotificacoes(intervalo = 1e4) {
+    if (!TOKEN) {
+      console.warn("Cannot start notifications polling: no authentication token");
+      return;
+    }
+    if (_pollNotifTimer) clearInterval(_pollNotifTimer);
+    console.log("Starting notifications polling...");
+    _pollNotifTimer = setInterval(() => carregarNotificacoes(true), intervalo);
+  }
+  function pararPollNotificacoes() {
+    if (_pollNotifTimer) clearInterval(_pollNotifTimer);
+  }
+  async function marcarNotifLida(id, abrirLink = null) {
+    try {
+      await req("PUT", `/notificacoes/${id}/lida`, {});
+      if (abrirLink) window.location.href = abrirLink;
+    } catch (e) {
+      toast(e.message, "erro");
+    }
+  }
+  async function marcarTodasNotifLidas() {
+    try {
+      await req("PUT", "/notificacoes/lidas", {});
+      toast("Notifica\xE7\xF5es marcadas como lidas", "ok");
+    } catch (e) {
+      toast(e.message, "erro");
+    }
+  }
+  function renderPainelNotificacoes() {
+    const panel = document.getElementById("notif-panel");
+    if (!panel) return;
+    panel.innerHTML = '<div style="padding: 16px; color: var(--text3); text-align: center;">Nenhuma notifica\xE7\xE3o</div>';
+  }
+  function abrirNotificacoes() {
+    const panel = document.getElementById("notif-panel");
+    const overlay = document.getElementById("notif-overlay");
+    if (panel) panel.setAttribute("aria-hidden", "false");
+    if (overlay) overlay.classList.remove("hidden");
+  }
+  function fecharPainelNotificacoes() {
+    const panel = document.getElementById("notif-panel");
+    const overlay = document.getElementById("notif-overlay");
+    if (panel) panel.setAttribute("aria-hidden", "true");
+    if (overlay) overlay.classList.add("hidden");
+  }
+  async function carregarStatus() {
+    return null;
+  }
+  function iniciarStatusPoll() {
+  }
+  var _pollNotifTimer;
+  var init_notifications = __esm({
+    "src/modules/notifications.js"() {
+      init_api();
+      init_state();
+      init_ui();
+      init_utils();
+      _pollNotifTimer = null;
+      if (typeof window !== "undefined") {
+        window.carregarNotificacoes = carregarNotificacoes;
+        window.iniciarPollNotificacoes = iniciarPollNotificacoes;
+        window.marcarNotifLida = marcarNotifLida;
+        window.marcarTodasNotifLidas = marcarTodasNotifLidas;
+        window.abrirNotificacoes = abrirNotificacoes;
+        window.fecharPainelNotificacoes = fecharPainelNotificacoes;
+        window.renderPainelNotificacoes = renderPainelNotificacoes;
+      }
+    }
+  });
+
+  // src/app.js
+  init_state();
+  init_api();
+
+  // src/modules/auth.js
+  init_api();
+  init_state();
+  init_ui();
+  async function init() {
+    const renderTimeout = setTimeout(() => {
+      if (TOKEN) {
+        console.warn("Auth API timeout - showing app despite unverified token");
+        mostrarApp();
+        return true;
+      } else {
+        console.warn("Auth API timeout - showing login");
+        mostrarLogin();
+        return false;
+      }
+    }, 3e4);
+    try {
+      if (TOKEN) {
+        try {
+          const user = await endpoints.me();
+          clearTimeout(renderTimeout);
+          setEU(user);
+          mostrarApp();
+          return true;
+        } catch (erro) {
+          clearTimeout(renderTimeout);
+          console.error("Auth error:", erro);
+          clearAuth();
+          mostrarLogin();
+          return false;
+        }
+      } else {
+        try {
+          const { precisa_setup } = await endpoints.needsSetup();
+          clearTimeout(renderTimeout);
+          if (precisa_setup) {
+            mostrarSetup();
+          } else {
+            mostrarLogin();
+          }
+          return false;
+        } catch (erro) {
+          clearTimeout(renderTimeout);
+          console.error("Setup check error:", erro);
+          mostrarLogin();
+          return false;
+        }
+      }
+    } catch (erro) {
+      clearTimeout(renderTimeout);
+      console.error("Auth init error:", erro);
+      mostrarLogin();
+      return false;
+    }
+  }
+  async function fazerLogin() {
+    const usuario = document.getElementById("l-login")?.value;
+    const senha = document.getElementById("l-senha")?.value;
+    if (!usuario || !senha) {
+      toast("Preencha usu\xE1rio e senha", "erro");
+      return;
+    }
+    try {
+      const btnLogin = document.getElementById("btn-login");
+      btnLogin.classList.add("btn-loading");
+      btnLogin.disabled = true;
+      const { token, usuario: user } = await endpoints.login(usuario, senha);
+      setToken(token);
+      setEU(user);
+      if (user.deve_trocar_senha) {
+        mostrarSetup(true);
+      } else {
+        mostrarApp();
+        const { iniciarPollNotificacoes: iniciarPollNotificacoes2 } = await Promise.resolve().then(() => (init_notifications(), notifications_exports));
+        iniciarPollNotificacoes2?.();
+      }
+    } catch (erro) {
+      toast(`Erro ao fazer login: ${erro.message}`, "erro");
+    } finally {
+      document.getElementById("btn-login")?.classList.remove("btn-loading");
+      document.getElementById("btn-login").disabled = false;
+    }
+  }
+  async function fazerSetup(forceChange = false) {
+    const nome = document.getElementById("s-nome")?.value;
+    const senha = document.getElementById("s-senha")?.value;
+    const confirma = document.getElementById("s-confirma")?.value;
+    if (!nome || !senha || !confirma) {
+      toast("Preencha todos os campos", "erro");
+      return;
+    }
+    if (senha !== confirma) {
+      toast("Senhas n\xE3o conferem", "erro");
+      return;
+    }
+    if (senha.length < 6) {
+      toast("Senha deve ter pelo menos 6 caracteres", "erro");
+      return;
+    }
+    try {
+      const btnSetup = document.getElementById("btn-setup");
+      btnSetup.classList.add("btn-loading");
+      btnSetup.disabled = true;
+      if (forceChange) {
+        await req("POST", "/auth/trocar-senha", { nova_senha: senha });
+        setEU({ ...EU, deve_trocar_senha: 0 });
+        toast("Senha alterada com sucesso", "ok");
+        mostrarApp();
+      } else {
+        const { token, usuario: user } = await endpoints.setup(nome, senha);
+        setToken(token);
+        setEU(user);
+        toast("Setup realizado com sucesso", "ok");
+        mostrarApp();
+      }
+    } catch (erro) {
+      toast(`Erro ao fazer setup: ${erro.message}`, "erro");
+    } finally {
+      document.getElementById("btn-setup")?.classList.remove("btn-loading");
+      document.getElementById("btn-setup").disabled = false;
+    }
+  }
+  async function fazerLogout() {
+    try {
+      await endpoints.logout();
+    } catch {
+    }
+    const { pararPollNotificacoes: pararPollNotificacoes2 } = await Promise.resolve().then(() => (init_notifications(), notifications_exports));
+    pararPollNotificacoes2?.();
+    clearAuth();
+    mostrarLogin();
+    toast("Logout realizado", "ok");
+  }
+  async function modalCadastroPublico() {
+    const html = `
+    <form style="display: flex; flex-direction: column; gap: 12px;">
+      <input type="text" id="cadastro-nome" placeholder="Nome completo" class="input-control" />
+      <input type="email" id="cadastro-email" placeholder="Email" class="input-control" />
+      <input type="password" id="cadastro-senha" placeholder="Senha" class="input-control" />
+      <input type="password" id="cadastro-confirma" placeholder="Confirmar senha" class="input-control" />
+      <button type="button" class="btn btn-primary" onclick="fazerCadastroPublico()" id="btn-cadastro">
+        Cadastrar
+      </button>
+    </form>
+  `;
+    console.log("Modal cadastro p\xFAblico preparado");
+  }
+  async function fazerCadastroPublico() {
+    const nome = document.getElementById("cadastro-nome")?.value;
+    const email = document.getElementById("cadastro-email")?.value;
+    const senha = document.getElementById("cadastro-senha")?.value;
+    const confirma = document.getElementById("cadastro-confirma")?.value;
+    if (!nome || !email || !senha || !confirma) {
+      toast("Preencha todos os campos", "erro");
+      return;
+    }
+    if (senha !== confirma) {
+      toast("Senhas n\xE3o conferem", "erro");
+      return;
+    }
+    try {
+      const btnCadastro = document.getElementById("btn-cadastro");
+      btnCadastro.classList.add("btn-loading");
+      btnCadastro.disabled = true;
+      await endpoints.register(nome, email, senha);
+      toast("Cadastro realizado! Fa\xE7a login para continuar.", "ok");
+      document.querySelector(".modal-overlay")?.remove();
+    } catch (erro) {
+      toast(`Erro ao cadastrar: ${erro.message}`, "erro");
+    } finally {
+      document.getElementById("btn-cadastro")?.classList.remove("btn-loading");
+      document.getElementById("btn-cadastro").disabled = false;
+    }
+  }
+  function clearAuth() {
+    clearToken();
+    clearEU();
+  }
+  function isAdminRole() {
+    return EU?.papel === "admin";
+  }
+  function isAdmin() {
+    return isAdminRole();
+  }
+  function mostrarLogin() {
+    document.getElementById("page-login")?.classList.remove("hidden");
+    document.getElementById("page-setup")?.classList.add("hidden");
+    document.getElementById("page-app")?.classList.add("hidden");
+  }
+  function mostrarSetup(forceChange = false) {
+    document.getElementById("page-login")?.classList.add("hidden");
+    document.getElementById("page-setup")?.classList.remove("hidden");
+    document.getElementById("page-app")?.classList.add("hidden");
+    if (forceChange) {
+      const setupTitle = document.querySelector("#page-setup h1");
+      if (setupTitle) setupTitle.textContent = "Alterar Senha";
+    }
+  }
+  function mostrarApp() {
+    document.getElementById("page-login")?.classList.add("hidden");
+    document.getElementById("page-setup")?.classList.add("hidden");
+    document.getElementById("page-app")?.classList.remove("hidden");
+  }
+  if (typeof window !== "undefined") {
+    window.fazerLogin = fazerLogin;
+    window.fazerSetup = fazerSetup;
+    window.fazerLogout = fazerLogout;
+    window.fazerCadastroPublico = fazerCadastroPublico;
+    window.isAdmin = isAdmin;
+  }
+
+  // src/app.js
+  init_ui();
+  init_utils();
 
   // src/modules/dashboard.js
+  init_api();
+  init_state();
+  init_ui();
+  init_utils();
   function isAdminRole2() {
     return EU?.papel === "admin";
   }
@@ -1016,6 +1172,10 @@
   }
 
   // src/modules/project.js
+  init_api();
+  init_state();
+  init_ui();
+  init_utils();
   function isAdminRole3() {
     return EU?.papel === "admin";
   }
@@ -1295,6 +1455,10 @@
   }
 
   // src/modules/tasks.js
+  init_api();
+  init_state();
+  init_ui();
+  init_utils();
   function renderKanban(tarefas, container) {
     if (!container) return;
     const statuses = ["A fazer", "Em andamento", "Em revis\xE3o", "Conclu\xEDdo"];
@@ -1557,6 +1721,9 @@
   }
 
   // src/modules/timer.js
+  init_api();
+  init_ui();
+  init_utils();
   async function carregarTimersAtivos() {
     try {
       return await req("GET", "/tempo/ativas");
@@ -1683,6 +1850,8 @@
   }
 
   // src/modules/groups.js
+  init_api();
+  init_ui();
   var _dragProjetoId = null;
   var _dragGrupoId = null;
   function dragProjeto(e, projetoId) {
@@ -1739,6 +1908,9 @@
   }
 
   // src/modules/admin.js
+  init_api();
+  init_ui();
+  init_utils();
   async function abrirCentralAdmin(aba = "resumo") {
     try {
       document.getElementById("content").innerHTML = `
@@ -1782,64 +1954,12 @@
     window.modalNovoColega = modalNovoColega;
   }
 
-  // src/modules/notifications.js
-  var _pollNotifTimer = null;
-  async function carregarNotificacoes(silencioso = true) {
-    try {
-      const notifs = await req("GET", "/notificacoes");
-      return notifs;
-    } catch (e) {
-      if (!silencioso) toast(e.message, "erro");
-      return [];
-    }
-  }
-  function iniciarPollNotificacoes(intervalo = 1e4) {
-    _pollNotifTimer = setInterval(carregarNotificacoes, intervalo);
-  }
-  async function marcarNotifLida(id, abrirLink = null) {
-    try {
-      await req("PUT", `/notificacoes/${id}/lida`, {});
-      if (abrirLink) window.location.href = abrirLink;
-    } catch (e) {
-      toast(e.message, "erro");
-    }
-  }
-  async function marcarTodasNotifLidas() {
-    try {
-      await req("PUT", "/notificacoes/lidas", {});
-      toast("Notifica\xE7\xF5es marcadas como lidas", "ok");
-    } catch (e) {
-      toast(e.message, "erro");
-    }
-  }
-  function renderPainelNotificacoes() {
-    const panel = document.getElementById("notif-panel");
-    if (!panel) return;
-    panel.innerHTML = '<div style="padding: 16px; color: var(--text3); text-align: center;">Nenhuma notifica\xE7\xE3o</div>';
-  }
-  function abrirNotificacoes() {
-    const panel = document.getElementById("notif-panel");
-    const overlay = document.getElementById("notif-overlay");
-    if (panel) panel.setAttribute("aria-hidden", "false");
-    if (overlay) overlay.classList.remove("hidden");
-  }
-  function fecharPainelNotificacoes() {
-    const panel = document.getElementById("notif-panel");
-    const overlay = document.getElementById("notif-overlay");
-    if (panel) panel.setAttribute("aria-hidden", "true");
-    if (overlay) overlay.classList.add("hidden");
-  }
-  if (typeof window !== "undefined") {
-    window.carregarNotificacoes = carregarNotificacoes;
-    window.iniciarPollNotificacoes = iniciarPollNotificacoes;
-    window.marcarNotifLida = marcarNotifLida;
-    window.marcarTodasNotifLidas = marcarTodasNotifLidas;
-    window.abrirNotificacoes = abrirNotificacoes;
-    window.fecharPainelNotificacoes = fecharPainelNotificacoes;
-    window.renderPainelNotificacoes = renderPainelNotificacoes;
-  }
+  // src/app.js
+  init_notifications();
 
   // src/modules/shortcuts.js
+  init_state();
+  init_utils();
   function setupKeyboardShortcuts() {
     document.addEventListener("keydown", handleGlobalKeyDown);
   }
@@ -2116,8 +2236,10 @@
     try {
       setupKeyboardShortcuts?.();
       carregarFiltrosDash?.();
-      await init();
-      iniciarPollNotificacoes?.();
+      const authSuccess = await init();
+      if (authSuccess) {
+        iniciarPollNotificacoes?.();
+      }
     } catch (error) {
       console.error("App initialization error:", error);
     }
