@@ -379,3 +379,36 @@ Nesta fase, ações ainda não migradas usam fallback explícito:
 1. primeira ação nativa read-write de prioridade/complexidade com mesma política de fallback;
 2. detalhes de tempo da tarefa em leitura expandida (sem edição avançada);
 3. início de painel lateral de atividade/histórico mantendo contrato atual.
+
+## Fase 5.5 — ação nativa de cronômetro no detalhe de Tarefa (v2)
+
+### O que foi implementado nesta fase
+
+1. ação nativa de cronômetro no detalhe read-first da tarefa:
+   - iniciar/retomar cronômetro;
+   - parar cronômetro.
+2. snapshot da tarefa passou a incluir estado de sessão ativa (`timer`) via integração de baixo risco com `GET /tempo/ativas`.
+3. feedback discreto por estado de mutação de cronômetro:
+   - loading por ação (`Iniciando...` / `Parando...`);
+   - erro local sem vazar para outras ações.
+4. atualização conservadora após ação:
+   - recarga controlada do snapshot da tarefa para refletir estado real.
+
+### O que ainda depende do fluxo atual
+
+1. edição completa de tarefa;
+2. tempo detalhado por sessão/intervalo;
+3. foco avançado e colaboradores avançados;
+4. CRUD completo de tarefas.
+
+### Limites da fase
+
+1. sem criação de contrato novo de API;
+2. sem reescrita da área completa de Tempo;
+3. sem migração de edição avançada no detalhe da tarefa.
+
+### Próximos candidatos seguros para migração
+
+1. ação nativa simples de prioridade/complexidade no detalhe;
+2. bloco read-first de sessões recentes da tarefa (sem edição avançada);
+3. integração de ações de tarefa no Projeto v2 com estados unificados de operação.

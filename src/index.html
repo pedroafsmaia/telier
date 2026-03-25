@@ -1569,10 +1569,11 @@ async function getProjetoTarefasSnapshotV2(projetoId) {
 
 async function getTarefaSnapshotV2(tarefaId, context = {}) {
   if (!tarefaId) return null;
-  const [tarefaRes, tempoRes, colaboradoresRes] = await Promise.allSettled([
+  const [tarefaRes, tempoRes, colaboradoresRes, ativasRes] = await Promise.allSettled([
     req('GET', `/tarefas/${tarefaId}`),
     req('GET', `/tarefas/${tarefaId}/tempo/resumo`),
     req('GET', `/tarefas/${tarefaId}/colaboradores`),
+    req('GET', '/tempo/ativas'),
   ]);
 
   const tarefa = tarefaRes.status === 'fulfilled' ? (tarefaRes.value || null) : null;
@@ -1587,6 +1588,10 @@ async function getTarefaSnapshotV2(tarefaId, context = {}) {
   const tempoMinutos = Number.isFinite(Number(tempoMinutosRaw))
     ? Number(tempoMinutosRaw)
     : null;
+  const ativas = ativasRes.status === 'fulfilled'
+    ? (Array.isArray(ativasRes.value?.itens) ? ativasRes.value.itens : (Array.isArray(ativasRes.value) ? ativasRes.value : []))
+    : [];
+  const sessaoAtiva = ativas.find((sessao) => (sessao?.tarefa_id || sessao?.id) === (tarefa.id || tarefaId)) || null;
 
   return {
     id: tarefa.id || tarefaId,
@@ -1598,11 +1603,17 @@ async function getTarefaSnapshotV2(tarefaId, context = {}) {
     complexidade: tarefa.complexidade || tarefa.dificuldade || null,
     prioridade: tarefa.prioridade || null,
     tempoMinutos,
+    timer: {
+      ativa: !!sessaoAtiva,
+      sessaoId: sessaoAtiva?.id || sessaoAtiva?.sessao_id || null,
+      minutos: Number(sessaoAtiva?.minutos || 0),
+      label: sessaoAtiva?.tempo_formatado || null,
+    },
     projeto: {
       id: tarefa.projeto_id || context?.projetoId || null,
       nome: context?.projetoNome || 'Projeto',
     },
-    parcial: tempoRes.status !== 'fulfilled' || colaboradoresRes.status !== 'fulfilled',
+    parcial: tempoRes.status !== 'fulfilled' || colaboradoresRes.status !== 'fulfilled' || ativasRes.status !== 'fulfilled',
     source: 'api-task-read-first',
   };
 }
@@ -1672,6 +1683,25 @@ window.TelierV2Bridge.actions = {
       return { ok: false, refresh: false };
     }
     await req('PATCH', `/tarefas/${tarefaId}`, { status });
+    return { ok: true, refresh: false };
+  },
+  iniciarCronometroDaTarefa: async (tarefa = {}) => {
+    const tarefaId = tarefa?.id;
+    const tarefaNome = tarefa?.nome || 'Tarefa';
+    if (!tarefaId || typeof iniciarCronometro !== 'function') {
+      toast('Não foi possível iniciar cronômetro nesta tarefa', 'err');
+      return { ok: false, refresh: false };
+    }
+    await iniciarCronometro(tarefaId, tarefaNome);
+    return { ok: true, refresh: false };
+  },
+  pararCronometroDaTarefa: async (tarefa = {}) => {
+    const sessaoId = tarefa?.timer?.sessaoId || null;
+    if (!sessaoId || typeof pararCronometro !== 'function') {
+      toast('Não há sessão ativa desta tarefa para parar', 'err');
+      return { ok: false, refresh: false };
+    }
+    await pararCronometro(sessaoId);
     return { ok: true, refresh: false };
   },
   iniciarOuRetomarCronometro: async (snapshot = {}) => {

@@ -1219,3 +1219,20 @@ Quando houver dúvida entre duas soluções, preferir a que:
 **Paridade mínima fechada nesta etapa:**
 - leitura nativa de contexto principal da tarefa (status, prazo, responsável, colaboradores e resumo de tempo);
 - transição reversível com botão explícito para “Abrir no fluxo atual”.
+
+### 2026-03-25 — Fase 5.5 concluída com ação nativa de cronômetro no detalhe de Tarefa (v2)
+
+**Decisão (curta e cumulativa):**
+- O detalhe de tarefa no v2 passa a permitir iniciar/retomar e parar cronômetro sem sair imediatamente para o legado.
+- A atualização de estado do cronômetro usa recarga conservadora do snapshot da tarefa após ação.
+
+**Motivação:**
+- reduzir dependência da interface atual numa ação operacional central do uso diário;
+- priorizar consistência de estado sobre sensação de instantaneidade em cenário de concorrência.
+
+**Trade-off aceito:**
+- leitura de sessão ativa depende de integração adicional (`/tempo/ativas`) e pode marcar parcialidade quando essa fonte falhar.
+
+**Paridade mínima fechada nesta etapa:**
+- ação nativa de iniciar/retomar e parar cronômetro no detalhe da tarefa;
+- feedback local de loading/erro e estado visual sem ambiguidade.

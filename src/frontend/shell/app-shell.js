@@ -86,6 +86,14 @@
       complexidade: src.complexidade || null,
       prioridade: src.prioridade || null,
       tempoMinutos: Number.isFinite(Number(src.tempoMinutos)) ? Number(src.tempoMinutos) : null,
+      timer: src.timer && typeof src.timer === 'object'
+        ? {
+          ativa: !!src.timer.ativa,
+          sessaoId: src.timer.sessaoId || null,
+          minutos: Number.isFinite(Number(src.timer.minutos)) ? Number(src.timer.minutos) : 0,
+          label: src.timer.label || null,
+        }
+        : { ativa: false, sessaoId: null, minutos: 0, label: null },
       projeto: src.projeto && typeof src.projeto === 'object'
         ? { id: src.projeto.id || '', nome: src.projeto.nome || 'Projeto' }
         : { id: '', nome: 'Projeto' },
@@ -245,6 +253,10 @@
     const colaboradores = tarefa.colaboradores.length
       ? tarefa.colaboradores.join(', ')
       : '—';
+    const timerMutation = tarefaState?.timerMutation || { loading: false, error: '' };
+    const timerLabel = tarefa.timer?.ativa
+      ? (tarefa.timer.label || fmtHours(tarefa.timer.minutos || 0))
+      : 'Sem sessão ativa nesta tarefa';
     return `
       <div class="v2-project-layout">
         <section class="v2-panel">
@@ -272,6 +284,18 @@
             ${button({ label: 'Abrir projeto (v2)', attrs: { 'data-v2-action': 'open-project', 'data-v2-project-id': tarefa.projeto?.id || '' }, disabled: !tarefa.projeto?.id })}
             ${button({ label: 'Voltar para projeto', attrs: { 'data-v2-action': 'go-projeto' } })}
           </div>
+          <div style="height:10px"></div>
+          ${panel({
+            title: 'Cronômetro',
+            body: `<div class="v2-shell-note">${esc(timerLabel)}</div>
+              <div style="height:8px"></div>
+              <div class="v2-controls">
+                ${tarefa.timer?.ativa
+    ? button({ label: timerMutation.loading ? 'Parando...' : 'Parar cronômetro', attrs: { 'data-v2-action': 'stop-task-timer' }, disabled: !!timerMutation.loading || !tarefa.timer?.sessaoId })
+    : button({ label: timerMutation.loading ? 'Iniciando...' : 'Iniciar/retomar cronômetro', attrs: { 'data-v2-action': 'start-task-timer' }, disabled: !!timerMutation.loading || !tarefa.id })}
+              </div>
+              ${timerMutation.error ? '<div class="v2-shell-note" style="color:var(--danger,#b42318)">Falha ao atualizar cronômetro da tarefa.</div>' : ''}`,
+          })}
           <div style="height:10px"></div>
           ${emptyState({
             title: 'Escopo read-first',
@@ -476,7 +500,7 @@
         responsavelOptions: [],
       },
       projeto: { id: '', loading: false, error: '', data: null, reqToken: 0, statusMutations: {} },
-      tarefa: { id: '', projectId: '', loading: false, error: '', data: null, reqToken: 0 },
+      tarefa: { id: '', projectId: '', loading: false, error: '', data: null, reqToken: 0, timerMutation: { loading: false, error: '' } },
     };
 
     function applyProjectFilters() {
@@ -603,6 +627,15 @@
       }
     }
 
+    async function reloadTarefa() {
+      const tarefaId = state.tarefa.id;
+      if (!tarefaId) return;
+      await loadTarefa(tarefaId, {
+        id: state.tarefa.projectId || state.projeto.id || '',
+        nome: state.projeto.data?.nome || state.tarefa.data?.projeto?.nome || 'Projeto',
+      });
+    }
+
     async function loadHoje() {
       if (state.hoje.loading) return;
       const bridge = global.TelierV2Bridge;
@@ -689,6 +722,36 @@
           if (targetProjectId && (!state.projeto.data || state.projeto.id !== targetProjectId)) {
             loadProjeto(targetProjectId);
           } else {
+            render();
+          }
+          return;
+        }
+        if (action === 'start-task-timer') {
+          if (state.tarefa.timerMutation.loading || !state.tarefa.data) return;
+          state.tarefa.timerMutation = { loading: true, error: '' };
+          render();
+          try {
+            result = await bridge.actions.iniciarCronometroDaTarefa?.(state.tarefa.data);
+            if (!result?.ok) throw new Error('task_timer_start_failed');
+            state.tarefa.timerMutation = { loading: false, error: '' };
+            await reloadTarefa();
+          } catch {
+            state.tarefa.timerMutation = { loading: false, error: 'task_timer_start_failed' };
+            render();
+          }
+          return;
+        }
+        if (action === 'stop-task-timer') {
+          if (state.tarefa.timerMutation.loading || !state.tarefa.data) return;
+          state.tarefa.timerMutation = { loading: true, error: '' };
+          render();
+          try {
+            result = await bridge.actions.pararCronometroDaTarefa?.(state.tarefa.data);
+            if (!result?.ok) throw new Error('task_timer_stop_failed');
+            state.tarefa.timerMutation = { loading: false, error: '' };
+            await reloadTarefa();
+          } catch {
+            state.tarefa.timerMutation = { loading: false, error: 'task_timer_stop_failed' };
             render();
           }
           return;
