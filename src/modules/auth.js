@@ -38,9 +38,9 @@ export async function init() {
     } else {
       // Check if setup is needed
       try {
-        const { precisa_setup } = await endpoints.needsSetup();
+        const { needs_setup } = await endpoints.needsSetup();
         clearTimeout(renderTimeout);
-        if (precisa_setup) {
+        if (needs_setup) {
           mostrarSetup();
         } else {
           mostrarLogin();
@@ -101,9 +101,18 @@ export async function fazerSetup(forceChange = false) {
   const senha = document.getElementById('s-senha')?.value;
   const confirma = document.getElementById('s-confirma')?.value;
 
-  if (!nome || !senha || !confirma) {
-    toast('Preencha todos os campos', 'erro');
-    return;
+  if (forceChange) {
+    // Troca forçada de senha: só precisa de senha e confirmação
+    if (!senha || !confirma) {
+      toast('Preencha os campos de senha', 'erro');
+      return;
+    }
+  } else {
+    const login = document.getElementById('s-login')?.value;
+    if (!nome || !login || !senha || !confirma) {
+      toast('Preencha todos os campos', 'erro');
+      return;
+    }
   }
 
   if (senha !== confirma) {
@@ -122,17 +131,18 @@ export async function fazerSetup(forceChange = false) {
     btnSetup.disabled = true;
 
     if (forceChange) {
-      // Change existing password
+      // Troca de senha forçada após login
       await req('POST', '/auth/trocar-senha', { nova_senha: senha });
       setEU({ ...EU, deve_trocar_senha: 0 });
       toast('Senha alterada com sucesso', 'ok');
       mostrarApp();
     } else {
-      // Initial setup
-      const { token, usuario: user } = await endpoints.setup(nome, senha);
+      // Setup inicial do administrador
+      const login = document.getElementById('s-login')?.value;
+      const { token, usuario: user } = await endpoints.setup(nome, login, senha);
       setToken(token);
       setEU(user);
-      toast('Setup realizado com sucesso', 'ok');
+      toast('Conta criada com sucesso', 'ok');
       mostrarApp();
     }
   } catch (erro) {
@@ -161,27 +171,24 @@ export async function modalCadastroPublico() {
   const html = `
     <form style="display: flex; flex-direction: column; gap: 12px;">
       <input type="text" id="cadastro-nome" placeholder="Nome completo" class="input-control" />
-      <input type="email" id="cadastro-email" placeholder="Email" class="input-control" />
-      <input type="password" id="cadastro-senha" placeholder="Senha" class="input-control" />
-      <input type="password" id="cadastro-confirma" placeholder="Confirmar senha" class="input-control" />
+      <input type="text" id="cadastro-login" placeholder="Nome de usuário (ex: joao_silva)" class="input-control" autocomplete="username" />
+      <input type="password" id="cadastro-senha" placeholder="Senha" class="input-control" autocomplete="new-password" />
+      <input type="password" id="cadastro-confirma" placeholder="Confirmar senha" class="input-control" autocomplete="new-password" />
       <button type="button" class="btn btn-primary" onclick="fazerCadastroPublico()" id="btn-cadastro">
         Cadastrar
       </button>
     </form>
   `;
-
-  // Import abrirModal here to avoid circular dependency
-  // This will be handled in app.js when all modules are loaded
-  console.log('Modal cadastro público preparado');
+  window.abrirModal?.(html, { titulo: 'Criar minha conta' });
 }
 
 export async function fazerCadastroPublico() {
   const nome = document.getElementById('cadastro-nome')?.value;
-  const email = document.getElementById('cadastro-email')?.value;
+  const usuario_login = document.getElementById('cadastro-login')?.value;
   const senha = document.getElementById('cadastro-senha')?.value;
   const confirma = document.getElementById('cadastro-confirma')?.value;
 
-  if (!nome || !email || !senha || !confirma) {
+  if (!nome || !usuario_login || !senha || !confirma) {
     toast('Preencha todos os campos', 'erro');
     return;
   }
@@ -191,14 +198,18 @@ export async function fazerCadastroPublico() {
     return;
   }
 
+  if (senha.length < 6) {
+    toast('Senha deve ter pelo menos 6 caracteres', 'erro');
+    return;
+  }
+
   try {
     const btnCadastro = document.getElementById('btn-cadastro');
     btnCadastro.classList.add('btn-loading');
     btnCadastro.disabled = true;
 
-    await endpoints.register(nome, email, senha);
+    await endpoints.register(nome, usuario_login, senha);
     toast('Cadastro realizado! Faça login para continuar.', 'ok');
-    // Close modal and go back to login
     document.querySelector('.modal-overlay')?.remove();
   } catch (erro) {
     toast(`Erro ao cadastrar: ${erro.message}`, 'erro');

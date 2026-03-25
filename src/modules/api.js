@@ -21,8 +21,13 @@ export async function req(method, path, body) {
     clearTimeout(timeoutId);
 
     if (!res.ok) {
-      const erro = await res.text();
-      throw new Error(erro || `HTTP ${res.status}`);
+      const erroTexto = await res.text();
+      let erroMsg = erroTexto || `HTTP ${res.status}`;
+      try {
+        const erroJson = JSON.parse(erroTexto);
+        erroMsg = erroJson.error || erroJson.message || erroMsg;
+      } catch {}
+      throw new Error(erroMsg);
     }
 
     return await res.json();
@@ -70,8 +75,8 @@ export const endpoints = {
   // Auth
   login: (usuario, senha) => req('POST', '/auth/login', { usuario_login: usuario, senha }),
   logout: () => req('POST', '/auth/logout'),
-  register: (nome, email, senha) => req('POST', '/auth/register', { nome, email, senha }),
-  setup: (nome, senha) => req('POST', '/auth/setup', { nome, senha }),
+  register: (nome, usuario_login, senha) => req('POST', '/auth/register', { nome, usuario_login, senha }),
+  setup: (nome, usuario_login, senha) => req('POST', '/auth/setup', { nome, usuario_login, senha }),
   me: () => req('GET', '/auth/me'),
   needsSetup: () => req('GET', '/auth/needs-setup'),
 

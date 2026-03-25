@@ -38,11 +38,38 @@ export async function pararCronometro(sessaoId) {
 }
 
 // Render timer dock (floating timer display)
-export function renderTimerDock() {
+export async function renderTimerDock() {
   const dock = document.getElementById('timer-dock');
   if (!dock) return;
-  // TODO: Fetch active timers and render
-  dock.innerHTML = '';
+  try {
+    const ativas = await req('GET', '/tempo/ativas');
+    if (!ativas || !ativas.length) {
+      dock.innerHTML = '';
+      return;
+    }
+    dock.innerHTML = `
+      <div class="timer-dock-list">
+        ${ativas.map(s => {
+          const inicioMs = new Date(s.inicio.replace(' ', 'T')).getTime();
+          const decorrido = Math.floor((Date.now() - inicioMs) / 1000);
+          const horas = Math.floor(decorrido / 3600);
+          const min = Math.floor((decorrido % 3600) / 60);
+          const tempoStr = horas > 0 ? `${horas}h ${min}min` : `${min}min`;
+          return `
+            <div class="timer-dock-item">
+              <div class="timer-dock-info">
+                <span class="timer-dock-tarefa">${esc(s.tarefa_nome)}</span>
+                <span class="timer-dock-proj muted-detail">${esc(s.projeto_nome)}</span>
+              </div>
+              <span class="timer-dock-tempo">${tempoStr}</span>
+              <button class="btn btn-sm btn-ghost" onclick="pararCronometro('${s.id}')">■ Parar</button>
+            </div>
+          `;
+        }).join('')}
+      </div>`;
+  } catch {
+    dock.innerHTML = '';
+  }
 }
 
 // Modal to add interval to session
@@ -121,15 +148,23 @@ export async function renderSessoesTarefa(tarefaId, containerEl) {
     }
     containerEl.innerHTML = `
       <div class="sessoes-list">
-        ${sessoes.map(s => `
-          <div class="sessao-item">
-            <div class="sessao-header">
-              <span class="sessao-data">${s.data_inicio?.split('T')[0]}</span>
-              <span class="sessao-duracao">${fmtDuracao(s.duracao_segundos)}</span>
-              <button class="btn btn-sm btn-ghost" onclick="editarSessao('${s.id}')">✎</button>
+        ${sessoes.map(s => {
+          // Backend retorna s.inicio (datetime string), s.fim (nullable), s.horas_liquidas (float)
+          const data = (s.inicio || '').split('T')[0] || (s.inicio || '').split(' ')[0] || '—';
+          const duracaoH = s.horas_liquidas != null
+            ? `${parseFloat(s.horas_liquidas).toFixed(2)}h`
+            : (s.fim ? '—' : 'em andamento');
+          return `
+            <div class="sessao-item">
+              <div class="sessao-header">
+                <span class="sessao-data">${esc(data)}</span>
+                <span class="sessao-duracao">${esc(duracaoH)}</span>
+                ${s.usuario_nome ? `<span class="sessao-user muted-detail">${esc(s.usuario_nome)}</span>` : ''}
+                <button class="btn btn-sm btn-ghost" onclick="editarSessao('${s.id}')">✎</button>
+              </div>
             </div>
-          </div>
-        `).join('')}
+          `;
+        }).join('')}
       </div>`;
   } catch (e) {
     containerEl.innerHTML = `<div class="error-small">${esc(e.message)}</div>`;
