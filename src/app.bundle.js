@@ -1376,6 +1376,10 @@
   }
   async function duplicarTarefa(id) {
   }
+  function dragTarefa(e, tarefaId) {
+    e.dataTransfer.effectAllowed = "move";
+    e.dataTransfer.setData("tarefa-id", tarefaId);
+  }
   if (typeof window !== "undefined") {
     window.renderKanban = renderKanban;
     window.renderLista = renderLista;
@@ -1556,6 +1560,9 @@
   async function abrirUsuarioAdmin(usuarioId) {
   }
   async function exportarTempoAdminCSV(projetoId) {
+  }
+  async function modalNovoColega() {
+    toast("Fun\xE7\xE3o em desenvolvimento", "info");
   }
   if (typeof window !== "undefined") {
     window.abrirCentralAdmin = abrirCentralAdmin;
@@ -1942,6 +1949,7 @@
   window.modalEditarTarefa = modalEditarTarefa;
   window.abrirTarefa = abrirTarefa;
   window.duplicarTarefa = duplicarTarefa;
+  window.dragTarefa = dragTarefa;
   window.iniciarCronometro = iniciarCronometro;
   window.pararCronometro = pararCronometro;
   window.carregarTimersAtivos = carregarTimersAtivos;
@@ -1966,6 +1974,7 @@
   window.abrirCentralAdmin = abrirCentralAdmin;
   window.abrirUsuarioAdmin = abrirUsuarioAdmin;
   window.exportarTempoAdminCSV = exportarTempoAdminCSV;
+  window.modalNovoColega = modalNovoColega;
   window.carregarNotificacoes = carregarNotificacoes;
   window.iniciarPollNotificacoes = iniciarPollNotificacoes;
   window.marcarNotifLida = marcarNotifLida;

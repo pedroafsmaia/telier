@@ -79,6 +79,7 @@ window.modalNovaTarefa = tasks.modalNovaTarefa;
 window.modalEditarTarefa = tasks.modalEditarTarefa;
 window.abrirTarefa = tasks.abrirTarefa;
 window.duplicarTarefa = tasks.duplicarTarefa;
+window.dragTarefa = tasks.dragTarefa;
 
 // Timer
 window.iniciarCronometro = timer.iniciarCronometro;
@@ -109,6 +110,7 @@ window.toggleGrupo = groups.toggleGrupo;
 window.abrirCentralAdmin = admin.abrirCentralAdmin;
 window.abrirUsuarioAdmin = admin.abrirUsuarioAdmin;
 window.exportarTempoAdminCSV = admin.exportarTempoAdminCSV;
+window.modalNovoColega = admin.modalNovoColega;
 
 // Notifications
 window.carregarNotificacoes = notifications.carregarNotificacoes;

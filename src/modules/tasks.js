@@ -249,6 +249,11 @@ export async function duplicarTarefa(id) {
   // TODO: Duplicate task
 }
 
+export function dragTarefa(e, tarefaId) {
+  e.dataTransfer.effectAllowed = 'move';
+  e.dataTransfer.setData('tarefa-id', tarefaId);
+}
+
 // Expose globally
 if (typeof window !== 'undefined') {
   window.renderKanban = renderKanban;
