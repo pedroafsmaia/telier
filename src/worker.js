@@ -1308,6 +1308,7 @@ export default {
         u.uid, u.uid, u.uid,
         u.uid, u.uid, u.uid,
         u.uid,
+        u.uid, u.uid,
         adminScope, u.uid, u.uid, u.uid, u.uid,
         statusFiltro, statusFiltro,
       ).all();
