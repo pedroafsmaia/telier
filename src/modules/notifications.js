@@ -30,7 +30,7 @@ export function pararPollNotificacoes() {
 
 export async function marcarNotifLida(id, abrirLink = null) {
   try {
-    await req('PATCH', `/notificacoes/${id}`, { lida: true });
+    await req('PUT', `/notificacoes/${id}/lida`, {});
     if (abrirLink) window.location.href = abrirLink;
   } catch (e) {
     toast(e.message, 'erro');
@@ -39,7 +39,7 @@ export async function marcarNotifLida(id, abrirLink = null) {
 
 export async function marcarTodasNotifLidas() {
   try {
-    await req('POST', '/notificacoes/marcar-todas-lidas', {});
+    await req('PUT', '/notificacoes/lidas', {});
     toast('Notificações marcadas como lidas', 'ok');
   } catch (e) {
     toast(e.message, 'erro');
