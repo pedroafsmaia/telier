@@ -402,7 +402,10 @@ tr[data-status="Concluída"]    { border-left:2px solid var(--green); opacity:.7
 .proj-progress-fill{height:100%;border-radius:2px;transition:width .4s}
 .proj-progress-fill.done{background:var(--green)}
 .proj-progress-fill.partial{background:var(--blue)}
-.proj-card-footer{display:flex;align-items:center;justify-content:space-between}
+.proj-foco-hint{font-size:var(--fs-075);color:var(--accent);margin-bottom:8px;padding:6px 8px;background:rgba(91,138,245,.08);border-radius:var(--r);display:inline-block}
+.proj-card-footer{display:flex;align-items:flex-end;justify-content:space-between;gap:8px;flex-wrap:wrap}
+.proj-card-footer .proj-status{flex:0 0 auto}
+.proj-card-footer .proj-card-actions{flex:0 0 auto;display:flex;gap:6px;margin:0}
 .proj-card-dono{display:flex;align-items:center;gap:6px;font-size:var(--fs-080);color:var(--text3)}
 .proj-card-dono-label{color:var(--text3);margin-right:2px}
 .proj-urgente{font-size:var(--fs-075);font-family:var(--ff-mono);display:flex;align-items:center;gap:4px}

@@ -599,7 +599,7 @@
     renderDash2();
   }
   function renderInicioDia(projetos, ativas, ultimaSessao = null, focoGlobal = null, resumoHoje = null) {
-    const collapsed = localStorage.getItem(STARTDAY_COLLAPSE_KEY) === "1";
+    const collapsed = localStorage.getItem(STARTDAY_COLLAPSE_KEY) !== "0";
     const btnText = collapsed ? "Expandir" : "Recolher";
     return `
     <div class="startday-wrap dash-header-spaced${collapsed ? " collapsed" : ""}" id="startday-wrap">
@@ -903,6 +903,7 @@
       const urgente = dias !== null && dias <= 7 && !projetoConcluido(statusProjeto);
       const timerAtivo = _ativasDash && _ativasDash.some((a) => a.projeto_id === p.id);
       const compartilhado = Number(p.compartilhado_comigo) === 1;
+      const temFoco = p.minha_tarefa_foco_id && p.minha_tarefa_foco;
       return `
       <div class="proj-card ${urgente ? "urgent" : ""}" draggable="true" ondragstart="dragProjeto(event,'${p.id}')" ondragend="dragProjetoEnd(event)" onclick="abrirProjeto('${p.id}')">
         <div class="proj-card-header">
@@ -914,13 +915,17 @@
         </div>
         <div class="proj-card-body">
           ${p.total_tarefas ? `<div class="proj-progress"><div class="proj-prog-bar"><div class="proj-prog-fill" style="width:${pct}%"></div></div><span class="proj-prog-text">${conc}/${total}</span></div>` : ""}
+          ${temFoco ? `<div class="proj-foco-hint">\u2B50 ${esc(p.minha_tarefa_foco)}</div>` : ""}
         </div>
         <div class="proj-card-footer">
           <div class="proj-meta">
             ${prazoFmt(p.prazo) ? `<span class="proj-meta-item${urgente ? " urgent" : ""}">\u{1F4C5} ${prazoFmt(p.prazo)}</span>` : ""}
             ${p.area_m2 ? `<span class="proj-meta-item">\u{1F4D0} ${Math.round(p.area_m2)} m\xB2</span>` : ""}
           </div>
-          <div class="proj-status">${tag(statusProjeto)}</div>
+          <div class="proj-card-actions">
+            <div class="proj-status">${tag(statusProjeto)}</div>
+            ${temFoco ? `<button class="btn btn-sm btn-primary" onclick="event.stopPropagation(); iniciarCronometro('${p.minha_tarefa_foco_id}', '${esc(p.minha_tarefa_foco)}')">\u23F1\uFE0F Iniciar</button>` : ""}
+          </div>
         </div>
       </div>`;
     }).join("");

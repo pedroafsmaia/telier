@@ -68,7 +68,8 @@ export function setFiltro(f) {
 
 // Render start-of-day card section
 export function renderInicioDia(projetos, ativas, ultimaSessao = null, focoGlobal = null, resumoHoje = null) {
-  const collapsed = localStorage.getItem(STARTDAY_COLLAPSE_KEY) === '1';
+  // Default to collapsed (unless explicitly expanded with '0')
+  const collapsed = localStorage.getItem(STARTDAY_COLLAPSE_KEY) !== '0';
   const btnText = collapsed ? 'Expandir' : 'Recolher';
   return `
     <div class="startday-wrap dash-header-spaced${collapsed ? ' collapsed' : ''}" id="startday-wrap">
@@ -418,6 +419,7 @@ export function renderCardsDash(projetos) {
     const urgente = dias !== null && dias <= 7 && !projetoConcluido(statusProjeto);
     const timerAtivo = _ativasDash && _ativasDash.some(a => a.projeto_id === p.id);
     const compartilhado = Number(p.compartilhado_comigo) === 1;
+    const temFoco = p.minha_tarefa_foco_id && p.minha_tarefa_foco;
 
     return `
       <div class="proj-card ${urgente ? 'urgent' : ''}" draggable="true" ondragstart="dragProjeto(event,'${p.id}')" ondragend="dragProjetoEnd(event)" onclick="abrirProjeto('${p.id}')">
@@ -430,13 +432,17 @@ export function renderCardsDash(projetos) {
         </div>
         <div class="proj-card-body">
           ${p.total_tarefas ? `<div class="proj-progress"><div class="proj-prog-bar"><div class="proj-prog-fill" style="width:${pct}%"></div></div><span class="proj-prog-text">${conc}/${total}</span></div>` : ''}
+          ${temFoco ? `<div class="proj-foco-hint">⭐ ${esc(p.minha_tarefa_foco)}</div>` : ''}
         </div>
         <div class="proj-card-footer">
           <div class="proj-meta">
             ${prazoFmt(p.prazo) ? `<span class="proj-meta-item${urgente ? ' urgent' : ''}">📅 ${prazoFmt(p.prazo)}</span>` : ''}
             ${p.area_m2 ? `<span class="proj-meta-item">📐 ${Math.round(p.area_m2)} m²</span>` : ''}
           </div>
-          <div class="proj-status">${tag(statusProjeto)}</div>
+          <div class="proj-card-actions">
+            <div class="proj-status">${tag(statusProjeto)}</div>
+            ${temFoco ? `<button class="btn btn-sm btn-primary" onclick="event.stopPropagation(); iniciarCronometro('${p.minha_tarefa_foco_id}', '${esc(p.minha_tarefa_foco)}')">⏱️ Iniciar</button>` : ''}
+          </div>
         </div>
       </div>`;
   }).join('');
