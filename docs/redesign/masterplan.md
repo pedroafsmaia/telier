@@ -1126,3 +1126,96 @@ Quando houver dúvida entre duas soluções, preferir a que:
 8. **Atualizar `docs/redesign/masterplan.md`** conforme decisões forem tomadas durante a execução.
 
 > **Decisão operacional:** schema, tipos, contratos e preparo de API para campus e unidade devem ser introduzidos nas fases iniciais do plano, preferencialmente entre a Fase 0 e a Fase 2. A UI administrativa completa e as estruturas auxiliares adicionais podem permanecer para a Fase 7.
+
+---
+
+## 21. Decisões fechadas (registro incremental)
+
+### 2026-03-24 — Fase 1 (design system e shell) concluída com transição híbrida
+
+**Decisão (curta e cumulativa):**
+- `#v2-shell-root` é o shell padrão de navegação (Hoje, Projetos, Tempo, Pessoas, Administração).
+- `#legacy-app-root` permanece ativo apenas como camada de contingência durante a migração.
+
+**Motivação:**
+- reduzir regressão enquanto a reescrita sai do monólito para módulos;
+- manter continuidade operacional sem “big bang”.
+
+**Trade-off aceito:**
+- convivência temporária de duas camadas de UI, com custo de manutenção no curto prazo.
+
+**Paridade mínima + checks para remover `#legacy-app-root` (critério objetivo):**
+- paridade de navegação: shell v2 acessa Hoje, Projetos, Tempo, Pessoas e Administração sem depender de render do legado;
+- paridade de operação: iniciar/parar cronômetro, listar tarefas pendentes e abrir projeto funcionam no shell v2 em fluxo principal;
+- paridade de estados: loading, vazio e erro tratados nas telas migradas;
+- checks obrigatórios aprovados no PR de remoção: `node scripts/check_backend_infra_compat.mjs` e `npm run smoke` (ou justificativa explícita de limitação de ambiente no próprio PR).
+
+### 2026-03-24 — Fase 5.1 concluída com primeira subárea nativa de Tarefas no Projeto v2
+
+**Decisão (curta e cumulativa):**
+- A página de Projeto no v2 passa a incorporar uma subárea nativa real de Tarefas (tabela operacional) como destino principal.
+- Ações avançadas de tarefa permanecem temporariamente no fluxo atual com fallback explícito por linha.
+
+**Motivação:**
+- reduzir dependência imediata da interface antiga sem migrar CRUD completo de uma vez;
+- criar base segura para migração incremental de operações de tarefa com menor risco.
+
+**Trade-off aceito:**
+- enriquecimentos de colaboradores/tempo usam integração best-effort (podem aparecer como parciais nesta fase).
+
+**Paridade mínima fechada nesta etapa:**
+- leitura nativa de tarefas por projeto no shell v2;
+- exibição operacional de responsável, status, prazo e complexidade/prioridade;
+- fallback documentado para ações ainda não migradas.
+
+### 2026-03-24 — Fase 5.2 concluída com endpoint agregado para snapshot de tarefas (redução de N+1)
+
+**Decisão (curta e cumulativa):**
+- O v2 passa a consumir um endpoint agregado dedicado para snapshot de tarefas do projeto (`/projetos/:id/tarefas/snapshot-v2`).
+- O enriquecimento N+1 por tarefa (colaboradores/tempo) deixa de ser caminho principal no bridge.
+
+**Motivação:**
+- reduzir fragilidade e variabilidade de tempo de carregamento da subárea de tarefas no Projeto v2;
+- preparar a próxima fase de ações nativas com base de dados mais previsível.
+
+**Trade-off aceito:**
+- endpoint explicitamente orientado ao v2, mantendo fallback de baixo risco para ambientes onde a rota ainda não esteja disponível.
+
+**Paridade mínima fechada nesta etapa:**
+- snapshot operacional da tabela de tarefas entregue em chamada agregada única;
+- contratos legados preservados sem quebra de fluxos existentes.
+
+### 2026-03-24 — Fase 5.3 concluída com ação nativa de status em linha no Projeto v2
+
+**Decisão (curta e cumulativa):**
+- O v2 passa a permitir mudança de status por linha na tabela de tarefas do projeto.
+- A operação usa contrato já existente (`PATCH /tarefas/:id`) com recarga controlada do snapshot agregado.
+
+**Motivação:**
+- reduzir dependência imediata da interface antiga em uma ação operacional frequente;
+- manter risco baixo sem migrar CRUD completo.
+
+**Trade-off aceito:**
+- atualização conservadora (com recarga de snapshot) em vez de otimista agressiva para evitar inconsistência.
+
+**Paridade mínima fechada nesta etapa:**
+- feedback de loading/erro por linha;
+- estado da tabela consistente após atualização de status;
+- fallback para fluxo atual preservado nas ações ainda não migradas.
+
+### 2026-03-25 — Fase 5.4 concluída com primeiro detalhe read-first de Tarefa no v2
+
+**Decisão (curta e cumulativa):**
+- O clique de “Abrir tarefa” na tabela do Projeto v2 passa a abrir um destino nativo inicial de tarefa (read-first), sem depender imediatamente do legado.
+- Ações avançadas de tarefa continuam com fallback explícito para o fluxo atual.
+
+**Motivação:**
+- reduzir mais dependência da interface atual em navegação operacional frequente;
+- preparar base segura para próximas ações nativas na tarefa sem migrar CRUD completo de uma vez.
+
+**Trade-off aceito:**
+- leitura de colaboradores/tempo pode ficar parcial quando endpoints auxiliares falharem, mantendo renderização estável.
+
+**Paridade mínima fechada nesta etapa:**
+- leitura nativa de contexto principal da tarefa (status, prazo, responsável, colaboradores e resumo de tempo);
+- transição reversível com botão explícito para “Abrir no fluxo atual”.

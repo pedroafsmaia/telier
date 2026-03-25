@@ -9,247 +9,78 @@
 //   C7 — Checagem explícita de env.DB para mensagem de erro clara quando binding não configurado
 //   C8 — Migração automática de coluna senha_hash em bancos legados
 
-// ── CORS DINÂMICO (C3) ──
-// Configure a variável ALLOWED_ORIGIN nas env vars do Worker com o domínio do seu Cloudflare Pages
-// Ex: https://telier.pages.dev
-function getCors(request, env) {
-  const origin = request.headers.get('Origin') || '';
-  const allowed = env.ALLOWED_ORIGIN || 'https://telier.pages.dev';
-  // Permite localhost em desenvolvimento
-  const isLocalhost = origin.startsWith('http://localhost:') || origin.startsWith('http://127.0.0.1:');
-  const allowedOrigin = (origin === allowed || isLocalhost) ? origin : allowed;
-  return {
-    'Access-Control-Allow-Origin': allowedOrigin,
-    'Access-Control-Allow-Methods': 'GET,POST,PUT,PATCH,DELETE,OPTIONS',
-    'Access-Control-Allow-Headers': 'Content-Type,Authorization',
-    'Vary': 'Origin',
-  };
-}
-
-function json(data, status = 200, cors = {}, extraHeaders = {}) {
-  return new Response(JSON.stringify(data), {
-    status, headers: { ...cors, 'Content-Type': 'application/json', ...extraHeaders },
-  });
-}
-function err(msg, status = 400, cors = {}, extraHeaders = {}) {
-  return json({ error: msg }, status, cors, extraHeaders);
-}
-
-// ── SENHAS (SHA-256 + COMPAT PBKDF2/LEGADO) ──
-// C2 — hashSenha usa SHA-256 com salt aleatório (sha256v1).
-//       crypto.subtle.deriveBits (PBKDF2) não é suportado de forma confiável
-//       em todos os planos do Cloudflare Workers; SHA-256 é sempre disponível.
-//       Hashes PBKDF2 e senhas em texto puro são aceitos na verificação para
-//       compatibilidade com contas existentes e migrados na próxima autenticação.
-const PBKDF2_ITER = 10000; // mantido apenas para verificar hashes pbkdf2 legados
-const PBKDF2_ALGO = 'SHA-256';
-const LEGACY_PLAIN = 'legacy_plain';
-const MIN_PASSWORD = 8;
-const MAX_PASSWORD = 256;
-
-function toBase64(bytes) {
-  let s = '';
-  for (let i = 0; i < bytes.length; i++) s += String.fromCharCode(bytes[i]);
-  return btoa(s);
-}
-
-function fromBase64(str) {
-  const bin = atob(str || '');
-  const out = new Uint8Array(bin.length);
-  for (let i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i);
-  return out;
-}
-
-function timingSafeEqual(a, b) {
-  if (!(a instanceof Uint8Array) || !(b instanceof Uint8Array)) return false;
-  if (a.length !== b.length) return false;
-  let diff = 0;
-  for (let i = 0; i < a.length; i++) diff |= (a[i] ^ b[i]);
-  return diff === 0;
-}
-
-// Converte hex string → Uint8Array sem depender de TextEncoder para instanceof
-function hexToBytes(hex) {
-  const out = new Uint8Array(hex.length >>> 1);
-  for (let i = 0; i < out.length; i++) out[i] = parseInt(hex.slice(i * 2, i * 2 + 2), 16);
-  return out;
-}
-
-// SHA-256 de um ArrayBuffer/Uint8Array, retorna hex string
-async function sha256Hex(data) {
-  const buf = await crypto.subtle.digest('SHA-256', data);
-  return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('');
-}
-
-async function pbkdf2Hash(senha, saltBytes, iter = PBKDF2_ITER) {
-  const enc = new TextEncoder();
-  const key = await crypto.subtle.importKey('raw', enc.encode(String(senha || '')), 'PBKDF2', false, ['deriveBits']);
-  const bits = await crypto.subtle.deriveBits({ name: 'PBKDF2', hash: PBKDF2_ALGO, salt: saltBytes, iterations: iter }, key, 256);
-  return new Uint8Array(bits);
-}
-
-// Gera hash sha256v1: salt aleatório (32 hex chars) + SHA-256(salt:senha)
-async function hashSenha(senha) {
-  const saltBytes = crypto.getRandomValues(new Uint8Array(16));
-  const salt = Array.from(saltBytes).map(b => b.toString(16).padStart(2, '0')).join('');
-  const enc = new TextEncoder();
-  const hash = await sha256Hex(enc.encode(salt + ':' + String(senha)));
-  return `sha256v1$${salt}$${hash}`;
-}
-
-function parseHash(stored) {
-  const s = String(stored || '');
-  if (!s.startsWith('pbkdf2$')) return null;
-  const parts = s.split('$');
-  if (parts.length !== 4) return null;
-  const iter = Number(parts[1]);
-  if (!Number.isFinite(iter) || iter < 1) return null;
-  try {
-    return { iter, salt: fromBase64(parts[2]), hash: fromBase64(parts[3]) };
-  } catch {
-    return null;
-  }
-}
-
-async function verificarSenha(senha, stored) {
-  const s = String(stored || '');
-
-  // sha256v1 — formato atual
-  if (s.startsWith('sha256v1$')) {
-    const parts = s.split('$');
-    if (parts.length !== 3) return { ok: false, mode: 'sha256v1' };
-    const [, salt, storedHash] = parts;
-    const enc = new TextEncoder();
-    const calc = await sha256Hex(enc.encode(salt + ':' + String(senha)));
-    return { ok: timingSafeEqual(hexToBytes(calc), hexToBytes(storedHash)), mode: 'sha256v1' };
-  }
-
-  // pbkdf2 — compatibilidade com hashes criados entre c680bba e este commit
-  const parsed = parseHash(s);
-  if (parsed) {
-    try {
-      const calc = await pbkdf2Hash(senha, parsed.salt, parsed.iter);
-      return { ok: timingSafeEqual(calc, parsed.hash), mode: 'pbkdf2' };
-    } catch {
-      return { ok: false, mode: 'pbkdf2' };
-    }
-  }
-
-  // texto puro — legado (antes de c680bba); migrado para sha256v1 no próximo login
-  return { ok: String(senha) === s, mode: LEGACY_PLAIN };
-}
-
-const RATE_WINDOW_MS = 60000;
-const RATE_AUTH_LIMIT = 12;
-// ── RATE LIMITING ──
-// IMPORTANT: _rateBuckets is in-memory and local to each Worker instance.
-// Cloudflare may run multiple instances simultaneously, so these limits are
-// per-instance, not globally enforced. For production, migrate to a Durable
-// Object (see docs/context.md § rate-limiting) for consistent global limits.
-// Current implementation is adequate for small teams (single-instance traffic).
-const _rateBuckets = new Map();
-
-function getClientIp(request) {
-  return (request.headers.get('CF-Connecting-IP') || request.headers.get('X-Forwarded-For') || 'unknown').split(',')[0].trim();
-}
-
-function checkRateLimit(request, scope, limit = RATE_AUTH_LIMIT, windowMs = RATE_WINDOW_MS) {
-  const ip = getClientIp(request);
-  const now = Date.now();
-  const key = `${scope}:${ip}`;
-
-  // Prune expired entries periodically to prevent unbounded growth
-  if (_rateBuckets.size > 2000) {
-    for (const [k, b] of _rateBuckets) {
-      if (now > b.resetAt) _rateBuckets.delete(k);
-    }
-  }
-
-  let bucket = _rateBuckets.get(key);
-  if (!bucket || now > bucket.resetAt) {
-    bucket = { count: 0, resetAt: now + windowMs };
-    _rateBuckets.set(key, bucket);
-  }
-  bucket.count += 1;
-  return bucket.count <= limit;
-}
-
-function toInt(v, fallback = 1) {
-  const n = Number(v);
-  return Number.isFinite(n) && n > 0 ? Math.floor(n) : fallback;
-}
-
-function getPagination(url, defaultSize = 100, maxSize = 500) {
-  const page = toInt(url.searchParams.get('page'), 1);
-  const pageSize = Math.min(toInt(url.searchParams.get('page_size'), defaultSize), maxSize);
-  const offset = (page - 1) * pageSize;
-  return { page, pageSize, offset };
-}
-
-// Retorna datetime atual no formato SQLite ('YYYY-MM-DD HH:MM:SS')
-function nowStr(d = new Date()) { return d.toISOString().slice(0, 19).replace('T', ' '); }
+import { getCors, json, err, buildResponseHeaders } from './backend/http/response.js';
+import { readJsonBody, clampStr, validateDate, validatePositiveNumber, getPagination, toInt, nowStr } from './backend/utils/request.js';
+import {
+  MIN_PASSWORD,
+  MAX_PASSWORD,
+  hashSenha,
+  verificarSenha,
+  checkRateLimit,
+  getRateLimitRetryAfter,
+  requireAuth,
+  isAdmin,
+  getUsuarioLoginInput,
+  normalizeUsuarioPayload,
+  normalizeTarefaPayload,
+} from './backend/domain/auth/core.js';
+import {
+  STATUS_PROJ_VALIDOS_SET,
+  normalizarStatusProjeto,
+  podeEditarProjeto,
+  syncProjetoPermissoesGrupo,
+  syncProjetosDoGrupo,
+} from './backend/domain/projects/core.js';
+import { parseProjetoInput } from './backend/domain/projects/contracts.js';
+import { parseGrupoInput } from './backend/domain/groups/contracts.js';
+import { parseTarefaUpsertInput, getComplexidadeNormalizada, parseColaboradorInput } from './backend/domain/tasks/contracts.js';
+import {
+  podeEditarTarefa,
+  podeCronometrarTarefa,
+  podeGerenciarFocoTarefa,
+  podeGerenciarColaboradorTarefa,
+  mensagemCompartilhamentoTarefa,
+} from './backend/domain/tasks/core.js';
+import { parseSessaoTempoCreateInput, parseSessaoTempoUpdateInput, parseSessaoTempoStopInput } from './backend/domain/time/contracts.js';
+import {
+  listTarefasPorProjeto,
+  listSnapshotTarefasProjetoV2,
+  getTemplateTarefaAtivo,
+  createTarefa,
+  updateTarefa,
+  deleteTarefa,
+  patchStatusTarefa,
+  getTarefaParaDuplicar,
+  getTarefaBase,
+  getTarefaDono,
+  setFocoExclusivoTarefa,
+  clearFocoTarefa,
+  listColaboradoresTarefa,
+  getTarefaComProjetoParaColab,
+  addColaboradorTarefa,
+  removeColaboradorTarefa,
+} from './backend/repositories/tasks.js';
+import {
+  listSessoesPorTarefaComIntervalos,
+  getSessaoTempoPorId,
+  criarSessaoTempo,
+  atualizarSessaoTempo,
+  excluirSessaoTempo,
+  pararSessaoTempo,
+  listResumoTempoPorTarefa,
+  listTempoAtivo,
+  listColegasComTempoAtivo,
+  getUltimaSessaoConcluida,
+  getResumoTempoHoje,
+  listRelatorioProjetoTempoRows,
+  listHorasPorUsuarioNoProjeto,
+} from './backend/repositories/time.js';
+import { agruparRelatorioProjetoPorTarefa } from './backend/services/time_reports.js';
 
 // ── TOKEN COM 128 BITS (C6) ──
 function uid() { return crypto.randomUUID().replace(/-/g, ''); } // 32 hex chars = 128 bits
 
 function sessaoUid() { return crypto.randomUUID().replace(/-/g, ''); } // token de sessão = 128 bits
-
-async function getUsuario(request, env) {
-  const token = (request.headers.get('Authorization') || '').replace('Bearer ', '').trim();
-  if (!token) return null;
-  return await env.DB.prepare(
-    `SELECT s.id as sessao_id, u.id as uid, u.nome, u.login, u.papel, COALESCE(u.deve_trocar_senha, 0) as deve_trocar_senha
-     FROM sessoes s JOIN usuarios u ON s.usuario_id = u.id
-     WHERE s.id = ? AND s.expira_em > datetime('now')`
-  ).bind(token).first();
-}
-
-async function requireAuth(request, env) {
-  const u = await getUsuario(request, env);
-  if (!u) return [null, 401];
-  return [u, null];
-}
-
-function isAdmin(u) { return u?.papel === 'admin'; }
-
-const STATUS_PROJ_VALIDOS = ['A fazer', 'Em andamento', 'Em revisão', 'Pausado', 'Concluído', 'Arquivado'];
-const STATUS_PROJ_VALIDOS_SET = new Set(STATUS_PROJ_VALIDOS);
-
-function normalizarStatusProjeto(status) {
-  if (!status) return status;
-  const s = String(status).trim();
-  if (s === 'Concluída') return 'Concluído';
-  // Backward compat: old records stored before rename
-  if (s === 'Aguardando aprovação') return 'Em revisão';
-  return s;
-}
-
-async function podeEditarProjeto(env, projetoId, usuarioId, papel) {
-  if (papel === 'admin') return true;
-
-  const [proj, recusado, perm] = await env.DB.batch([
-    env.DB.prepare('SELECT dono_id, grupo_id FROM projetos WHERE id = ?')
-      .bind(projetoId),
-    env.DB.prepare('SELECT 1 as ok FROM recusas_projeto WHERE projeto_id = ? AND usuario_id = ?')
-      .bind(projetoId, usuarioId),
-    env.DB.prepare('SELECT 1 as ok FROM permissoes_projeto WHERE projeto_id = ? AND usuario_id = ?')
-      .bind(projetoId, usuarioId),
-  ]);
-
-  const projRow = proj.results[0];
-  if (!projRow) return false;
-  if (projRow.dono_id === usuarioId) return true;
-  if (recusado.results[0]) return false;
-  if (perm.results[0]) return true;
-
-  if (projRow.grupo_id) {
-    const gperm = await env.DB.prepare(
-      'SELECT 1 FROM permissoes_grupo WHERE grupo_id = ? AND usuario_id = ?'
-    ).bind(projRow.grupo_id, usuarioId).first();
-    if (gperm) return true;
-  }
-  return false;
-}
 
 let _grupoSchemaReady = false;
 async function ensureGrupoSchema(env) {
@@ -430,80 +261,6 @@ async function ensureUserSecuritySchema(env) {
   _userSecuritySchemaReady = true;
 }
 
-async function syncProjetoPermissoesGrupo(env, projetoId, grupoId, donoId = null) {
-  if (!projetoId) return;
-  let ownerId = donoId;
-  if (!ownerId) {
-    const projeto = await env.DB.prepare('SELECT dono_id FROM projetos WHERE id = ?').bind(projetoId).first();
-    ownerId = projeto?.dono_id || null;
-  }
-
-  if (!grupoId) {
-    await env.DB.prepare(
-      'DELETE FROM permissoes_projeto WHERE projeto_id = ? AND origem = "grupo"'
-    ).bind(projetoId).run();
-    return;
-  }
-
-  await env.DB.prepare(`
-    INSERT OR IGNORE INTO permissoes_projeto (projeto_id, usuario_id, nivel, origem)
-    SELECT ?, pg.usuario_id, 'editor', 'grupo'
-    FROM permissoes_grupo pg
-    WHERE pg.grupo_id = ?
-      AND (? IS NULL OR pg.usuario_id <> ?)
-      AND NOT EXISTS (
-        SELECT 1 FROM recusas_projeto rp
-        WHERE rp.projeto_id = ? AND rp.usuario_id = pg.usuario_id
-      )
-  `).bind(projetoId, grupoId, ownerId, ownerId, projetoId).run();
-
-  await env.DB.prepare(`
-    DELETE FROM permissoes_projeto
-    WHERE projeto_id = ?
-      AND origem = 'grupo'
-      AND usuario_id NOT IN (
-        SELECT pg.usuario_id
-        FROM permissoes_grupo pg
-        WHERE pg.grupo_id = ?
-      )
-  `).bind(projetoId, grupoId).run();
-}
-
-async function syncProjetosDoGrupo(env, grupoId, novoGrupoId = undefined) {
-  const projetos = await env.DB.prepare(
-    'SELECT id, dono_id FROM projetos WHERE grupo_id = ?'
-  ).bind(grupoId).all();
-
-  for (const projeto of projetos.results) {
-    await syncProjetoPermissoesGrupo(env, projeto.id, novoGrupoId, projeto.dono_id);
-  }
-}
-
-async function podeEditarTarefa(env, tarefaId, usuarioId, papel) {
-  if (papel === 'admin') return true;
-  const t = await env.DB.prepare('SELECT dono_id, projeto_id FROM tarefas WHERE id = ?').bind(tarefaId).first();
-  if (!t) return false;
-  if (t.dono_id === usuarioId) return true;
-  // Verificar colaboradores da tarefa
-  const colab = await env.DB.prepare(
-    'SELECT 1 FROM colaboradores_tarefa WHERE tarefa_id = ? AND usuario_id = ?'
-  ).bind(tarefaId, usuarioId).first();
-  if (colab) return true;
-  return await podeEditarProjeto(env, t.projeto_id, usuarioId, papel);
-}
-
-// Verifica se usuário pode iniciar cronômetro numa tarefa
-async function podeCronometrar(env, tarefaId, usuarioId, papel) {
-  if (papel === 'admin') return true;
-  const t = await env.DB.prepare('SELECT dono_id FROM tarefas WHERE id = ?').bind(tarefaId).first();
-  if (!t) return false;
-  if (t.dono_id === usuarioId) return true;
-  const colab = await env.DB.prepare(
-    'SELECT 1 FROM colaboradores_tarefa WHERE tarefa_id = ? AND usuario_id = ?'
-  ).bind(tarefaId, usuarioId).first();
-  return !!colab;
-}
-
 async function ensureIndexes(env) {
   if (env._idxReady) return;
   await env.DB.batch([
@@ -530,56 +287,6 @@ async function ensureAllSchemas(env) {
   _allSchemasReady = true;
 }
 
-const MAX_BODY_BYTES = 64 * 1024; // 64 KB
-
-async function readJsonBody(request) {
-  const ct = (request.headers.get('Content-Type') || '').split(';')[0].trim();
-  if (ct && ct !== 'application/json') {
-    throw Object.assign(new Error('Content-Type deve ser application/json'), { status: 415 });
-  }
-  const contentLength = Number(request.headers.get('Content-Length') || 0);
-  if (contentLength > MAX_BODY_BYTES) {
-    throw Object.assign(new Error('Payload too large'), { status: 413 });
-  }
-  const arrayBuf = await request.arrayBuffer();
-  if (arrayBuf.byteLength > MAX_BODY_BYTES) {
-    throw Object.assign(new Error('Payload too large'), { status: 413 });
-  }
-  try {
-    return JSON.parse(new TextDecoder().decode(arrayBuf));
-  } catch {
-    throw Object.assign(new Error('JSON inválido'), { status: 400 });
-  }
-}
-
-function clampStr(value, max, fieldName) {
-  if (value === undefined || value === null) return value;
-  const s = String(value);
-  if (s.length > max) throw Object.assign(
-    new Error(`Campo "${fieldName}" excede o limite de ${max} caracteres`),
-    { status: 400 }
-  );
-  return s;
-}
-
-function validateDate(value, fieldName) {
-  if (value === undefined || value === null || value === '') return null;
-  const s = String(value).trim();
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(s)) {
-    throw Object.assign(new Error(`Campo "${fieldName}" deve ser uma data válida (YYYY-MM-DD)`), { status: 400 });
-  }
-  return s;
-}
-
-function validatePositiveNumber(value, fieldName) {
-  if (value === undefined || value === null || value === '') return null;
-  const n = Number(value);
-  if (!Number.isFinite(n) || n < 0) {
-    throw Object.assign(new Error(`Campo "${fieldName}" deve ser um número positivo`), { status: 400 });
-  }
-  return n;
-}
-
 export default {
   async fetch(request, env) {
     const startedAt = Date.now();
@@ -588,13 +295,7 @@ export default {
     const path = url.pathname;
     const method = request.method;
     const cors = getCors(request, env);
-    const responseHeaders = {
-      'X-Request-Id': reqId,
-      'X-Content-Type-Options': 'nosniff',
-      'X-Frame-Options': 'DENY',
-      'Referrer-Policy': 'strict-origin-when-cross-origin',
-      'Permissions-Policy': 'camera=(), microphone=(), geolocation=()',
-    };
+    const responseHeaders = buildResponseHeaders(reqId);
 
     if (method === 'OPTIONS') return new Response(null, { headers: { ...cors, ...responseHeaders } });
 
@@ -679,11 +380,8 @@ export default {
     // ── SETUP ──
     if (path === '/auth/setup' && method === 'POST') {
       {
-        const ip = getClientIp(request);
-        const key = `auth_setup:${ip}`;
         if (!checkRateLimit(request, 'auth_setup', 6)) {
-          const bucket = _rateBuckets.get(key);
-          const retryAfter = bucket ? Math.ceil((bucket.resetAt - Date.now()) / 1000) : 60;
+          const retryAfter = getRateLimitRetryAfter(request, 'auth_setup');
           return err('Muitas tentativas. Aguarde um minuto.', 429, cors, { ...responseHeaders, 'Retry-After': String(retryAfter) });
         }
       }
@@ -691,11 +389,11 @@ export default {
       if (existing) return fail('Admin já existe', 400);
       const _body = await readJsonBody(request);
       const nome = clampStr(_body.nome, 200, 'nome');
-      const usuario_login = clampStr(_body.usuario_login, 60, 'usuario_login');
+      const usuario_login = getUsuarioLoginInput(_body);
       const senha = clampStr(_body.senha, MAX_PASSWORD, 'senha');
       if (!nome || !usuario_login || !senha) return fail('Preencha todos os campos');
       if (senha.length < MIN_PASSWORD) return fail(`A senha deve ter no mínimo ${MIN_PASSWORD} caracteres`, 400);
-      const login = usuario_login.toLowerCase().trim().replace(/\s+/g, '_');
+      const login = usuario_login;
       const loginExiste = await env.DB.prepare('SELECT id FROM usuarios WHERE login = ?').bind(login).first();
       if (loginExiste) return fail('Nome de usuário já existe');
       const hash = await hashSenha(senha);
@@ -713,21 +411,18 @@ export default {
     // ── AUTO CADASTRO (USUÁRIO COMUM) ──
     if (path === '/auth/register' && method === 'POST') {
       {
-        const ip = getClientIp(request);
-        const key = `auth_register:${ip}`;
         if (!checkRateLimit(request, 'auth_register', 8)) {
-          const bucket = _rateBuckets.get(key);
-          const retryAfter = bucket ? Math.ceil((bucket.resetAt - Date.now()) / 1000) : 60;
+          const retryAfter = getRateLimitRetryAfter(request, 'auth_register');
           return err('Muitas tentativas. Aguarde um minuto.', 429, cors, { ...responseHeaders, 'Retry-After': String(retryAfter) });
         }
       }
       const _body = await readJsonBody(request);
       const nome = clampStr(_body.nome, 200, 'nome');
-      const usuario_login = clampStr(_body.usuario_login, 60, 'usuario_login');
+      const usuario_login = getUsuarioLoginInput(_body);
       const senha = clampStr(_body.senha, MAX_PASSWORD, 'senha');
       if (!nome || !usuario_login || !senha) return fail('Preencha todos os campos');
       if (senha.length < MIN_PASSWORD) return fail(`A senha deve ter no mínimo ${MIN_PASSWORD} caracteres`, 400);
-      const login = usuario_login.toLowerCase().trim().replace(/\s+/g, '_');
+      const login = usuario_login;
       const existing = await env.DB.prepare('SELECT id FROM usuarios WHERE login = ?').bind(login).first();
       if (existing) return fail('Nome de usuário já existe');
       const senhaSalva = await hashSenha(senha);
@@ -735,25 +430,22 @@ export default {
       await env.DB.prepare(
         'INSERT INTO usuarios (id, nome, login, senha_hash, papel, deve_trocar_senha) VALUES (?, ?, ?, ?, "membro", 0)'
       ).bind(id, nome.trim(), login, senhaSalva).run();
-      return ok({ ok: true, id, usuario_login: login, papel: 'membro' });
+      return ok(normalizeUsuarioPayload({ ok: true, id, usuario_login: login, papel: 'membro' }));
     }
 
     // ── LOGIN por usuario_login ──
     if (path === '/auth/login' && method === 'POST') {
       {
-        const ip = getClientIp(request);
-        const key = `auth_login:${ip}`;
         if (!checkRateLimit(request, 'auth_login', 10)) {
-          const bucket = _rateBuckets.get(key);
-          const retryAfter = bucket ? Math.ceil((bucket.resetAt - Date.now()) / 1000) : 60;
+          const retryAfter = getRateLimitRetryAfter(request, 'auth_login');
           return err('Muitas tentativas de login. Aguarde um minuto.', 429, cors, { ...responseHeaders, 'Retry-After': String(retryAfter) });
         }
       }
       const _body = await readJsonBody(request);
-      const usuario_login = clampStr(_body.usuario_login, 60, 'usuario_login');
+      const usuario_login = getUsuarioLoginInput(_body);
       const senha = clampStr(_body.senha, MAX_PASSWORD, 'senha');
       if (!usuario_login || !senha) return fail('Usuário e senha obrigatórios');
-      const login = usuario_login.toLowerCase().trim().replace(/\s+/g, '_');
+      const login = usuario_login;
       const usuario = await env.DB.prepare(
         'SELECT * FROM usuarios WHERE login = ?'
       ).bind(login).first();
@@ -778,13 +470,13 @@ export default {
       return ok({
         token: sessaoId,
         must_change_password: Number(usuario.deve_trocar_senha || 0) === 1,
-        usuario: {
+        usuario: normalizeUsuarioPayload({
           id: usuario.id,
           nome: usuario.nome,
           usuario_login: usuario.login,
           papel: usuario.papel,
           deve_trocar_senha: Number(usuario.deve_trocar_senha || 0),
-        },
+        }),
       });
     }
 
@@ -797,13 +489,33 @@ export default {
     if (path === '/auth/me' && method === 'GET') {
       const [u, e] = await requireAuth(request, env);
       if (e) return fail('Não autorizado', 401);
-      return ok({
+      return ok(normalizeUsuarioPayload({
         id: u.uid,
         nome: u.nome,
         usuario_login: u.login,
         papel: u.papel,
         deve_trocar_senha: Number(u.deve_trocar_senha || 0),
-      });
+      }));
+    }
+
+    // Compatibilidade de contrato: endpoint consumido no frontend durante renderDash.
+    // Mantém comportamento atual (nulo por padrão), evitando 404 silencioso.
+    if (path === '/auth/foco-global' && method === 'GET') {
+      const [u, e] = await requireAuth(request, env);
+      if (e) return fail('Não autorizado', 401);
+      const foco = await env.DB.prepare(`
+        SELECT t.id, t.id AS tarefa_id, t.nome, t.nome AS tarefa_nome,
+               t.status, t.prioridade, t.dificuldade AS complexidade, t.dificuldade,
+               t.projeto_id, p.nome as projeto_nome, t.data, t.atualizado_em
+        FROM tarefas t
+        JOIN projetos p ON p.id = t.projeto_id
+        WHERE t.foco = 1
+          AND (t.dono_id = ? OR EXISTS (SELECT 1 FROM colaboradores_tarefa ct WHERE ct.tarefa_id = t.id AND ct.usuario_id = ?))
+        ORDER BY t.atualizado_em DESC
+        LIMIT 1
+      `).bind(u.uid, u.uid).first();
+      const normalized = foco ? normalizeTarefaPayload(foco) : null;
+      return ok(normalized, 200, { 'Cache-Control': 'private, max-age=15' });
     }
 
     if (path === '/auth/trocar-senha' && method === 'POST') {
@@ -835,7 +547,7 @@ export default {
       const [u, e] = await requireAuth(request, env);
       if (e) return fail('Não autorizado', 401);
       const lista = await env.DB.prepare('SELECT id, nome, login as usuario_login, papel FROM usuarios ORDER BY nome').all();
-      return ok(lista.results, 200, { 'Cache-Control': 'private, max-age=30' });
+      return ok((lista.results || []).map(normalizeUsuarioPayload), 200, { 'Cache-Control': 'private, max-age=30' });
     }
 
     if (path === '/usuarios' && method === 'POST') {
@@ -844,12 +556,12 @@ export default {
       if (!isAdmin(u)) return fail('Sem permissão', 403);
       const _body = await readJsonBody(request);
       const nome = clampStr(_body.nome, 200, 'nome');
-      const usuario_login = clampStr(_body.usuario_login, 60, 'usuario_login');
+      const usuario_login = getUsuarioLoginInput(_body);
       const senha = clampStr(_body.senha, MAX_PASSWORD, 'senha');
       const papel = clampStr(_body.papel ?? 'membro', 80, 'papel');
       if (!nome || !usuario_login || !senha) return fail('Campos obrigatórios');
       if (senha.length < MIN_PASSWORD) return fail(`A senha deve ter no mínimo ${MIN_PASSWORD} caracteres`, 400);
-      const login = usuario_login.toLowerCase().trim().replace(/\s+/g, '_');
+      const login = usuario_login;
       const existing = await env.DB.prepare('SELECT id FROM usuarios WHERE login = ?').bind(login).first();
       if (existing) return fail('Nome de usuário já existe');
       const hash = await hashSenha(senha);
@@ -857,7 +569,7 @@ export default {
       await env.DB.prepare(
         'INSERT INTO usuarios (id, nome, login, senha_hash, papel, deve_trocar_senha) VALUES (?, ?, ?, ?, ?, 1)'
       ).bind(id, nome.trim(), login, hash, papel).run();
-      return ok({ id, nome, usuario_login: login, papel });
+      return ok(normalizeUsuarioPayload({ id, nome, usuario_login: login, papel }));
     }
 
     const matchUsuarioSenha = path.match(/^\/usuarios\/(usr_\w+)\/senha$/);
@@ -988,7 +700,7 @@ export default {
         LIMIT ? OFFSET ?
       `).bind(pageSize, offset).all();
 
-      return ok(usuarios.results);
+      return ok((usuarios.results || []).map(normalizeUsuarioPayload));
     }
 
     const matchAdminUsuario = path.match(/^\/admin\/usuarios\/(usr_\w+)$/);
@@ -1064,9 +776,9 @@ export default {
       `).bind(usuarioId).all();
 
       return ok({
-        usuario,
+        usuario: normalizeUsuarioPayload(usuario),
         projetos_dashboard: projetosDashboard.results,
-        tarefas: tarefas.results,
+        tarefas: (tarefas.results || []).map(normalizeTarefaPayload),
         tempo_por_tarefa: tempoPorTarefa.results,
         ativas: ativas.results,
       });
@@ -1917,7 +1629,7 @@ export default {
       const [u, e] = await requireAuth(request, env);
       if (e) return fail('Não autorizado', 401);
       const templates = await env.DB.prepare(`
-        SELECT tt.id, tt.nome, tt.status, tt.prioridade, tt.dificuldade,
+        SELECT tt.id, tt.nome, tt.status, tt.prioridade, tt.dificuldade, tt.dificuldade AS complexidade,
           tt.descricao,
           tt.criado_por, tu.nome as criado_por_nome,
           tt.criado_em, tt.atualizado_em
@@ -1926,7 +1638,7 @@ export default {
         WHERE tt.ativo = 1
         ORDER BY tt.nome ASC
       `).all();
-      return ok(templates.results);
+      return ok((templates.results || []).map(normalizeTarefaPayload));
     }
 
     if (path === '/templates-tarefa' && method === 'POST') {
@@ -1937,7 +1649,7 @@ export default {
       const nome = clampStr(_body.nome, 200, 'nome');
       const status = clampStr(_body.status, 80, 'status');
       const prioridade = clampStr(_body.prioridade, 80, 'prioridade');
-      const dificuldade = clampStr(_body.dificuldade, 80, 'dificuldade');
+      const dificuldade = clampStr(_body.dificuldade ?? _body.complexidade, 80, 'dificuldade');
       const descricao = clampStr(_body.descricao, 4000, 'descricao');
       if (!nome?.trim()) return fail('Nome obrigatório');
       const id = 'tpl_' + uid();
@@ -1968,7 +1680,7 @@ export default {
       const nome = clampStr(_body.nome, 200, 'nome');
       const status = clampStr(_body.status, 80, 'status');
       const prioridade = clampStr(_body.prioridade, 80, 'prioridade');
-      const dificuldade = clampStr(_body.dificuldade, 80, 'dificuldade');
+      const dificuldade = clampStr(_body.dificuldade ?? _body.complexidade, 80, 'dificuldade');
       const descricao = clampStr(_body.descricao, 4000, 'descricao');
       if (!nome?.trim()) return fail('Nome obrigatório');
       const t = await env.DB.prepare('SELECT id FROM templates_tarefa WHERE id = ? AND ativo = 1').bind(templateId).first();
@@ -2002,6 +1714,17 @@ export default {
     }
 
     // ── TAREFAS ──
+    const matchTarefasSnapshotV2 = path.match(/^\/projetos\/(prj_\w+)\/tarefas\/snapshot-v2$/);
+
+    if (matchTarefasSnapshotV2 && method === 'GET') {
+      const [u, e] = await requireAuth(request, env);
+      if (e) return fail('Não autorizado', 401);
+      const projetoId = matchTarefasSnapshotV2[1];
+      if (!await podeEditarProjeto(env, projetoId, u.uid, u.papel)) return fail('Sem permissão', 403);
+      const itens = await listSnapshotTarefasProjetoV2(env, { projetoId, usuarioId: u.uid });
+      return ok({ itens, parcial: false, source: 'aggregated-v2' }, 200, { 'Cache-Control': 'private, max-age=10' });
+    }
+
     const matchTarefasProj = path.match(/^\/projetos\/(prj_\w+)\/tarefas$/);
 
     if (matchTarefasProj) {
@@ -2011,16 +1734,8 @@ export default {
         const [u, e] = await requireAuth(request, env);
         if (e) return fail('Não autorizado', 401);
         if (!await podeEditarProjeto(env, projetoId, u.uid, u.papel)) return fail('Sem permissão', 403);
-        const tarefas = await env.DB.prepare(
-          `SELECT t.*, t.dificuldade AS complexidade, tu.nome as dono_nome,
-           CASE WHEN t.dono_id = ? THEN 1 ELSE 0 END as minha_tarefa
-           FROM tarefas t LEFT JOIN usuarios tu ON tu.id = t.dono_id
-           WHERE t.projeto_id = ?
-           ORDER BY t.foco DESC,
-             CASE t.status WHEN 'Em andamento' THEN 0 WHEN 'A fazer' THEN 1 WHEN 'Bloqueada' THEN 2 ELSE 3 END,
-             t.criado_em ASC`
-        ).bind(u.uid, projetoId).all();
-        return ok(tarefas.results);
+        const tarefas = await listTarefasPorProjeto(env, { projetoId, usuarioId: u.uid });
+        return ok(tarefas.map(normalizeTarefaPayload));
       }
 
       if (method === 'POST') {
@@ -2028,43 +1743,33 @@ export default {
         if (e) return fail('Não autorizado', 401);
         if (!await podeEditarProjeto(env, projetoId, u.uid, u.papel)) return fail('Sem permissão', 403);
         const _body = await readJsonBody(request);
-        const nome = clampStr(_body.nome, 200, 'nome');
-        const status = clampStr(_body.status, 80, 'status');
-        const prioridade = clampStr(_body.prioridade, 80, 'prioridade');
-        const complexidade = clampStr(_body.complexidade, 80, 'dificuldade');
-        const dificuldade = clampStr(_body.dificuldade, 80, 'dificuldade');
-        const data = validateDate(_body.data, 'prazo');
-        const descricao = clampStr(_body.descricao, 4000, 'descricao');
+        const { nome, status, prioridade, complexidade, dificuldade, data, descricao } =
+          parseTarefaUpsertInput(_body, { clampStr, validateDate });
         const template_id = _body.template_id;
         let template = null;
         if (template_id) {
-          template = await env.DB.prepare(
-            `SELECT id, nome, status, prioridade, dificuldade, descricao
-             FROM templates_tarefa
-             WHERE id = ? AND ativo = 1`
-          ).bind(template_id).first();
+          template = await getTemplateTarefaAtivo(env, { templateId: template_id });
           if (!template) return fail('Template não encontrado', 404);
         }
         const nomeFinal = (nome || template?.nome || '').trim();
         if (!nomeFinal) return fail('Nome obrigatório');
-        const complexidadeVal = complexidade || dificuldade || template?.dificuldade || 'Moderada'; // accept both for compat
+        const complexidadeVal = getComplexidadeNormalizada({
+          complexidade,
+          dificuldade,
+          fallback: template?.dificuldade || 'Moderada',
+        }); // accept both for compat
         const id = 'tsk_' + uid();
-        await env.DB.prepare(
-          `INSERT INTO tarefas (
-            id, projeto_id, nome, status, prioridade, dificuldade, data, dono_id,
-            descricao
-          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
-        ).bind(
+        await createTarefa(env, {
           id,
           projetoId,
-          nomeFinal,
-          status || template?.status || 'A fazer',
-          prioridade || template?.prioridade || 'Média',
-          complexidadeVal,
-          data || null,
-          u.uid,
-          descricao?.trim() || template?.descricao || null
-        ).run();
+          nome: nomeFinal,
+          status: status || template?.status || 'A fazer',
+          prioridade: prioridade || template?.prioridade || 'Média',
+          dificuldade: complexidadeVal,
+          data: data || null,
+          donoId: u.uid,
+          descricao: descricao?.trim() || template?.descricao || null,
+        });
         return ok({ id });
       }
     }
@@ -2077,56 +1782,53 @@ export default {
       if (method === 'PUT') {
         const [u, e] = await requireAuth(request, env);
         if (e) return fail('Não autorizado', 401);
-        if (!await podeEditarTarefa(env, tarefaId, u.uid, u.papel)) return fail('Sem permissão', 403);
+        if (!await podeEditarTarefa(env, {
+          tarefaId,
+          usuarioId: u.uid,
+          papel: u.papel,
+          podeEditarProjeto,
+        })) return fail('Sem permissão', 403);
         const _body = await readJsonBody(request);
-        const nome = clampStr(_body.nome, 200, 'nome');
-        const status = clampStr(_body.status, 80, 'status');
-        const prioridade = clampStr(_body.prioridade, 80, 'prioridade');
-        const complexidade = clampStr(_body.complexidade, 80, 'dificuldade');
-        const dificuldade = clampStr(_body.dificuldade, 80, 'dificuldade');
-        const data = validateDate(_body.data, 'prazo');
-        const descricao = clampStr(_body.descricao, 4000, 'descricao');
-        const complexidadeVal = complexidade || dificuldade || 'Moderada';
+        const { nome, status, prioridade, complexidade, dificuldade, data, descricao } =
+          parseTarefaUpsertInput(_body, { clampStr, validateDate });
+        const complexidadeVal = getComplexidadeNormalizada({ complexidade, dificuldade, fallback: 'Moderada' });
         if (!nome?.trim()) return fail('Nome obrigatório');
-        await env.DB.prepare(
-          `UPDATE tarefas
-           SET nome=?, status=?, prioridade=?, dificuldade=?, data=?,
-               descricao=?,
-               atualizado_em=datetime('now')
-           WHERE id=?`
-        ).bind(
-          nome.trim(),
+        await updateTarefa(env, {
+          tarefaId,
+          nome: nome.trim(),
           status,
           prioridade,
-          complexidadeVal,
-          data || null,
-          descricao?.trim() || null,
-          tarefaId
-        ).run();
+          dificuldade: complexidadeVal,
+          data: data || null,
+          descricao: descricao?.trim() || null,
+        });
         return ok({ ok: true });
       }
 
 
-      // PUT /tarefas/:id/status — muda só o status, restrito a dono e colaboradores
+      // PATCH /tarefas/:id — muda só o status neste fluxo, restrito a dono e colaboradores
       if (method === 'PATCH') {
         const [u, e] = await requireAuth(request, env);
         if (e) return fail('Não autorizado', 401);
-        if (!await podeCronometrar(env, tarefaId, u.uid, u.papel)) {
+        if (!await podeCronometrarTarefa(env, { tarefaId, usuarioId: u.uid, papel: u.papel })) {
           return fail('Sem permissão — só o dono e colaboradores podem mudar o status', 403);
         }
         const _body = await readJsonBody(request);
         const status = clampStr(_body.status, 80, 'status');
         if (!status) return fail('Status obrigatório');
-        await env.DB.prepare(
-          'UPDATE tarefas SET status=?, atualizado_em=datetime("now") WHERE id=?'
-        ).bind(status, tarefaId).run();
+        await patchStatusTarefa(env, { tarefaId, status });
         return ok({ ok: true });
       }
       if (method === 'DELETE') {
         const [u, e] = await requireAuth(request, env);
         if (e) return fail('Não autorizado', 401);
-        if (!await podeEditarTarefa(env, tarefaId, u.uid, u.papel)) return fail('Sem permissão', 403);
-        await env.DB.prepare('DELETE FROM tarefas WHERE id = ?').bind(tarefaId).run();
+        if (!await podeEditarTarefa(env, {
+          tarefaId,
+          usuarioId: u.uid,
+          papel: u.papel,
+          podeEditarProjeto,
+        })) return fail('Sem permissão', 403);
+        await deleteTarefa(env, { tarefaId });
         return ok({ ok: true });
       }
     }
@@ -2136,31 +1838,26 @@ export default {
       const [u, e] = await requireAuth(request, env);
       if (e) return fail('Não autorizado', 401);
       const tarefaId = matchDuplicarTarefa[1];
-      if (!await podeEditarTarefa(env, tarefaId, u.uid, u.papel)) return fail('Sem permissão', 403);
-      const original = await env.DB.prepare(`
-        SELECT projeto_id, nome, status, prioridade, dificuldade, data,
-          descricao
-        FROM tarefas
-        WHERE id = ?
-      `).bind(tarefaId).first();
+      if (!await podeEditarTarefa(env, {
+        tarefaId,
+        usuarioId: u.uid,
+        papel: u.papel,
+        podeEditarProjeto,
+      })) return fail('Sem permissão', 403);
+      const original = await getTarefaParaDuplicar(env, { tarefaId });
       if (!original) return fail('Tarefa não encontrada', 404);
       const novoId = 'tsk_' + uid();
-      await env.DB.prepare(`
-        INSERT INTO tarefas (
-          id, projeto_id, nome, status, prioridade, dificuldade, data, dono_id,
-          descricao
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-      `).bind(
-        novoId,
-        original.projeto_id,
-        `${original.nome} (cópia)`,
-        original.status,
-        original.prioridade,
-        original.dificuldade,
-        original.data,
-        u.uid,
-        original.descricao
-      ).run();
+      await createTarefa(env, {
+        id: novoId,
+        projetoId: original.projeto_id,
+        nome: `${original.nome} (cópia)`,
+        status: original.status,
+        prioridade: original.prioridade,
+        dificuldade: original.dificuldade,
+        data: original.data,
+        donoId: u.uid,
+        descricao: original.descricao,
+      });
       return ok({ id: novoId });
     }
 
@@ -2173,22 +1870,22 @@ export default {
       if (e) return fail('Não autorizado', 401);
 
       if (method === 'PUT') {
-        const tarefa = await env.DB.prepare('SELECT projeto_id, dono_id FROM tarefas WHERE id = ?').bind(tarefaId).first();
+        const tarefa = await getTarefaBase(env, { tarefaId });
         if (!tarefa) return fail('Tarefa não encontrada', 404);
-        if (tarefa.dono_id !== u.uid && !isAdmin(u)) return fail('Só pode marcar foco nas suas tarefas', 403);
-        // Usar batch para atomicidade: remove foco anterior e define novo numa operação
-        await env.DB.batch([
-          env.DB.prepare('UPDATE tarefas SET foco = 0 WHERE projeto_id = ? AND dono_id = ?').bind(tarefa.projeto_id, u.uid),
-          env.DB.prepare('UPDATE tarefas SET foco = 1 WHERE id = ?').bind(tarefaId),
-        ]);
+        if (!podeGerenciarFocoTarefa({ tarefaDonoId: tarefa.dono_id, usuarioId: u.uid, admin: isAdmin(u) })) {
+          return fail('Só pode marcar foco nas suas tarefas', 403);
+        }
+        await setFocoExclusivoTarefa(env, { projetoId: tarefa.projeto_id, donoId: u.uid, tarefaId });
         return ok({ ok: true });
       }
 
       if (method === 'DELETE') {
-        const tarefa = await env.DB.prepare('SELECT dono_id FROM tarefas WHERE id = ?').bind(tarefaId).first();
+        const tarefa = await getTarefaDono(env, { tarefaId });
         if (!tarefa) return fail('Tarefa não encontrada', 404);
-        if (tarefa.dono_id !== u.uid && !isAdmin(u)) return fail('Sem permissão', 403);
-        await env.DB.prepare('UPDATE tarefas SET foco = 0 WHERE id = ?').bind(tarefaId).run();
+        if (!podeGerenciarFocoTarefa({ tarefaDonoId: tarefa.dono_id, usuarioId: u.uid, admin: isAdmin(u) })) {
+          return fail('Sem permissão', 403);
+        }
+        await clearFocoTarefa(env, { tarefaId });
         return ok({ ok: true });
       }
     }
@@ -2264,37 +1961,30 @@ export default {
       if (e) return fail('Não autorizado', 401);
 
       if (method === 'GET') {
-        const tarefa = await env.DB.prepare('SELECT dono_id FROM tarefas WHERE id = ?').bind(tarefaId).first();
+        const tarefa = await getTarefaDono(env, { tarefaId });
         if (!tarefa) return fail('Tarefa não encontrada', 404);
-        const colabs = await env.DB.prepare(
-          'SELECT u.id, u.nome, u.login as usuario_login FROM colaboradores_tarefa ct JOIN usuarios u ON u.id = ct.usuario_id WHERE ct.tarefa_id = ?'
-        ).bind(tarefaId).all();
-        return ok(colabs.results);
+        const colabs = await listColaboradoresTarefa(env, { tarefaId });
+        return ok(colabs);
       }
 
       if (method === 'POST') {
         // Só o dono da tarefa ou admin pode adicionar colaboradores
-        const tarefa = await env.DB.prepare(
-          `SELECT t.dono_id, t.nome as tarefa_nome, p.nome as projeto_nome
-           FROM tarefas t
-           LEFT JOIN projetos p ON p.id = t.projeto_id
-           WHERE t.id = ?`
-        ).bind(tarefaId).first();
+        const tarefa = await getTarefaComProjetoParaColab(env, { tarefaId });
         if (!tarefa) return fail('Tarefa não encontrada', 404);
-        if (tarefa.dono_id !== u.uid && !isAdmin(u)) return fail('Sem permissão', 403);
+        if (!podeGerenciarColaboradorTarefa({ tarefaDonoId: tarefa.dono_id, usuarioId: u.uid, admin: isAdmin(u) })) {
+          return fail('Sem permissão', 403);
+        }
         const _body = await readJsonBody(request);
-        const usuario_id = _body.usuario_id;
+        const { usuario_id } = parseColaboradorInput(_body);
         if (usuario_id === tarefa.dono_id) return fail('Usuário já é dono da tarefa');
-        await env.DB.prepare(
-          'INSERT OR IGNORE INTO colaboradores_tarefa (tarefa_id, usuario_id) VALUES (?, ?)'
-        ).bind(tarefaId, usuario_id).run();
+        await addColaboradorTarefa(env, { tarefaId, usuarioId: usuario_id });
         await criarNotificacaoCompartilhamento(env, {
           usuarioId: usuario_id,
           tipo: 'compartilhamento_recebido',
           escopo: 'tarefa',
           entidadeId: tarefaId,
           titulo: 'Tarefa compartilhada com você',
-          mensagem: `Você foi adicionado à tarefa "${tarefa.tarefa_nome}"${tarefa.projeto_nome ? ` no projeto "${tarefa.projeto_nome}"` : ''}.`,
+          mensagem: mensagemCompartilhamentoTarefa({ tarefaNome: tarefa.tarefa_nome, projetoNome: tarefa.projeto_nome }),
           atorId: u.uid,
         });
         return ok({ ok: true });
@@ -2306,12 +1996,10 @@ export default {
       const [u, e] = await requireAuth(request, env);
       if (e) return fail('Não autorizado', 401);
       const tarefaId = matchTarefaSair[1];
-      const tarefa = await env.DB.prepare('SELECT dono_id FROM tarefas WHERE id = ?').bind(tarefaId).first();
+      const tarefa = await getTarefaDono(env, { tarefaId });
       if (!tarefa) return fail('Tarefa não encontrada', 404);
       if (tarefa.dono_id === u.uid) return fail('O dono não pode sair da própria tarefa', 400);
-      const rm = await env.DB.prepare(
-        'DELETE FROM colaboradores_tarefa WHERE tarefa_id = ? AND usuario_id = ?'
-      ).bind(tarefaId, u.uid).run();
+      const rm = await removeColaboradorTarefa(env, { tarefaId, usuarioId: u.uid });
       if (!(rm.meta?.changes > 0)) return fail('Você não é colaborador desta tarefa', 400);
       return ok({ ok: true });
     }
@@ -2322,12 +2010,12 @@ export default {
       const [u, e] = await requireAuth(request, env);
       if (e) return fail('Não autorizado', 401);
       const [, tarefaId, usuarioId] = matchColabDel;
-      const tarefa = await env.DB.prepare('SELECT dono_id FROM tarefas WHERE id = ?').bind(tarefaId).first();
+      const tarefa = await getTarefaDono(env, { tarefaId });
       if (!tarefa) return fail('Tarefa não encontrada', 404);
-      if (tarefa.dono_id !== u.uid && !isAdmin(u)) return fail('Sem permissão', 403);
-      await env.DB.prepare(
-        'DELETE FROM colaboradores_tarefa WHERE tarefa_id = ? AND usuario_id = ?'
-      ).bind(tarefaId, usuarioId).run();
+      if (!podeGerenciarColaboradorTarefa({ tarefaDonoId: tarefa.dono_id, usuarioId: u.uid, admin: isAdmin(u) })) {
+        return fail('Sem permissão', 403);
+      }
+      await removeColaboradorTarefa(env, { tarefaId, usuarioId });
       return ok({ ok: true });
     }
 
@@ -2343,56 +2031,20 @@ export default {
       if (method === 'GET') {
         // Admin vê sessões de todos; outros veem só as suas
         const filtroUsuario = isAdmin(u) ? null : u.uid;
-        const sessoes = await env.DB.prepare(`
-          SELECT st.*, tu.nome as usuario_nome,
-            ROUND((
-              CASE WHEN st.fim IS NULL
-                THEN (julianday('now') - julianday(st.inicio)) * 24
-                ELSE (julianday(st.fim) - julianday(st.inicio)) * 24
-              END
-              -
-              COALESCE((
-                SELECT SUM(
-                  CASE WHEN i.fim IS NULL THEN 0
-                  ELSE (julianday(i.fim) - julianday(i.inicio)) * 24
-                  END
-                ) FROM intervalos i WHERE i.sessao_id = st.id
-              ), 0)
-            ), 4) as horas_liquidas
-          FROM sessoes_tempo st
-          LEFT JOIN usuarios tu ON tu.id = st.usuario_id
-          WHERE st.tarefa_id = ? AND (? IS NULL OR st.usuario_id = ?)
-          ORDER BY st.usuario_id, st.inicio DESC
-        `).bind(tarefaId, filtroUsuario, filtroUsuario).all();
-
-        if (!(sessoes.results || []).length) return ok([]);
-        const intervalosQ = await env.DB.prepare(`
-          SELECT i.*
-          FROM intervalos i
-          JOIN sessoes_tempo st ON st.id = i.sessao_id
-          WHERE st.tarefa_id = ? AND (? IS NULL OR st.usuario_id = ?)
-          ORDER BY i.sessao_id, i.inicio ASC
-        `).bind(tarefaId, filtroUsuario, filtroUsuario).all();
-        const intervalosPorSessao = new Map();
-        for (const it of (intervalosQ.results || [])) {
-          if (!intervalosPorSessao.has(it.sessao_id)) intervalosPorSessao.set(it.sessao_id, []);
-          intervalosPorSessao.get(it.sessao_id).push(it);
-        }
-        return ok(sessoes.results.map(s => ({ ...s, intervalos: intervalosPorSessao.get(s.id) || [] })));
+        const sessoes = await listSessoesPorTarefaComIntervalos(env, { tarefaId, filtroUsuario });
+        return ok(sessoes);
       }
 
       if (method === 'POST') {
         // Verificar se usuário tem permissão para cronometrar esta tarefa
-        if (!await podeCronometrar(env, tarefaId, u.uid, u.papel)) {
+        if (!await podeCronometrarTarefa(env, { tarefaId, usuarioId: u.uid, papel: u.papel })) {
           return fail('Sem permissão — você precisa ser dono ou colaborador desta tarefa', 403);
         }
         const _body = await readJsonBody(request);
-        const inicio = _body.inicio;
+        const { inicio } = parseSessaoTempoCreateInput(_body);
         const id = 'ste_' + uid();
         const inicioStr = inicio || new Date().toISOString().slice(0, 19).replace('T', ' ');
-        await env.DB.prepare(
-          'INSERT INTO sessoes_tempo (id, tarefa_id, usuario_id, inicio) VALUES (?, ?, ?, ?)'
-        ).bind(id, tarefaId, u.uid, inicioStr).run();
+        await criarSessaoTempo(env, { sessaoId: id, tarefaId, usuarioId: u.uid, inicio: inicioStr });
         return ok({ id, inicio: inicioStr });
       }
     }
@@ -2403,21 +2055,19 @@ export default {
       const sessaoId = matchTempoId[1];
       const [u, e] = await requireAuth(request, env);
       if (e) return fail('Não autorizado', 401);
-      const s = await env.DB.prepare('SELECT usuario_id FROM sessoes_tempo WHERE id = ?').bind(sessaoId).first();
+      const s = await getSessaoTempoPorId(env, { sessaoId });
       if (!s) return fail('Sessão não encontrada', 404);
       if (s.usuario_id !== u.uid && !isAdmin(u)) return fail('Sem permissão', 403);
 
       if (method === 'PUT') {
         const _body = await readJsonBody(request);
-        const inicio = _body.inicio;
-        const fim = _body.fim;
-        await env.DB.prepare('UPDATE sessoes_tempo SET inicio=?, fim=? WHERE id=?')
-          .bind(inicio, fim || null, sessaoId).run();
+        const { inicio, fim } = parseSessaoTempoUpdateInput(_body);
+        await atualizarSessaoTempo(env, { sessaoId, inicio, fim });
         return ok({ ok: true });
       }
 
       if (method === 'DELETE') {
-        await env.DB.prepare('DELETE FROM sessoes_tempo WHERE id = ?').bind(sessaoId).run();
+        await excluirSessaoTempo(env, { sessaoId });
         return ok({ ok: true });
       }
     }
@@ -2428,13 +2078,13 @@ export default {
       const sessaoId = matchTempoParar[1];
       const [u, e] = await requireAuth(request, env);
       if (e) return fail('Não autorizado', 401);
-      const s = await env.DB.prepare('SELECT usuario_id FROM sessoes_tempo WHERE id = ?').bind(sessaoId).first();
+      const s = await getSessaoTempoPorId(env, { sessaoId });
       if (!s) return fail('Sessão não encontrada', 404);
       if (s.usuario_id !== u.uid && !isAdmin(u)) return fail('Sem permissão', 403);
       const _body = await readJsonBody(request);
-      const fim = _body.fim;
+      const { fim } = parseSessaoTempoStopInput(_body);
       const fimStr = fim || new Date().toISOString().slice(0, 19).replace('T', ' ');
-      await env.DB.prepare('UPDATE sessoes_tempo SET fim=? WHERE id=?').bind(fimStr, sessaoId).run();
+      await pararSessaoTempo(env, { sessaoId, fim: fimStr });
       return ok({ ok: true, fim: fimStr });
     }
 
@@ -2445,29 +2095,8 @@ export default {
       const [u, e] = await requireAuth(request, env);
       if (e) return fail('Não autorizado', 401);
       const tarefaId = matchTempoResumo[1];
-      const resumo = await env.DB.prepare(`
-        SELECT st.usuario_id, tu.nome as usuario_nome,
-          ROUND(SUM(
-            (CASE WHEN st.fim IS NULL
-              THEN (julianday('now') - julianday(st.inicio)) * 24
-              ELSE (julianday(st.fim) - julianday(st.inicio)) * 24
-            END)
-            -
-            COALESCE((
-              SELECT SUM(
-                CASE WHEN i.fim IS NULL THEN 0
-                ELSE (julianday(i.fim) - julianday(i.inicio)) * 24
-                END
-              ) FROM intervalos i WHERE i.sessao_id = st.id
-            ), 0)
-          ), 2) as horas_liquidas
-        FROM sessoes_tempo st
-        LEFT JOIN usuarios tu ON tu.id = st.usuario_id
-        WHERE st.tarefa_id = ?
-        GROUP BY st.usuario_id, tu.nome
-        ORDER BY horas_liquidas DESC
-      `).bind(tarefaId).all();
-      return ok(resumo.results);
+      const resumo = await listResumoTempoPorTarefa(env, { tarefaId });
+      return ok(resumo);
     }
 
     // GET /tempo/ativas — sessões ativas do usuário (sem fim)
@@ -2476,55 +2105,23 @@ export default {
       if (e) return fail('Não autorizado', 401);
       const asMember = url.searchParams.get('as_member') === '1';
       const adminScope = (isAdmin(u) && !asMember) ? 1 : 0;
-      const ativas = await env.DB.prepare(`
-        SELECT st.id, st.tarefa_id, st.inicio,
-          t.nome as tarefa_nome, p.nome as projeto_nome, p.id as projeto_id,
-          tu.nome as usuario_nome, tu.login as usuario_login, st.usuario_id
-        FROM sessoes_tempo st
-        JOIN tarefas t ON t.id = st.tarefa_id
-        JOIN projetos p ON p.id = t.projeto_id
-        JOIN usuarios tu ON tu.id = st.usuario_id
-        WHERE (? = 1 OR st.usuario_id = ?) AND st.fim IS NULL
-        ORDER BY st.inicio ASC
-      `).bind(adminScope, u.uid).all();
-      return ok(ativas.results);
+      const ativas = await listTempoAtivo(env, { adminScope, usuarioId: u.uid });
+      return ok(ativas);
     }
 
     // GET /tempo/colegas-ativos — colaboradores com cronômetro ativo (exceto o próprio)
     if (path === '/tempo/colegas-ativos' && method === 'GET') {
       const [u, e] = await requireAuth(request, env);
       if (e) return fail('Não autorizado', 401);
-      const colegas = await env.DB.prepare(`
-        SELECT st.id, st.inicio, st.usuario_id,
-          tu.nome as usuario_nome,
-          t.nome as tarefa_nome,
-          p.nome as projeto_nome,
-          p.id as projeto_id
-        FROM sessoes_tempo st
-        JOIN usuarios tu ON tu.id = st.usuario_id
-        JOIN tarefas t ON t.id = st.tarefa_id
-        JOIN projetos p ON p.id = t.projeto_id
-        WHERE st.fim IS NULL AND st.usuario_id != ?
-        ORDER BY st.inicio ASC
-      `).bind(u.uid).all();
-      return ok(colegas.results);
+      const colegas = await listColegasComTempoAtivo(env, { usuarioId: u.uid });
+      return ok(colegas);
     }
 
     // GET /tempo/ultima-sessao — última sessão concluída do usuário
     if (path === '/tempo/ultima-sessao' && method === 'GET') {
       const [u, e] = await requireAuth(request, env);
       if (e) return fail('Não autorizado', 401);
-      const row = await env.DB.prepare(`
-        SELECT st.tarefa_id, t.nome as tarefa_nome,
-               p.id as projeto_id, p.nome as projeto_nome,
-               st.fim,
-               ROUND((julianday(st.fim) - julianday(st.inicio)) * 24, 2) as horas
-        FROM sessoes_tempo st
-        JOIN tarefas t ON t.id = st.tarefa_id
-        JOIN projetos p ON p.id = t.projeto_id
-        WHERE st.usuario_id = ? AND st.fim IS NOT NULL
-        ORDER BY st.fim DESC LIMIT 1
-      `).bind(u.uid).first();
+      const row = await getUltimaSessaoConcluida(env, { usuarioId: u.uid });
       return ok(row || null);
     }
 
@@ -2532,26 +2129,7 @@ export default {
       const [u, e] = await requireAuth(request, env);
       if (e) return fail('Não autorizado', 401);
 
-      const row = await env.DB.prepare(`
-        SELECT
-          COUNT(DISTINCT st.id) as sessoes,
-          COUNT(DISTINCT st.tarefa_id) as tarefas,
-          ROUND(SUM(
-            (CASE WHEN st.fim IS NULL
-              THEN (julianday('now') - julianday(st.inicio)) * 24
-              ELSE (julianday(st.fim) - julianday(st.inicio)) * 24
-            END)
-            - COALESCE((
-                SELECT SUM((julianday(i.fim) - julianday(i.inicio)) * 24)
-                FROM intervalos i
-                WHERE i.sessao_id = st.id AND i.fim IS NOT NULL
-              ), 0)
-          ), 2) as horas_hoje,
-          SUM(CASE WHEN st.fim IS NULL THEN 1 ELSE 0 END) as timers_ativos
-        FROM sessoes_tempo st
-        WHERE st.usuario_id = ?
-          AND DATE(st.inicio) = DATE('now')
-      `).bind(u.uid).first();
+      const row = await getResumoTempoHoje(env, { usuarioId: u.uid });
 
       return ok(row || { sessoes: 0, tarefas: 0, horas_hoje: 0, timers_ativos: 0 });
     }
@@ -2571,31 +2149,8 @@ export default {
       if (!isAdmin(u) && !(await podeEditarProjeto(env, projetoId, u.uid, u.papel)))
         return fail('Sem permissão', 403);
 
-      const rows = await env.DB.prepare(`
-        SELECT st.tarefa_id, tu.nome as usuario_nome,
-          ROUND(SUM(
-            (CASE WHEN st.fim IS NULL
-              THEN (julianday('now') - julianday(st.inicio)) * 24
-              ELSE (julianday(st.fim)  - julianday(st.inicio)) * 24 END)
-            - COALESCE((
-                SELECT SUM(CASE WHEN i.fim IS NULL THEN 0
-                  ELSE (julianday(i.fim) - julianday(i.inicio)) * 24 END)
-                FROM intervalos i WHERE i.sessao_id = st.id
-              ), 0)
-          ), 2) as horas_liquidas
-        FROM sessoes_tempo st
-        JOIN tarefas t ON t.id = st.tarefa_id
-        JOIN usuarios tu ON tu.id = st.usuario_id
-        WHERE t.projeto_id = ?
-        GROUP BY st.tarefa_id, st.usuario_id, tu.nome
-        HAVING horas_liquidas > 0
-        ORDER BY st.tarefa_id, horas_liquidas DESC
-      `).bind(projetoId).all();
-
-      const byTarefa = {};
-      for (const row of rows.results) {
-        (byTarefa[row.tarefa_id] = byTarefa[row.tarefa_id] || []).push(row);
-      }
+      const rows = await listRelatorioProjetoTempoRows(env, { projetoId });
+      const byTarefa = agruparRelatorioProjetoPorTarefa(rows);
       return ok(byTarefa);
     }
 
@@ -2616,28 +2171,8 @@ export default {
         if (!permissao) return fail('Sem permissão', 403);
       }
 
-      const resumo = await env.DB.prepare(`
-        SELECT tu.nome as usuario_nome,
-          ROUND(SUM(
-            (CASE WHEN st.fim IS NULL
-              THEN (julianday('now') - julianday(st.inicio)) * 24
-              ELSE (julianday(st.fim) - julianday(st.inicio)) * 24
-            END)
-            - COALESCE((
-              SELECT SUM(CASE WHEN i.fim IS NULL THEN 0
-                ELSE (julianday(i.fim) - julianday(i.inicio)) * 24
-              END) FROM intervalos i WHERE i.sessao_id = st.id
-            ), 0)
-          ), 2) as horas
-        FROM sessoes_tempo st
-        JOIN tarefas t ON t.id = st.tarefa_id
-        LEFT JOIN usuarios tu ON tu.id = st.usuario_id
-        WHERE t.projeto_id = ?
-        GROUP BY st.usuario_id, tu.nome
-        HAVING horas > 0
-        ORDER BY horas DESC
-      `).bind(projetoId).all();
-      return ok(resumo.results);
+      const resumo = await listHorasPorUsuarioNoProjeto(env, { projetoId });
+      return ok(resumo);
     }
 
     // ── INTERVALOS ──
