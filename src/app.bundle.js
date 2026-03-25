@@ -303,8 +303,8 @@
     }
   }
   async function fazerLogin() {
-    const usuario = document.getElementById("login-usuario")?.value;
-    const senha = document.getElementById("login-senha")?.value;
+    const usuario = document.getElementById("l-login")?.value;
+    const senha = document.getElementById("l-senha")?.value;
     if (!usuario || !senha) {
       toast("Preencha usu\xE1rio e senha", "erro");
       return;
@@ -329,9 +329,9 @@
     }
   }
   async function fazerSetup(forceChange = false) {
-    const nome = document.getElementById("setup-nome")?.value;
-    const senha = document.getElementById("setup-senha")?.value;
-    const confirma = document.getElementById("setup-confirma")?.value;
+    const nome = document.getElementById("s-nome")?.value;
+    const senha = document.getElementById("s-senha")?.value;
+    const confirma = document.getElementById("s-confirma")?.value;
     if (!nome || !senha || !confirma) {
       toast("Preencha todos os campos", "erro");
       return;
