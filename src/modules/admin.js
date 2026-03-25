@@ -46,11 +46,6 @@ export async function modalNovoColega() {
   abrirModal?.(html, { titulo: 'Cadastrar Colega' });
 }
 
-export async function modalNovoColega() {
-  // TODO: Implement new colleague registration modal
-  toast('Função em desenvolvimento', 'info');
-}
-
 // Expose globally
 if (typeof window !== 'undefined') {
   window.abrirCentralAdmin = abrirCentralAdmin;

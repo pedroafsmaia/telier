@@ -34,6 +34,7 @@
     <div class="form-row"><label>Nome completo</label><input id="s-nome" placeholder="Seu nome completo"></div>
     <div class="form-row"><label>Usuário</label><input type="text" id="s-login" placeholder="admin" autocomplete="username"></div>
     <div class="form-row" style="position:relative"><label>Senha</label><input type="password" id="s-senha" placeholder="Escolha uma senha forte" style="padding-right:38px"><button type="button" class="eye-toggle" data-eye-size="16" data-eye-stroke="1.6" onclick="toggleSenhaSetup(this)" title="Mostrar senha" aria-label="Mostrar senha"><svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8S1 12 1 12z" stroke="currentColor" stroke-width="1.6"/><circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="1.6"/></svg></button></div>
+    <div class="form-row"><label>Confirmar senha</label><input type="password" id="s-confirma" placeholder="Repita a senha"></div>
     <button class="btn btn-primary" id="btn-setup" onclick="fazerSetup()">Criar conta</button>
     <div id="setup-err" class="auth-err hidden"></div>
   </div>

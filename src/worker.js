@@ -699,10 +699,38 @@ export default {
       const loginExiste = await env.DB.prepare('SELECT id FROM usuarios WHERE login = ?').bind(login).first();
       if (loginExiste) return fail('Nome de usuário já existe');
       const hash = await hashSenha(senha);
+      const novoId = 'usr_' + uid();
       await env.DB.prepare(
         'INSERT INTO usuarios (id, nome, login, senha_hash, papel, deve_trocar_senha) VALUES (?, ?, ?, ?, "admin", 0)'
-      ).bind('usr_' + uid(), nome.trim(), login, hash).run();
-      return ok({ ok: true });
+      ).bind(novoId, nome.trim(), login, hash).run();
+      const sessaoId = sessaoUid();
+      const expira = nowStr(new Date(Date.now() + 30 * 24 * 60 * 60 * 1000));
+      await env.DB.prepare(
+        'INSERT INTO sessoes (id, usuario_id, criado_em, expira_em) VALUES (?, ?, ?, ?)'
+      ).bind(sessaoId, novoId, nowStr(), expira).run();
+      return ok({
+        token: sessaoId,
+        usuario: {
+          id: novoId,
+          nome: nome.trim(),
+          usuario_login: login,
+          papel: 'admin',
+          deve_trocar_senha: 0,
+        },
+      });
+    }
+
+    if (path === '/auth/foco-global' && method === 'GET') {
+      const [u, e] = await requireAuth(request, env);
+      if (e) return fail('Não autorizado', 401);
+      const foco = await env.DB.prepare(`
+        SELECT t.id as tarefa_id, t.nome as tarefa_nome, p.id as projeto_id, p.nome as projeto_nome
+        FROM tarefas t
+        JOIN projetos p ON p.id = t.projeto_id
+        WHERE t.foco = 1 AND t.dono_id = ?
+        LIMIT 1
+      `).bind(u.uid).first();
+      return ok(foco || {});
     }
 
     if (path === '/auth/needs-setup' && method === 'GET') {
@@ -1308,7 +1336,7 @@ export default {
         u.uid, u.uid, u.uid,
         u.uid, u.uid, u.uid,
         u.uid,
-        u.uid, u.uid,
+        u.uid,
         adminScope, u.uid, u.uid, u.uid, u.uid,
         statusFiltro, statusFiltro,
       ).all();

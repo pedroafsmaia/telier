@@ -5,6 +5,11 @@ import { req } from './api.js';
 import { PROJETO, GRUPO_ATUAL, TAREFAS, VISTA_ATUAL, EU, ADMIN_MODE, setProjeto, setGrupoAtual, setTarefas, setVistaAtual } from './state.js';
 import { toast } from './ui.js';
 import { esc, tag, normalizarStatusProjeto } from './utils.js';
+import { renderLista, renderKanban, renderMapa, renderRelatorio } from './tasks.js';
+
+// Dados de módulo para abas que precisam de dados carregados previamente
+let _decisoesAtivas = [];
+let _projetosGrupoAtual = [];
 
 // Helper functions
 function isAdminRole() {
@@ -123,6 +128,7 @@ export async function abrirGrupo(id) {
 export function renderProjeto(proj, tarefas, decisoes, abaAtiva, resumoHoras = []) {
   setProjeto(proj);
   setTarefas(tarefas);
+  _decisoesAtivas = decisoes || [];
 
   const statusProj = normalizarStatusProjeto(proj.status);
   const isArq = statusProj === 'Arquivado';
@@ -170,6 +176,7 @@ export function renderProjeto(proj, tarefas, decisoes, abaAtiva, resumoHoras = [
 // Render group detail
 export function renderGrupo(grupo, projetos, abaAtiva = 'projetos') {
   setGrupoAtual(grupo);
+  _projetosGrupoAtual = projetos || [];
 
   const podeGer = grupo.pode_gerenciar || isAdmin();
 
@@ -211,20 +218,86 @@ export function renderGrupo(grupo, projetos, abaAtiva = 'projetos') {
 export function mudarAba(aba) {
   document.querySelectorAll('.aba').forEach(b => b.classList.toggle('ativa', b.dataset.aba === aba));
   sessionStorage.setItem(`telier_proj_aba_${PROJETO?.id}`, aba);
-  // TODO: Render appropriate tab content
+  const container = document.getElementById('aba-conteudo');
+  if (!container) return;
+  switch (aba) {
+    case 'tarefas':
+      renderLista(TAREFAS, container);
+      break;
+    case 'kanban':
+      renderKanban(TAREFAS, container);
+      break;
+    case 'mapa':
+      renderMapa(TAREFAS, container);
+      break;
+    case 'relatorio':
+      renderRelatorio(TAREFAS, container, PROJETO?.id);
+      break;
+    case 'decisoes':
+      renderAbaDecisoes(container);
+      break;
+    default:
+      container.innerHTML = '';
+  }
 }
 
 export function mudarAbaGrupo(aba) {
   document.querySelectorAll('.aba').forEach(b => b.classList.toggle('ativa', b.dataset.aba === aba));
   sessionStorage.setItem(`telier_grupo_aba_${GRUPO_ATUAL?.id}`, aba);
-  // TODO: Render appropriate tab content
+  renderAbaGrupo(aba, _projetosGrupoAtual);
+}
+
+function renderAbaDecisoes(container) {
+  if (!_decisoesAtivas.length) {
+    container.innerHTML = '<div class="empty-small">Nenhuma decisão registrada</div>';
+    return;
+  }
+  container.innerHTML = `
+    <div class="decisoes-list">
+      ${_decisoesAtivas.map(d => `
+        <div class="decisao-item">
+          <div class="decisao-titulo">${esc(d.titulo || d.texto || '—')}</div>
+          ${d.criado_em ? `<div class="decisao-meta muted-detail">${d.criado_em.split('T')[0].split(' ')[0]}</div>` : ''}
+        </div>
+      `).join('')}
+    </div>`;
 }
 
 function renderAbaGrupo(aba, projetos) {
   const el = document.getElementById('aba-grupo');
   if (!el) return;
-  // TODO: Implement tab rendering
-  el.innerHTML = '<div class="loading"><div class="spinner"></div> Carregando...</div>';
+  switch (aba) {
+    case 'projetos':
+      if (!projetos || !projetos.length) {
+        el.innerHTML = '<div class="empty-small">Nenhum projeto neste grupo</div>';
+        return;
+      }
+      el.innerHTML = `
+        <div class="cards-grid">
+          ${projetos.map(p => `
+            <div class="proj-card" onclick="abrirProjeto('${p.id}')">
+              <div class="proj-card-header">
+                <div class="proj-title">${esc(p.nome)}</div>
+              </div>
+              <div class="proj-card-footer">
+                <div class="proj-meta">
+                  ${p.prazo ? `<span class="proj-meta-item">📅 ${p.prazo}</span>` : ''}
+                </div>
+                <div class="proj-status">${tag(p.status || 'A fazer')}</div>
+              </div>
+            </div>
+          `).join('')}
+        </div>`;
+      break;
+    case 'tarefas':
+    case 'mapa':
+    case 'relatorio':
+    case 'aovivo':
+      el.innerHTML = `<div class="empty-small">Conteúdo desta aba em desenvolvimento</div>`;
+      break;
+    default:
+      el.innerHTML = '';
+  }
 }
 
 // Placeholder functions for modal handlers
