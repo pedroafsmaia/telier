@@ -4,7 +4,7 @@
 import { fetchProjetos, req } from './api.js';
 import { PROJETO, FILTRO_STATUS, FILTRO_ORIGEM_DASH, FILTRO_GRUPO_DASH, BUSCA_DASH, _projsDash, _ativasDash, _gruposDash, _prazoNotifShown, VISTA_ATUAL, STARTDAY_COLLAPSE_KEY, EU, ADMIN_MODE, setFiltroStatus, setFiltroOrigemDash, setFiltroGrupoDash, setBuscaDash, setProjsDash, setAtivasDash, setGruposDash, setVistaAtual } from './state.js';
 import { toast } from './ui.js';
-import { esc, diasRestantes, prazoFmt, fmtHoras, normalizarStatusProjeto, projetoConcluido, avatar, tag } from './utils.js';
+import { esc, diasRestantes, prazoFmt, fmtHoras, normalizarStatusProjeto, projetoConcluido, avatar, tag, debounce } from './utils.js';
 
 // Helper functions
 function isAdminRole() {
@@ -42,10 +42,14 @@ export function salvarFiltrosDash() {
   } catch {}
 }
 
-export function filtrarProjetosBusca(v) {
+const _debouncedFiltro = debounce((v) => {
   setBuscaDash(v);
   salvarFiltrosDash();
   renderDash();
+}, 200);
+
+export function filtrarProjetosBusca(v) {
+  _debouncedFiltro(v);
 }
 
 export function filtrarGrupoDash(v) {

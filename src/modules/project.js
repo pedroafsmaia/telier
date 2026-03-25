@@ -38,8 +38,22 @@ function slideContent(direction) {
 export async function abrirProjeto(id) {
   window.scrollTo(0, 0);
   const c = document.getElementById('content');
-  c.style.opacity = '0.4';
-  c.style.pointerEvents = 'none';
+
+  // Show skeleton while loading
+  c.innerHTML = `
+    <div style="opacity:0.4">
+      <button class="btn-back" style="visibility:hidden">← Voltar para projetos</button>
+      <div class="proj-hero" style="opacity:0.5">
+        <div style="height:40px;background:var(--bg3);border-radius:var(--r);margin-bottom:12px;animation:pulse 1.2s ease infinite"></div>
+        <div style="height:20px;background:var(--bg3);border-radius:var(--r);width:60%;animation:pulse 1.2s ease infinite"></div>
+      </div>
+      <div style="display:flex;gap:8px;margin-top:16px">
+        <div style="height:32px;width:80px;background:var(--bg3);border-radius:var(--r);animation:pulse 1.2s ease infinite"></div>
+        <div style="height:32px;width:80px;background:var(--bg3);border-radius:var(--r);animation:pulse 1.2s ease infinite"></div>
+      </div>
+    </div>
+  `;
+
   try {
     const [projeto, tarefas, decisoes, resumoHoras] = await Promise.all([
       req('GET', `/projetos/${id}`),
@@ -47,8 +61,6 @@ export async function abrirProjeto(id) {
       req('GET', `/projetos/${id}/decisoes`).catch(() => []),
       req('GET', `/projetos/${id}/resumo-horas`).catch(() => []),
     ]);
-    c.style.opacity = '';
-    c.style.pointerEvents = '';
     const abaSalva = sessionStorage.getItem(`telier_proj_aba_${id}`) || 'tarefas';
     slideContent('right');
     renderProjeto(projeto, tarefas, decisoes, abaSalva, resumoHoras);
@@ -56,8 +68,6 @@ export async function abrirProjeto(id) {
     setTarefas(tarefas);
     setVistaAtual('projeto');
   } catch (e) {
-    c.style.opacity = '';
-    c.style.pointerEvents = '';
     c.innerHTML = `<div class="error-block">${esc(e.message)}</div>`;
   }
 }
@@ -77,24 +87,34 @@ function invalidarCacheProjetos() {
 export async function abrirGrupo(id) {
   window.scrollTo(0, 0);
   const c = document.getElementById('content');
-  c.style.opacity = '0.4';
-  c.style.pointerEvents = 'none';
+
+  // Show skeleton while loading
+  c.innerHTML = `
+    <div style="opacity:0.4">
+      <button class="btn-back" style="visibility:hidden">← Voltar para projetos</button>
+      <div class="proj-hero" style="opacity:0.5">
+        <div style="height:40px;background:var(--bg3);border-radius:var(--r);margin-bottom:12px;animation:pulse 1.2s ease infinite"></div>
+        <div style="height:20px;background:var(--bg3);border-radius:var(--r);width:60%;animation:pulse 1.2s ease infinite"></div>
+      </div>
+      <div style="display:flex;gap:8px;margin-top:16px">
+        <div style="height:32px;width:80px;background:var(--bg3);border-radius:var(--r);animation:pulse 1.2s ease infinite"></div>
+        <div style="height:32px;width:80px;background:var(--bg3);border-radius:var(--r);animation:pulse 1.2s ease infinite"></div>
+      </div>
+    </div>
+  `;
+
   try {
     const [grupo, projetos] = await Promise.all([
       req('GET', `/grupos/${id}`),
       req('GET', `/projetos`),
     ]);
     const projetosDoGrupo = projetos.filter(p => p.grupo_id === id);
-    c.style.opacity = '';
-    c.style.pointerEvents = '';
     const abaSalva = sessionStorage.getItem(`telier_grupo_aba_${id}`) || 'projetos';
     slideContent('right');
     renderGrupo(grupo, projetosDoGrupo, abaSalva);
     setGrupoAtual(grupo);
     setVistaAtual('grupo');
   } catch (e) {
-    c.style.opacity = '';
-    c.style.pointerEvents = '';
     c.innerHTML = `<div class="error-block">${esc(e.message)}</div>`;
   }
 }

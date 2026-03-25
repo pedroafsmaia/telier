@@ -175,20 +175,37 @@ export async function renderRelatorio(tarefas, container, projetoId) {
 
 // Task actions
 export async function mudarStatus(tarefaId, novoStatus, selEl) {
+  const statusAnterior = selEl?.value;
+
+  // Optimistic UI: update immediately
+  if (selEl) selEl.value = novoStatus;
+
   try {
     await req('PATCH', `/tarefas/${tarefaId}`, { status: novoStatus });
-    if (selEl) selEl.value = novoStatus;
     toast(`Status atualizado para ${novoStatus}`, 'ok');
   } catch (e) {
+    // Rollback on error
+    if (selEl) selEl.value = statusAnterior;
     toast(e.message, 'erro');
   }
 }
 
 export async function toggleFoco(id, focoAtual) {
+  const focoNovo = focoAtual ? 0 : 1;
+  const btnEl = document.querySelector(`[data-tarefa-id="${id}"] .btn-foco`);
+  const classAnterior = btnEl?.className;
+
+  // Optimistic UI: update immediately
+  if (btnEl) {
+    btnEl.classList.toggle('ativo', focoNovo === 1);
+  }
+
   try {
-    await req('PATCH', `/tarefas/${id}`, { foco: focoAtual ? 0 : 1 });
+    await req('PATCH', `/tarefas/${id}`, { foco: focoNovo });
     toast(focoAtual ? 'Removido do foco' : 'Adicionado ao foco', 'ok');
   } catch (e) {
+    // Rollback on error
+    if (btnEl && classAnterior) btnEl.className = classAnterior;
     toast(e.message, 'erro');
   }
 }

@@ -216,7 +216,7 @@
       setTimeout(() => overlay.remove(), 150);
     }
   }
-  function fecharModal2() {
+  function fecharModal() {
     document.querySelectorAll(".modal-overlay").forEach(fecharOverlayModal);
   }
   function confirmar(mensagem, onConfirm, opts = {}) {
@@ -578,10 +578,13 @@
     } catch {
     }
   }
-  function filtrarProjetosBusca(v) {
+  var _debouncedFiltro = debounce((v) => {
     setBuscaDash(v);
     salvarFiltrosDash();
     renderDash2();
+  }, 200);
+  function filtrarProjetosBusca(v) {
+    _debouncedFiltro(v);
   }
   function filtrarGrupoDash(v) {
     setFiltroGrupoDash(v);
@@ -984,8 +987,19 @@
   async function abrirProjeto(id) {
     window.scrollTo(0, 0);
     const c = document.getElementById("content");
-    c.style.opacity = "0.4";
-    c.style.pointerEvents = "none";
+    c.innerHTML = `
+    <div style="opacity:0.4">
+      <button class="btn-back" style="visibility:hidden">\u2190 Voltar para projetos</button>
+      <div class="proj-hero" style="opacity:0.5">
+        <div style="height:40px;background:var(--bg3);border-radius:var(--r);margin-bottom:12px;animation:pulse 1.2s ease infinite"></div>
+        <div style="height:20px;background:var(--bg3);border-radius:var(--r);width:60%;animation:pulse 1.2s ease infinite"></div>
+      </div>
+      <div style="display:flex;gap:8px;margin-top:16px">
+        <div style="height:32px;width:80px;background:var(--bg3);border-radius:var(--r);animation:pulse 1.2s ease infinite"></div>
+        <div style="height:32px;width:80px;background:var(--bg3);border-radius:var(--r);animation:pulse 1.2s ease infinite"></div>
+      </div>
+    </div>
+  `;
     try {
       const [projeto, tarefas, decisoes, resumoHoras] = await Promise.all([
         req("GET", `/projetos/${id}`),
@@ -993,8 +1007,6 @@
         req("GET", `/projetos/${id}/decisoes`).catch(() => []),
         req("GET", `/projetos/${id}/resumo-horas`).catch(() => [])
       ]);
-      c.style.opacity = "";
-      c.style.pointerEvents = "";
       const abaSalva = sessionStorage.getItem(`telier_proj_aba_${id}`) || "tarefas";
       slideContent2("right");
       renderProjeto(projeto, tarefas, decisoes, abaSalva, resumoHoras);
@@ -1002,8 +1014,6 @@
       setTarefas(tarefas);
       setVistaAtual("projeto");
     } catch (e) {
-      c.style.opacity = "";
-      c.style.pointerEvents = "";
       c.innerHTML = `<div class="error-block">${esc(e.message)}</div>`;
     }
   }
@@ -1018,24 +1028,31 @@
   async function abrirGrupo(id) {
     window.scrollTo(0, 0);
     const c = document.getElementById("content");
-    c.style.opacity = "0.4";
-    c.style.pointerEvents = "none";
+    c.innerHTML = `
+    <div style="opacity:0.4">
+      <button class="btn-back" style="visibility:hidden">\u2190 Voltar para projetos</button>
+      <div class="proj-hero" style="opacity:0.5">
+        <div style="height:40px;background:var(--bg3);border-radius:var(--r);margin-bottom:12px;animation:pulse 1.2s ease infinite"></div>
+        <div style="height:20px;background:var(--bg3);border-radius:var(--r);width:60%;animation:pulse 1.2s ease infinite"></div>
+      </div>
+      <div style="display:flex;gap:8px;margin-top:16px">
+        <div style="height:32px;width:80px;background:var(--bg3);border-radius:var(--r);animation:pulse 1.2s ease infinite"></div>
+        <div style="height:32px;width:80px;background:var(--bg3);border-radius:var(--r);animation:pulse 1.2s ease infinite"></div>
+      </div>
+    </div>
+  `;
     try {
       const [grupo, projetos] = await Promise.all([
         req("GET", `/grupos/${id}`),
         req("GET", `/projetos`)
       ]);
       const projetosDoGrupo = projetos.filter((p) => p.grupo_id === id);
-      c.style.opacity = "";
-      c.style.pointerEvents = "";
       const abaSalva = sessionStorage.getItem(`telier_grupo_aba_${id}`) || "projetos";
       slideContent2("right");
       renderGrupo(grupo, projetosDoGrupo, abaSalva);
       setGrupoAtual(grupo);
       setVistaAtual("grupo");
     } catch (e) {
-      c.style.opacity = "";
-      c.style.pointerEvents = "";
       c.innerHTML = `<div class="error-block">${esc(e.message)}</div>`;
     }
   }
@@ -1308,19 +1325,28 @@
     }
   }
   async function mudarStatus(tarefaId, novoStatus, selEl) {
+    const statusAnterior = selEl?.value;
+    if (selEl) selEl.value = novoStatus;
     try {
       await req("PATCH", `/tarefas/${tarefaId}`, { status: novoStatus });
-      if (selEl) selEl.value = novoStatus;
       toast(`Status atualizado para ${novoStatus}`, "ok");
     } catch (e) {
+      if (selEl) selEl.value = statusAnterior;
       toast(e.message, "erro");
     }
   }
   async function toggleFoco(id, focoAtual) {
+    const focoNovo = focoAtual ? 0 : 1;
+    const btnEl = document.querySelector(`[data-tarefa-id="${id}"] .btn-foco`);
+    const classAnterior = btnEl?.className;
+    if (btnEl) {
+      btnEl.classList.toggle("ativo", focoNovo === 1);
+    }
     try {
-      await req("PATCH", `/tarefas/${id}`, { foco: focoAtual ? 0 : 1 });
+      await req("PATCH", `/tarefas/${id}`, { foco: focoNovo });
       toast(focoAtual ? "Removido do foco" : "Adicionado ao foco", "ok");
     } catch (e) {
+      if (btnEl && classAnterior) btnEl.className = classAnterior;
       toast(e.message, "erro");
     }
   }
@@ -1602,14 +1628,230 @@
     }
     if ((e.ctrlKey || e.metaKey) && e.key === "/") {
       e.preventDefault();
+      abrirModalAtalhos();
       return;
     }
     if (e.key === "Escape") {
-      fecharModal();
+      fecharCommandPalette();
     }
   }
   function abrirCommandPalette() {
-    console.log("Command palette: TODO");
+    if (document.querySelector(".cmd-palette-overlay.open")) {
+      return;
+    }
+    const overlay = document.createElement("div");
+    overlay.className = "cmd-palette-overlay open";
+    overlay.innerHTML = `
+    <div class="cmd-palette">
+      <input type="text" class="cmd-palette-input" placeholder="Buscar projetos, tarefas, a\xE7\xF5es..." autofocus>
+      <div class="cmd-palette-results"></div>
+    </div>
+  `;
+    document.body.appendChild(overlay);
+    const input = overlay.querySelector(".cmd-palette-input");
+    const resultsEl = overlay.querySelector(".cmd-palette-results");
+    let selectedIndex = 0;
+    let items = [];
+    const performSearch = debounce((query) => {
+      selectedIndex = 0;
+      items = [];
+      if (!query.trim()) {
+        renderDefaultActions(resultsEl, items);
+        return;
+      }
+      const q = query.toLowerCase();
+      if (_projsDash && Array.isArray(_projsDash)) {
+        _projsDash.forEach((proj) => {
+          if (proj.nome.toLowerCase().includes(q)) {
+            items.push({
+              type: "project",
+              icon: "\u{1F4CB}",
+              label: proj.nome,
+              detail: "Projeto",
+              action: () => {
+                window.abrirProjeto(proj.id);
+                fecharCommandPalette();
+              }
+            });
+          }
+        });
+      }
+      if (TAREFAS && Array.isArray(TAREFAS)) {
+        TAREFAS.forEach((tarefa) => {
+          if (tarefa.nome.toLowerCase().includes(q)) {
+            items.push({
+              type: "task",
+              icon: "\u2713",
+              label: tarefa.nome,
+              detail: "Tarefa",
+              action: () => {
+                window.abrirTarefa?.(tarefa.id);
+                fecharCommandPalette();
+              }
+            });
+          }
+        });
+      }
+      if ("novo".includes(q)) {
+        items.push({
+          type: "action",
+          icon: "\u2795",
+          label: "Novo projeto",
+          detail: "A\xE7\xE3o",
+          action: () => {
+            window.modalNovoProjeto?.();
+            fecharCommandPalette();
+          }
+        });
+      }
+      if ("novo".includes(q) && PROJETO) {
+        items.push({
+          type: "action",
+          icon: "\u2795",
+          label: "Nova tarefa",
+          detail: "A\xE7\xE3o",
+          action: () => {
+            window.modalNovaTarefa?.(PROJETO.id);
+            fecharCommandPalette();
+          }
+        });
+      }
+      if ("dashboard".includes(q) || "dashboard".includes(q)) {
+        items.push({
+          type: "action",
+          icon: "\u{1F3E0}",
+          label: "Ir para dashboard",
+          detail: "A\xE7\xE3o",
+          action: () => {
+            window.goHome?.();
+            fecharCommandPalette();
+          }
+        });
+      }
+      renderResults(resultsEl, items, selectedIndex);
+    });
+    input.addEventListener("input", (e) => {
+      performSearch(e.target.value);
+    });
+    input.addEventListener("keydown", (e) => {
+      if (e.key === "ArrowDown") {
+        e.preventDefault();
+        selectedIndex = (selectedIndex + 1) % Math.max(items.length, 1);
+        updateSelected(resultsEl, selectedIndex);
+      } else if (e.key === "ArrowUp") {
+        e.preventDefault();
+        selectedIndex = (selectedIndex - 1 + Math.max(items.length, 1)) % Math.max(items.length, 1);
+        updateSelected(resultsEl, selectedIndex);
+      } else if (e.key === "Enter" && items[selectedIndex]) {
+        e.preventDefault();
+        items[selectedIndex].action?.();
+      } else if (e.key === "Escape") {
+        e.preventDefault();
+        fecharCommandPalette();
+      }
+    });
+    overlay.addEventListener("click", (e) => {
+      if (e.target === overlay) {
+        fecharCommandPalette();
+      }
+    });
+    renderDefaultActions(resultsEl, items);
+  }
+  function renderDefaultActions(el, items) {
+    items.length = 0;
+    items.push({
+      type: "action",
+      icon: "\u2318",
+      label: "Novo projeto",
+      detail: "A\xE7\xE3o",
+      action: () => {
+        window.modalNovoProjeto?.();
+        fecharCommandPalette();
+      }
+    });
+    if (PROJETO) {
+      items.push({
+        type: "action",
+        icon: "\u2795",
+        label: "Nova tarefa",
+        detail: "A\xE7\xE3o",
+        action: () => {
+          window.modalNovaTarefa?.(PROJETO.id);
+          fecharCommandPalette();
+        }
+      });
+    }
+    items.push({
+      type: "action",
+      icon: "\u{1F3E0}",
+      label: "Dashboard",
+      detail: "A\xE7\xE3o",
+      action: () => {
+        window.goHome?.();
+        fecharCommandPalette();
+      }
+    });
+    items.push({
+      type: "action",
+      icon: "?",
+      label: "Atalhos de teclado",
+      detail: "Ajuda",
+      action: () => {
+        abrirModalAtalhos();
+        fecharCommandPalette();
+      }
+    });
+    renderResults(el, items, 0);
+  }
+  function renderResults(el, items, selectedIndex) {
+    el.innerHTML = items.map((item, i) => `
+    <div class="cmd-palette-item ${i === selectedIndex ? "selected" : ""}" data-index="${i}">
+      <span class="cmd-palette-item-icon">${item.icon}</span>
+      <span class="cmd-palette-item-text">${item.label}</span>
+      <span class="cmd-palette-item-type">${item.detail}</span>
+    </div>
+  `).join("");
+    el.querySelectorAll(".cmd-palette-item").forEach((elem, i) => {
+      elem.addEventListener("click", () => {
+        items[i]?.action?.();
+      });
+    });
+  }
+  function updateSelected(el, selectedIndex) {
+    el.querySelectorAll(".cmd-palette-item").forEach((item, i) => {
+      item.classList.toggle("selected", i === selectedIndex);
+    });
+  }
+  function fecharCommandPalette() {
+    const overlay = document.querySelector(".cmd-palette-overlay");
+    if (overlay) {
+      overlay.remove();
+    }
+  }
+  function abrirModalAtalhos() {
+    const html = `
+    <div style="padding:24px;">
+      <h2 style="margin:0 0 24px 0;font-size:1.4rem;font-weight:600">Atalhos de Teclado</h2>
+      <div style="display:grid;gap:12px;font-size:var(--fs-090)">
+        <div style="display:flex;justify-content:space-between;padding:8px;background:var(--bg3);border-radius:var(--r);padding:10px 12px">
+          <span style="font-family:monospace;color:var(--text3)">Cmd/Ctrl + K</span>
+          <span>Abrir command palette</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;padding:8px;background:var(--bg3);border-radius:var(--r);padding:10px 12px">
+          <span style="font-family:monospace;color:var(--text3)">Cmd/Ctrl + /</span>
+          <span>Abrir atalhos</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;padding:8px;background:var(--bg3);border-radius:var(--r);padding:10px 12px">
+          <span style="font-family:monospace;color:var(--text3)">Esc</span>
+          <span>Fechar modal</span>
+        </div>
+        <div style="margin-top:12px;padding:12px;background:var(--bg3);border-radius:var(--r);font-size:var(--fs-080);color:var(--text3)">
+          <strong>Dica:</strong> Use a command palette para navegar rapidamente entre projetos e tarefas.
+        </div>
+      </div>
+    </div>
+  `;
+    window.abrirModal?.(html, { titulo: "Atalhos de Teclado" });
   }
   function toggleSenhaLogin(btn) {
     const input = btn.previousElementSibling;
@@ -1637,6 +1879,8 @@
   if (typeof window !== "undefined") {
     window.setupKeyboardShortcuts = setupKeyboardShortcuts;
     window.abrirCommandPalette = abrirCommandPalette;
+    window.fecharCommandPalette = fecharCommandPalette;
+    window.abrirModalAtalhos = abrirModalAtalhos;
     window.toggleSenhaLogin = toggleSenhaLogin;
     window.toggleSenhaSetup = toggleSenhaSetup;
     window.toggleSenhaCadastro = toggleSenhaCadastro;
@@ -1735,7 +1979,7 @@
   window.toast = toast;
   window.toastUndo = toastUndo;
   window.abrirModal = abrirModal;
-  window.fecharModal = fecharModal2;
+  window.fecharModal = fecharModal;
   window.confirmar = confirmar;
   window.fecharOverlayModal = fecharOverlayModal;
   window.btnLoading = btnLoading;
