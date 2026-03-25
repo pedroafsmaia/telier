@@ -141,6 +141,9 @@ window.btnLoading = ui.btnLoading;
 window.syncEyeButton = ui.syncEyeButton;
 window.atualizarBadgeNotificacoes = ui.atualizarBadgeNotificacoes;
 window.escapeHtml = ui.escapeHtml;
+window.alternarTema = ui.alternarTema;
+window.alternarPerfilAdmin = ui.alternarPerfilAdmin;
+window.mostrar = ui.mostrar;
 
 // Utils
 window.esc = utils.esc;

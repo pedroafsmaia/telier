@@ -276,6 +276,37 @@
     };
     return String(text).replace(/[&<>"']/g, (m) => map[m]);
   }
+  function alternarTema() {
+    const html = document.documentElement;
+    const tema = html.getAttribute("data-theme") || "dark";
+    const novoTema = tema === "dark" ? "light" : "dark";
+    html.setAttribute("data-theme", novoTema);
+    localStorage.setItem("ea_tema", novoTema);
+  }
+  function alternarPerfilAdmin() {
+    const { ADMIN_MODE: ADMIN_MODE2, setAdminMode } = window;
+    if (typeof ADMIN_MODE2 !== "undefined" && typeof setAdminMode === "function") {
+      const novoMode = ADMIN_MODE2 === "admin" ? "normal" : "admin";
+      setAdminMode(novoMode);
+      toast(`Modo: ${novoMode === "admin" ? "Administrador" : "Membro"}`, "ok");
+      window.renderDash?.();
+    }
+  }
+  function mostrar(pagina) {
+    if (pagina === "setup") {
+      document.getElementById("page-login")?.classList.add("hidden");
+      document.getElementById("page-setup")?.classList.remove("hidden");
+      document.getElementById("page-app")?.classList.add("hidden");
+    } else if (pagina === "app") {
+      document.getElementById("page-login")?.classList.add("hidden");
+      document.getElementById("page-setup")?.classList.add("hidden");
+      document.getElementById("page-app")?.classList.remove("hidden");
+    } else {
+      document.getElementById("page-login")?.classList.remove("hidden");
+      document.getElementById("page-setup")?.classList.add("hidden");
+      document.getElementById("page-app")?.classList.add("hidden");
+    }
+  }
 
   // src/modules/auth.js
   async function init() {
@@ -2181,6 +2212,9 @@
   window.syncEyeButton = syncEyeButton;
   window.atualizarBadgeNotificacoes = atualizarBadgeNotificacoes;
   window.escapeHtml = escapeHtml;
+  window.alternarTema = alternarTema;
+  window.alternarPerfilAdmin = alternarPerfilAdmin;
+  window.mostrar = mostrar;
   window.esc = esc;
   window.iniciais = iniciais;
   window.avatar = avatar;
