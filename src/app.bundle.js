@@ -3,7 +3,10 @@
   var API = "https://telier-api.pedroafsmaia.workers.dev";
   var TOKEN = localStorage.getItem("ea_token");
   var EU = JSON.parse(localStorage.getItem("ea_user") || "null");
+  var PROJETO = null;
+  var GRUPO_ATUAL = null;
   var VISTA_ATUAL = "dash";
+  var TAREFAS = [];
   var ADMIN_MODE_KEY = "ea_admin_mode";
   var ADMIN_MODE = localStorage.getItem(ADMIN_MODE_KEY) || "admin";
   var FILTRO_STATUS = "todos";
@@ -13,6 +16,7 @@
   var _projsDash = [];
   var _ativasDash = [];
   var _gruposDash = [];
+  var LISTA_CONCLUIDAS_EXPANDIDA = false;
   var _prazoNotifShown = /* @__PURE__ */ new Set();
   var STARTDAY_COLLAPSE_KEY = "telier_startday_collapsed";
   var REQ_TIMEOUT_MS = 15e3;
@@ -34,8 +38,17 @@
     EU = null;
     localStorage.removeItem("ea_user");
   }
+  function setProjeto(p) {
+    PROJETO = p;
+  }
+  function setGrupoAtual(g) {
+    GRUPO_ATUAL = g;
+  }
   function setVistaAtual(v) {
     VISTA_ATUAL = v;
+  }
+  function setTarefas(t) {
+    TAREFAS = t;
   }
   function setFiltroStatus(f) {
     FILTRO_STATUS = f;
@@ -203,7 +216,7 @@
       setTimeout(() => overlay.remove(), 150);
     }
   }
-  function fecharModal() {
+  function fecharModal2() {
     document.querySelectorAll(".modal-overlay").forEach(fecharOverlayModal);
   }
   function confirmar(mensagem, onConfirm, opts = {}) {
@@ -568,22 +581,22 @@
   function filtrarProjetosBusca(v) {
     setBuscaDash(v);
     salvarFiltrosDash();
-    renderDash();
+    renderDash2();
   }
   function filtrarGrupoDash(v) {
     setFiltroGrupoDash(v);
     salvarFiltrosDash();
-    renderDash();
+    renderDash2();
   }
   function filtrarOrigemDash(v) {
     setFiltroOrigemDash(v);
     salvarFiltrosDash();
-    renderDash();
+    renderDash2();
   }
   function setFiltro(f) {
     setFiltroStatus(f);
     salvarFiltrosDash();
-    renderDash();
+    renderDash2();
   }
   function renderInicioDia(projetos, ativas, ultimaSessao = null, focoGlobal = null, resumoHoje = null) {
     const collapsed = localStorage.getItem(STARTDAY_COLLAPSE_KEY) === "1";
@@ -670,7 +683,7 @@
     if (status === "Conclu\xEDdo") return "is-done";
     return "";
   }
-  async function renderDash() {
+  async function renderDash2() {
     window.scrollTo(0, 0);
     document.title = "Telier";
     setBreadcrumb([]);
@@ -929,7 +942,7 @@
     c.style.animation = `slideContent${direction === "left" ? "In" : "Out"} .3s ease-out forwards`;
   }
   if (typeof window !== "undefined") {
-    window.renderDash = renderDash;
+    window.renderDash = renderDash2;
     window.setFiltro = setFiltro;
     window.filtrarProjetosBusca = filtrarProjetosBusca;
     window.filtrarGrupoDash = filtrarGrupoDash;
@@ -940,11 +953,699 @@
     window.setBreadcrumb = setBreadcrumb;
   }
 
+  // src/modules/project.js
+  function isAdminRole3() {
+    return EU?.papel === "admin";
+  }
+  function isAdmin3() {
+    return isAdminRole3() && ADMIN_MODE === "admin";
+  }
+  function setBreadcrumb2(partes) {
+    const el = document.getElementById("topbar-breadcrumb");
+    if (!el) return;
+    if (!partes.length) {
+      el.innerHTML = "";
+      return;
+    }
+    el.innerHTML = partes.map(
+      (p, i) => `<span>${i > 0 ? " / " : ""}${typeof p === "string" ? p : `<button onclick="abrirProjeto('${p.id}')">${esc(p.nome)}</button>`}</span>`
+    ).join("");
+  }
+  function slideContent2(direction) {
+    const c = document.getElementById("content");
+    if (!c) return;
+    c.style.animation = `slideContent${direction === "left" ? "In" : "Out"} .3s ease-out forwards`;
+  }
+  async function abrirProjeto(id) {
+    window.scrollTo(0, 0);
+    const c = document.getElementById("content");
+    c.style.opacity = "0.4";
+    c.style.pointerEvents = "none";
+    try {
+      const [projeto, tarefas, decisoes, resumoHoras] = await Promise.all([
+        req("GET", `/projetos/${id}`),
+        req("GET", `/projetos/${id}/tarefas`),
+        req("GET", `/projetos/${id}/decisoes`).catch(() => []),
+        req("GET", `/projetos/${id}/resumo-horas`).catch(() => [])
+      ]);
+      c.style.opacity = "";
+      c.style.pointerEvents = "";
+      const abaSalva = sessionStorage.getItem(`telier_proj_aba_${id}`) || "tarefas";
+      slideContent2("right");
+      renderProjeto(projeto, tarefas, decisoes, abaSalva, resumoHoras);
+      setProjeto(projeto);
+      setTarefas(tarefas);
+      setVistaAtual("projeto");
+    } catch (e) {
+      c.style.opacity = "";
+      c.style.pointerEvents = "";
+      c.innerHTML = `<div class="error-block">${esc(e.message)}</div>`;
+    }
+  }
+  function voltarDash() {
+    slideContent2("left");
+    invalidarCacheProjetos?.();
+    renderDash?.();
+  }
+  function invalidarCacheProjetos() {
+    localStorage.removeItem("telier_proj_cache");
+  }
+  async function abrirGrupo(id) {
+    window.scrollTo(0, 0);
+    const c = document.getElementById("content");
+    c.style.opacity = "0.4";
+    c.style.pointerEvents = "none";
+    try {
+      const [grupo, projetos] = await Promise.all([
+        req("GET", `/grupos/${id}`),
+        req("GET", `/projetos`)
+      ]);
+      const projetosDoGrupo = projetos.filter((p) => p.grupo_id === id);
+      c.style.opacity = "";
+      c.style.pointerEvents = "";
+      const abaSalva = sessionStorage.getItem(`telier_grupo_aba_${id}`) || "projetos";
+      slideContent2("right");
+      renderGrupo(grupo, projetosDoGrupo, abaSalva);
+      setGrupoAtual(grupo);
+      setVistaAtual("grupo");
+    } catch (e) {
+      c.style.opacity = "";
+      c.style.pointerEvents = "";
+      c.innerHTML = `<div class="error-block">${esc(e.message)}</div>`;
+    }
+  }
+  function renderProjeto(proj, tarefas, decisoes, abaAtiva, resumoHoras = []) {
+    setProjeto(proj);
+    setTarefas(tarefas);
+    const statusProj = normalizarStatusProjeto(proj.status);
+    const isArq = statusProj === "Arquivado";
+    const isPaus = statusProj === "Pausado";
+    const podeEditar = !isArq && (proj.pode_editar || isAdmin3());
+    setBreadcrumb2([
+      { id: null, nome: "Projetos", label: "Projetos" },
+      { id: proj.id, nome: proj.nome }
+    ]);
+    document.getElementById("content").innerHTML = `
+    <button class="btn-back" onclick="voltarDash()">\u2190 Voltar para projetos</button>
+    <div class="proj-hero" data-status="${esc(proj.status || "A fazer")}">
+      <div class="proj-hero-top">
+        <div class="proj-hero-left">
+          <div class="proj-nome ${isArq ? "is-muted" : ""}">${esc(proj.nome)}</div>
+          ${proj.descricao ? `<div class="proj-dono muted-detail">${esc(proj.descricao)}</div>` : ""}
+        </div>
+        <div class="proj-hero-actions">
+          ${podeEditar ? `<button class="btn btn-sm" onclick="modalEditarProjeto('${proj.id}')">Editar projeto</button>` : ""}
+          <button class="btn btn-sm" onclick="modalPermissoes('${proj.id}')">Compartilhar</button>
+        </div>
+      </div>
+      <div class="proj-meta">
+        <div class="proj-meta-item"><span class="proj-meta-label">Status</span>${tag(proj.status || "A fazer")}</div>
+        ${proj.prazo ? `<div class="proj-meta-item"><span class="proj-meta-label">Prazo</span><span class="tag tag-gray">${proj.prazo}</span></div>` : ""}
+        ${proj.area_m2 ? `<div class="proj-meta-item"><span class="proj-meta-label">\xC1rea</span><span class="tag tag-gray mono">${Number(proj.area_m2).toLocaleString("pt-BR")} m\xB2</span></div>` : ""}
+        ${proj.total_horas ? `<div class="proj-meta-item"><span class="proj-meta-label">Horas</span><span class="tag tag-gray mono">${proj.total_horas}h</span></div>` : ""}
+      </div>
+      ${isArq ? `<div class="alert-banner"><svg width="13" height="13" viewBox="0 0 24 24" fill="none"><rect x="3" y="10" width="18" height="11" rx="2" stroke="currentColor" stroke-width="1.6"/><path d="M7 10V7a5 5 0 0 1 10 0v3" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg> Projeto arquivado \u2014 apenas leitura.</div>` : ""}
+    </div>
+    <div class="abas abas-spaced">
+      <button class="aba ${abaAtiva === "tarefas" ? "ativa" : ""}" data-aba="tarefas" onclick="mudarAba('tarefas')">Tarefas${tarefas.length ? ` <span class="tab-count">${tarefas.length}</span>` : ""}</button>
+      <button class="aba ${abaAtiva === "kanban" ? "ativa" : ""}" data-aba="kanban" onclick="mudarAba('kanban')">Kanban</button>
+      <button class="aba ${abaAtiva === "mapa" ? "ativa" : ""}" data-aba="mapa" onclick="mudarAba('mapa')">Mapa de Foco</button>
+      <button class="aba ${abaAtiva === "relatorio" ? "ativa" : ""}" data-aba="relatorio" onclick="mudarAba('relatorio')">Relat\xF3rio</button>
+      <button class="aba ${abaAtiva === "decisoes" ? "ativa" : ""}" data-aba="decisoes" onclick="mudarAba('decisoes')">Decis\xF5es</button>
+    </div>
+    <div id="aba-conteudo"></div>`;
+    mudarAba(abaAtiva);
+  }
+  function renderGrupo(grupo, projetos, abaAtiva = "projetos") {
+    setGrupoAtual(grupo);
+    const podeGer = grupo.pode_gerenciar || isAdmin3();
+    setBreadcrumb2([
+      { id: null, nome: "Projetos", label: "Projetos" },
+      { id: grupo.id, nome: grupo.nome }
+    ]);
+    document.getElementById("content").innerHTML = `
+    <button class="btn-back" onclick="voltarDash()">\u2190 Voltar para projetos</button>
+    <div class="proj-hero" data-status="${esc(grupo.status || "Ativo")}">
+      <div class="proj-hero-top">
+        <div class="proj-hero-left">
+          <div class="proj-nome">${esc(grupo.nome)}</div>
+          ${grupo.descricao ? `<div class="proj-dono muted-detail">${esc(grupo.descricao)}</div>` : ""}
+        </div>
+        <div class="proj-hero-actions">
+          ${podeGer ? `<button class="btn btn-sm" onclick="modalEditarGrupo('${grupo.id}')">Editar grupo</button>` : ""}
+          <button class="btn btn-sm" onclick="compartilharGrupo('${grupo.id}')">Compartilhar</button>
+        </div>
+      </div>
+      <div class="proj-meta">
+        <div class="proj-meta-item"><span class="proj-meta-label">Status</span>${tag(grupo.status || "Ativo")}</div>
+        <div class="proj-meta-item"><span class="proj-meta-label">Projetos</span><span class="tag tag-gray">${projetos.length}</span></div>
+      </div>
+    </div>
+    <div class="abas abas-spaced">
+      <button class="aba ${abaAtiva === "projetos" ? "ativa" : ""}" data-aba="projetos" onclick="mudarAbaGrupo('projetos')">Projetos${projetos.length ? ` <span class="tab-count">${projetos.length}</span>` : ""}</button>
+      <button class="aba ${abaAtiva === "tarefas" ? "ativa" : ""}" data-aba="tarefas" onclick="mudarAbaGrupo('tarefas')">Tarefas</button>
+      <button class="aba ${abaAtiva === "mapa" ? "ativa" : ""}" data-aba="mapa" onclick="mudarAbaGrupo('mapa')">Mapa</button>
+      <button class="aba ${abaAtiva === "relatorio" ? "ativa" : ""}" data-aba="relatorio" onclick="mudarAbaGrupo('relatorio')">Relat\xF3rio</button>
+      <button class="aba ${abaAtiva === "aovivo" ? "ativa" : ""}" data-aba="aovivo" onclick="mudarAbaGrupo('aovivo')">Ao vivo</button>
+    </div>
+    <div id="aba-grupo"></div>`;
+    renderAbaGrupo(abaAtiva, projetos);
+  }
+  function mudarAba(aba) {
+    document.querySelectorAll(".aba").forEach((b) => b.classList.toggle("ativa", b.dataset.aba === aba));
+    sessionStorage.setItem(`telier_proj_aba_${PROJETO?.id}`, aba);
+  }
+  function mudarAbaGrupo(aba) {
+    document.querySelectorAll(".aba").forEach((b) => b.classList.toggle("ativa", b.dataset.aba === aba));
+    sessionStorage.setItem(`telier_grupo_aba_${GRUPO_ATUAL?.id}`, aba);
+  }
+  function renderAbaGrupo(aba, projetos) {
+    const el = document.getElementById("aba-grupo");
+    if (!el) return;
+    el.innerHTML = '<div class="loading"><div class="spinner"></div> Carregando...</div>';
+  }
+  async function modalNovoProjeto(preselectGrupoId = "") {
+  }
+  async function modalEditarProjeto(id) {
+  }
+  async function modalPermissoes(projetoId) {
+  }
+  async function modalNovoGrupo() {
+  }
+  async function modalEditarGrupo(id) {
+  }
+  async function compartilharGrupo(id) {
+  }
+  if (typeof window !== "undefined") {
+    window.abrirProjeto = abrirProjeto;
+    window.voltarDash = voltarDash;
+    window.abrirGrupo = abrirGrupo;
+    window.renderProjeto = renderProjeto;
+    window.renderGrupo = renderGrupo;
+    window.mudarAba = mudarAba;
+    window.mudarAbaGrupo = mudarAbaGrupo;
+    window.modalNovoProjeto = modalNovoProjeto;
+    window.modalEditarProjeto = modalEditarProjeto;
+    window.modalPermissoes = modalPermissoes;
+    window.modalNovoGrupo = modalNovoGrupo;
+    window.modalEditarGrupo = modalEditarGrupo;
+    window.compartilharGrupo = compartilharGrupo;
+  }
+
+  // src/modules/tasks.js
+  function renderKanban(tarefas, container) {
+    if (!container) return;
+    const statuses = ["A fazer", "Em andamento", "Em revis\xE3o", "Conclu\xEDdo"];
+    const grouped = {};
+    statuses.forEach((s) => grouped[s] = tarefas.filter((t) => t.status === s));
+    container.innerHTML = `
+    <div class="kanban-board">
+      ${statuses.map((status) => `
+        <div class="kanban-col" data-status="${esc(status)}">
+          <div class="kanban-header">
+            <h3>${status}</h3>
+            <span class="kanban-count">${grouped[status].length}</span>
+          </div>
+          <div class="kanban-items">
+            ${grouped[status].map((t) => `
+              <div class="kanban-card" draggable="true" ondragstart="dragTarefa(event,'${t.id}')" onclick="abrirTarefa('${t.id}')">
+                <div class="card-title">${esc(t.nome)}</div>
+                <div class="card-meta">
+                  ${t.prioridade ? `<span>${tag(t.prioridade)}</span>` : ""}
+                  ${t.prazo ? `<span class="card-prazo">\u{1F4C5} ${t.prazo}</span>` : ""}
+                </div>
+              </div>
+            `).join("")}
+          </div>
+        </div>
+      `).join("")}
+    </div>`;
+  }
+  function renderLista(tarefas, container) {
+    if (!container) return;
+    const concluidas = tarefas.filter((t) => t.status === "Conclu\xEDdo");
+    const ativas = tarefas.filter((t) => t.status !== "Conclu\xEDdo");
+    container.innerHTML = `
+    <div class="lista-view">
+      ${ativas.length ? `
+        <div class="lista-section">
+          <div class="lista-header">
+            <h3>Ativas</h3>
+            <span class="lista-count">${ativas.length}</span>
+          </div>
+          <table class="lista-table">
+            <thead>
+              <tr>
+                <th onclick="ordenarLista('nome')">Tarefa</th>
+                <th onclick="ordenarLista('prioridade')">Prioridade</th>
+                <th onclick="ordenarLista('prazo')">Prazo</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${ativas.map((t) => `
+                <tr onclick="abrirTarefa('${t.id}')">
+                  <td><strong>${esc(t.nome)}</strong></td>
+                  <td>${t.prioridade ? tag(t.prioridade) : "-"}</td>
+                  <td>${t.prazo || "-"}</td>
+                  <td>${tag(t.status)}</td>
+                </tr>
+              `).join("")}
+            </tbody>
+          </table>
+        </div>` : ""}
+
+      ${concluidas.length ? `
+        <div class="lista-section">
+          <button class="lista-section-toggle" onclick="toggleListaConcluidas()">
+            ${LISTA_CONCLUIDAS_EXPANDIDA ? "\u25BC" : "\u25B6"} Conclu\xEDdas (${concluidas.length})
+          </button>
+          ${LISTA_CONCLUIDAS_EXPANDIDA ? `
+            <table class="lista-table is-concluded">
+              <tbody>
+                ${concluidas.map((t) => `
+                  <tr onclick="abrirTarefa('${t.id}')">
+                    <td><del>${esc(t.nome)}</del></td>
+                    <td>${t.prazo || "-"}</td>
+                  </tr>
+                `).join("")}
+              </tbody>
+            </table>` : ""}
+        </div>` : ""}
+    </div>`;
+  }
+  function renderMapa(tarefas, container) {
+    if (!container) return;
+    const comPrazo = tarefas.filter((t) => t.prazo && t.status !== "Conclu\xEDdo").sort(
+      (a, b) => new Date(a.prazo) - new Date(b.prazo)
+    );
+    if (!comPrazo.length) {
+      container.innerHTML = '<div class="empty-small">Nenhuma tarefa com prazo</div>';
+      return;
+    }
+    container.innerHTML = `
+    <div class="mapa-timeline">
+      ${comPrazo.map((t, i) => {
+      const dias = Math.ceil((new Date(t.prazo) - /* @__PURE__ */ new Date()) / 864e5);
+      const urgente = dias <= 7 && dias > 0;
+      return `
+          <div class="mapa-item ${urgente ? "urgente" : ""}" onclick="abrirTarefa('${t.id}')">
+            <div class="mapa-dot"></div>
+            <div class="mapa-content">
+              <div class="mapa-title">${esc(t.nome)}</div>
+              <div class="mapa-date">${t.prazo} ${dias > 0 ? `(${dias}d)` : "(hoje)"}</div>
+            </div>
+          </div>
+        `;
+    }).join("")}
+    </div>`;
+  }
+  async function renderRelatorio(tarefas, container, projetoId) {
+    if (!container) return;
+    try {
+      const stats = {
+        total: tarefas.length,
+        concluidas: tarefas.filter((t) => t.status === "Conclu\xEDdo").length,
+        ativas: tarefas.filter((t) => t.status !== "Conclu\xEDdo").length,
+        horas: tarefas.reduce((sum, t) => sum + (Number(t.total_horas) || 0), 0)
+      };
+      const pctConcluidas = stats.total ? Math.round(stats.concluidas / stats.total * 100) : 0;
+      container.innerHTML = `
+      <div class="relatorio-view">
+        <div class="relatorio-cards">
+          <div class="stat-card">
+            <div class="stat-label">Total de tarefas</div>
+            <div class="stat-value">${stats.total}</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Conclu\xEDdas</div>
+            <div class="stat-value">${stats.concluidas}<span class="stat-pct">${pctConcluidas}%</span></div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Ativas</div>
+            <div class="stat-value">${stats.ativas}</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Horas trabalhadas</div>
+            <div class="stat-value">${fmtHoras(stats.horas)}</div>
+          </div>
+        </div>
+        <div class="relatorio-progress">
+          <div class="progress-label">Progresso geral</div>
+          <div class="progress-bar">
+            <div class="progress-fill" style="width:${pctConcluidas}%"></div>
+          </div>
+          <div class="progress-detail">${stats.concluidas} de ${stats.total} tarefas conclu\xEDdas</div>
+        </div>
+      </div>`;
+    } catch (e) {
+      container.innerHTML = `<div class="error-small">${esc(e.message)}</div>`;
+    }
+  }
+  async function mudarStatus(tarefaId, novoStatus, selEl) {
+    try {
+      await req("PATCH", `/tarefas/${tarefaId}`, { status: novoStatus });
+      if (selEl) selEl.value = novoStatus;
+      toast(`Status atualizado para ${novoStatus}`, "ok");
+    } catch (e) {
+      toast(e.message, "erro");
+    }
+  }
+  async function toggleFoco(id, focoAtual) {
+    try {
+      await req("PATCH", `/tarefas/${id}`, { foco: focoAtual ? 0 : 1 });
+      toast(focoAtual ? "Removido do foco" : "Adicionado ao foco", "ok");
+    } catch (e) {
+      toast(e.message, "erro");
+    }
+  }
+  async function deletarTarefa(id) {
+    try {
+      await req("DELETE", `/tarefas/${id}`, {});
+      toast("Tarefa deletada", "ok");
+    } catch (e) {
+      toast(e.message, "erro");
+    }
+  }
+  function renderColabsStack(ids = [], max = 3) {
+    return ids.slice(0, max).map((id) => `<span class="colab-avatar">${avatar("Colaborador", "xs")}</span>`).join("");
+  }
+  function ordenarLista(col) {
+  }
+  function toggleListaConcluidas() {
+  }
+  async function modalNovaTarefa(projetoId) {
+  }
+  async function modalEditarTarefa(id) {
+  }
+  async function abrirTarefa(id) {
+  }
+  async function duplicarTarefa(id) {
+  }
+  if (typeof window !== "undefined") {
+    window.renderKanban = renderKanban;
+    window.renderLista = renderLista;
+    window.renderMapa = renderMapa;
+    window.renderRelatorio = renderRelatorio;
+    window.mudarStatus = mudarStatus;
+    window.toggleFoco = toggleFoco;
+    window.deletarTarefa = deletarTarefa;
+    window.renderColabsStack = renderColabsStack;
+    window.ordenarLista = ordenarLista;
+    window.toggleListaConcluidas = toggleListaConcluidas;
+    window.modalNovaTarefa = modalNovaTarefa;
+    window.modalEditarTarefa = modalEditarTarefa;
+    window.abrirTarefa = abrirTarefa;
+    window.duplicarTarefa = duplicarTarefa;
+  }
+
+  // src/modules/timer.js
+  async function carregarTimersAtivos() {
+    try {
+      return await req("GET", "/tempo/ativas");
+    } catch {
+      return [];
+    }
+  }
+  async function iniciarCronometro(tarefaId, tarefaNome) {
+    try {
+      const sessao = await req("POST", "/tempo/iniciar", { tarefa_id: tarefaId });
+      toast(`Cron\xF4metro iniciado: ${tarefaNome}`, "ok");
+      renderTimerDock();
+      return sessao;
+    } catch (e) {
+      toast(e.message, "erro");
+    }
+  }
+  async function pararCronometro(sessaoId) {
+    try {
+      await req("POST", `/tempo/parar/${sessaoId}`, {});
+      toast("Sess\xE3o finalizada", "ok");
+      renderTimerDock();
+    } catch (e) {
+      toast(e.message, "erro");
+    }
+  }
+  function renderTimerDock() {
+    const dock = document.getElementById("timer-dock");
+    if (!dock) return;
+    dock.innerHTML = "";
+  }
+  async function modalAdicionarIntervalo(sessaoId) {
+  }
+  async function criarIntervalo(sessaoId) {
+  }
+  async function editarSessao(sessaoId, inicio, fim) {
+  }
+  async function salvarSessao(sessaoId) {
+  }
+  async function deletarSessao(sessaoId, tarefaId) {
+  }
+  async function editarIntervalo(intervaloId) {
+  }
+  async function salvarIntervalo(id) {
+  }
+  async function deletarIntervalo(id, tarefaId) {
+  }
+  async function renderSessoesTarefa(tarefaId, containerEl) {
+    if (!containerEl) return;
+    try {
+      const sessoes = await req("GET", `/tarefas/${tarefaId}/sessoes`);
+      if (!sessoes.length) {
+        containerEl.innerHTML = '<div class="empty-small">Sem sess\xF5es de trabalho registradas</div>';
+        return;
+      }
+      containerEl.innerHTML = `
+      <div class="sessoes-list">
+        ${sessoes.map((s) => `
+          <div class="sessao-item">
+            <div class="sessao-header">
+              <span class="sessao-data">${s.data_inicio?.split("T")[0]}</span>
+              <span class="sessao-duracao">${fmtDuracao(s.duracao_segundos)}</span>
+              <button class="btn btn-sm btn-ghost" onclick="editarSessao('${s.id}')">\u270E</button>
+            </div>
+          </div>
+        `).join("")}
+      </div>`;
+    } catch (e) {
+      containerEl.innerHTML = `<div class="error-small">${esc(e.message)}</div>`;
+    }
+  }
+  if (typeof window !== "undefined") {
+    window.iniciarCronometro = iniciarCronometro;
+    window.pararCronometro = pararCronometro;
+    window.carregarTimersAtivos = carregarTimersAtivos;
+    window.renderTimerDock = renderTimerDock;
+    window.modalAdicionarIntervalo = modalAdicionarIntervalo;
+    window.criarIntervalo = criarIntervalo;
+    window.editarSessao = editarSessao;
+    window.salvarSessao = salvarSessao;
+    window.deletarSessao = deletarSessao;
+    window.editarIntervalo = editarIntervalo;
+    window.salvarIntervalo = salvarIntervalo;
+    window.deletarIntervalo = deletarIntervalo;
+    window.renderSessoesTarefa = renderSessoesTarefa;
+  }
+
+  // src/modules/groups.js
+  var _dragProjetoId = null;
+  var _dragGrupoId = null;
+  function dragProjeto(e, projetoId) {
+    e.stopPropagation();
+    _dragProjetoId = projetoId;
+    e.dataTransfer.effectAllowed = "move";
+  }
+  function dragProjetoEnd(e) {
+    _dragProjetoId = null;
+    document.querySelectorAll(".proj-card.dragging").forEach((el) => el.classList.remove("dragging"));
+    document.querySelectorAll(".grupo-section.drag-over").forEach((el) => el.classList.remove("drag-over"));
+  }
+  function dragGrupo(e, grupoId) {
+    e.stopPropagation();
+    _dragGrupoId = grupoId;
+    e.dataTransfer.effectAllowed = "move";
+  }
+  function dragGrupoEnd(e) {
+    _dragGrupoId = null;
+    document.querySelectorAll(".grupo-section.dragging").forEach((el) => el.classList.remove("dragging"));
+  }
+  function dragOver(e, grupoId) {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = "move";
+    e.currentTarget.classList.add("drag-over");
+  }
+  function dragLeave(e) {
+    if (!e.currentTarget.contains(e.relatedTarget)) {
+      e.currentTarget.classList.remove("drag-over");
+    }
+  }
+  async function dropProjeto(e, grupoId) {
+    e.preventDefault();
+    e.currentTarget.classList.remove("drag-over");
+  }
+  function toggleGrupo(grupoId) {
+    const collapsed = JSON.parse(localStorage.getItem("telier_grupos_collapsed") || "[]");
+    const idx = collapsed.indexOf(grupoId);
+    if (idx >= 0) collapsed.splice(idx, 1);
+    else collapsed.push(grupoId);
+    localStorage.setItem("telier_grupos_collapsed", JSON.stringify(collapsed));
+  }
+  if (typeof window !== "undefined") {
+    window.dragProjeto = dragProjeto;
+    window.dragProjetoEnd = dragProjetoEnd;
+    window.dragGrupo = dragGrupo;
+    window.dragGrupoEnd = dragGrupoEnd;
+    window.dragOver = dragOver;
+    window.dragLeave = dragLeave;
+    window.dropProjeto = dropProjeto;
+    window.toggleGrupo = toggleGrupo;
+  }
+
+  // src/modules/admin.js
+  async function abrirCentralAdmin(aba = "resumo") {
+    try {
+      document.getElementById("content").innerHTML = `
+      <div class="admin-panel">
+        <h1>Central de Administra\xE7\xE3o</h1>
+        <div class="admin-nav">
+          <button class="admin-nav-btn ${aba === "resumo" ? "ativo" : ""}">Resumo</button>
+          <button class="admin-nav-btn ${aba === "tempo" ? "ativo" : ""}">Tempo</button>
+          <button class="admin-nav-btn ${aba === "usuarios" ? "ativo" : ""}">Usu\xE1rios</button>
+          <button class="admin-nav-btn ${aba === "relatorios" ? "ativo" : ""}">Relat\xF3rios</button>
+        </div>
+        <div id="admin-content"></div>
+      </div>`;
+    } catch (e) {
+      toast(e.message, "erro");
+    }
+  }
+  async function abrirUsuarioAdmin(usuarioId) {
+  }
+  async function exportarTempoAdminCSV(projetoId) {
+  }
+  if (typeof window !== "undefined") {
+    window.abrirCentralAdmin = abrirCentralAdmin;
+    window.abrirUsuarioAdmin = abrirUsuarioAdmin;
+    window.exportarTempoAdminCSV = exportarTempoAdminCSV;
+  }
+
+  // src/modules/notifications.js
+  var _pollNotifTimer = null;
+  async function carregarNotificacoes(silencioso = true) {
+    try {
+      const notifs = await req("GET", "/notificacoes");
+      return notifs;
+    } catch (e) {
+      if (!silencioso) toast(e.message, "erro");
+      return [];
+    }
+  }
+  function iniciarPollNotificacoes(intervalo = 1e4) {
+    _pollNotifTimer = setInterval(carregarNotificacoes, intervalo);
+  }
+  async function marcarNotifLida(id, abrirLink = null) {
+    try {
+      await req("PATCH", `/notificacoes/${id}`, { lida: true });
+      if (abrirLink) window.location.href = abrirLink;
+    } catch (e) {
+      toast(e.message, "erro");
+    }
+  }
+  async function marcarTodasNotifLidas() {
+    try {
+      await req("POST", "/notificacoes/marcar-todas-lidas", {});
+      toast("Notifica\xE7\xF5es marcadas como lidas", "ok");
+    } catch (e) {
+      toast(e.message, "erro");
+    }
+  }
+  function renderPainelNotificacoes() {
+    const panel = document.getElementById("notif-panel");
+    if (!panel) return;
+  }
+  function abrirNotificacoes() {
+    const panel = document.getElementById("notif-panel");
+    const overlay = document.getElementById("notif-overlay");
+    if (panel) panel.setAttribute("aria-hidden", "false");
+    if (overlay) overlay.classList.remove("hidden");
+  }
+  function fecharPainelNotificacoes() {
+    const panel = document.getElementById("notif-panel");
+    const overlay = document.getElementById("notif-overlay");
+    if (panel) panel.setAttribute("aria-hidden", "true");
+    if (overlay) overlay.classList.add("hidden");
+  }
+  if (typeof window !== "undefined") {
+    window.carregarNotificacoes = carregarNotificacoes;
+    window.iniciarPollNotificacoes = iniciarPollNotificacoes;
+    window.marcarNotifLida = marcarNotifLida;
+    window.marcarTodasNotifLidas = marcarTodasNotifLidas;
+    window.abrirNotificacoes = abrirNotificacoes;
+    window.fecharPainelNotificacoes = fecharPainelNotificacoes;
+    window.renderPainelNotificacoes = renderPainelNotificacoes;
+  }
+
+  // src/modules/shortcuts.js
+  function setupKeyboardShortcuts() {
+    document.addEventListener("keydown", handleGlobalKeyDown);
+  }
+  function handleGlobalKeyDown(e) {
+    if ((e.ctrlKey || e.metaKey) && e.key === "k") {
+      e.preventDefault();
+      abrirCommandPalette();
+      return;
+    }
+    if ((e.ctrlKey || e.metaKey) && e.key === "/") {
+      e.preventDefault();
+      return;
+    }
+    if (e.key === "Escape") {
+      fecharModal();
+    }
+  }
+  function abrirCommandPalette() {
+    console.log("Command palette: TODO");
+  }
+  function toggleSenhaLogin(btn) {
+    const input = btn.previousElementSibling;
+    if (!input) return;
+    const isPassword = input.type === "password";
+    input.type = isPassword ? "text" : "password";
+    btn.title = isPassword ? "Ocultar senha" : "Mostrar senha";
+  }
+  function toggleSenhaSetup(btn) {
+    const input = btn.closest(".form-row")?.querySelector('input[type="password"]');
+    if (!input) return;
+    const isPassword = input.type === "password";
+    input.type = isPassword ? "text" : "password";
+    btn.title = isPassword ? "Ocultar senha" : "Mostrar senha";
+  }
+  function toggleSenhaCadastro(btn) {
+    toggleSenhaSetup(btn);
+  }
+  function toggleSenhaObrigatoria(btn) {
+    toggleSenhaSetup(btn);
+  }
+  function toggleSenhaReset(btn) {
+    toggleSenhaSetup(btn);
+  }
+  if (typeof window !== "undefined") {
+    window.setupKeyboardShortcuts = setupKeyboardShortcuts;
+    window.abrirCommandPalette = abrirCommandPalette;
+    window.toggleSenhaLogin = toggleSenhaLogin;
+    window.toggleSenhaSetup = toggleSenhaSetup;
+    window.toggleSenhaCadastro = toggleSenhaCadastro;
+    window.toggleSenhaObrigatoria = toggleSenhaObrigatoria;
+    window.toggleSenhaReset = toggleSenhaReset;
+  }
+
   // src/app.js
   document.addEventListener("DOMContentLoaded", async () => {
     try {
+      setupKeyboardShortcuts?.();
       carregarFiltrosDash?.();
       await init();
+      iniciarPollNotificacoes?.();
     } catch (error) {
       console.error("App initialization error:", error);
     }
@@ -954,17 +1655,82 @@
   window.fazerLogout = fazerLogout;
   window.fazerCadastroPublico = fazerCadastroPublico;
   window.modalCadastroPublico = modalCadastroPublico;
-  window.renderDash = renderDash;
+  window.renderDash = renderDash2;
   window.setFiltro = setFiltro;
   window.filtrarProjetosBusca = filtrarProjetosBusca;
   window.filtrarGrupoDash = filtrarGrupoDash;
   window.filtrarOrigemDash = filtrarOrigemDash;
   window.toggleStartday = toggleStartday;
   window.renderCardsDash = renderCardsDash;
+  window.abrirProjeto = abrirProjeto;
+  window.voltarDash = voltarDash;
+  window.abrirGrupo = abrirGrupo;
+  window.renderProjeto = renderProjeto;
+  window.renderGrupo = renderGrupo;
+  window.mudarAba = mudarAba;
+  window.mudarAbaGrupo = mudarAbaGrupo;
+  window.modalNovoProjeto = modalNovoProjeto;
+  window.modalEditarProjeto = modalEditarProjeto;
+  window.modalPermissoes = modalPermissoes;
+  window.modalNovoGrupo = modalNovoGrupo;
+  window.modalEditarGrupo = modalEditarGrupo;
+  window.compartilharGrupo = compartilharGrupo;
+  window.renderKanban = renderKanban;
+  window.renderLista = renderLista;
+  window.renderMapa = renderMapa;
+  window.renderRelatorio = renderRelatorio;
+  window.mudarStatus = mudarStatus;
+  window.toggleFoco = toggleFoco;
+  window.deletarTarefa = deletarTarefa;
+  window.renderColabsStack = renderColabsStack;
+  window.ordenarLista = ordenarLista;
+  window.toggleListaConcluidas = toggleListaConcluidas;
+  window.modalNovaTarefa = modalNovaTarefa;
+  window.modalEditarTarefa = modalEditarTarefa;
+  window.abrirTarefa = abrirTarefa;
+  window.duplicarTarefa = duplicarTarefa;
+  window.iniciarCronometro = iniciarCronometro;
+  window.pararCronometro = pararCronometro;
+  window.carregarTimersAtivos = carregarTimersAtivos;
+  window.renderTimerDock = renderTimerDock;
+  window.modalAdicionarIntervalo = modalAdicionarIntervalo;
+  window.criarIntervalo = criarIntervalo;
+  window.editarSessao = editarSessao;
+  window.salvarSessao = salvarSessao;
+  window.deletarSessao = deletarSessao;
+  window.editarIntervalo = editarIntervalo;
+  window.salvarIntervalo = salvarIntervalo;
+  window.deletarIntervalo = deletarIntervalo;
+  window.renderSessoesTarefa = renderSessoesTarefa;
+  window.dragProjeto = dragProjeto;
+  window.dragProjetoEnd = dragProjetoEnd;
+  window.dragGrupo = dragGrupo;
+  window.dragGrupoEnd = dragGrupoEnd;
+  window.dragOver = dragOver;
+  window.dragLeave = dragLeave;
+  window.dropProjeto = dropProjeto;
+  window.toggleGrupo = toggleGrupo;
+  window.abrirCentralAdmin = abrirCentralAdmin;
+  window.abrirUsuarioAdmin = abrirUsuarioAdmin;
+  window.exportarTempoAdminCSV = exportarTempoAdminCSV;
+  window.carregarNotificacoes = carregarNotificacoes;
+  window.iniciarPollNotificacoes = iniciarPollNotificacoes;
+  window.marcarNotifLida = marcarNotifLida;
+  window.marcarTodasNotifLidas = marcarTodasNotifLidas;
+  window.abrirNotificacoes = abrirNotificacoes;
+  window.fecharPainelNotificacoes = fecharPainelNotificacoes;
+  window.renderPainelNotificacoes = renderPainelNotificacoes;
+  window.setupKeyboardShortcuts = setupKeyboardShortcuts;
+  window.abrirCommandPalette = abrirCommandPalette;
+  window.toggleSenhaLogin = toggleSenhaLogin;
+  window.toggleSenhaSetup = toggleSenhaSetup;
+  window.toggleSenhaCadastro = toggleSenhaCadastro;
+  window.toggleSenhaObrigatoria = toggleSenhaObrigatoria;
+  window.toggleSenhaReset = toggleSenhaReset;
   window.toast = toast;
   window.toastUndo = toastUndo;
   window.abrirModal = abrirModal;
-  window.fecharModal = fecharModal;
+  window.fecharModal = fecharModal2;
   window.confirmar = confirmar;
   window.fecharOverlayModal = fecharOverlayModal;
   window.btnLoading = btnLoading;
