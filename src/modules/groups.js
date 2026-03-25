@@ -46,7 +46,16 @@ export function dragLeave(e) {
 export async function dropProjeto(e, grupoId) {
   e.preventDefault();
   e.currentTarget.classList.remove('drag-over');
-  toast('Funcionalidade em desenvolvimento', 'info');
+  if (!_dragProjetoId) return;
+  try {
+    await req('PATCH', `/projetos/${_dragProjetoId}`, { grupo_id: grupoId || null });
+    toast('Projeto movido de grupo', 'ok');
+    window.renderDash?.();
+  } catch (err) {
+    toast(err.message, 'erro');
+  } finally {
+    _dragProjetoId = null;
+  }
 }
 
 export function toggleGrupo(grupoId) {

@@ -50,6 +50,12 @@
   function setBuscaDash(b) {
     BUSCA_DASH = b;
   }
+  function setFiltroConcluidas(e) {
+    LISTA_CONCLUIDAS_EXPANDIDA = e;
+  }
+  function setListaSort(s) {
+    LISTA_SORT = s;
+  }
   function setProjsDash(p) {
     _projsDash = p;
   }
@@ -59,7 +65,7 @@
   function setGruposDash(g) {
     _gruposDash = g;
   }
-  var API, TOKEN, EU, PROJETO, GRUPO_ATUAL, VISTA_ATUAL, TAREFAS, ADMIN_MODE_KEY, ADMIN_MODE, FILTRO_STATUS, FILTRO_ORIGEM_DASH, FILTRO_GRUPO_DASH, BUSCA_DASH, _projsDash, _ativasDash, _gruposDash, LISTA_CONCLUIDAS_EXPANDIDA, _prazoNotifShown, STARTDAY_COLLAPSE_KEY, REQ_TIMEOUT_MS, PROJ_CACHE_KEY, PROJ_CACHE_TTL;
+  var API, TOKEN, EU, PROJETO, GRUPO_ATUAL, VISTA_ATUAL, TAREFAS, ADMIN_MODE_KEY, ADMIN_MODE, FILTRO_STATUS, FILTRO_ORIGEM_DASH, FILTRO_GRUPO_DASH, BUSCA_DASH, _projsDash, _ativasDash, _gruposDash, LISTA_SORT, LISTA_CONCLUIDAS_EXPANDIDA, _prazoNotifShown, STARTDAY_COLLAPSE_KEY, REQ_TIMEOUT_MS, PROJ_CACHE_KEY, PROJ_CACHE_TTL;
   var init_state = __esm({
     "src/modules/state.js"() {
       API = "https://telier-api.pedroafsmaia.workers.dev";
@@ -78,6 +84,7 @@
       _projsDash = [];
       _ativasDash = [];
       _gruposDash = [];
+      LISTA_SORT = { col: null, dir: "asc" };
       LISTA_CONCLUIDAS_EXPANDIDA = false;
       _prazoNotifShown = /* @__PURE__ */ new Set();
       STARTDAY_COLLAPSE_KEY = "telier_startday_collapsed";
@@ -137,6 +144,12 @@
     } catch {
     }
     return data;
+  }
+  function invalidarCacheProjetos() {
+    try {
+      sessionStorage.removeItem(PROJ_CACHE_KEY);
+    } catch {
+    }
   }
   var endpoints;
   var init_api = __esm({
@@ -781,7 +794,7 @@
   }
   var DASH_FILTERS_KEY = "telier_dash_filters_v1";
   function goHome() {
-    renderDash2();
+    renderDash();
   }
   function carregarFiltrosDash() {
     try {
@@ -810,7 +823,7 @@
   var _debouncedFiltro = debounce((v) => {
     setBuscaDash(v);
     salvarFiltrosDash();
-    renderDash2();
+    renderDash();
   }, 200);
   function filtrarProjetosBusca(v) {
     _debouncedFiltro(v);
@@ -818,17 +831,17 @@
   function filtrarGrupoDash(v) {
     setFiltroGrupoDash(v);
     salvarFiltrosDash();
-    renderDash2();
+    renderDash();
   }
   function filtrarOrigemDash(v) {
     setFiltroOrigemDash(v);
     salvarFiltrosDash();
-    renderDash2();
+    renderDash();
   }
   function setFiltro(f) {
     setFiltroStatus(f);
     salvarFiltrosDash();
-    renderDash2();
+    renderDash();
   }
   function renderInicioDia(projetos, ativas, ultimaSessao = null, focoGlobal = null, resumoHoje = null) {
     const collapsed = localStorage.getItem(STARTDAY_COLLAPSE_KEY) !== "0";
@@ -915,7 +928,7 @@
     if (status === "Conclu\xEDdo") return "is-done";
     return "";
   }
-  async function renderDash2() {
+  async function renderDash() {
     window.scrollTo(0, 0);
     document.title = "Telier";
     setBreadcrumb([]);
@@ -1179,7 +1192,7 @@
     c.style.animation = `slideContent${direction === "left" ? "In" : "Out"} .3s ease-out forwards`;
   }
   if (typeof window !== "undefined") {
-    window.renderDash = renderDash2;
+    window.renderDash = renderDash;
     window.setFiltro = setFiltro;
     window.filtrarProjetosBusca = filtrarProjetosBusca;
     window.filtrarGrupoDash = filtrarGrupoDash;
@@ -1201,249 +1214,163 @@
   init_state();
   init_ui();
   init_utils();
+  var STATUS_ORDEM = ["A fazer", "Em andamento", "Em revis\xE3o", "Conclu\xEDdo"];
+  var PRIORIDADE_ORDEM = ["Alta", "M\xE9dia", "Baixa"];
+  var prazoDe = (t) => t.prazo || t.data || "";
   function renderKanban(tarefas, container) {
     if (!container) return;
-    const statuses = ["A fazer", "Em andamento", "Em revis\xE3o", "Conclu\xEDdo"];
     const grouped = {};
-    statuses.forEach((s) => grouped[s] = tarefas.filter((t) => t.status === s));
+    STATUS_ORDEM.forEach((s) => grouped[s] = tarefas.filter((t) => t.status === s));
+    const projetoIds = new Set((tarefas || []).map((t) => t.projeto_id).filter(Boolean));
+    const canCreate = !!PROJETO?.id && projetoIds.size <= 1 && (projetoIds.size === 0 || projetoIds.has(PROJETO.id));
     container.innerHTML = `
+    <div style="display:flex;justify-content:space-between;margin-bottom:8px">${canCreate ? `<button class="btn btn-sm btn-primary" onclick="modalNovaTarefa('${PROJETO?.id || ""}')">+ Nova tarefa</button>` : ""}</div>
     <div class="kanban-board">
-      ${statuses.map((status) => `
-        <div class="kanban-col" data-status="${esc(status)}">
-          <div class="kanban-header">
-            <h3>${status}</h3>
-            <span class="kanban-count">${grouped[status].length}</span>
-          </div>
-          <div class="kanban-items">
-            ${grouped[status].map((t) => `
-              <div class="kanban-card" draggable="true" ondragstart="dragTarefa(event,'${t.id}')" onclick="abrirTarefa('${t.id}')">
-                <div class="card-title">${esc(t.nome)}</div>
-                <div class="card-meta">
-                  ${t.prioridade ? `<span>${tag(t.prioridade)}</span>` : ""}
-                  ${t.prazo ? `<span class="card-prazo">\u{1F4C5} ${t.prazo}</span>` : ""}
-                </div>
-              </div>
-            `).join("")}
-          </div>
-        </div>
-      `).join("")}
+      ${STATUS_ORDEM.map((status) => `<div class="kanban-col"><div class="kanban-header"><h3>${status}</h3><span class="kanban-count">${grouped[status].length}</span></div><div class="kanban-items">${grouped[status].map((t) => `<div class="kanban-card" onclick="abrirTarefa('${t.id}')"><div class="card-title">${esc(t.nome)}</div><div class="card-meta">${t.prioridade ? `<span>${tag(t.prioridade)}</span>` : ""}${prazoDe(t) ? `<span class="card-prazo">\u{1F4C5} ${esc(prazoDe(t))}</span>` : ""}</div></div>`).join("")}</div></div>`).join("")}
     </div>`;
   }
   function renderLista(tarefas, container) {
     if (!container) return;
-    const concluidas = tarefas.filter((t) => t.status === "Conclu\xEDdo");
-    const ativas = tarefas.filter((t) => t.status !== "Conclu\xEDdo");
+    const base = [...tarefas];
+    const projetoIds = new Set((tarefas || []).map((t) => t.projeto_id).filter(Boolean));
+    const canCreate = !!PROJETO?.id && projetoIds.size <= 1 && (projetoIds.size === 0 || projetoIds.has(PROJETO.id));
+    if (LISTA_SORT.col) {
+      base.sort((a, b) => {
+        const dir = LISTA_SORT.dir === "asc" ? 1 : -1;
+        if (LISTA_SORT.col === "nome") return a.nome.localeCompare(b.nome) * dir;
+        if (LISTA_SORT.col === "prioridade") return (PRIORIDADE_ORDEM.indexOf(a.prioridade) - PRIORIDADE_ORDEM.indexOf(b.prioridade) || 0) * dir;
+        if (LISTA_SORT.col === "prazo") return (new Date(prazoDe(a) || "2999-01-01") - new Date(prazoDe(b) || "2999-01-01")) * dir;
+        return 0;
+      });
+    }
+    const concluidas = base.filter((t) => t.status === "Conclu\xEDdo");
+    const ativas = base.filter((t) => t.status !== "Conclu\xEDdo");
     container.innerHTML = `
     <div class="lista-view">
-      ${ativas.length ? `
-        <div class="lista-section">
-          <div class="lista-header">
-            <h3>Ativas</h3>
-            <span class="lista-count">${ativas.length}</span>
-          </div>
-          <table class="lista-table">
-            <thead>
-              <tr>
-                <th onclick="ordenarLista('nome')">Tarefa</th>
-                <th onclick="ordenarLista('prioridade')">Prioridade</th>
-                <th onclick="ordenarLista('prazo')">Prazo</th>
-                <th>Status</th>
-              </tr>
-            </thead>
-            <tbody>
-              ${ativas.map((t) => `
-                <tr onclick="abrirTarefa('${t.id}')">
-                  <td><strong>${esc(t.nome)}</strong></td>
-                  <td>${t.prioridade ? tag(t.prioridade) : "-"}</td>
-                  <td>${t.prazo || "-"}</td>
-                  <td>${tag(t.status)}</td>
-                </tr>
-              `).join("")}
-            </tbody>
-          </table>
-        </div>` : ""}
-
-      ${concluidas.length ? `
-        <div class="lista-section">
-          <button class="lista-section-toggle" onclick="toggleListaConcluidas()">
-            ${LISTA_CONCLUIDAS_EXPANDIDA ? "\u25BC" : "\u25B6"} Conclu\xEDdas (${concluidas.length})
-          </button>
-          ${LISTA_CONCLUIDAS_EXPANDIDA ? `
-            <table class="lista-table is-concluded">
-              <tbody>
-                ${concluidas.map((t) => `
-                  <tr onclick="abrirTarefa('${t.id}')">
-                    <td><del>${esc(t.nome)}</del></td>
-                    <td>${t.prazo || "-"}</td>
-                  </tr>
-                `).join("")}
-              </tbody>
-            </table>` : ""}
-        </div>` : ""}
+      <div style="display:flex;justify-content:space-between;margin-bottom:8px">${canCreate ? `<button class="btn btn-sm btn-primary" onclick="modalNovaTarefa('${PROJETO?.id || ""}')">+ Nova tarefa</button>` : ""}</div>
+      ${ativas.length ? `<div class="lista-section"><div class="lista-header"><h3>Ativas</h3><span class="lista-count">${ativas.length}</span></div><table class="lista-table"><thead><tr><th onclick="ordenarLista('nome')">Tarefa</th><th onclick="ordenarLista('prioridade')">Prioridade</th><th onclick="ordenarLista('prazo')">Prazo</th><th>Status</th></tr></thead><tbody>${ativas.map((t) => `<tr onclick="abrirTarefa('${t.id}')"><td><strong>${esc(t.nome)}</strong></td><td>${t.prioridade ? tag(t.prioridade) : "-"}</td><td>${esc(prazoDe(t) || "-")}</td><td>${tag(t.status)}</td></tr>`).join("")}</tbody></table></div>` : ""}
+      ${concluidas.length ? `<div class="lista-section"><button class="lista-section-toggle" onclick="toggleListaConcluidas()">${LISTA_CONCLUIDAS_EXPANDIDA ? "\u25BC" : "\u25B6"} Conclu\xEDdas (${concluidas.length})</button>${LISTA_CONCLUIDAS_EXPANDIDA ? `<table class="lista-table is-concluded"><tbody>${concluidas.map((t) => `<tr onclick="abrirTarefa('${t.id}')"><td><del>${esc(t.nome)}</del></td><td>${esc(prazoDe(t) || "-")}</td></tr>`).join("")}</tbody></table>` : ""}</div>` : ""}
     </div>`;
   }
   function renderMapa(tarefas, container) {
     if (!container) return;
-    const comPrazo = tarefas.filter((t) => t.prazo && t.status !== "Conclu\xEDdo").sort(
-      (a, b) => new Date(a.prazo) - new Date(b.prazo)
-    );
+    const comPrazo = tarefas.filter((t) => prazoDe(t) && t.status !== "Conclu\xEDdo").sort((a, b) => new Date(prazoDe(a)) - new Date(prazoDe(b)));
     if (!comPrazo.length) {
       container.innerHTML = '<div class="empty-small">Nenhuma tarefa com prazo</div>';
       return;
     }
-    container.innerHTML = `
-    <div class="mapa-timeline">
-      ${comPrazo.map((t, i) => {
-      const dias = Math.ceil((new Date(t.prazo) - /* @__PURE__ */ new Date()) / 864e5);
-      const urgente = dias <= 7 && dias > 0;
-      return `
-          <div class="mapa-item ${urgente ? "urgente" : ""}" onclick="abrirTarefa('${t.id}')">
-            <div class="mapa-dot"></div>
-            <div class="mapa-content">
-              <div class="mapa-title">${esc(t.nome)}</div>
-              <div class="mapa-date">${t.prazo} ${dias > 0 ? `(${dias}d)` : "(hoje)"}</div>
-            </div>
-          </div>
-        `;
-    }).join("")}
-    </div>`;
+    container.innerHTML = `<div class="mapa-timeline">${comPrazo.map((t) => {
+      const dias = Math.ceil((new Date(prazoDe(t)) - /* @__PURE__ */ new Date()) / 864e5);
+      return `<div class="mapa-item ${dias <= 7 && dias > 0 ? "urgente" : ""}" onclick="abrirTarefa('${t.id}')"><div class="mapa-dot"></div><div class="mapa-content"><div class="mapa-title">${esc(t.nome)}</div><div class="mapa-date">${esc(prazoDe(t))}</div></div></div>`;
+    }).join("")}</div>`;
   }
-  async function renderRelatorio(tarefas, container, projetoId) {
+  async function renderRelatorio(tarefas, container) {
     if (!container) return;
-    try {
-      const stats = {
-        total: tarefas.length,
-        concluidas: tarefas.filter((t) => t.status === "Conclu\xEDdo").length,
-        ativas: tarefas.filter((t) => t.status !== "Conclu\xEDdo").length,
-        horas: tarefas.reduce((sum, t) => sum + (Number(t.total_horas) || 0), 0)
-      };
-      const pctConcluidas = stats.total ? Math.round(stats.concluidas / stats.total * 100) : 0;
-      container.innerHTML = `
-      <div class="relatorio-view">
-        <div class="relatorio-cards">
-          <div class="stat-card">
-            <div class="stat-label">Total de tarefas</div>
-            <div class="stat-value">${stats.total}</div>
-          </div>
-          <div class="stat-card">
-            <div class="stat-label">Conclu\xEDdas</div>
-            <div class="stat-value">${stats.concluidas}<span class="stat-pct">${pctConcluidas}%</span></div>
-          </div>
-          <div class="stat-card">
-            <div class="stat-label">Ativas</div>
-            <div class="stat-value">${stats.ativas}</div>
-          </div>
-          <div class="stat-card">
-            <div class="stat-label">Horas trabalhadas</div>
-            <div class="stat-value">${fmtHoras(stats.horas)}</div>
-          </div>
-        </div>
-        <div class="relatorio-progress">
-          <div class="progress-label">Progresso geral</div>
-          <div class="progress-bar">
-            <div class="progress-fill" style="width:${pctConcluidas}%"></div>
-          </div>
-          <div class="progress-detail">${stats.concluidas} de ${stats.total} tarefas conclu\xEDdas</div>
-        </div>
-      </div>`;
-    } catch (e) {
-      container.innerHTML = `<div class="error-small">${esc(e.message)}</div>`;
-    }
+    const stats = {
+      total: tarefas.length,
+      concluidas: tarefas.filter((t) => t.status === "Conclu\xEDdo").length,
+      ativas: tarefas.filter((t) => t.status !== "Conclu\xEDdo").length,
+      horas: tarefas.reduce((sum, t) => sum + (Number(t.total_horas) || 0), 0)
+    };
+    const pctConcluidas = stats.total ? Math.round(stats.concluidas / stats.total * 100) : 0;
+    container.innerHTML = `<div class="relatorio-view"><div class="relatorio-cards"><div class="stat-card"><div class="stat-label">Total de tarefas</div><div class="stat-value">${stats.total}</div></div><div class="stat-card"><div class="stat-label">Conclu\xEDdas</div><div class="stat-value">${stats.concluidas}<span class="stat-pct">${pctConcluidas}%</span></div></div><div class="stat-card"><div class="stat-label">Ativas</div><div class="stat-value">${stats.ativas}</div></div><div class="stat-card"><div class="stat-label">Horas trabalhadas</div><div class="stat-value">${fmtHoras(stats.horas)}</div></div></div></div>`;
+  }
+  async function reloadProjetoTarefas() {
+    if (!PROJETO?.id) return;
+    const tarefas = await req("GET", `/projetos/${PROJETO.id}/tarefas`);
+    setTarefas(tarefas);
+    window.mudarAba?.(sessionStorage.getItem(`telier_proj_aba_${PROJETO.id}`) || "tarefas");
   }
   async function mudarStatus(tarefaId, novoStatus, selEl) {
-    const statusAnterior = selEl?.value;
+    const old = selEl?.value;
     if (selEl) selEl.value = novoStatus;
     try {
       await req("PATCH", `/tarefas/${tarefaId}`, { status: novoStatus });
+      await reloadProjetoTarefas();
       toast(`Status atualizado para ${novoStatus}`, "ok");
     } catch (e) {
-      if (selEl) selEl.value = statusAnterior;
+      if (selEl) selEl.value = old;
       toast(e.message, "erro");
     }
   }
   async function toggleFoco(id, focoAtual) {
-    const focoNovo = focoAtual ? 0 : 1;
-    const btnEl = document.querySelector(`[data-tarefa-id="${id}"] .btn-foco`);
-    const classAnterior = btnEl?.className;
-    if (btnEl) {
-      btnEl.classList.toggle("ativo", focoNovo === 1);
-    }
     try {
-      await req("PATCH", `/tarefas/${id}`, { foco: focoNovo });
+      if (focoAtual) await req("DELETE", `/tarefas/${id}/foco`);
+      else await req("PUT", `/tarefas/${id}/foco`, {});
+      await reloadProjetoTarefas();
       toast(focoAtual ? "Removido do foco" : "Adicionado ao foco", "ok");
     } catch (e) {
-      if (btnEl && classAnterior) btnEl.className = classAnterior;
       toast(e.message, "erro");
     }
   }
   async function deletarTarefa(id) {
-    try {
-      await req("DELETE", `/tarefas/${id}`, {});
-      toast("Tarefa deletada", "ok");
-    } catch (e) {
-      toast(e.message, "erro");
-    }
+    confirmar("Deseja deletar esta tarefa?", async () => {
+      try {
+        await req("DELETE", `/tarefas/${id}`, {});
+        await reloadProjetoTarefas();
+        toast("Tarefa deletada", "ok");
+      } catch (e) {
+        toast(e.message, "erro");
+      }
+    });
   }
   function renderColabsStack(ids = [], max = 3) {
-    return ids.slice(0, max).map((id) => `<span class="colab-avatar">${avatar("Colaborador", "xs")}</span>`).join("");
+    return ids.slice(0, max).map(() => `<span class="colab-avatar">${avatar("Colaborador", "xs")}</span>`).join("");
   }
   function ordenarLista(col) {
-    toast("Funcionalidade em desenvolvimento", "info");
+    const dir = LISTA_SORT.col === col && LISTA_SORT.dir === "asc" ? "desc" : "asc";
+    setListaSort({ col, dir });
+    window.mudarAba?.("tarefas");
   }
   function toggleListaConcluidas() {
-    toast("Funcionalidade em desenvolvimento", "info");
+    setFiltroConcluidas(!LISTA_CONCLUIDAS_EXPANDIDA);
+    window.mudarAba?.("tarefas");
+  }
+  function formTaskHtml(task = {}) {
+    return `<form id="form-task" class="form-grid">
+    <input name="nome" placeholder="Nome" value="${esc(task.nome || "")}" required>
+    <textarea name="descricao" placeholder="Descri\xE7\xE3o">${esc(task.descricao || "")}</textarea>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+      <select name="status"><option ${task.status === "A fazer" ? "selected" : ""}>A fazer</option><option ${task.status === "Em andamento" ? "selected" : ""}>Em andamento</option><option ${task.status === "Em revis\xE3o" ? "selected" : ""}>Em revis\xE3o</option><option ${task.status === "Conclu\xEDdo" ? "selected" : ""}>Conclu\xEDdo</option></select>
+      <select name="prioridade"><option ${task.prioridade === "Alta" ? "selected" : ""}>Alta</option><option ${task.prioridade === "M\xE9dia" ? "selected" : ""}>M\xE9dia</option><option ${task.prioridade === "Baixa" ? "selected" : ""}>Baixa</option></select>
+    </div>
+    <input name="data" type="date" value="${esc(prazoDe(task) || "")}">
+    <button class="btn btn-primary" type="submit">Salvar</button>
+  </form>`;
   }
   async function modalNovaTarefa(projetoId) {
-    const { abrirModal: abrirModal2 } = window;
-    const html = `
-    <div style="padding: 24px;">
-      <h2>Nova Tarefa</h2>
-      <div style="color: var(--text3); margin: 16px 0;">
-        <strong>Funcionalidade em desenvolvimento</strong>
-        <p style="margin-top: 8px; font-size: 0.9rem;">Esta funcionalidade ser\xE1 implementada em breve.</p>
-      </div>
-    </div>
-  `;
-    abrirModal2?.(html, { titulo: "Nova Tarefa" });
+    const overlay = window.abrirModal?.(formTaskHtml(), { titulo: "Nova Tarefa" });
+    overlay?.querySelector("#form-task")?.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const body = Object.fromEntries(new FormData(e.currentTarget).entries());
+      await req("POST", `/projetos/${projetoId}/tarefas`, body);
+      fecharModal();
+      await reloadProjetoTarefas();
+      toast("Tarefa criada", "ok");
+    });
   }
   async function modalEditarTarefa(id) {
-    const { abrirModal: abrirModal2 } = window;
-    const html = `
-    <div style="padding: 24px;">
-      <h2>Editar Tarefa</h2>
-      <div style="color: var(--text3); margin: 16px 0;">
-        <strong>Funcionalidade em desenvolvimento</strong>
-        <p style="margin-top: 8px; font-size: 0.9rem;">Esta funcionalidade ser\xE1 implementada em breve.</p>
-      </div>
-    </div>
-  `;
-    abrirModal2?.(html, { titulo: "Editar Tarefa" });
+    const t = TAREFAS.find((x) => x.id === id);
+    if (!t) return toast("Tarefa n\xE3o encontrada", "erro");
+    const overlay = window.abrirModal?.(formTaskHtml(t), { titulo: "Editar Tarefa" });
+    overlay?.querySelector("#form-task")?.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      await req("PUT", `/tarefas/${id}`, Object.fromEntries(new FormData(e.currentTarget).entries()));
+      fecharModal();
+      await reloadProjetoTarefas();
+      toast("Tarefa atualizada", "ok");
+    });
   }
   async function abrirTarefa(id) {
-    const { abrirModal: abrirModal2 } = window;
-    const html = `
-    <div style="padding: 24px;">
-      <h2>Detalhes da Tarefa</h2>
-      <div style="color: var(--text3); margin: 16px 0;">
-        <strong>Funcionalidade em desenvolvimento</strong>
-        <p style="margin-top: 8px; font-size: 0.9rem;">Esta funcionalidade ser\xE1 implementada em breve.</p>
-      </div>
-    </div>
-  `;
-    abrirModal2?.(html, { titulo: "Detalhes da Tarefa" });
+    const t = TAREFAS.find((x) => x.id === id);
+    if (!t) return toast("Tarefa n\xE3o encontrada", "erro");
+    const html = `<div><h3 style="margin-bottom:8px">${esc(t.nome)}</h3><div class="muted-detail" style="margin-bottom:8px">${esc(t.descricao || "Sem descri\xE7\xE3o")}</div><div style="display:flex;gap:8px;flex-wrap:wrap">${tag(t.status)}${tag(t.prioridade || "M\xE9dia")}</div><div style="margin-top:12px;display:flex;gap:8px"><button class="btn" onclick="modalEditarTarefa('${id}')">Editar</button><button class="btn" onclick="duplicarTarefa('${id}')">Duplicar</button><button class="btn btn-danger" onclick="deletarTarefa('${id}')">Excluir</button></div></div>`;
+    window.abrirModal?.(html, { titulo: "Detalhes da tarefa" });
   }
   async function duplicarTarefa(id) {
-    const { abrirModal: abrirModal2 } = window;
-    const html = `
-    <div style="padding: 24px;">
-      <h2>Duplicar Tarefa</h2>
-      <div style="color: var(--text3); margin: 16px 0;">
-        <strong>Funcionalidade em desenvolvimento</strong>
-        <p style="margin-top: 8px; font-size: 0.9rem;">Esta funcionalidade ser\xE1 implementada em breve.</p>
-      </div>
-    </div>
-  `;
-    abrirModal2?.(html, { titulo: "Duplicar Tarefa" });
+    await req("POST", `/tarefas/${id}/duplicar`, {});
+    await reloadProjetoTarefas();
+    toast("Tarefa duplicada", "ok");
   }
   function dragTarefa(e, tarefaId) {
     e.dataTransfer.effectAllowed = "move";
@@ -1464,11 +1391,13 @@
     window.modalEditarTarefa = modalEditarTarefa;
     window.abrirTarefa = abrirTarefa;
     window.duplicarTarefa = duplicarTarefa;
+    window.dragTarefa = dragTarefa;
   }
 
   // src/modules/project.js
   var _decisoesAtivas = [];
   var _projetosGrupoAtual = [];
+  var _grupoTarefas = [];
   function isAdminRole3() {
     return EU?.papel === "admin";
   }
@@ -1483,7 +1412,7 @@
       return;
     }
     el.innerHTML = partes.map(
-      (p, i) => `<span>${i > 0 ? " / " : ""}${typeof p === "string" ? p : `<button onclick="abrirProjeto('${p.id}')">${esc(p.nome)}</button>`}</span>`
+      (p, i) => `<span>${i > 0 ? " / " : ""}${typeof p === "string" ? p : `<button onclick="${p.onClick || `abrirProjeto('${p.id}')`}">${esc(p.nome)}</button>`}</span>`
     ).join("");
   }
   function slideContent2(direction) {
@@ -1494,19 +1423,7 @@
   async function abrirProjeto(id) {
     window.scrollTo(0, 0);
     const c = document.getElementById("content");
-    c.innerHTML = `
-    <div style="opacity:0.4">
-      <button class="btn-back" style="visibility:hidden">\u2190 Voltar para projetos</button>
-      <div class="proj-hero" style="opacity:0.5">
-        <div style="height:40px;background:var(--bg3);border-radius:var(--r);margin-bottom:12px;animation:pulse 1.2s ease infinite"></div>
-        <div style="height:20px;background:var(--bg3);border-radius:var(--r);width:60%;animation:pulse 1.2s ease infinite"></div>
-      </div>
-      <div style="display:flex;gap:8px;margin-top:16px">
-        <div style="height:32px;width:80px;background:var(--bg3);border-radius:var(--r);animation:pulse 1.2s ease infinite"></div>
-        <div style="height:32px;width:80px;background:var(--bg3);border-radius:var(--r);animation:pulse 1.2s ease infinite"></div>
-      </div>
-    </div>
-  `;
+    c.innerHTML = '<div class="empty-small">Carregando projeto...</div>';
     try {
       const [projeto, tarefas, decisoes, resumoHoras] = await Promise.all([
         req("GET", `/projetos/${id}`),
@@ -1526,28 +1443,13 @@
   }
   function voltarDash() {
     slideContent2("left");
-    invalidarCacheProjetos?.();
-    renderDash?.();
-  }
-  function invalidarCacheProjetos() {
-    localStorage.removeItem("telier_proj_cache");
+    invalidarCacheProjetos();
+    renderDash();
   }
   async function abrirGrupo(id) {
     window.scrollTo(0, 0);
     const c = document.getElementById("content");
-    c.innerHTML = `
-    <div style="opacity:0.4">
-      <button class="btn-back" style="visibility:hidden">\u2190 Voltar para projetos</button>
-      <div class="proj-hero" style="opacity:0.5">
-        <div style="height:40px;background:var(--bg3);border-radius:var(--r);margin-bottom:12px;animation:pulse 1.2s ease infinite"></div>
-        <div style="height:20px;background:var(--bg3);border-radius:var(--r);width:60%;animation:pulse 1.2s ease infinite"></div>
-      </div>
-      <div style="display:flex;gap:8px;margin-top:16px">
-        <div style="height:32px;width:80px;background:var(--bg3);border-radius:var(--r);animation:pulse 1.2s ease infinite"></div>
-        <div style="height:32px;width:80px;background:var(--bg3);border-radius:var(--r);animation:pulse 1.2s ease infinite"></div>
-      </div>
-    </div>
-  `;
+    c.innerHTML = '<div class="empty-small">Carregando grupo...</div>';
     try {
       const [grupo, projetos] = await Promise.all([
         req("GET", `/grupos/${id}`),
@@ -1556,23 +1458,22 @@
       const projetosDoGrupo = projetos.filter((p) => p.grupo_id === id);
       const abaSalva = sessionStorage.getItem(`telier_grupo_aba_${id}`) || "projetos";
       slideContent2("right");
-      renderGrupo(grupo, projetosDoGrupo, abaSalva);
+      await renderGrupo(grupo, projetosDoGrupo, abaSalva);
       setGrupoAtual(grupo);
       setVistaAtual("grupo");
     } catch (e) {
       c.innerHTML = `<div class="error-block">${esc(e.message)}</div>`;
     }
   }
-  function renderProjeto(proj, tarefas, decisoes, abaAtiva, resumoHoras = []) {
+  function renderProjeto(proj, tarefas, decisoes, abaAtiva) {
     setProjeto(proj);
     setTarefas(tarefas);
     _decisoesAtivas = decisoes || [];
     const statusProj = normalizarStatusProjeto(proj.status);
     const isArq = statusProj === "Arquivado";
-    const isPaus = statusProj === "Pausado";
     const podeEditar = !isArq && (proj.pode_editar || isAdmin3());
     setBreadcrumb2([
-      { id: null, nome: "Projetos", label: "Projetos" },
+      { id: null, nome: "Projetos", onClick: "voltarDash()" },
       { id: proj.id, nome: proj.nome }
     ]);
     document.getElementById("content").innerHTML = `
@@ -1591,13 +1492,11 @@
       <div class="proj-meta">
         <div class="proj-meta-item"><span class="proj-meta-label">Status</span>${tag(proj.status || "A fazer")}</div>
         ${proj.prazo ? `<div class="proj-meta-item"><span class="proj-meta-label">Prazo</span><span class="tag tag-gray">${proj.prazo}</span></div>` : ""}
-        ${proj.area_m2 ? `<div class="proj-meta-item"><span class="proj-meta-label">\xC1rea</span><span class="tag tag-gray mono">${Number(proj.area_m2).toLocaleString("pt-BR")} m\xB2</span></div>` : ""}
-        ${proj.total_horas ? `<div class="proj-meta-item"><span class="proj-meta-label">Horas</span><span class="tag tag-gray mono">${proj.total_horas}h</span></div>` : ""}
       </div>
-      ${isArq ? `<div class="alert-banner"><svg width="13" height="13" viewBox="0 0 24 24" fill="none"><rect x="3" y="10" width="18" height="11" rx="2" stroke="currentColor" stroke-width="1.6"/><path d="M7 10V7a5 5 0 0 1 10 0v3" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg> Projeto arquivado \u2014 apenas leitura.</div>` : ""}
+      ${isArq ? `<div class="alert-banner">Projeto arquivado \u2014 apenas leitura.</div>` : ""}
     </div>
     <div class="abas abas-spaced">
-      <button class="aba ${abaAtiva === "tarefas" ? "ativa" : ""}" data-aba="tarefas" onclick="mudarAba('tarefas')">Tarefas${tarefas.length ? ` <span class="tab-count">${tarefas.length}</span>` : ""}</button>
+      <button class="aba ${abaAtiva === "tarefas" ? "ativa" : ""}" data-aba="tarefas" onclick="mudarAba('tarefas')">Tarefas</button>
       <button class="aba ${abaAtiva === "kanban" ? "ativa" : ""}" data-aba="kanban" onclick="mudarAba('kanban')">Kanban</button>
       <button class="aba ${abaAtiva === "mapa" ? "ativa" : ""}" data-aba="mapa" onclick="mudarAba('mapa')">Mapa de Foco</button>
       <button class="aba ${abaAtiva === "relatorio" ? "ativa" : ""}" data-aba="relatorio" onclick="mudarAba('relatorio')">Relat\xF3rio</button>
@@ -1606,13 +1505,14 @@
     <div id="aba-conteudo"></div>`;
     mudarAba(abaAtiva);
   }
-  function renderGrupo(grupo, projetos, abaAtiva = "projetos") {
+  async function renderGrupo(grupo, projetos, abaAtiva = "projetos") {
     setGrupoAtual(grupo);
     _projetosGrupoAtual = projetos || [];
+    _grupoTarefas = [];
     const podeGer = grupo.pode_gerenciar || isAdmin3();
     setBreadcrumb2([
-      { id: null, nome: "Projetos", label: "Projetos" },
-      { id: grupo.id, nome: grupo.nome }
+      { id: null, nome: "Projetos", onClick: "voltarDash()" },
+      { id: grupo.id, nome: grupo.nome, onClick: `abrirGrupo('${grupo.id}')` }
     ]);
     document.getElementById("content").innerHTML = `
     <button class="btn-back" onclick="voltarDash()">\u2190 Voltar para projetos</button>
@@ -1627,20 +1527,16 @@
           <button class="btn btn-sm" onclick="compartilharGrupo('${grupo.id}')">Compartilhar</button>
         </div>
       </div>
-      <div class="proj-meta">
-        <div class="proj-meta-item"><span class="proj-meta-label">Status</span>${tag(grupo.status || "Ativo")}</div>
-        <div class="proj-meta-item"><span class="proj-meta-label">Projetos</span><span class="tag tag-gray">${projetos.length}</span></div>
-      </div>
     </div>
     <div class="abas abas-spaced">
-      <button class="aba ${abaAtiva === "projetos" ? "ativa" : ""}" data-aba="projetos" onclick="mudarAbaGrupo('projetos')">Projetos${projetos.length ? ` <span class="tab-count">${projetos.length}</span>` : ""}</button>
+      <button class="aba ${abaAtiva === "projetos" ? "ativa" : ""}" data-aba="projetos" onclick="mudarAbaGrupo('projetos')">Projetos</button>
       <button class="aba ${abaAtiva === "tarefas" ? "ativa" : ""}" data-aba="tarefas" onclick="mudarAbaGrupo('tarefas')">Tarefas</button>
       <button class="aba ${abaAtiva === "mapa" ? "ativa" : ""}" data-aba="mapa" onclick="mudarAbaGrupo('mapa')">Mapa</button>
       <button class="aba ${abaAtiva === "relatorio" ? "ativa" : ""}" data-aba="relatorio" onclick="mudarAbaGrupo('relatorio')">Relat\xF3rio</button>
       <button class="aba ${abaAtiva === "aovivo" ? "ativa" : ""}" data-aba="aovivo" onclick="mudarAbaGrupo('aovivo')">Ao vivo</button>
     </div>
     <div id="aba-grupo"></div>`;
-    renderAbaGrupo(abaAtiva, projetos);
+    await renderAbaGrupo(abaAtiva, projetos);
   }
   function mudarAba(aba) {
     document.querySelectorAll(".aba").forEach((b) => b.classList.toggle("ativa", b.dataset.aba === aba));
@@ -1672,134 +1568,191 @@
     sessionStorage.setItem(`telier_grupo_aba_${GRUPO_ATUAL?.id}`, aba);
     renderAbaGrupo(aba, _projetosGrupoAtual);
   }
+  async function carregarTarefasDoGrupo(projetos) {
+    const listas = await Promise.all((projetos || []).map((p) => req("GET", `/projetos/${p.id}/tarefas`).catch(() => [])));
+    return listas.flat().map((t) => ({ ...t, projeto_nome: projetos.find((p) => p.id === t.projeto_id)?.nome || "" }));
+  }
   function renderAbaDecisoes(container) {
     if (!_decisoesAtivas.length) {
       container.innerHTML = '<div class="empty-small">Nenhuma decis\xE3o registrada</div>';
       return;
     }
-    container.innerHTML = `
-    <div class="decisoes-list">
-      ${_decisoesAtivas.map((d) => `
-        <div class="decisao-item">
-          <div class="decisao-titulo">${esc(d.titulo || d.texto || "\u2014")}</div>
-          ${d.criado_em ? `<div class="decisao-meta muted-detail">${d.criado_em.split("T")[0].split(" ")[0]}</div>` : ""}
-        </div>
-      `).join("")}
-    </div>`;
+    container.innerHTML = `<div class="decisoes-list">${_decisoesAtivas.map((d) => `<div class="decisao-item"><div class="decisao-titulo">${esc(d.titulo || d.texto || d.descricao || "\u2014")}</div></div>`).join("")}</div>`;
   }
-  function renderAbaGrupo(aba, projetos) {
+  async function renderAbaGrupo(aba, projetos) {
     const el = document.getElementById("aba-grupo");
     if (!el) return;
-    switch (aba) {
-      case "projetos":
-        if (!projetos || !projetos.length) {
-          el.innerHTML = '<div class="empty-small">Nenhum projeto neste grupo</div>';
-          return;
-        }
-        el.innerHTML = `
-        <div class="cards-grid">
-          ${projetos.map((p) => `
-            <div class="proj-card" onclick="abrirProjeto('${p.id}')">
-              <div class="proj-card-header">
-                <div class="proj-title">${esc(p.nome)}</div>
-              </div>
-              <div class="proj-card-footer">
-                <div class="proj-meta">
-                  ${p.prazo ? `<span class="proj-meta-item">\u{1F4C5} ${p.prazo}</span>` : ""}
-                </div>
-                <div class="proj-status">${tag(p.status || "A fazer")}</div>
-              </div>
-            </div>
-          `).join("")}
-        </div>`;
-        break;
-      case "tarefas":
-      case "mapa":
-      case "relatorio":
-      case "aovivo":
-        el.innerHTML = `<div class="empty-small">Conte\xFAdo desta aba em desenvolvimento</div>`;
-        break;
-      default:
-        el.innerHTML = "";
+    if (aba === "projetos") {
+      if (!projetos?.length) {
+        el.innerHTML = '<div class="empty-small">Nenhum projeto neste grupo</div>';
+        return;
+      }
+      el.innerHTML = `<div class="cards-grid">${projetos.map((p) => `<div class="proj-card" onclick="abrirProjeto('${p.id}')"><div class="proj-title">${esc(p.nome)}</div><div class="proj-status">${tag(p.status || "A fazer")}</div></div>`).join("")}</div>`;
+      return;
     }
+    if (!_grupoTarefas.length && ["tarefas", "mapa", "relatorio"].includes(aba)) {
+      el.innerHTML = '<div class="empty-small">Carregando tarefas do grupo...</div>';
+      _grupoTarefas = await carregarTarefasDoGrupo(projetos);
+    }
+    if (aba === "tarefas") return renderLista(_grupoTarefas, el);
+    if (aba === "mapa") return renderMapa(_grupoTarefas, el);
+    if (aba === "relatorio") return renderRelatorio(_grupoTarefas, el, null);
+    if (aba === "aovivo") {
+      const ids = new Set((projetos || []).map((p) => p.id));
+      const ativas = await req("GET", "/tempo/ativas").catch(() => []);
+      const filtradas = ativas.filter((a) => ids.has(a.projeto_id));
+      el.innerHTML = filtradas.length ? `<div class="sessoes-list">${filtradas.map((s) => `<div class="sessao-item"><strong>${esc(s.usuario_nome || s.usuario_login || "Usu\xE1rio")}</strong> \xB7 ${esc(s.tarefa_nome)} <span class="muted-detail">(${esc(s.projeto_nome)})</span></div>`).join("")}</div>` : '<div class="empty-small">Nenhum cron\xF4metro ativo neste grupo</div>';
+      return;
+    }
+    el.innerHTML = "";
   }
   async function modalNovoProjeto(preselectGrupoId = "") {
-    const { abrirModal: abrirModal2, toast: toast2 } = window;
+    const grupos = await req("GET", "/grupos").catch(() => []);
+    const { abrirModal: abrirModal2 } = window;
     const html = `
-    <div style="padding: 24px;">
-      <h2>Novo Projeto</h2>
-      <div style="color: var(--text3); margin: 16px 0;">
-        <strong>Funcionalidade em desenvolvimento</strong>
-        <p style="margin-top: 8px; font-size: 0.9rem;">Esta funcionalidade ser\xE1 implementada em breve.</p>
-      </div>
-    </div>
-  `;
-    abrirModal2?.(html, { titulo: "Novo Projeto" });
+    <form id="form-novo-projeto" class="form-grid">
+      <input name="nome" placeholder="Nome do projeto" required>
+      <textarea name="descricao" placeholder="Descri\xE7\xE3o"></textarea>
+      <select name="status"><option>A fazer</option><option>Em andamento</option><option>Em revis\xE3o</option><option>Pausado</option><option>Conclu\xEDdo</option><option>Arquivado</option></select>
+      <input name="prazo" type="date">
+      <input name="area_m2" type="number" step="0.01" placeholder="\xC1rea (m\xB2)">
+      <select name="grupo_id"><option value="">Sem grupo</option>${grupos.map((g) => `<option value="${g.id}" ${preselectGrupoId === g.id ? "selected" : ""}>${esc(g.nome)}</option>`).join("")}</select>
+      <div><button class="btn btn-primary" type="submit">Criar projeto</button></div>
+    </form>`;
+    const overlay = abrirModal2?.(html, { titulo: "Novo Projeto" });
+    overlay?.querySelector("#form-novo-projeto")?.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const fd = new FormData(e.currentTarget);
+      try {
+        const body = Object.fromEntries(fd.entries());
+        await req("POST", "/projetos", body);
+        fecharModal();
+        invalidarCacheProjetos();
+        await renderDash();
+        toast("Projeto criado", "ok");
+      } catch (err) {
+        toast(err.message, "erro");
+      }
+    });
   }
   async function modalEditarProjeto(id) {
+    const [projeto, grupos] = await Promise.all([req("GET", `/projetos/${id}`), req("GET", "/grupos").catch(() => [])]);
     const { abrirModal: abrirModal2 } = window;
     const html = `
-    <div style="padding: 24px;">
-      <h2>Editar Projeto</h2>
-      <div style="color: var(--text3); margin: 16px 0;">
-        <strong>Funcionalidade em desenvolvimento</strong>
-        <p style="margin-top: 8px; font-size: 0.9rem;">Esta funcionalidade ser\xE1 implementada em breve.</p>
-      </div>
-    </div>
-  `;
-    abrirModal2?.(html, { titulo: "Editar Projeto" });
+    <form id="form-editar-projeto" class="form-grid">
+      <input name="nome" value="${esc(projeto.nome || "")}" required>
+      <input name="fase" value="${esc(projeto.fase || "Estudo preliminar")}" placeholder="Fase">
+      <select name="status"><option ${projeto.status === "A fazer" ? "selected" : ""}>A fazer</option><option ${projeto.status === "Em andamento" ? "selected" : ""}>Em andamento</option><option ${projeto.status === "Em revis\xE3o" ? "selected" : ""}>Em revis\xE3o</option><option ${projeto.status === "Pausado" ? "selected" : ""}>Pausado</option><option ${projeto.status === "Conclu\xEDdo" ? "selected" : ""}>Conclu\xEDdo</option><option ${projeto.status === "Arquivado" ? "selected" : ""}>Arquivado</option></select>
+      <select name="prioridade"><option ${projeto.prioridade === "Alta" ? "selected" : ""}>Alta</option><option ${projeto.prioridade === "M\xE9dia" ? "selected" : ""}>M\xE9dia</option><option ${projeto.prioridade === "Baixa" ? "selected" : ""}>Baixa</option></select>
+      <input name="prazo" type="date" value="${esc(projeto.prazo || "")}">
+      <input name="area_m2" type="number" step="0.01" value="${esc(projeto.area_m2 || "")}">
+      <select name="grupo_id"><option value="">Sem grupo</option>${grupos.map((g) => `<option value="${g.id}" ${projeto.grupo_id === g.id ? "selected" : ""}>${esc(g.nome)}</option>`).join("")}</select>
+      <div><button class="btn btn-primary" type="submit">Salvar</button></div>
+    </form>`;
+    const overlay = abrirModal2?.(html, { titulo: "Editar Projeto" });
+    overlay?.querySelector("#form-editar-projeto")?.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const body = Object.fromEntries(new FormData(e.currentTarget).entries());
+      try {
+        await req("PUT", `/projetos/${id}`, body);
+        fecharModal();
+        invalidarCacheProjetos();
+        await abrirProjeto(id);
+        toast("Projeto atualizado", "ok");
+      } catch (err) {
+        toast(err.message, "erro");
+      }
+    });
   }
   async function modalPermissoes(projetoId) {
+    const [projeto, usuarios] = await Promise.all([req("GET", `/projetos/${projetoId}`), req("GET", "/usuarios")]);
     const { abrirModal: abrirModal2 } = window;
     const html = `
-    <div style="padding: 24px;">
-      <h2>Permiss\xF5es</h2>
-      <div style="color: var(--text3); margin: 16px 0;">
-        <strong>Funcionalidade em desenvolvimento</strong>
-        <p style="margin-top: 8px; font-size: 0.9rem;">Esta funcionalidade ser\xE1 implementada em breve.</p>
-      </div>
-    </div>
-  `;
-    abrirModal2?.(html, { titulo: "Permiss\xF5es" });
+    <div>
+      <div class="muted-detail" style="margin-bottom:8px">Dono: ${esc(projeto.dono_nome || "\u2014")}</div>
+      <form id="form-add-perm" style="display:flex;gap:8px;margin-bottom:12px">
+        <select name="usuario_id" style="flex:1"><option value="">Selecionar usu\xE1rio</option>${usuarios.filter((u) => u.id !== projeto.dono_id).map((u) => `<option value="${u.id}">${esc(u.nome)} (${esc(u.usuario_login)})</option>`).join("")}</select>
+        <button class="btn" type="submit">Adicionar</button>
+      </form>
+      <div>${(projeto.editores || []).map((ed) => `<div class="sessao-item" style="display:flex;justify-content:space-between"><span>${esc(ed.nome)} <small class="muted-detail">${esc(ed.origem || "manual")}</small></span>${ed.origem === "manual" ? `<button class="btn btn-sm" onclick="removerPermissaoProjeto('${projetoId}','${ed.usuario_id}')">Remover</button>` : ""}</div>`).join("") || '<div class="empty-small">Sem editores adicionais</div>'}</div>
+    </div>`;
+    const overlay = abrirModal2?.(html, { titulo: "Permiss\xF5es do projeto" });
+    overlay?.querySelector("#form-add-perm")?.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const usuario_id = new FormData(e.currentTarget).get("usuario_id");
+      if (!usuario_id) return;
+      try {
+        await req("POST", `/projetos/${projetoId}/permissoes`, { usuario_id });
+        fecharModal();
+        modalPermissoes(projetoId);
+      } catch (err) {
+        toast(err.message, "erro");
+      }
+    });
+  }
+  async function removerPermissaoProjeto(projetoId, usuarioId) {
+    await req("DELETE", `/projetos/${projetoId}/permissoes/${usuarioId}`);
+    toast("Permiss\xE3o removida", "ok");
+    fecharModal();
+    modalPermissoes(projetoId);
   }
   async function modalNovoGrupo() {
     const { abrirModal: abrirModal2 } = window;
-    const html = `
-    <div style="padding: 24px;">
-      <h2>Novo Grupo</h2>
-      <div style="color: var(--text3); margin: 16px 0;">
-        <strong>Funcionalidade em desenvolvimento</strong>
-        <p style="margin-top: 8px; font-size: 0.9rem;">Esta funcionalidade ser\xE1 implementada em breve.</p>
-      </div>
-    </div>
-  `;
-    abrirModal2?.(html, { titulo: "Novo Grupo" });
+    const html = `<form id="form-novo-grupo" class="form-grid"><input name="nome" placeholder="Nome" required><textarea name="descricao" placeholder="Descri\xE7\xE3o"></textarea><button class="btn btn-primary" type="submit">Criar grupo</button></form>`;
+    const overlay = abrirModal2?.(html, { titulo: "Novo Grupo" });
+    overlay?.querySelector("#form-novo-grupo")?.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      try {
+        await req("POST", "/grupos", Object.fromEntries(new FormData(e.currentTarget).entries()));
+        fecharModal();
+        renderDash();
+        toast("Grupo criado", "ok");
+      } catch (err) {
+        toast(err.message, "erro");
+      }
+    });
   }
   async function modalEditarGrupo(id) {
+    const grupo = await req("GET", `/grupos/${id}`);
     const { abrirModal: abrirModal2 } = window;
-    const html = `
-    <div style="padding: 24px;">
-      <h2>Editar Grupo</h2>
-      <div style="color: var(--text3); margin: 16px 0;">
-        <strong>Funcionalidade em desenvolvimento</strong>
-        <p style="margin-top: 8px; font-size: 0.9rem;">Esta funcionalidade ser\xE1 implementada em breve.</p>
-      </div>
-    </div>
-  `;
-    abrirModal2?.(html, { titulo: "Editar Grupo" });
+    const html = `<form id="form-editar-grupo" class="form-grid"><input name="nome" value="${esc(grupo.nome || "")}" required><textarea name="descricao">${esc(grupo.descricao || "")}</textarea><select name="status"><option ${grupo.status === "Ativo" ? "selected" : ""}>Ativo</option><option ${grupo.status === "Pausado" ? "selected" : ""}>Pausado</option><option ${grupo.status === "Arquivado" ? "selected" : ""}>Arquivado</option></select><button class="btn btn-primary" type="submit">Salvar</button></form>`;
+    const overlay = abrirModal2?.(html, { titulo: "Editar Grupo" });
+    overlay?.querySelector("#form-editar-grupo")?.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      await req("PUT", `/grupos/${id}`, Object.fromEntries(new FormData(e.currentTarget).entries()));
+      fecharModal();
+      await abrirGrupo(id);
+      toast("Grupo atualizado", "ok");
+    });
   }
   async function compartilharGrupo(id) {
+    const [grupo, usuarios] = await Promise.all([req("GET", `/grupos/${id}`), req("GET", "/usuarios")]);
     const { abrirModal: abrirModal2 } = window;
     const html = `
-    <div style="padding: 24px;">
-      <h2>Compartilhar Grupo</h2>
-      <div style="color: var(--text3); margin: 16px 0;">
-        <strong>Funcionalidade em desenvolvimento</strong>
-        <p style="margin-top: 8px; font-size: 0.9rem;">Esta funcionalidade ser\xE1 implementada em breve.</p>
-      </div>
-    </div>
-  `;
-    abrirModal2?.(html, { titulo: "Compartilhar Grupo" });
+    <div>
+      <form id="form-add-grupo" style="display:flex;gap:8px;margin-bottom:12px">
+        <select name="usuario_id" style="flex:1"><option value="">Selecionar usu\xE1rio</option>${usuarios.filter((u) => u.id !== grupo.dono_id).map((u) => `<option value="${u.id}">${esc(u.nome)} (${esc(u.usuario_login)})</option>`).join("")}</select>
+        <button class="btn" type="submit">Adicionar</button>
+      </form>
+      <div>${(grupo.colaboradores || []).map((c) => `<div class="sessao-item" style="display:flex;justify-content:space-between"><span>${esc(c.nome)}</span><button class="btn btn-sm" onclick="removerPermissaoGrupo('${id}','${c.usuario_id}')">Remover</button></div>`).join("") || '<div class="empty-small">Sem colaboradores</div>'}</div>
+    </div>`;
+    const overlay = abrirModal2?.(html, { titulo: `Compartilhar ${grupo.nome}` });
+    overlay?.querySelector("#form-add-grupo")?.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const usuario_id = new FormData(e.currentTarget).get("usuario_id");
+      if (!usuario_id) return;
+      await req("POST", `/grupos/${id}/permissoes`, { usuario_id });
+      fecharModal();
+      compartilharGrupo(id);
+    });
+  }
+  async function removerPermissaoGrupo(grupoId, usuarioId) {
+    confirmar("Remover este colaborador do grupo?", async () => {
+      await req("DELETE", `/grupos/${grupoId}/permissoes/${usuarioId}`);
+      toast("Colaborador removido", "ok");
+      fecharModal();
+      compartilharGrupo(grupoId);
+    });
   }
   if (typeof window !== "undefined") {
     window.abrirProjeto = abrirProjeto;
@@ -1815,12 +1768,16 @@
     window.modalNovoGrupo = modalNovoGrupo;
     window.modalEditarGrupo = modalEditarGrupo;
     window.compartilharGrupo = compartilharGrupo;
+    window.removerPermissaoProjeto = removerPermissaoProjeto;
+    window.removerPermissaoGrupo = removerPermissaoGrupo;
   }
 
   // src/modules/timer.js
   init_api();
   init_ui();
   init_utils();
+  var _sessaoEditando = null;
+  var _intervaloEditando = null;
   async function carregarTimersAtivos() {
     try {
       return await req("GET", "/tempo/ativas");
@@ -1830,7 +1787,7 @@
   }
   async function iniciarCronometro(tarefaId, tarefaNome) {
     try {
-      const sessao = await req("POST", `/tarefas/${tarefaId}/tempo`, { inicio: (/* @__PURE__ */ new Date()).toISOString() });
+      const sessao = await req("POST", `/tarefas/${tarefaId}/tempo`, { inicio: (/* @__PURE__ */ new Date()).toISOString().slice(0, 19).replace("T", " ") });
       toast(`Cron\xF4metro iniciado: ${tarefaNome}`, "ok");
       renderTimerDock();
       return sessao;
@@ -1852,87 +1809,99 @@
     if (!dock) return;
     try {
       const ativas = await req("GET", "/tempo/ativas");
-      if (!ativas || !ativas.length) {
-        dock.innerHTML = "";
-        return;
-      }
-      dock.innerHTML = `
-      <div class="timer-dock-list">
-        ${ativas.map((s) => {
-        const inicioMs = new Date(s.inicio.replace(" ", "T")).getTime();
-        const decorrido = Math.floor((Date.now() - inicioMs) / 1e3);
-        const horas = Math.floor(decorrido / 3600);
-        const min = Math.floor(decorrido % 3600 / 60);
-        const tempoStr = horas > 0 ? `${horas}h ${min}min` : `${min}min`;
-        return `
-            <div class="timer-dock-item">
-              <div class="timer-dock-info">
-                <span class="timer-dock-tarefa">${esc(s.tarefa_nome)}</span>
-                <span class="timer-dock-proj muted-detail">${esc(s.projeto_nome)}</span>
-              </div>
-              <span class="timer-dock-tempo">${tempoStr}</span>
-              <button class="btn btn-sm btn-ghost" onclick="pararCronometro('${s.id}')">\u25A0 Parar</button>
-            </div>
-          `;
-      }).join("")}
-      </div>`;
+      if (!ativas?.length) return dock.innerHTML = "";
+      dock.innerHTML = `<div class="timer-dock-list">${ativas.map((s) => {
+        const inicioMs = new Date(String(s.inicio).replace(" ", "T")).getTime();
+        const decorrido = Math.floor((Date.now() - inicioMs) / 6e4);
+        return `<div class="timer-dock-item"><div class="timer-dock-info"><span class="timer-dock-tarefa">${esc(s.tarefa_nome)}</span><span class="timer-dock-proj muted-detail">${esc(s.projeto_nome)} \xB7 ${decorrido}min</span></div><div style="display:flex;gap:6px"><button class="btn btn-sm" onclick="editarSessao('${s.id}','${esc(s.inicio || "")}','${esc(s.fim || "")}')">Editar</button><button class="btn btn-sm btn-ghost" onclick="pararCronometro('${s.id}')">\u25A0 Parar</button></div></div>`;
+      }).join("")}</div>`;
     } catch {
       dock.innerHTML = "";
     }
   }
   async function modalAdicionarIntervalo(sessaoId) {
-    const { abrirModal: abrirModal2 } = window;
-    const html = `
-    <div style="padding: 24px;">
-      <h2>Adicionar Intervalo</h2>
-      <div style="color: var(--text3); margin: 16px 0;">
-        <strong>Funcionalidade em desenvolvimento</strong>
-        <p style="margin-top: 8px; font-size: 0.9rem;">Esta funcionalidade ser\xE1 implementada em breve.</p>
-      </div>
-    </div>
-  `;
-    abrirModal2?.(html, { titulo: "Adicionar Intervalo" });
+    _sessaoEditando = sessaoId;
+    const html = `<form id="form-add-int" class="form-grid"><input name="tipo" placeholder="Tipo (ex: Pausa)" required><input name="inicio" type="datetime-local" required><input name="fim" type="datetime-local"><button class="btn btn-primary" type="submit">Adicionar</button></form>`;
+    const overlay = window.abrirModal?.(html, { titulo: "Adicionar Intervalo" });
+    overlay?.querySelector("#form-add-int")?.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const body = Object.fromEntries(new FormData(e.currentTarget).entries());
+      body.inicio = body.inicio?.replace("T", " ");
+      body.fim = body.fim?.replace("T", " ");
+      await criarIntervalo(sessaoId, body);
+      fecharModal();
+    });
   }
-  async function criarIntervalo(sessaoId) {
-    toast("Funcionalidade em desenvolvimento", "info");
+  async function criarIntervalo(sessaoId, body = null) {
+    try {
+      const payload = body || { tipo: "Pausa", inicio: (/* @__PURE__ */ new Date()).toISOString().slice(0, 19).replace("T", " ") };
+      await req("POST", `/tempo/${sessaoId}/intervalos`, payload);
+      toast("Intervalo criado", "ok");
+    } catch (e) {
+      toast(e.message, "erro");
+    }
   }
-  async function editarSessao(sessaoId, inicio, fim) {
-    const { abrirModal: abrirModal2 } = window;
-    const html = `
-    <div style="padding: 24px;">
-      <h2>Editar Sess\xE3o</h2>
-      <div style="color: var(--text3); margin: 16px 0;">
-        <strong>Funcionalidade em desenvolvimento</strong>
-        <p style="margin-top: 8px; font-size: 0.9rem;">Esta funcionalidade ser\xE1 implementada em breve.</p>
-      </div>
-    </div>
-  `;
-    abrirModal2?.(html, { titulo: "Editar Sess\xE3o" });
+  async function editarSessao(sessaoId, inicio = "", fim = "") {
+    _sessaoEditando = sessaoId;
+    const html = `<form id="form-editar-sessao" class="form-grid"><input name="inicio" type="datetime-local" value="${String(inicio).slice(0, 16).replace(" ", "T")}"><input name="fim" type="datetime-local" value="${String(fim || "").slice(0, 16).replace(" ", "T")}"><div style="display:flex;gap:8px"><button class="btn btn-primary" type="submit">Salvar</button><button class="btn" type="button" onclick="modalAdicionarIntervalo('${sessaoId}')">+ Intervalo</button><button class="btn btn-danger" type="button" onclick="deletarSessao('${sessaoId}')">Excluir sess\xE3o</button></div></form>`;
+    const overlay = window.abrirModal?.(html, { titulo: "Editar Sess\xE3o" });
+    overlay?.querySelector("#form-editar-sessao")?.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const data = Object.fromEntries(new FormData(e.currentTarget).entries());
+      await salvarSessao(sessaoId, data);
+      fecharModal();
+    });
   }
-  async function salvarSessao(sessaoId) {
-    toast("Funcionalidade em desenvolvimento", "info");
+  async function salvarSessao(sessaoId, data = null) {
+    try {
+      const form = data || Object.fromEntries(new FormData(document.getElementById("form-editar-sessao")).entries());
+      await req("PUT", `/tempo/${sessaoId}`, {
+        inicio: form.inicio?.replace("T", " "),
+        fim: form.fim ? form.fim.replace("T", " ") : null
+      });
+      toast("Sess\xE3o salva", "ok");
+      renderTimerDock();
+    } catch (e) {
+      toast(e.message, "erro");
+    }
   }
-  async function deletarSessao(sessaoId, tarefaId) {
-    toast("Funcionalidade em desenvolvimento", "info");
+  async function deletarSessao(sessaoId) {
+    confirmar("Excluir esta sess\xE3o?", async () => {
+      await req("DELETE", `/tempo/${sessaoId}`);
+      toast("Sess\xE3o exclu\xEDda", "ok");
+      fecharModal();
+      renderTimerDock();
+    });
   }
-  async function editarIntervalo(intervaloId) {
-    const { abrirModal: abrirModal2 } = window;
-    const html = `
-    <div style="padding: 24px;">
-      <h2>Editar Intervalo</h2>
-      <div style="color: var(--text3); margin: 16px 0;">
-        <strong>Funcionalidade em desenvolvimento</strong>
-        <p style="margin-top: 8px; font-size: 0.9rem;">Esta funcionalidade ser\xE1 implementada em breve.</p>
-      </div>
-    </div>
-  `;
-    abrirModal2?.(html, { titulo: "Editar Intervalo" });
+  async function editarIntervalo(intervaloId, tipo = "", inicio = "", fim = "") {
+    _intervaloEditando = intervaloId;
+    const html = `<form id="form-editar-intervalo" class="form-grid"><input name="tipo" value="${esc(tipo || "Pausa")}" required><input name="inicio" type="datetime-local" value="${String(inicio).slice(0, 16).replace(" ", "T")}"><input name="fim" type="datetime-local" value="${String(fim || "").slice(0, 16).replace(" ", "T")}"><div style="display:flex;gap:8px"><button class="btn btn-primary" type="submit">Salvar</button><button class="btn btn-danger" type="button" onclick="deletarIntervalo('${intervaloId}')">Excluir</button></div></form>`;
+    const overlay = window.abrirModal?.(html, { titulo: "Editar Intervalo" });
+    overlay?.querySelector("#form-editar-intervalo")?.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      await salvarIntervalo(intervaloId, Object.fromEntries(new FormData(e.currentTarget).entries()));
+      fecharModal();
+    });
   }
-  async function salvarIntervalo(id) {
-    toast("Funcionalidade em desenvolvimento", "info");
+  async function salvarIntervalo(id, data = null) {
+    try {
+      const form = data || Object.fromEntries(new FormData(document.getElementById("form-editar-intervalo")).entries());
+      await req("PUT", `/intervalos/${id}`, {
+        tipo: form.tipo,
+        inicio: form.inicio?.replace("T", " "),
+        fim: form.fim ? form.fim.replace("T", " ") : null
+      });
+      toast("Intervalo salvo", "ok");
+    } catch (e) {
+      toast(e.message, "erro");
+    }
   }
-  async function deletarIntervalo(id, tarefaId) {
-    toast("Funcionalidade em desenvolvimento", "info");
+  async function deletarIntervalo(id) {
+    confirmar("Excluir este intervalo?", async () => {
+      await req("DELETE", `/intervalos/${id}`);
+      toast("Intervalo exclu\xEDdo", "ok");
+      fecharModal();
+    });
   }
   async function renderSessoesTarefa(tarefaId, containerEl) {
     if (!containerEl) return;
@@ -1942,23 +1911,7 @@
         containerEl.innerHTML = '<div class="empty-small">Sem sess\xF5es de trabalho registradas</div>';
         return;
       }
-      containerEl.innerHTML = `
-      <div class="sessoes-list">
-        ${sessoes.map((s) => {
-        const data = (s.inicio || "").split("T")[0] || (s.inicio || "").split(" ")[0] || "\u2014";
-        const duracaoH = s.horas_liquidas != null ? `${parseFloat(s.horas_liquidas).toFixed(2)}h` : s.fim ? "\u2014" : "em andamento";
-        return `
-            <div class="sessao-item">
-              <div class="sessao-header">
-                <span class="sessao-data">${esc(data)}</span>
-                <span class="sessao-duracao">${esc(duracaoH)}</span>
-                ${s.usuario_nome ? `<span class="sessao-user muted-detail">${esc(s.usuario_nome)}</span>` : ""}
-                <button class="btn btn-sm btn-ghost" onclick="editarSessao('${s.id}')">\u270E</button>
-              </div>
-            </div>
-          `;
-      }).join("")}
-      </div>`;
+      containerEl.innerHTML = `<div class="sessoes-list">${sessoes.map((s) => `<div class="sessao-item"><div class="sessao-header"><span class="sessao-data">${esc((s.inicio || "").split(" ")[0] || "")}</span><span class="sessao-duracao">${esc(s.horas_liquidas != null ? `${parseFloat(s.horas_liquidas).toFixed(2)}h` : "\u2014")}</span><button class="btn btn-sm btn-ghost" onclick="editarSessao('${s.id}','${esc(s.inicio || "")}','${esc(s.fim || "")}')">\u270E</button></div>${(s.intervalos || []).map((i) => `<div class="muted-detail">${esc(i.tipo)}: ${esc(i.inicio)} - ${esc(i.fim || "...")} <button class="btn btn-sm" onclick="editarIntervalo('${i.id}','${esc(i.tipo)}','${esc(i.inicio)}','${esc(i.fim || "")}')">Editar</button></div>`).join("")}<button class="btn btn-sm" onclick="modalAdicionarIntervalo('${s.id}')">+ Intervalo</button></div>`).join("")}</div>`;
     } catch (e) {
       containerEl.innerHTML = `<div class="error-small">${esc(e.message)}</div>`;
     }
@@ -2016,7 +1969,16 @@
   async function dropProjeto(e, grupoId) {
     e.preventDefault();
     e.currentTarget.classList.remove("drag-over");
-    toast("Funcionalidade em desenvolvimento", "info");
+    if (!_dragProjetoId) return;
+    try {
+      await req("PATCH", `/projetos/${_dragProjetoId}`, { grupo_id: grupoId || null });
+      toast("Projeto movido de grupo", "ok");
+      window.renderDash?.();
+    } catch (err) {
+      toast(err.message, "erro");
+    } finally {
+      _dragProjetoId = null;
+    }
   }
   function toggleGrupo(grupoId) {
     const collapsed = JSON.parse(localStorage.getItem("telier_grupos_collapsed") || "[]");
@@ -2041,41 +2003,59 @@
   init_api();
   init_ui();
   init_utils();
-  async function abrirCentralAdmin(aba = "resumo") {
+  async function renderAbaUsuarios() {
+    const usuarios = await req("GET", "/admin/usuarios").catch(() => req("GET", "/usuarios"));
+    return `<div><div style="display:flex;justify-content:flex-end;margin-bottom:10px"><button class="btn btn-primary" onclick="modalNovoColega()">+ Cadastrar colega</button></div><div class="sessoes-list">${usuarios.map((u) => `<div class="sessao-item" style="display:flex;justify-content:space-between;gap:12px"><div><strong>${esc(u.nome)}</strong><div class="muted-detail">@${esc(u.usuario_login || "")} \xB7 ${esc(u.papel || "membro")}</div><div class="muted-detail">Projetos: ${u.projetos_como_dono ?? "-"} \xB7 Tarefas: ${u.tarefas_como_dono ?? "-"}</div></div><div style="display:flex;align-items:center;gap:8px">${u.horas_totais != null ? `<span class="tag tag-gray">${fmtHoras(Number(u.horas_totais))}</span>` : ""}<button class="btn btn-sm" onclick="abrirUsuarioAdmin('${u.id}')">Detalhes</button></div></div>`).join("")}</div></div>`;
+  }
+  async function renderAbaTempo() {
+    const ativas = await req("GET", "/admin/agora").catch(() => []);
+    return ativas.length ? `<div class="sessoes-list">${ativas.map((a) => `<div class="sessao-item"><strong>${esc(a.usuario_nome)}</strong> \xB7 ${esc(a.projeto_nome)} / ${esc(a.tarefa_nome)}<div class="muted-detail">In\xEDcio: ${esc(a.inicio)}</div></div>`).join("")}</div>` : '<div class="empty-small">Nenhuma sess\xE3o ativa no momento</div>';
+  }
+  async function abrirCentralAdmin(aba = "usuarios") {
     try {
-      document.getElementById("content").innerHTML = `
-      <div class="admin-panel">
-        <h1>Central de Administra\xE7\xE3o</h1>
-        <div class="admin-nav">
-          <button class="admin-nav-btn ${aba === "resumo" ? "ativo" : ""}">Resumo</button>
-          <button class="admin-nav-btn ${aba === "tempo" ? "ativo" : ""}">Tempo</button>
-          <button class="admin-nav-btn ${aba === "usuarios" ? "ativo" : ""}">Usu\xE1rios</button>
-          <button class="admin-nav-btn ${aba === "relatorios" ? "ativo" : ""}">Relat\xF3rios</button>
-        </div>
-        <div id="admin-content"></div>
-      </div>`;
+      const content = aba === "tempo" ? await renderAbaTempo() : await renderAbaUsuarios();
+      document.getElementById("content").innerHTML = `<div class="admin-panel"><h1>Central de Administra\xE7\xE3o</h1><div class="admin-nav"><button class="admin-nav-btn ${aba === "usuarios" ? "ativo" : ""}" onclick="abrirCentralAdmin('usuarios')">Usu\xE1rios</button><button class="admin-nav-btn ${aba === "tempo" ? "ativo" : ""}" onclick="abrirCentralAdmin('tempo')">Tempo em andamento</button></div><div id="admin-content">${content}</div></div>`;
     } catch (e) {
       toast(e.message, "erro");
     }
   }
   async function abrirUsuarioAdmin(usuarioId) {
-    toast("Funcionalidade em desenvolvimento", "info");
+    try {
+      const data = await req("GET", `/admin/usuarios/${usuarioId}`);
+      const html = `<div><h3>${esc(data.usuario.nome)}</h3><div class="muted-detail">@${esc(data.usuario.usuario_login)} \xB7 ${esc(data.usuario.papel)}</div><h4 style="margin-top:12px">Projetos</h4><ul>${(data.projetos_dashboard || []).map((p) => `<li>${esc(p.nome)} (${esc(p.status)})</li>`).join("") || "<li>Nenhum</li>"}</ul><h4>Tarefas</h4><ul>${(data.tarefas || []).slice(0, 10).map((t) => `<li>${esc(t.nome)} \xB7 ${esc(t.projeto_nome)}</li>`).join("") || "<li>Nenhuma</li>"}</ul></div>`;
+      window.abrirModal?.(html, { titulo: "Detalhes do usu\xE1rio" });
+    } catch (e) {
+      toast(e.message, "erro");
+    }
   }
-  async function exportarTempoAdminCSV(projetoId) {
-    toast("Funcionalidade em desenvolvimento", "info");
+  async function exportarTempoAdminCSV() {
+    try {
+      const rows = await req("GET", "/admin/tempo");
+      const header = ["usuario", "projeto", "tarefa", "inicio", "fim", "horas_liquidas"];
+      const csv = [header.join(",")].concat(rows.map((r) => [r.usuario_nome, r.projeto_nome, r.tarefa_nome, r.inicio, r.fim || "", r.horas_liquidas || ""].map((v) => `"${String(v || "").replace(/"/g, '""')}"`).join(","))).join("\n");
+      const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = "admin-tempo.csv";
+      a.click();
+    } catch (e) {
+      toast(e.message, "erro");
+    }
   }
   async function modalNovoColega() {
-    const { abrirModal: abrirModal2 } = window;
-    const html = `
-    <div style="padding: 24px;">
-      <h2>Cadastrar Colega</h2>
-      <div style="color: var(--text3); margin: 16px 0;">
-        <strong>Funcionalidade em desenvolvimento</strong>
-        <p style="margin-top: 8px; font-size: 0.9rem;">Esta funcionalidade ser\xE1 implementada em breve.</p>
-      </div>
-    </div>
-  `;
-    abrirModal2?.(html, { titulo: "Cadastrar Colega" });
+    const html = `<form id="form-novo-colega" class="form-grid"><input name="nome" placeholder="Nome" required><input name="usuario_login" placeholder="Login" required><input name="senha" type="password" minlength="8" placeholder="Senha inicial" required><select name="papel"><option value="membro">membro</option><option value="admin">admin</option></select><button class="btn btn-primary" type="submit">Cadastrar</button></form>`;
+    const overlay = window.abrirModal?.(html, { titulo: "Cadastrar Colega" });
+    overlay?.querySelector("#form-novo-colega")?.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      try {
+        await req("POST", "/usuarios", Object.fromEntries(new FormData(e.currentTarget).entries()));
+        fecharModal();
+        toast("Colega cadastrado", "ok");
+        abrirCentralAdmin("usuarios");
+      } catch (err) {
+        toast(err.message, "erro");
+      }
+    });
   }
   if (typeof window !== "undefined") {
     window.abrirCentralAdmin = abrirCentralAdmin;
@@ -2380,7 +2360,7 @@
   window.fazerCadastroPublico = fazerCadastroPublico;
   window.modalCadastroPublico = modalCadastroPublico;
   window.goHome = goHome;
-  window.renderDash = renderDash2;
+  window.renderDash = renderDash;
   window.setFiltro = setFiltro;
   window.filtrarProjetosBusca = filtrarProjetosBusca;
   window.filtrarGrupoDash = filtrarGrupoDash;

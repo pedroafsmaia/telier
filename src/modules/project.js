@@ -1,17 +1,17 @@
 // ── PROJECT MODULE ──
 // Project detail rendering, group management, modal handlers
 
-import { req } from './api.js';
+import { req, invalidarCacheProjetos } from './api.js';
 import { PROJETO, GRUPO_ATUAL, TAREFAS, VISTA_ATUAL, EU, ADMIN_MODE, setProjeto, setGrupoAtual, setTarefas, setVistaAtual } from './state.js';
-import { toast } from './ui.js';
+import { toast, fecharModal, confirmar } from './ui.js';
 import { esc, tag, normalizarStatusProjeto } from './utils.js';
 import { renderLista, renderKanban, renderMapa, renderRelatorio } from './tasks.js';
+import { renderDash } from './dashboard.js';
 
-// Dados de módulo para abas que precisam de dados carregados previamente
 let _decisoesAtivas = [];
 let _projetosGrupoAtual = [];
+let _grupoTarefas = [];
 
-// Helper functions
 function isAdminRole() {
   return EU?.papel === 'admin';
 }
@@ -20,7 +20,6 @@ function isAdmin() {
   return isAdminRole() && ADMIN_MODE === 'admin';
 }
 
-// Helper for breadcrumb
 function setBreadcrumb(partes) {
   const el = document.getElementById('topbar-breadcrumb');
   if (!el) return;
@@ -29,7 +28,7 @@ function setBreadcrumb(partes) {
     return;
   }
   el.innerHTML = partes.map((p, i) =>
-    `<span>${i > 0 ? ' / ' : ''}${typeof p === 'string' ? p : `<button onclick="abrirProjeto('${p.id}')">${esc(p.nome)}</button>`}</span>`
+    `<span>${i > 0 ? ' / ' : ''}${typeof p === 'string' ? p : `<button onclick="${p.onClick || `abrirProjeto('${p.id}')`}">${esc(p.nome)}</button>`}</span>`
   ).join('');
 }
 
@@ -39,26 +38,10 @@ function slideContent(direction) {
   c.style.animation = `slideContent${direction === 'left' ? 'In' : 'Out'} .3s ease-out forwards`;
 }
 
-// Open project detail view
 export async function abrirProjeto(id) {
   window.scrollTo(0, 0);
   const c = document.getElementById('content');
-
-  // Show skeleton while loading
-  c.innerHTML = `
-    <div style="opacity:0.4">
-      <button class="btn-back" style="visibility:hidden">← Voltar para projetos</button>
-      <div class="proj-hero" style="opacity:0.5">
-        <div style="height:40px;background:var(--bg3);border-radius:var(--r);margin-bottom:12px;animation:pulse 1.2s ease infinite"></div>
-        <div style="height:20px;background:var(--bg3);border-radius:var(--r);width:60%;animation:pulse 1.2s ease infinite"></div>
-      </div>
-      <div style="display:flex;gap:8px;margin-top:16px">
-        <div style="height:32px;width:80px;background:var(--bg3);border-radius:var(--r);animation:pulse 1.2s ease infinite"></div>
-        <div style="height:32px;width:80px;background:var(--bg3);border-radius:var(--r);animation:pulse 1.2s ease infinite"></div>
-      </div>
-    </div>
-  `;
-
+  c.innerHTML = '<div class="empty-small">Carregando projeto...</div>';
   try {
     const [projeto, tarefas, decisoes, resumoHoras] = await Promise.all([
       req('GET', `/projetos/${id}`),
@@ -77,36 +60,16 @@ export async function abrirProjeto(id) {
   }
 }
 
-// Back to dashboard
 export function voltarDash() {
   slideContent('left');
-  invalidarCacheProjetos?.();
-  renderDash?.();
+  invalidarCacheProjetos();
+  renderDash();
 }
 
-function invalidarCacheProjetos() {
-  localStorage.removeItem('telier_proj_cache');
-}
-
-// Open group detail view
 export async function abrirGrupo(id) {
   window.scrollTo(0, 0);
   const c = document.getElementById('content');
-
-  // Show skeleton while loading
-  c.innerHTML = `
-    <div style="opacity:0.4">
-      <button class="btn-back" style="visibility:hidden">← Voltar para projetos</button>
-      <div class="proj-hero" style="opacity:0.5">
-        <div style="height:40px;background:var(--bg3);border-radius:var(--r);margin-bottom:12px;animation:pulse 1.2s ease infinite"></div>
-        <div style="height:20px;background:var(--bg3);border-radius:var(--r);width:60%;animation:pulse 1.2s ease infinite"></div>
-      </div>
-      <div style="display:flex;gap:8px;margin-top:16px">
-        <div style="height:32px;width:80px;background:var(--bg3);border-radius:var(--r);animation:pulse 1.2s ease infinite"></div>
-        <div style="height:32px;width:80px;background:var(--bg3);border-radius:var(--r);animation:pulse 1.2s ease infinite"></div>
-      </div>
-    </div>
-  `;
+  c.innerHTML = '<div class="empty-small">Carregando grupo...</div>';
 
   try {
     const [grupo, projetos] = await Promise.all([
@@ -116,7 +79,7 @@ export async function abrirGrupo(id) {
     const projetosDoGrupo = projetos.filter(p => p.grupo_id === id);
     const abaSalva = sessionStorage.getItem(`telier_grupo_aba_${id}`) || 'projetos';
     slideContent('right');
-    renderGrupo(grupo, projetosDoGrupo, abaSalva);
+    await renderGrupo(grupo, projetosDoGrupo, abaSalva);
     setGrupoAtual(grupo);
     setVistaAtual('grupo');
   } catch (e) {
@@ -124,19 +87,17 @@ export async function abrirGrupo(id) {
   }
 }
 
-// Render project detail
-export function renderProjeto(proj, tarefas, decisoes, abaAtiva, resumoHoras = []) {
+export function renderProjeto(proj, tarefas, decisoes, abaAtiva) {
   setProjeto(proj);
   setTarefas(tarefas);
   _decisoesAtivas = decisoes || [];
 
   const statusProj = normalizarStatusProjeto(proj.status);
   const isArq = statusProj === 'Arquivado';
-  const isPaus = statusProj === 'Pausado';
   const podeEditar = !isArq && (proj.pode_editar || isAdmin());
 
   setBreadcrumb([
-    { id: null, nome: 'Projetos', label: 'Projetos' },
+    { id: null, nome: 'Projetos', onClick: 'voltarDash()' },
     { id: proj.id, nome: proj.nome }
   ]);
 
@@ -156,13 +117,11 @@ export function renderProjeto(proj, tarefas, decisoes, abaAtiva, resumoHoras = [
       <div class="proj-meta">
         <div class="proj-meta-item"><span class="proj-meta-label">Status</span>${tag(proj.status || 'A fazer')}</div>
         ${proj.prazo ? `<div class="proj-meta-item"><span class="proj-meta-label">Prazo</span><span class="tag tag-gray">${proj.prazo}</span></div>` : ''}
-        ${proj.area_m2 ? `<div class="proj-meta-item"><span class="proj-meta-label">Área</span><span class="tag tag-gray mono">${Number(proj.area_m2).toLocaleString('pt-BR')} m²</span></div>` : ''}
-        ${proj.total_horas ? `<div class="proj-meta-item"><span class="proj-meta-label">Horas</span><span class="tag tag-gray mono">${proj.total_horas}h</span></div>` : ''}
       </div>
-      ${isArq ? `<div class="alert-banner"><svg width="13" height="13" viewBox="0 0 24 24" fill="none"><rect x="3" y="10" width="18" height="11" rx="2" stroke="currentColor" stroke-width="1.6"/><path d="M7 10V7a5 5 0 0 1 10 0v3" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg> Projeto arquivado — apenas leitura.</div>` : ''}
+      ${isArq ? `<div class="alert-banner">Projeto arquivado — apenas leitura.</div>` : ''}
     </div>
     <div class="abas abas-spaced">
-      <button class="aba ${abaAtiva==='tarefas'?'ativa':''}" data-aba="tarefas" onclick="mudarAba('tarefas')">Tarefas${tarefas.length ? ` <span class="tab-count">${tarefas.length}</span>` : ''}</button>
+      <button class="aba ${abaAtiva==='tarefas'?'ativa':''}" data-aba="tarefas" onclick="mudarAba('tarefas')">Tarefas</button>
       <button class="aba ${abaAtiva==='kanban'?'ativa':''}" data-aba="kanban" onclick="mudarAba('kanban')">Kanban</button>
       <button class="aba ${abaAtiva==='mapa'?'ativa':''}" data-aba="mapa" onclick="mudarAba('mapa')">Mapa de Foco</button>
       <button class="aba ${abaAtiva==='relatorio'?'ativa':''}" data-aba="relatorio" onclick="mudarAba('relatorio')">Relatório</button>
@@ -173,16 +132,16 @@ export function renderProjeto(proj, tarefas, decisoes, abaAtiva, resumoHoras = [
   mudarAba(abaAtiva);
 }
 
-// Render group detail
-export function renderGrupo(grupo, projetos, abaAtiva = 'projetos') {
+export async function renderGrupo(grupo, projetos, abaAtiva = 'projetos') {
   setGrupoAtual(grupo);
   _projetosGrupoAtual = projetos || [];
+  _grupoTarefas = [];
 
   const podeGer = grupo.pode_gerenciar || isAdmin();
 
   setBreadcrumb([
-    { id: null, nome: 'Projetos', label: 'Projetos' },
-    { id: grupo.id, nome: grupo.nome }
+    { id: null, nome: 'Projetos', onClick: 'voltarDash()' },
+    { id: grupo.id, nome: grupo.nome, onClick: `abrirGrupo('${grupo.id}')` }
   ]);
 
   document.getElementById('content').innerHTML = `
@@ -198,13 +157,9 @@ export function renderGrupo(grupo, projetos, abaAtiva = 'projetos') {
           <button class="btn btn-sm" onclick="compartilharGrupo('${grupo.id}')">Compartilhar</button>
         </div>
       </div>
-      <div class="proj-meta">
-        <div class="proj-meta-item"><span class="proj-meta-label">Status</span>${tag(grupo.status || 'Ativo')}</div>
-        <div class="proj-meta-item"><span class="proj-meta-label">Projetos</span><span class="tag tag-gray">${projetos.length}</span></div>
-      </div>
     </div>
     <div class="abas abas-spaced">
-      <button class="aba ${abaAtiva==='projetos'?'ativa':''}" data-aba="projetos" onclick="mudarAbaGrupo('projetos')">Projetos${projetos.length ? ` <span class="tab-count">${projetos.length}</span>` : ''}</button>
+      <button class="aba ${abaAtiva==='projetos'?'ativa':''}" data-aba="projetos" onclick="mudarAbaGrupo('projetos')">Projetos</button>
       <button class="aba ${abaAtiva==='tarefas'?'ativa':''}" data-aba="tarefas" onclick="mudarAbaGrupo('tarefas')">Tarefas</button>
       <button class="aba ${abaAtiva==='mapa'?'ativa':''}" data-aba="mapa" onclick="mudarAbaGrupo('mapa')">Mapa</button>
       <button class="aba ${abaAtiva==='relatorio'?'ativa':''}" data-aba="relatorio" onclick="mudarAbaGrupo('relatorio')">Relatório</button>
@@ -212,7 +167,7 @@ export function renderGrupo(grupo, projetos, abaAtiva = 'projetos') {
     </div>
     <div id="aba-grupo"></div>`;
 
-  renderAbaGrupo(abaAtiva, projetos);
+  await renderAbaGrupo(abaAtiva, projetos);
 }
 
 export function mudarAba(aba) {
@@ -247,145 +202,205 @@ export function mudarAbaGrupo(aba) {
   renderAbaGrupo(aba, _projetosGrupoAtual);
 }
 
+async function carregarTarefasDoGrupo(projetos) {
+  const listas = await Promise.all((projetos || []).map((p) => req('GET', `/projetos/${p.id}/tarefas`).catch(() => [])));
+  return listas.flat().map(t => ({ ...t, projeto_nome: projetos.find(p => p.id === t.projeto_id)?.nome || '' }));
+}
+
 function renderAbaDecisoes(container) {
   if (!_decisoesAtivas.length) {
     container.innerHTML = '<div class="empty-small">Nenhuma decisão registrada</div>';
     return;
   }
-  container.innerHTML = `
-    <div class="decisoes-list">
-      ${_decisoesAtivas.map(d => `
-        <div class="decisao-item">
-          <div class="decisao-titulo">${esc(d.titulo || d.texto || '—')}</div>
-          ${d.criado_em ? `<div class="decisao-meta muted-detail">${d.criado_em.split('T')[0].split(' ')[0]}</div>` : ''}
-        </div>
-      `).join('')}
-    </div>`;
+  container.innerHTML = `<div class="decisoes-list">${_decisoesAtivas.map(d => `<div class="decisao-item"><div class="decisao-titulo">${esc(d.titulo || d.texto || d.descricao || '—')}</div></div>`).join('')}</div>`;
 }
 
-function renderAbaGrupo(aba, projetos) {
+async function renderAbaGrupo(aba, projetos) {
   const el = document.getElementById('aba-grupo');
   if (!el) return;
-  switch (aba) {
-    case 'projetos':
-      if (!projetos || !projetos.length) {
-        el.innerHTML = '<div class="empty-small">Nenhum projeto neste grupo</div>';
-        return;
-      }
-      el.innerHTML = `
-        <div class="cards-grid">
-          ${projetos.map(p => `
-            <div class="proj-card" onclick="abrirProjeto('${p.id}')">
-              <div class="proj-card-header">
-                <div class="proj-title">${esc(p.nome)}</div>
-              </div>
-              <div class="proj-card-footer">
-                <div class="proj-meta">
-                  ${p.prazo ? `<span class="proj-meta-item">📅 ${p.prazo}</span>` : ''}
-                </div>
-                <div class="proj-status">${tag(p.status || 'A fazer')}</div>
-              </div>
-            </div>
-          `).join('')}
-        </div>`;
-      break;
-    case 'tarefas':
-    case 'mapa':
-    case 'relatorio':
-    case 'aovivo':
-      el.innerHTML = `<div class="empty-small">Conteúdo desta aba em desenvolvimento</div>`;
-      break;
-    default:
-      el.innerHTML = '';
+  if (aba === 'projetos') {
+    if (!projetos?.length) {
+      el.innerHTML = '<div class="empty-small">Nenhum projeto neste grupo</div>';
+      return;
+    }
+    el.innerHTML = `<div class="cards-grid">${projetos.map(p => `<div class="proj-card" onclick="abrirProjeto('${p.id}')"><div class="proj-title">${esc(p.nome)}</div><div class="proj-status">${tag(p.status || 'A fazer')}</div></div>`).join('')}</div>`;
+    return;
   }
+  if (!_grupoTarefas.length && ['tarefas', 'mapa', 'relatorio'].includes(aba)) {
+    el.innerHTML = '<div class="empty-small">Carregando tarefas do grupo...</div>';
+    _grupoTarefas = await carregarTarefasDoGrupo(projetos);
+  }
+  if (aba === 'tarefas') return renderLista(_grupoTarefas, el);
+  if (aba === 'mapa') return renderMapa(_grupoTarefas, el);
+  if (aba === 'relatorio') return renderRelatorio(_grupoTarefas, el, null);
+  if (aba === 'aovivo') {
+    const ids = new Set((projetos || []).map(p => p.id));
+    const ativas = await req('GET', '/tempo/ativas').catch(() => []);
+    const filtradas = ativas.filter(a => ids.has(a.projeto_id));
+    el.innerHTML = filtradas.length
+      ? `<div class="sessoes-list">${filtradas.map(s => `<div class="sessao-item"><strong>${esc(s.usuario_nome || s.usuario_login || 'Usuário')}</strong> · ${esc(s.tarefa_nome)} <span class="muted-detail">(${esc(s.projeto_nome)})</span></div>`).join('')}</div>`
+      : '<div class="empty-small">Nenhum cronômetro ativo neste grupo</div>';
+    return;
+  }
+  el.innerHTML = '';
 }
 
-// Placeholder functions for modal handlers
 export async function modalNovoProjeto(preselectGrupoId = '') {
-  const { abrirModal, toast } = window;
+  const grupos = await req('GET', '/grupos').catch(() => []);
+  const { abrirModal } = window;
   const html = `
-    <div style="padding: 24px;">
-      <h2>Novo Projeto</h2>
-      <div style="color: var(--text3); margin: 16px 0;">
-        <strong>Funcionalidade em desenvolvimento</strong>
-        <p style="margin-top: 8px; font-size: 0.9rem;">Esta funcionalidade será implementada em breve.</p>
-      </div>
-    </div>
-  `;
-  abrirModal?.(html, { titulo: 'Novo Projeto' });
+    <form id="form-novo-projeto" class="form-grid">
+      <input name="nome" placeholder="Nome do projeto" required>
+      <textarea name="descricao" placeholder="Descrição"></textarea>
+      <select name="status"><option>A fazer</option><option>Em andamento</option><option>Em revisão</option><option>Pausado</option><option>Concluído</option><option>Arquivado</option></select>
+      <input name="prazo" type="date">
+      <input name="area_m2" type="number" step="0.01" placeholder="Área (m²)">
+      <select name="grupo_id"><option value="">Sem grupo</option>${grupos.map(g => `<option value="${g.id}" ${preselectGrupoId===g.id?'selected':''}>${esc(g.nome)}</option>`).join('')}</select>
+      <div><button class="btn btn-primary" type="submit">Criar projeto</button></div>
+    </form>`;
+  const overlay = abrirModal?.(html, { titulo: 'Novo Projeto' });
+  overlay?.querySelector('#form-novo-projeto')?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const fd = new FormData(e.currentTarget);
+    try {
+      const body = Object.fromEntries(fd.entries());
+      await req('POST', '/projetos', body);
+      fecharModal();
+      invalidarCacheProjetos();
+      await renderDash();
+      toast('Projeto criado', 'ok');
+    } catch (err) {
+      toast(err.message, 'erro');
+    }
+  });
 }
 
 export async function modalEditarProjeto(id) {
+  const [projeto, grupos] = await Promise.all([req('GET', `/projetos/${id}`), req('GET', '/grupos').catch(() => [])]);
   const { abrirModal } = window;
   const html = `
-    <div style="padding: 24px;">
-      <h2>Editar Projeto</h2>
-      <div style="color: var(--text3); margin: 16px 0;">
-        <strong>Funcionalidade em desenvolvimento</strong>
-        <p style="margin-top: 8px; font-size: 0.9rem;">Esta funcionalidade será implementada em breve.</p>
-      </div>
-    </div>
-  `;
-  abrirModal?.(html, { titulo: 'Editar Projeto' });
+    <form id="form-editar-projeto" class="form-grid">
+      <input name="nome" value="${esc(projeto.nome || '')}" required>
+      <input name="fase" value="${esc(projeto.fase || 'Estudo preliminar')}" placeholder="Fase">
+      <select name="status"><option ${projeto.status==='A fazer'?'selected':''}>A fazer</option><option ${projeto.status==='Em andamento'?'selected':''}>Em andamento</option><option ${projeto.status==='Em revisão'?'selected':''}>Em revisão</option><option ${projeto.status==='Pausado'?'selected':''}>Pausado</option><option ${projeto.status==='Concluído'?'selected':''}>Concluído</option><option ${projeto.status==='Arquivado'?'selected':''}>Arquivado</option></select>
+      <select name="prioridade"><option ${projeto.prioridade==='Alta'?'selected':''}>Alta</option><option ${projeto.prioridade==='Média'?'selected':''}>Média</option><option ${projeto.prioridade==='Baixa'?'selected':''}>Baixa</option></select>
+      <input name="prazo" type="date" value="${esc(projeto.prazo || '')}">
+      <input name="area_m2" type="number" step="0.01" value="${esc(projeto.area_m2 || '')}">
+      <select name="grupo_id"><option value="">Sem grupo</option>${grupos.map(g => `<option value="${g.id}" ${projeto.grupo_id===g.id?'selected':''}>${esc(g.nome)}</option>`).join('')}</select>
+      <div><button class="btn btn-primary" type="submit">Salvar</button></div>
+    </form>`;
+  const overlay = abrirModal?.(html, { titulo: 'Editar Projeto' });
+  overlay?.querySelector('#form-editar-projeto')?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const body = Object.fromEntries(new FormData(e.currentTarget).entries());
+    try {
+      await req('PUT', `/projetos/${id}`, body);
+      fecharModal();
+      invalidarCacheProjetos();
+      await abrirProjeto(id);
+      toast('Projeto atualizado', 'ok');
+    } catch (err) {
+      toast(err.message, 'erro');
+    }
+  });
 }
 
 export async function modalPermissoes(projetoId) {
+  const [projeto, usuarios] = await Promise.all([req('GET', `/projetos/${projetoId}`), req('GET', '/usuarios')]);
   const { abrirModal } = window;
   const html = `
-    <div style="padding: 24px;">
-      <h2>Permissões</h2>
-      <div style="color: var(--text3); margin: 16px 0;">
-        <strong>Funcionalidade em desenvolvimento</strong>
-        <p style="margin-top: 8px; font-size: 0.9rem;">Esta funcionalidade será implementada em breve.</p>
-      </div>
-    </div>
-  `;
-  abrirModal?.(html, { titulo: 'Permissões' });
+    <div>
+      <div class="muted-detail" style="margin-bottom:8px">Dono: ${esc(projeto.dono_nome || '—')}</div>
+      <form id="form-add-perm" style="display:flex;gap:8px;margin-bottom:12px">
+        <select name="usuario_id" style="flex:1"><option value="">Selecionar usuário</option>${usuarios.filter(u => u.id !== projeto.dono_id).map(u => `<option value="${u.id}">${esc(u.nome)} (${esc(u.usuario_login)})</option>`).join('')}</select>
+        <button class="btn" type="submit">Adicionar</button>
+      </form>
+      <div>${(projeto.editores || []).map(ed => `<div class="sessao-item" style="display:flex;justify-content:space-between"><span>${esc(ed.nome)} <small class="muted-detail">${esc(ed.origem || 'manual')}</small></span>${ed.origem === 'manual' ? `<button class="btn btn-sm" onclick="removerPermissaoProjeto('${projetoId}','${ed.usuario_id}')">Remover</button>` : ''}</div>`).join('') || '<div class="empty-small">Sem editores adicionais</div>'}</div>
+    </div>`;
+  const overlay = abrirModal?.(html, { titulo: 'Permissões do projeto' });
+  overlay?.querySelector('#form-add-perm')?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const usuario_id = new FormData(e.currentTarget).get('usuario_id');
+    if (!usuario_id) return;
+    try {
+      await req('POST', `/projetos/${projetoId}/permissoes`, { usuario_id });
+      fecharModal();
+      modalPermissoes(projetoId);
+    } catch (err) {
+      toast(err.message, 'erro');
+    }
+  });
+}
+
+export async function removerPermissaoProjeto(projetoId, usuarioId) {
+  await req('DELETE', `/projetos/${projetoId}/permissoes/${usuarioId}`);
+  toast('Permissão removida', 'ok');
+  fecharModal();
+  modalPermissoes(projetoId);
 }
 
 export async function modalNovoGrupo() {
   const { abrirModal } = window;
-  const html = `
-    <div style="padding: 24px;">
-      <h2>Novo Grupo</h2>
-      <div style="color: var(--text3); margin: 16px 0;">
-        <strong>Funcionalidade em desenvolvimento</strong>
-        <p style="margin-top: 8px; font-size: 0.9rem;">Esta funcionalidade será implementada em breve.</p>
-      </div>
-    </div>
-  `;
-  abrirModal?.(html, { titulo: 'Novo Grupo' });
+  const html = `<form id="form-novo-grupo" class="form-grid"><input name="nome" placeholder="Nome" required><textarea name="descricao" placeholder="Descrição"></textarea><button class="btn btn-primary" type="submit">Criar grupo</button></form>`;
+  const overlay = abrirModal?.(html, { titulo: 'Novo Grupo' });
+  overlay?.querySelector('#form-novo-grupo')?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    try {
+      await req('POST', '/grupos', Object.fromEntries(new FormData(e.currentTarget).entries()));
+      fecharModal();
+      renderDash();
+      toast('Grupo criado', 'ok');
+    } catch (err) {
+      toast(err.message, 'erro');
+    }
+  });
 }
 
 export async function modalEditarGrupo(id) {
+  const grupo = await req('GET', `/grupos/${id}`);
   const { abrirModal } = window;
-  const html = `
-    <div style="padding: 24px;">
-      <h2>Editar Grupo</h2>
-      <div style="color: var(--text3); margin: 16px 0;">
-        <strong>Funcionalidade em desenvolvimento</strong>
-        <p style="margin-top: 8px; font-size: 0.9rem;">Esta funcionalidade será implementada em breve.</p>
-      </div>
-    </div>
-  `;
-  abrirModal?.(html, { titulo: 'Editar Grupo' });
+  const html = `<form id="form-editar-grupo" class="form-grid"><input name="nome" value="${esc(grupo.nome || '')}" required><textarea name="descricao">${esc(grupo.descricao || '')}</textarea><select name="status"><option ${grupo.status==='Ativo'?'selected':''}>Ativo</option><option ${grupo.status==='Pausado'?'selected':''}>Pausado</option><option ${grupo.status==='Arquivado'?'selected':''}>Arquivado</option></select><button class="btn btn-primary" type="submit">Salvar</button></form>`;
+  const overlay = abrirModal?.(html, { titulo: 'Editar Grupo' });
+  overlay?.querySelector('#form-editar-grupo')?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    await req('PUT', `/grupos/${id}`, Object.fromEntries(new FormData(e.currentTarget).entries()));
+    fecharModal();
+    await abrirGrupo(id);
+    toast('Grupo atualizado', 'ok');
+  });
 }
 
 export async function compartilharGrupo(id) {
+  const [grupo, usuarios] = await Promise.all([req('GET', `/grupos/${id}`), req('GET', '/usuarios')]);
   const { abrirModal } = window;
   const html = `
-    <div style="padding: 24px;">
-      <h2>Compartilhar Grupo</h2>
-      <div style="color: var(--text3); margin: 16px 0;">
-        <strong>Funcionalidade em desenvolvimento</strong>
-        <p style="margin-top: 8px; font-size: 0.9rem;">Esta funcionalidade será implementada em breve.</p>
-      </div>
-    </div>
-  `;
-  abrirModal?.(html, { titulo: 'Compartilhar Grupo' });
+    <div>
+      <form id="form-add-grupo" style="display:flex;gap:8px;margin-bottom:12px">
+        <select name="usuario_id" style="flex:1"><option value="">Selecionar usuário</option>${usuarios.filter(u => u.id !== grupo.dono_id).map(u => `<option value="${u.id}">${esc(u.nome)} (${esc(u.usuario_login)})</option>`).join('')}</select>
+        <button class="btn" type="submit">Adicionar</button>
+      </form>
+      <div>${(grupo.colaboradores || []).map(c => `<div class="sessao-item" style="display:flex;justify-content:space-between"><span>${esc(c.nome)}</span><button class="btn btn-sm" onclick="removerPermissaoGrupo('${id}','${c.usuario_id}')">Remover</button></div>`).join('') || '<div class="empty-small">Sem colaboradores</div>'}</div>
+    </div>`;
+  const overlay = abrirModal?.(html, { titulo: `Compartilhar ${grupo.nome}` });
+  overlay?.querySelector('#form-add-grupo')?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const usuario_id = new FormData(e.currentTarget).get('usuario_id');
+    if (!usuario_id) return;
+    await req('POST', `/grupos/${id}/permissoes`, { usuario_id });
+    fecharModal();
+    compartilharGrupo(id);
+  });
 }
 
-// Expose globally
+export async function removerPermissaoGrupo(grupoId, usuarioId) {
+  confirmar('Remover este colaborador do grupo?', async () => {
+    await req('DELETE', `/grupos/${grupoId}/permissoes/${usuarioId}`);
+    toast('Colaborador removido', 'ok');
+    fecharModal();
+    compartilharGrupo(grupoId);
+  });
+}
+
 if (typeof window !== 'undefined') {
   window.abrirProjeto = abrirProjeto;
   window.voltarDash = voltarDash;
@@ -400,4 +415,6 @@ if (typeof window !== 'undefined') {
   window.modalNovoGrupo = modalNovoGrupo;
   window.modalEditarGrupo = modalEditarGrupo;
   window.compartilharGrupo = compartilharGrupo;
+  window.removerPermissaoProjeto = removerPermissaoProjeto;
+  window.removerPermissaoGrupo = removerPermissaoGrupo;
 }
