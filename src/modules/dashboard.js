@@ -2,9 +2,18 @@
 // Dashboard rendering, filters, project cards, groups
 
 import { fetchProjetos, req } from './api.js';
-import { PROJETO, FILTRO_STATUS, FILTRO_ORIGEM_DASH, FILTRO_GRUPO_DASH, BUSCA_DASH, _projsDash, _ativasDash, _gruposDash, _prazoNotifShown, VISTA_ATUAL, STARTDAY_COLLAPSE_KEY, EU, ADMIN_MODE, isAdminRole as stateIsAdminRole } from './state.js';
-import { toast, abrirModal, fecharOverlayModal, confirmar } from './ui.js';
-import { esc, diasRestantes, prazoFmt, fmtHoras, fmtDatetime, normalizarStatusProjeto, projetoConcluido, isAdminRole, isAdmin, avatar, tag } from './utils.js';
+import { PROJETO, FILTRO_STATUS, FILTRO_ORIGEM_DASH, FILTRO_GRUPO_DASH, BUSCA_DASH, _projsDash, _ativasDash, _gruposDash, _prazoNotifShown, VISTA_ATUAL, STARTDAY_COLLAPSE_KEY, EU, ADMIN_MODE, setFiltroStatus, setFiltroOrigemDash, setFiltroGrupoDash, setBuscaDash, setProjsDash, setAtivasDash, setGruposDash, setVistaAtual } from './state.js';
+import { toast } from './ui.js';
+import { esc, diasRestantes, prazoFmt, fmtHoras, normalizarStatusProjeto, projetoConcluido, avatar, tag } from './utils.js';
+
+// Helper functions
+function isAdminRole() {
+  return EU?.papel === 'admin';
+}
+
+function isAdmin() {
+  return isAdminRole() && ADMIN_MODE === 'admin';
+}
 
 const DASH_FILTERS_KEY = 'telier_dash_filters_v1';
 
@@ -14,10 +23,10 @@ export function carregarFiltrosDash() {
     const saved = localStorage.getItem(DASH_FILTERS_KEY);
     if (saved) {
       const { status, origem, grupo, busca } = JSON.parse(saved);
-      if (status) FILTRO_STATUS = status;
-      if (origem) FILTRO_ORIGEM_DASH = origem;
-      if (grupo !== undefined) FILTRO_GRUPO_DASH = grupo;
-      if (busca) BUSCA_DASH = busca;
+      if (status) setFiltroStatus(status);
+      if (origem) setFiltroOrigemDash(origem);
+      if (grupo !== undefined) setFiltroGrupoDash(grupo);
+      if (busca) setBuscaDash(busca);
     }
   } catch {}
 }
@@ -34,25 +43,25 @@ export function salvarFiltrosDash() {
 }
 
 export function filtrarProjetosBusca(v) {
-  BUSCA_DASH = v;
+  setBuscaDash(v);
   salvarFiltrosDash();
   renderDash();
 }
 
 export function filtrarGrupoDash(v) {
-  FILTRO_GRUPO_DASH = v;
+  setFiltroGrupoDash(v);
   salvarFiltrosDash();
   renderDash();
 }
 
 export function filtrarOrigemDash(v) {
-  FILTRO_ORIGEM_DASH = v;
+  setFiltroOrigemDash(v);
   salvarFiltrosDash();
   renderDash();
 }
 
 export function setFiltro(f) {
-  FILTRO_STATUS = f;
+  setFiltroStatus(f);
   salvarFiltrosDash();
   renderDash();
 }
@@ -159,7 +168,6 @@ function grupoStatusToneClass(status) {
 // Main dashboard render
 export async function renderDash() {
   window.scrollTo(0, 0);
-  PROJETO = null;
   document.title = 'Telier';
   setBreadcrumb([]);
   const c = document.getElementById('content');
@@ -177,9 +185,9 @@ export async function renderDash() {
       req('GET', '/auth/foco-global').catch(() => null),
     ]);
 
-    _projsDash = projetos;
-    _ativasDash = ativas;
-    _gruposDash = grupos;
+    setProjsDash(projetos);
+    setAtivasDash(ativas);
+    setGruposDash(grupos);
 
     projetos.forEach(p => {
       if (_prazoNotifShown.has(p.id)) return;
@@ -249,7 +257,7 @@ export async function renderDash() {
 
     html += renderProjetosDash(projetosVisiveisBase, gruposVisiveisBase) + '</div>';
     const slide = VISTA_ATUAL === 'projeto';
-    VISTA_ATUAL = 'dash';
+    setVistaAtual('dash');
     c.innerHTML = html;
     if (slide) slideContent('left');
   } catch (e) {
@@ -268,7 +276,7 @@ function renderProjetosDash(projetos, grupos) {
   else if (FILTRO_GRUPO_DASH !== 'todos') {
     const filtered = lista.filter(p => String(p.grupo_id) === String(FILTRO_GRUPO_DASH));
     if (filtered.length === 0 && lista.length > 0) {
-      FILTRO_GRUPO_DASH = 'todos';
+      setFiltroGrupoDash('todos');
       salvarFiltrosDash();
     }
     else lista = filtered;

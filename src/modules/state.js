@@ -82,3 +82,25 @@ export function setGrupoAtual(g) { GRUPO_ATUAL = g; }
 export function setVistaAtual(v) { VISTA_ATUAL = v; }
 export function setTarefas(t) { TAREFAS = t; }
 export function setAdminMode(mode) { ADMIN_MODE = mode; localStorage.setItem(ADMIN_MODE_KEY, mode); }
+
+// Filter setters for dashboard
+export function setFiltroStatus(f) { FILTRO_STATUS = f; }
+export function setFiltroOrigemDash(f) { FILTRO_ORIGEM_DASH = f; }
+export function setFiltroGrupoDash(g) { FILTRO_GRUPO_DASH = g; }
+export function setBuscaDash(b) { BUSCA_DASH = b; }
+export function setFiltroConcluidas(e) { LISTA_CONCLUIDAS_EXPANDIDA = e; }
+export function setListaSort(s) { LISTA_SORT = s; }
+export function setTarefasView(v) { TAREFAS_VIEW = v; }
+export function setFiltroStatusTarefa(f) { FILTRO_STATUS_TAREFA = f; }
+export function setFiltroOrigemTarefas(f) { FILTRO_ORIGEM_TAREFAS = f; }
+export function setFiltroRespTar(r) { FILTRO_RESP_TAR = r; }
+export function setBuscaTarefa(b) { BUSCA_TAREFA = b; }
+export function setProjsDash(p) { _projsDash = p; }
+export function setAtivasDash(a) { _ativasDash = a; }
+export function setGruposDash(g) { _gruposDash = g; }
+export function setTaskMobileFiltersOpen(o) { TASK_MOBILE_FILTERS_OPEN = o; }
+export function setGrupoTaskMobileFiltersOpen(o) { GRUPO_TASK_MOBILE_FILTERS_OPEN = o; }
+export function setPresenceAberto(a) { PRESENCE_ABERTO = a; }
+export function setNotifTab(t) { NOTIF_TAB = t; }
+export function setNotifs(n) { NOTIFS = n; }
+export function setPendingUndoAction(a) { _pendingUndoAction = a; }
