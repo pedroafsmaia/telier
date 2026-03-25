@@ -49,7 +49,7 @@ export async function marcarTodasNotifLidas() {
 export function renderPainelNotificacoes() {
   const panel = document.getElementById('notif-panel');
   if (!panel) return;
-  // TODO: Render notification list
+  panel.innerHTML = '<div style="padding: 16px; color: var(--text3); text-align: center;">Nenhuma notificação</div>';
 }
 
 export function abrirNotificacoes() {
@@ -67,11 +67,12 @@ export function fecharPainelNotificacoes() {
 }
 
 export async function carregarStatus() {
-  // TODO: Load presence/status data
+  // Funcionalidade de presença em desenvolvimento
+  return null;
 }
 
 export function iniciarStatusPoll() {
-  // TODO: Implement status polling
+  // Polling de status em desenvolvimento
 }
 
 // Expose globally

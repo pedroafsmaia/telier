@@ -25,11 +25,25 @@ export async function abrirCentralAdmin(aba = 'resumo') {
 }
 
 export async function abrirUsuarioAdmin(usuarioId) {
-  // TODO: Implement user admin view
+  toast('Funcionalidade em desenvolvimento', 'info');
 }
 
 export async function exportarTempoAdminCSV(projetoId) {
-  // TODO: Export time data as CSV
+  toast('Funcionalidade em desenvolvimento', 'info');
+}
+
+export async function modalNovoColega() {
+  const { abrirModal } = window;
+  const html = `
+    <div style="padding: 24px;">
+      <h2>Cadastrar Colega</h2>
+      <div style="color: var(--text3); margin: 16px 0;">
+        <strong>Funcionalidade em desenvolvimento</strong>
+        <p style="margin-top: 8px; font-size: 0.9rem;">Esta funcionalidade será implementada em breve.</p>
+      </div>
+    </div>
+  `;
+  abrirModal?.(html, { titulo: 'Cadastrar Colega' });
 }
 
 // Expose globally
@@ -37,4 +51,5 @@ if (typeof window !== 'undefined') {
   window.abrirCentralAdmin = abrirCentralAdmin;
   window.abrirUsuarioAdmin = abrirUsuarioAdmin;
   window.exportarTempoAdminCSV = exportarTempoAdminCSV;
+  window.modalNovoColega = modalNovoColega;
 }

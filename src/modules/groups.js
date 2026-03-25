@@ -46,7 +46,7 @@ export function dragLeave(e) {
 export async function dropProjeto(e, grupoId) {
   e.preventDefault();
   e.currentTarget.classList.remove('drag-over');
-  // TODO: Implement project reordering
+  toast('Funcionalidade em desenvolvimento', 'info');
 }
 
 export function toggleGrupo(grupoId) {
@@ -55,7 +55,8 @@ export function toggleGrupo(grupoId) {
   if (idx >= 0) collapsed.splice(idx, 1);
   else collapsed.push(grupoId);
   localStorage.setItem('telier_grupos_collapsed', JSON.stringify(collapsed));
-  // TODO: Re-render dashboard
+  // Re-render via dashboard
+  window.renderDash?.();
 }
 
 // Expose globally

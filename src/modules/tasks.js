@@ -225,28 +225,68 @@ export function renderColabsStack(ids = [], max = 3) {
 }
 
 export function ordenarLista(col) {
-  // TODO: Implement list sorting
+  toast('Funcionalidade em desenvolvimento', 'info');
 }
 
 export function toggleListaConcluidas() {
-  // TODO: Toggle concluded tasks visibility
+  toast('Funcionalidade em desenvolvimento', 'info');
 }
 
 // Modals
 export async function modalNovaTarefa(projetoId) {
-  // TODO: Implement task creation modal
+  const { abrirModal } = window;
+  const html = `
+    <div style="padding: 24px;">
+      <h2>Nova Tarefa</h2>
+      <div style="color: var(--text3); margin: 16px 0;">
+        <strong>Funcionalidade em desenvolvimento</strong>
+        <p style="margin-top: 8px; font-size: 0.9rem;">Esta funcionalidade será implementada em breve.</p>
+      </div>
+    </div>
+  `;
+  abrirModal?.(html, { titulo: 'Nova Tarefa' });
 }
 
 export async function modalEditarTarefa(id) {
-  // TODO: Implement task edit modal
+  const { abrirModal } = window;
+  const html = `
+    <div style="padding: 24px;">
+      <h2>Editar Tarefa</h2>
+      <div style="color: var(--text3); margin: 16px 0;">
+        <strong>Funcionalidade em desenvolvimento</strong>
+        <p style="margin-top: 8px; font-size: 0.9rem;">Esta funcionalidade será implementada em breve.</p>
+      </div>
+    </div>
+  `;
+  abrirModal?.(html, { titulo: 'Editar Tarefa' });
 }
 
 export async function abrirTarefa(id) {
-  // TODO: Implement task detail view
+  const { abrirModal } = window;
+  const html = `
+    <div style="padding: 24px;">
+      <h2>Detalhes da Tarefa</h2>
+      <div style="color: var(--text3); margin: 16px 0;">
+        <strong>Funcionalidade em desenvolvimento</strong>
+        <p style="margin-top: 8px; font-size: 0.9rem;">Esta funcionalidade será implementada em breve.</p>
+      </div>
+    </div>
+  `;
+  abrirModal?.(html, { titulo: 'Detalhes da Tarefa' });
 }
 
 export async function duplicarTarefa(id) {
-  // TODO: Duplicate task
+  const { abrirModal } = window;
+  const html = `
+    <div style="padding: 24px;">
+      <h2>Duplicar Tarefa</h2>
+      <div style="color: var(--text3); margin: 16px 0;">
+        <strong>Funcionalidade em desenvolvimento</strong>
+        <p style="margin-top: 8px; font-size: 0.9rem;">Esta funcionalidade será implementada em breve.</p>
+      </div>
+    </div>
+  `;
+  abrirModal?.(html, { titulo: 'Duplicar Tarefa' });
 }
 
 // Expose globally
