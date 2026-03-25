@@ -11,9 +11,11 @@ export async function init() {
     if (TOKEN) {
       console.warn('Auth API timeout - showing app despite unverified token');
       mostrarApp();
+      return true; // Still return true so notifications can start
     } else {
       console.warn('Auth API timeout - showing login');
       mostrarLogin();
+      return false; // Don't start notifications if not authenticated
     }
   }, 30000);
 
@@ -25,11 +27,13 @@ export async function init() {
         clearTimeout(renderTimeout);
         setEU(user);
         mostrarApp();
+        return true; // Successfully authenticated
       } catch (erro) {
         clearTimeout(renderTimeout);
         console.error('Auth error:', erro);
         clearAuth();
         mostrarLogin();
+        return false; // Auth failed
       }
     } else {
       // Check if setup is needed
@@ -41,16 +45,19 @@ export async function init() {
         } else {
           mostrarLogin();
         }
+        return false; // Not authenticated yet
       } catch (erro) {
         clearTimeout(renderTimeout);
         console.error('Setup check error:', erro);
         mostrarLogin();
+        return false; // Setup check failed
       }
     }
   } catch (erro) {
     clearTimeout(renderTimeout);
     console.error('Auth init error:', erro);
     mostrarLogin();
+    return false; // Initialization failed
   }
 }
 
@@ -77,6 +84,9 @@ export async function fazerLogin() {
       mostrarSetup(true);
     } else {
       mostrarApp();
+      // Start notifications polling after successful login
+      const { iniciarPollNotificacoes } = await import('./notifications.js');
+      iniciarPollNotificacoes?.();
     }
   } catch (erro) {
     toast(`Erro ao fazer login: ${erro.message}`, 'erro');
@@ -137,6 +147,10 @@ export async function fazerLogout() {
   try {
     await endpoints.logout();
   } catch {}
+
+  // Stop notifications polling before clearing auth
+  const { pararPollNotificacoes } = await import('./notifications.js');
+  pararPollNotificacoes?.();
 
   clearAuth();
   mostrarLogin();
