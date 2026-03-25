@@ -18,6 +18,10 @@ function isAdmin() {
 const DASH_FILTERS_KEY = 'telier_dash_filters_v1';
 
 // Load/save dashboard filters from localStorage
+export function goHome() {
+  renderDash();
+}
+
 export function carregarFiltrosDash() {
   try {
     const saved = localStorage.getItem(DASH_FILTERS_KEY);

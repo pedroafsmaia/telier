@@ -554,6 +554,9 @@
     return isAdminRole2() && ADMIN_MODE === "admin";
   }
   var DASH_FILTERS_KEY = "telier_dash_filters_v1";
+  function goHome() {
+    renderDash2();
+  }
   function carregarFiltrosDash() {
     try {
       const saved = localStorage.getItem(DASH_FILTERS_KEY);
@@ -1904,6 +1907,7 @@
   window.fazerLogout = fazerLogout;
   window.fazerCadastroPublico = fazerCadastroPublico;
   window.modalCadastroPublico = modalCadastroPublico;
+  window.goHome = goHome;
   window.renderDash = renderDash2;
   window.setFiltro = setFiltro;
   window.filtrarProjetosBusca = filtrarProjetosBusca;
@@ -1971,6 +1975,8 @@
   window.renderPainelNotificacoes = renderPainelNotificacoes;
   window.setupKeyboardShortcuts = setupKeyboardShortcuts;
   window.abrirCommandPalette = abrirCommandPalette;
+  window.fecharCommandPalette = fecharCommandPalette;
+  window.abrirModalAtalhos = abrirModalAtalhos;
   window.toggleSenhaLogin = toggleSenhaLogin;
   window.toggleSenhaSetup = toggleSenhaSetup;
   window.toggleSenhaCadastro = toggleSenhaCadastro;

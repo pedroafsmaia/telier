@@ -40,6 +40,7 @@ window.fazerCadastroPublico = auth.fazerCadastroPublico;
 window.modalCadastroPublico = auth.modalCadastroPublico;
 
 // Dashboard
+window.goHome = dashboard.goHome;
 window.renderDash = dashboard.renderDash;
 window.setFiltro = dashboard.setFiltro;
 window.filtrarProjetosBusca = dashboard.filtrarProjetosBusca;
@@ -121,6 +122,8 @@ window.renderPainelNotificacoes = notifications.renderPainelNotificacoes;
 // Shortcuts & keyboard
 window.setupKeyboardShortcuts = shortcuts.setupKeyboardShortcuts;
 window.abrirCommandPalette = shortcuts.abrirCommandPalette;
+window.fecharCommandPalette = shortcuts.fecharCommandPalette;
+window.abrirModalAtalhos = shortcuts.abrirModalAtalhos;
 window.toggleSenhaLogin = shortcuts.toggleSenhaLogin;
 window.toggleSenhaSetup = shortcuts.toggleSenhaSetup;
 window.toggleSenhaCadastro = shortcuts.toggleSenhaCadastro;
