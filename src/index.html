@@ -1157,28 +1157,32 @@ body.has-presence #timer-dock {
 
 <!-- APP -->
 <div id="page-app" class="hidden">
-  <nav class="topbar">
-    <div class="topbar-logo" onclick="goHome()" title="Ir para início">Telier</div>
-    <div id="topbar-breadcrumb" class="topbar-breadcrumb"></div>
-    <div class="topbar-sep"></div>
-    <div class="topbar-actions">
-      <div id="topbar-presence" style="display:none"></div>
-      <span class="topbar-user-name" id="topbar-nome"></span>
-      <button class="btn btn-ghost btn-sm" id="btn-admin-toggle" style="display:none" onclick="alternarPerfilAdmin()">Visão admin</button>
-      <button class="topbar-bell" id="btn-notifs" onclick="abrirNotificacoes()" title="Notificações" style="display:none">
-        <svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M12 3.5a5 5 0 0 0-5 5v2.2c0 .7-.23 1.39-.66 1.94L5 14.5h14l-1.34-1.86a3.3 3.3 0 0 1-.66-1.94V8.5a5 5 0 0 0-5-5z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M9.5 17a2.5 2.5 0 0 0 5 0" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
-        <span class="topbar-bell-dot hidden" id="notif-badge">0</span>
-      </button>
-      <button class="topbar-theme" id="btn-tema" onclick="alternarTema()" title="Alternar tema">
-        <svg id="icon-tema-svg" width="15" height="15" viewBox="0 0 15 15" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <path d="M12.5 9.5A5.5 5.5 0 0 1 5.5 2.5a5.5 5.5 0 1 0 7 7z" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
-        </svg>
-      </button>
-      <button class="btn btn-ghost btn-sm" onclick="fazerLogout()">Sair</button>
+  <div id="v2-shell-root" class="hidden"></div>
+  <div id="legacy-app-root" class="hidden">
+    <nav class="topbar">
+      <div class="topbar-logo" onclick="goHome()" title="Ir para início">Telier</div>
+      <div id="topbar-breadcrumb" class="topbar-breadcrumb"></div>
+      <div class="topbar-sep"></div>
+      <div class="topbar-actions">
+        <div id="topbar-presence" style="display:none"></div>
+        <span class="topbar-user-name" id="topbar-nome"></span>
+        <button class="btn btn-ghost btn-sm" id="btn-shell-v2" onclick="abrirShellV2()">Shell v2</button>
+        <button class="btn btn-ghost btn-sm" id="btn-admin-toggle" style="display:none" onclick="alternarPerfilAdmin()">Visão admin</button>
+        <button class="topbar-bell" id="btn-notifs" onclick="abrirNotificacoes()" title="Notificações" style="display:none">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M12 3.5a5 5 0 0 0-5 5v2.2c0 .7-.23 1.39-.66 1.94L5 14.5h14l-1.34-1.86a3.3 3.3 0 0 1-.66-1.94V8.5a5 5 0 0 0-5-5z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M9.5 17a2.5 2.5 0 0 0 5 0" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+          <span class="topbar-bell-dot hidden" id="notif-badge">0</span>
+        </button>
+        <button class="topbar-theme" id="btn-tema" onclick="alternarTema()" title="Alternar tema">
+          <svg id="icon-tema-svg" width="15" height="15" viewBox="0 0 15 15" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M12.5 9.5A5.5 5.5 0 0 1 5.5 2.5a5.5 5.5 0 1 0 7 7z" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </button>
+        <button class="btn btn-ghost btn-sm" onclick="fazerLogout()">Sair</button>
+      </div>
+    </nav>
+    <div class="content" id="content">
+      <div class="loading"><div class="spinner"></div> Carregando...</div>
     </div>
-  </nav>
-  <div class="content" id="content">
-    <div class="loading"><div class="spinner"></div> Carregando...</div>
   </div>
 </div>
 
@@ -1190,6 +1194,12 @@ body.has-presence #timer-dock {
 <div id="notif-overlay" class="notif-overlay" onclick="fecharPainelNotificacoes()"></div>
 <aside id="notif-panel" class="notif-panel" aria-hidden="true"></aside>
 
+<script src="frontend/state/constants.js"></script>
+<script src="frontend/utils/formatters.js"></script>
+<script src="frontend/services/api.js"></script>
+<script src="frontend/theme/tokens.js"></script>
+<script src="frontend/components/base.js"></script>
+<script src="frontend/shell/app-shell.js"></script>
 <script>
 // ── CONFIG ──
 const API = 'https://telier-api.pedroafsmaia.workers.dev';
@@ -1233,12 +1243,80 @@ const _prazoNotifShown = new Set();
 const STARTDAY_COLLAPSE_KEY = 'telier_startday_collapsed';
 const TIMER_AVISO_HORAS = 4;
 const DASH_FILTERS_KEY = 'telier_dash_filters_v1';
-const DASH_STATUS_OPCOES = new Set(['todos', 'Em andamento', 'A fazer', 'Em revisão', 'Pausado', 'Concluído', 'Arquivado']);
 const REQ_TIMEOUT_MS = 15000;
 const PROJ_CACHE_KEY = 'telier_proj_cache';
 const PROJ_CACHE_TTL = 10000;
 let _pendingUndoAction = null;
 let FORCE_PASSWORD_CHANGE = false;
+
+const _infra = window.TelierFrontend || {};
+if (!_infra.services?.api || !_infra.utils?.formatters || !_infra.state?.constants || !_infra.theme?.tokens || !_infra.components?.base || !_infra.shell?.appShell) {
+  document.getElementById('content').innerHTML = `<div class="api-empty"><div class="api-empty-icon"><svg width="30" height="30" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 3.5l9 15.5H3l9-15.5z" stroke="currentColor" stroke-width="1.7"/><path d="M12 9v5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/><circle cx="12" cy="16.7" r="1" fill="currentColor"/></svg></div><div class="api-empty-text">Falha ao carregar infraestrutura modular do frontend.<br>Verifique a ordem dos scripts em <code>src/index.html</code>.</div></div>`;
+  throw new Error('Infra do frontend não carregada: window.TelierFrontend incompleto');
+}
+
+const { createApiClient } = _infra.services.api;
+const { esc, iniciais, avatarCor, prazoFmt, diasRestantes } = _infra.utils.formatters;
+const {
+  DASH_STATUS_OPCOES,
+  ST,
+  PT,
+  DT,
+  FT,
+  PO,
+  DO,
+  normalizarStatusProjeto,
+  projetoConcluido,
+} = _infra.state.constants;
+
+let _v2ShellReady = false;
+let _v2ShellInitInFlight = false;
+const _v2ShellReadyCallbacks = [];
+
+function onV2ShellReady(cb) {
+  if (typeof cb !== 'function') return;
+  if (_v2ShellReady) {
+    cb();
+    return;
+  }
+  _v2ShellReadyCallbacks.push(cb);
+}
+
+function abrirOperacaoLegada() {
+  const legacy = document.getElementById('legacy-app-root');
+  if (legacy) legacy.classList.remove('hidden');
+  const shell = document.getElementById('v2-shell-root');
+  if (shell) shell.classList.add('hidden');
+  const shellBack = document.getElementById('btn-shell-v2');
+  if (shellBack) shellBack.classList.remove('hidden');
+}
+
+function abrirShellV2() {
+  const shell = document.getElementById('v2-shell-root');
+  if (shell && !_v2ShellReady && !shell.innerHTML.trim()) {
+    shell.innerHTML = `<div class="v2-boot"><div class="spinner"></div><span>Preparando shell v2…</span></div>`;
+  }
+  const legacy = document.getElementById('legacy-app-root');
+  if (legacy) legacy.classList.add('hidden');
+  if (shell) shell.classList.remove('hidden');
+  const shellBack = document.getElementById('btn-shell-v2');
+  if (shellBack) shellBack.classList.add('hidden');
+}
+
+function initV2Shell() {
+  if (_v2ShellReady || _v2ShellInitInFlight) return;
+  _v2ShellInitInFlight = true;
+  _infra.shell.appShell.initAppShell({
+    onReady: () => {
+      _v2ShellReady = true;
+      _v2ShellInitInFlight = false;
+      while (_v2ShellReadyCallbacks.length) {
+        const cb = _v2ShellReadyCallbacks.shift();
+        try { cb?.(); } catch {}
+      }
+    },
+  });
+}
 
 async function fetchProjetos(params) {
   try {
@@ -1287,31 +1365,365 @@ function salvarFiltrosDash() {
 carregarFiltrosDash();
 
 // ── API ──
-async function req(method, path, body) {
-  const ctrl = new AbortController();
-  const timeoutId = setTimeout(() => ctrl.abort(), REQ_TIMEOUT_MS);
-  let r;
-  try {
-    r = await fetch(API + path, {
-      method,
-      signal: ctrl.signal,
-      headers: { 'Content-Type': 'application/json', ...(TOKEN ? { Authorization: 'Bearer ' + TOKEN } : {}) },
-      ...(body !== undefined ? { body: JSON.stringify(body) } : {}),
-    });
-  } catch (e) {
-    if (e?.name === 'AbortError') {
-      throw new Error('Tempo limite atingido ao conectar ao servidor.');
-    }
-    throw new Error('Falha de conexão com o servidor.');
-  } finally {
-    clearTimeout(timeoutId);
+const req = createApiClient({
+  getApiBase: () => API,
+  getToken: () => TOKEN,
+  getTimeoutMs: () => REQ_TIMEOUT_MS,
+});
+
+async function getHojeSnapshotV2() {
+  const [ativasRes, ultimaRes, resumoRes, projetosRes] = await Promise.allSettled([
+    req('GET', '/tempo/ativas'),
+    req('GET', '/tempo/ultima-sessao'),
+    req('GET', '/tempo/resumo-hoje'),
+    req('GET', '/projetos?origem=todos&status=todos'),
+  ]);
+
+  const ativasResp = ativasRes.status === 'fulfilled' ? ativasRes.value : { itens: [] };
+  const ultimaResp = ultimaRes.status === 'fulfilled' ? ultimaRes.value : null;
+  const resumoResp = resumoRes.status === 'fulfilled' ? (resumoRes.value || {}) : {};
+  const projetosResp = projetosRes.status === 'fulfilled' ? projetosRes.value : { itens: [] };
+
+  const ativas = Array.isArray(ativasResp?.itens) ? ativasResp.itens : (Array.isArray(ativasResp) ? ativasResp : []);
+  const ativa = ativas[0] || null;
+  const ultima = ultimaResp || null;
+  const projetos = Array.isArray(projetosResp?.itens) ? projetosResp.itens : (Array.isArray(projetosResp) ? projetosResp : []);
+
+  const activeProjects = projetos
+    .filter((p) => !projetoConcluido(p.status))
+    .slice(0, 6)
+    .map((p) => ({ nome: p.nome || 'Projeto', status: normalizarStatusProjeto(p.status) || 'Ativo' }));
+
+  const dueSoon = projetos
+    .filter((p) => p.prazo)
+    .map((p) => ({
+      nome: p.nome || 'Projeto',
+      prazo: p.prazo,
+      _prazoTs: Date.parse(`${p.prazo}T00:00:00`) || Number.MAX_SAFE_INTEGER,
+    }))
+    .sort((a, b) => a._prazoTs - b._prazoTs)
+    .slice(0, 5)
+    .map(({ _prazoTs, ...rest }) => rest);
+
+  const pendencias = [];
+  if (Number(resumoResp?.pendentes || 0) > 0) {
+    pendencias.push({ nome: `${resumoResp.pendentes} sessões pendentes de revisão`, tipo: 'Pendência' });
+  }
+  if (Number(resumoResp?.bloqueios || 0) > 0) {
+    pendencias.push({ nome: `${resumoResp.bloqueios} bloqueios registrados`, tipo: 'Bloqueio' });
+  }
+  if (!pendencias.length && activeProjects.length) {
+    pendencias.push({ nome: 'Sem bloqueios explícitos nesta leitura inicial', tipo: 'Estável' });
   }
 
-  let d = null;
-  try { d = await r.json(); } catch { d = null; }
-  if (!r.ok) throw new Error(d?.error || `Erro na requisição (${r.status})`);
-  return d;
+  const resume = [];
+  if (ultima?.tarefa_nome || ultima?.tarefa_titulo) {
+    resume.push({
+      tarefa_id: ultima.tarefa_id || null,
+      projeto_id: ultima.projeto_id || null,
+      titulo: ultima.tarefa_nome || ultima.tarefa_titulo || 'Última tarefa',
+      meta: `Última sessão ${ultima.finalizado_em ? 'concluída' : 'registrada'}`,
+    });
+  }
+  if (resumoResp?.total_minutos != null) {
+    const mins = Number(resumoResp.total_minutos || 0);
+    resume.push({
+      titulo: 'Horas registradas hoje',
+      meta: `${Math.floor(mins / 60)}h${mins % 60 ? ` ${mins % 60}m` : ''}`,
+    });
+  }
+
+  const activeTask = ativa
+    ? {
+      id: ativa.tarefa_id || ativa.id || null,
+      nome: ativa.tarefa_nome || ativa.nome || 'Tarefa ativa',
+      status: 'Em execução',
+      projeto_id: ativa.projeto_id || null,
+      projeto_nome: ativa.projeto_nome || 'Projeto não informado',
+    }
+    : null;
+
+  return {
+    activeTask,
+    activeTimer: ativa ? { sessao_id: ativa.id || ativa.sessao_id || null, minutos: Number(ativa.minutos || 0), label: ativa.tempo_formatado || null } : null,
+    resume,
+    dueSoon,
+    pendencias,
+    activeProjects,
+    source: 'api-low-risk',
+  };
 }
+
+function getProjetoRiscoLabel(proj) {
+  const status = normalizarStatusProjeto(proj?.status);
+  if (status === 'Arquivado' || status === 'Concluído') return 'Sem sinal forte';
+  const dias = diasRestantes(proj?.prazo);
+  if (dias !== null && dias < 0) return 'Atenção prazo';
+  if (dias !== null && dias <= 5) return 'Prazo próximo';
+  return 'Sem sinal forte';
+}
+
+async function getProjetosSnapshotV2() {
+  const resp = await req('GET', '/projetos?origem=todos&status=todos').catch(() => ({ itens: [] }));
+  const itens = Array.isArray(resp?.itens) ? resp.itens : (Array.isArray(resp) ? resp : []);
+  return itens.map((p) => {
+    const status = normalizarStatusProjeto(p.status);
+    const total = Number(p.total_tarefas || p.tarefas_total || 0);
+    const concluidas = Number(p.tarefas_concluidas || p.concluidas_total || 0);
+    const progressoPct = total >= 3 ? Math.round((concluidas / total) * 100) : null;
+    return {
+      id: p.id,
+      nome: p.nome || 'Projeto',
+      campus: p.campus_nome || p.campus || null,
+      unidade: p.unidade_nome || p.unidade || null,
+      fase: p.fase || '—',
+      status,
+      prazo: p.prazo || null,
+      responsavel: p.dono_nome || '—',
+      responsavelId: p.dono_id || null,
+      progresso: progressoPct,
+      risco: getProjetoRiscoLabel(p),
+    };
+  });
+}
+
+async function getProjetoSnapshotV2(projetoId) {
+  if (!projetoId) return null;
+  const proj = await req('GET', `/projetos/${projetoId}`).catch(() => null);
+  if (!proj) return null;
+  const relatorio = await req('GET', `/projetos/${projetoId}/relatorio`).catch(() => null);
+  const total = Number(proj.total_tarefas || proj.tarefas_total || 0);
+  const concluidas = Number(proj.tarefas_concluidas || proj.concluidas_total || 0);
+  const progresso = total >= 3 ? Math.round((concluidas / total) * 100) : null;
+  const horas = Number(relatorio?.resumo?.horas_liquidas || proj.total_horas || 0);
+  const dadosParciais = !relatorio || !relatorio?.resumo;
+  return {
+    id: proj.id,
+    nome: proj.nome || 'Projeto',
+    campus: proj.campus_nome || proj.campus || null,
+    unidade: proj.unidade_nome || proj.unidade || null,
+    fase: proj.fase || '—',
+    status: normalizarStatusProjeto(proj.status) || '—',
+    prazo: proj.prazo || null,
+    responsavel: proj.dono_nome || '—',
+    progresso,
+    risco: getProjetoRiscoLabel(proj),
+    horasResumo: Number.isFinite(horas) ? horas : null,
+    resumoAtividade: relatorio?.resumo || null,
+    dadosParciais,
+  };
+}
+
+async function getProjetoTarefasSnapshotV2(projetoId) {
+  if (!projetoId) return { itens: [], parcial: true };
+  const agregado = await req('GET', `/projetos/${projetoId}/tarefas/snapshot-v2`).catch(() => null);
+  const agregadoValido = !!agregado && Array.isArray(agregado.itens);
+  if (agregadoValido) {
+    const listaAgregada = agregado.itens;
+    return {
+      itens: listaAgregada.slice(0, 50).map((tarefa) => ({
+        id: tarefa.id,
+        nome: tarefa.nome || 'Tarefa',
+        responsavel: tarefa.dono_nome || '—',
+        colaboradores: (tarefa.colaboradores_nomes_raw || '')
+          .split('||')
+          .map((nome) => (nome || '').trim())
+          .filter(Boolean),
+        status: tarefa.status || '—',
+        prazo: tarefa.data || null,
+        complexidade: tarefa.complexidade || tarefa.dificuldade || null,
+        prioridade: tarefa.prioridade || null,
+        tempoMinutos: Number.isFinite(Number(tarefa.tempo_minutos))
+          ? Number(tarefa.tempo_minutos)
+          : null,
+      })),
+      parcial: !!agregado?.parcial,
+      source: agregado?.source || 'aggregated-v2',
+    };
+  }
+
+  const tarefas = await req('GET', `/projetos/${projetoId}/tarefas`).catch(() => []);
+  const lista = Array.isArray(tarefas) ? tarefas : [];
+  const enriched = lista.slice(0, 50).map((tarefa) => ({
+    parcialLinha: true,
+    item: {
+      id: tarefa?.id || '',
+      nome: tarefa?.nome || 'Tarefa',
+      responsavel: tarefa?.dono_nome || '—',
+      colaboradores: Array.isArray(tarefa?.colaboradores_nomes)
+        ? tarefa.colaboradores_nomes.filter(Boolean)
+        : [],
+      status: tarefa?.status || '—',
+      prazo: tarefa?.data || null,
+      complexidade: tarefa?.complexidade || tarefa?.dificuldade || null,
+      prioridade: tarefa?.prioridade || null,
+      tempoMinutos: null,
+    },
+  }));
+  return {
+    itens: enriched.map((entry) => entry.item),
+    parcial: enriched.some((entry) => entry.parcialLinha),
+    source: 'fallback-base-only',
+  };
+}
+
+async function getTarefaSnapshotV2(tarefaId, context = {}) {
+  if (!tarefaId) return null;
+  const [tarefaRes, tempoRes, colaboradoresRes, ativasRes] = await Promise.allSettled([
+    req('GET', `/tarefas/${tarefaId}`),
+    req('GET', `/tarefas/${tarefaId}/tempo/resumo`),
+    req('GET', `/tarefas/${tarefaId}/colaboradores`),
+    req('GET', '/tempo/ativas'),
+  ]);
+
+  const tarefa = tarefaRes.status === 'fulfilled' ? (tarefaRes.value || null) : null;
+  if (!tarefa) return null;
+
+  const tempo = tempoRes.status === 'fulfilled' ? (tempoRes.value || {}) : {};
+  const colaboradoresRaw = colaboradoresRes.status === 'fulfilled' ? colaboradoresRes.value : [];
+  const colaboradores = Array.isArray(colaboradoresRaw)
+    ? colaboradoresRaw.map((c) => c?.nome || c?.usuario_nome || '').filter(Boolean)
+    : [];
+  const tempoMinutosRaw = tempo?.total_minutos ?? tempo?.minutos_total ?? null;
+  const tempoMinutos = Number.isFinite(Number(tempoMinutosRaw))
+    ? Number(tempoMinutosRaw)
+    : null;
+  const ativas = ativasRes.status === 'fulfilled'
+    ? (Array.isArray(ativasRes.value?.itens) ? ativasRes.value.itens : (Array.isArray(ativasRes.value) ? ativasRes.value : []))
+    : [];
+  const sessaoAtiva = ativas.find((sessao) => (sessao?.tarefa_id || sessao?.id) === (tarefa.id || tarefaId)) || null;
+
+  return {
+    id: tarefa.id || tarefaId,
+    nome: tarefa.nome || 'Tarefa',
+    status: tarefa.status || '—',
+    prazo: tarefa.data || null,
+    responsavel: tarefa.dono_nome || tarefa.usuario_nome || '—',
+    colaboradores,
+    complexidade: tarefa.complexidade || tarefa.dificuldade || null,
+    prioridade: tarefa.prioridade || null,
+    tempoMinutos,
+    timer: {
+      ativa: !!sessaoAtiva,
+      sessaoId: sessaoAtiva?.id || sessaoAtiva?.sessao_id || null,
+      minutos: Number(sessaoAtiva?.minutos || 0),
+      label: sessaoAtiva?.tempo_formatado || null,
+    },
+    projeto: {
+      id: tarefa.projeto_id || context?.projetoId || null,
+      nome: context?.projetoNome || 'Projeto',
+    },
+    parcial: tempoRes.status !== 'fulfilled' || colaboradoresRes.status !== 'fulfilled' || ativasRes.status !== 'fulfilled',
+    source: 'api-task-read-first',
+  };
+}
+
+window.TelierV2Bridge = window.TelierV2Bridge || {};
+window.TelierV2Bridge.getHojeSnapshot = getHojeSnapshotV2;
+window.TelierV2Bridge.getProjetosSnapshot = getProjetosSnapshotV2;
+window.TelierV2Bridge.getProjetoSnapshot = getProjetoSnapshotV2;
+window.TelierV2Bridge.getProjetoTarefasSnapshot = getProjetoTarefasSnapshotV2;
+window.TelierV2Bridge.getTarefaSnapshot = getTarefaSnapshotV2;
+window.TelierV2Bridge.actions = {
+  abrirProjetoNoLegado: async (projetoId) => {
+    if (!projetoId || typeof abrirProjeto !== 'function') {
+      toast('Projeto indisponível para abertura nesta fase', 'err');
+      return { ok: false, refresh: false };
+    }
+    abrirOperacaoLegada();
+    await abrirProjeto(projetoId);
+    toast('Abrindo projeto no fluxo atual');
+    return { ok: true, refresh: false };
+  },
+  abrirTarefaAtiva: async (snapshot = {}) => {
+    const projetoId = snapshot?.activeTask?.projeto_id || snapshot?.resume?.[0]?.projeto_id || null;
+    if (!projetoId) {
+      toast('Tarefa ativa sem projeto associado para navegação', 'err');
+      return { ok: false, refresh: false };
+    }
+    const res = await window.TelierV2Bridge.actions.abrirProjetoNoLegado(projetoId);
+    if (res.ok) toast('Abrindo tarefa ativa no fluxo atual');
+    return res;
+  },
+  abrirRetomada: async (item = {}) => {
+    if (!item?.projeto_id) {
+      toast('Retomada sem projeto associado', 'err');
+      return { ok: false, refresh: false };
+    }
+    const res = await window.TelierV2Bridge.actions.abrirProjetoNoLegado(item.projeto_id);
+    if (res.ok) toast('Abrindo retomada no fluxo atual');
+    return res;
+  },
+  abrirTarefaNoLegado: async ({ tarefaId, projetoId } = {}) => {
+    if (!projetoId) {
+      toast('Tarefa sem projeto para fallback no fluxo atual', 'err');
+      return { ok: false, refresh: false };
+    }
+    const res = await window.TelierV2Bridge.actions.abrirProjetoNoLegado(projetoId);
+    if (!res.ok) return res;
+    if (!tarefaId) {
+      toast('Projeto aberto no fluxo atual para operação de tarefa');
+      return { ok: true, refresh: false };
+    }
+    const tarefa = (TAREFAS || []).find((t) => t.id === tarefaId) || null;
+    BUSCA_TAREFA = tarefa?.nome || '';
+    TAREFAS_VIEW = 'lista';
+    if (typeof mudarAba === 'function') mudarAba('tarefas');
+    if (typeof modalEditarTarefa === 'function') {
+      modalEditarTarefa(tarefaId);
+      toast('Tarefa aberta no fluxo atual');
+    } else {
+      toast(`Projeto aberto no fluxo atual; tarefa ${tarefaId} pronta para continuidade`);
+    }
+    return { ok: true, refresh: false };
+  },
+  atualizarStatusTarefa: async ({ tarefaId, status } = {}) => {
+    if (!tarefaId || !status) {
+      toast('Dados insuficientes para atualizar status da tarefa', 'err');
+      return { ok: false, refresh: false };
+    }
+    await req('PATCH', `/tarefas/${tarefaId}`, { status });
+    return { ok: true, refresh: false };
+  },
+  iniciarCronometroDaTarefa: async (tarefa = {}) => {
+    const tarefaId = tarefa?.id;
+    const tarefaNome = tarefa?.nome || 'Tarefa';
+    if (!tarefaId || typeof iniciarCronometro !== 'function') {
+      toast('Não foi possível iniciar cronômetro nesta tarefa', 'err');
+      return { ok: false, refresh: false };
+    }
+    await iniciarCronometro(tarefaId, tarefaNome);
+    return { ok: true, refresh: false };
+  },
+  pararCronometroDaTarefa: async (tarefa = {}) => {
+    const sessaoId = tarefa?.timer?.sessaoId || null;
+    if (!sessaoId || typeof pararCronometro !== 'function') {
+      toast('Não há sessão ativa desta tarefa para parar', 'err');
+      return { ok: false, refresh: false };
+    }
+    await pararCronometro(sessaoId);
+    return { ok: true, refresh: false };
+  },
+  iniciarOuRetomarCronometro: async (snapshot = {}) => {
+    const tarefaId = snapshot?.activeTask?.id;
+    const tarefaNome = snapshot?.activeTask?.nome || 'Tarefa ativa';
+    if (!tarefaId || typeof iniciarCronometro !== 'function') {
+      toast('Não foi possível iniciar cronômetro: tarefa ativa indisponível', 'err');
+      return { ok: false, refresh: false };
+    }
+    await iniciarCronometro(tarefaId, tarefaNome);
+    return { ok: true, refresh: true };
+  },
+  pararCronometroAtivo: async (snapshot = {}) => {
+    const sessaoId = snapshot?.activeTimer?.sessao_id;
+    if (!sessaoId || typeof pararCronometro !== 'function') {
+      toast('Não há sessão ativa para parar neste contexto', 'err');
+      return { ok: false, refresh: false };
+    }
+    await pararCronometro(sessaoId);
+    return { ok: true, refresh: true };
+  },
+};
 
 // ── TOAST ──
 let _toastTimer;
@@ -1568,26 +1980,9 @@ function podeEditar(proj) {
   if (souDono(proj.dono_id)) return true;
   return (proj.editores || []).some(e => e.usuario_id === EU?.id);
 }
-function esc(s) { return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
-function iniciais(nome) { return (nome||'?').split(' ').slice(0,2).map(w=>w[0]).join('').toUpperCase(); }
-function avatarCor(nome) {
-  const cores = ['#7c6af7','#4a9eff','#3ecf8e','#f5c542','#f0834a','#f25b5b'];
-  let h = 0; for (const c of nome||'') h = (h * 31 + c.charCodeAt(0)) & 0xffffffff;
-  return cores[Math.abs(h) % cores.length];
-}
 function avatar(nome, size = '') {
   const cor = avatarCor(nome);
   return `<div class="avatar ${size}" style="background:${cor}20;color:${cor}">${iniciais(nome)}</div>`;
-}
-function prazoFmt(prazo, curto = false) {
-  if (!prazo) return null;
-  const d = new Date(prazo + 'T00:00:00');
-  if (curto) return d.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' });
-  return d.toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' });
-}
-function diasRestantes(prazo) {
-  if (!prazo) return null;
-  return Math.ceil((new Date(prazo + 'T00:00:00') - new Date()) / 86400000);
 }
 function btnLoading(id, on) {
   const b = document.getElementById(id);
@@ -1597,23 +1992,7 @@ function btnLoading(id, on) {
 }
 
 // TAGS
-const ST = { 'Arquivado':'tag-gray', 'Em andamento':'tag-blue','Concluída':'tag-green','Concluído':'tag-green','Bloqueada':'tag-red','A fazer':'tag-gray','Em revisão':'tag-yellow','Pausado':'tag-gray' };
-const PT = { 'Alta':'tag-orange','Média':'tag-yellow','Baixa':'tag-green' };
-const DT = { 'Simples':'tag-green','Moderada':'tag-yellow','Complexa':'tag-orange' };
-const FT = { 'Estudo preliminar':'tag-purple','Anteprojeto':'tag-blue','Projeto básico':'tag-sky','Projeto executivo':'tag-cyan','Em obra':'tag-green' };
-const PO = { 'Alta':0,'Média':1,'Baixa':2 };
-const DO = { 'Complexa':0,'Moderada':1,'Simples':2 };
-
 function tag(t, cls, lbl) { return `<span class="tag ${cls||ST[t]||'tag-gray'}"${lbl?' title="'+esc(lbl)+'"':''}>${esc(t)}</span>`; }
-function normalizarStatusProjeto(status) {
-  if (status === 'Concluída') return 'Concluído';
-  if (status === 'Aguardando aprovação') return 'Em revisão'; // backward compat
-  return status;
-}
-function projetoConcluido(status) {
-  const s = normalizarStatusProjeto(status);
-  return s === 'Concluído';
-}
 
 // ── INIT ──
 async function init() {
@@ -1650,6 +2029,9 @@ function mostrar(tela) {
     iniciarStatusPoll();
     syncAdminModeUI();
     renderDash();
+    initV2Shell();
+    onV2ShellReady(() => abrirShellV2());
+    abrirShellV2();
     if (FORCE_PASSWORD_CHANGE) {
       setTimeout(() => modalTrocaSenhaObrigatoria(), 120);
     }
@@ -2069,6 +2451,17 @@ function renderInicioDia(projetos, ativas, ultimaSessao = null, focoGlobal = nul
     </div>`;
 }
 
+function normalizeFocoGlobalResponse(focoGlobal) {
+  if (!focoGlobal || typeof focoGlobal !== 'object') return null;
+  return {
+    ...focoGlobal,
+    tarefa_id: focoGlobal.tarefa_id || focoGlobal.id || null,
+    tarefa_nome: focoGlobal.tarefa_nome || focoGlobal.nome || null,
+    projeto_id: focoGlobal.projeto_id || null,
+    projeto_nome: focoGlobal.projeto_nome || null,
+  };
+}
+
 function toggleStartday() {
   const el = document.getElementById('startday-wrap');
   if (!el) return;
@@ -2137,7 +2530,7 @@ async function renderDash() {
     if (FILTRO_STATUS !== 'todos') params.set('status', FILTRO_STATUS);
     if (isAdminRole() && ADMIN_MODE === 'normal') params.set('as_member', '1');
     const qs = params.toString() ? `?${params.toString()}` : '';
-    const [projetos, ativas, grupos, ultimaSessao, resumoHoje, focoGlobal] = await Promise.all([
+    const [projetos, ativas, grupos, ultimaSessao, resumoHoje, focoGlobalRaw] = await Promise.all([
       fetchProjetos(params),
       req('GET', `/tempo/ativas${isAdminRole() && ADMIN_MODE === 'normal' ? '?as_member=1' : ''}`).catch(() => []),
       req('GET', `/grupos${isAdminRole() && ADMIN_MODE === 'normal' ? '?as_member=1' : ''}`).catch(() => []),
@@ -2145,6 +2538,7 @@ async function renderDash() {
       req('GET', '/tempo/resumo-hoje').catch(() => null),
       req('GET', '/auth/foco-global').catch(() => null),
     ]);
+    const focoGlobal = normalizeFocoGlobalResponse(focoGlobalRaw);
 
     _projsDash = projetos;
     _ativasDash = ativas;
@@ -4795,6 +5189,7 @@ async function criarTarefa(projetoId) {
       status: gv('m-status'),
       prioridade: gv('m-prior'),
       complexidade: gv('m-dific'),
+      dificuldade: gv('m-dific'),
       data: gv('m-data')||null,
       descricao: gv('m-desc') || null,
     });
@@ -4839,6 +5234,7 @@ async function salvarTarefa(id) {
       status: gv('m-status'),
       prioridade: gv('m-prior'),
       complexidade: gv('m-dific'),
+      dificuldade: gv('m-dific'),
       data: gv('m-data')||null,
       descricao: gv('m-desc') || null,
     });
@@ -4886,6 +5282,7 @@ async function quickAddConfirmar(projetoId) {
       nome: _quickAddNome,
       status: 'A fazer',
       prioridade,
+      complexidade,
       dificuldade: complexidade,
     });
     quickAddCancelar();
