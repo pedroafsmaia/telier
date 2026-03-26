@@ -56,7 +56,7 @@ export function renderTimerActions(opts = {}) {
     tarefaNome = 'Tarefa',
     projetoId = '',
     size = 'sm',
-    compact = false,
+    iconOnly = false, // Substitui 'compact'
     allowStart = true,
     showOpenTask = true,
     showHistory = false,
@@ -69,31 +69,31 @@ export function renderTimerActions(opts = {}) {
   const busy = timerMutationEmAndamento();
   const clickSuffix = stopPropagation ? ';event.stopPropagation()' : '';
   const btnSizeClass = size === 'sm' ? ' btn-sm' : '';
-  const estadoClass = compact ? ' timer-actions-group timer-actions-group--compact' : ' timer-actions-group';
+  const btnIconClass = iconOnly ? ' btn-icon' : '';
 
   const botoes = [];
   if (sessaoTarefa) {
-    botoes.push(`<button class="btn btn-danger${btnSizeClass}" ${busy ? 'disabled' : ''} onclick="pararCronometro('${sessaoTarefa[0]}')${clickSuffix}" title="Encerrar sessão">${iconCronometro('stop')}Encerrar sessão</button>`);
+    botoes.push(`<button type="button" class="btn btn-danger${btnSizeClass}${btnIconClass}" ${busy ? 'disabled' : ''} onclick="pararCronometro('${sessaoTarefa[0]}')${clickSuffix}" title="Encerrar sessão" aria-label="Encerrar sessão">${iconCronometro('stop')}${iconOnly ? '' : 'Encerrar sessão'}</button>`);
   } else if (allowStart) {
     const disabled = busy || existeOutraSessaoAtiva;
     const title = existeOutraSessaoAtiva ? 'Encerre a sessão ativa atual antes de iniciar um novo cronômetro' : 'Iniciar cronômetro';
-    botoes.push(`<button class="btn btn-primary${btnSizeClass}" ${disabled ? 'disabled' : ''} onclick="iniciarCronometro('${jsArg(tarefaId)}','${jsArg(tarefaNome)}')${clickSuffix}" title="${title}">${iconCronometro('start')}Iniciar cronômetro</button>`);
+    botoes.push(`<button type="button" class="btn btn-primary${btnSizeClass}${btnIconClass}" ${disabled ? 'disabled' : ''} onclick="iniciarCronometro('${jsArg(tarefaId)}','${jsArg(tarefaNome)}')${clickSuffix}" title="${title}" aria-label="${title}">${iconCronometro('start')}${iconOnly ? '' : 'Iniciar cronômetro'}</button>`);
   }
   if (showInterval && sessaoTarefa) {
-    botoes.push(`<button class="btn btn-secondary${btnSizeClass}" ${busy ? 'disabled' : ''} onclick="modalAdicionarIntervalo('${sessaoTarefa[0]}')${clickSuffix}" title="Adicionar intervalo">${iconCronometro('interval')}Adicionar intervalo</button>`);
+    botoes.push(`<button type="button" class="btn btn-secondary${btnSizeClass}${btnIconClass}" ${busy ? 'disabled' : ''} onclick="modalAdicionarIntervalo('${sessaoTarefa[0]}')${clickSuffix}" title="Adicionar intervalo" aria-label="Adicionar intervalo">${iconCronometro('interval')}${iconOnly ? '' : 'Adicionar intervalo'}</button>`);
   }
   if (showHistory && tarefaId) {
-    botoes.push(`<button class="btn btn-ghost${btnSizeClass}" onclick="expandirSessoes('${jsArg(tarefaId)}')${clickSuffix}" title="Ver registros">${iconCronometro('history')}Ver registros</button>`);
+    botoes.push(`<button type="button" class="btn btn-ghost${btnSizeClass}${btnIconClass}" onclick="expandirSessoes('${jsArg(tarefaId)}')${clickSuffix}" title="Ver registros" aria-label="Ver registros">${iconCronometro('history')}${iconOnly ? '' : 'Ver registros'}</button>`);
   }
   if (showOpenTask && tarefaId && projetoId) {
-    botoes.push(`<button class="btn btn-ghost${btnSizeClass}" onclick="abrirTarefaContexto('${jsArg(tarefaId)}','${jsArg(projetoId)}')${clickSuffix}" title="Abrir tarefa">${iconCronometro('open')}Abrir tarefa</button>`);
+    botoes.push(`<button type="button" class="btn btn-ghost${btnSizeClass}${btnIconClass}" onclick="abrirTarefaContexto('${jsArg(tarefaId)}','${jsArg(projetoId)}')${clickSuffix}" title="Abrir tarefa" aria-label="Abrir tarefa">${iconCronometro('open')}${iconOnly ? '' : 'Abrir tarefa'}</button>`);
   } else if (showOpenTask && existeOutraSessaoAtiva) {
     const tarefaAtiva = sessaoGlobal?.[1] || null;
     if (tarefaAtiva?.tarefaId && tarefaAtiva?.projeto_id) {
-      botoes.push(`<button class="btn btn-ghost${btnSizeClass}" onclick="abrirTarefaContexto('${jsArg(tarefaAtiva.tarefaId)}','${jsArg(tarefaAtiva.projeto_id)}')${clickSuffix}" title="Abrir tarefa ativa">${iconCronometro('open')}Abrir tarefa ativa</button>`);
+      botoes.push(`<button type="button" class="btn btn-ghost${btnSizeClass}${btnIconClass}" onclick="abrirTarefaContexto('${jsArg(tarefaAtiva.tarefaId)}','${jsArg(tarefaAtiva.projeto_id)}')${clickSuffix}" title="Abrir tarefa ativa" aria-label="Abrir tarefa ativa">${iconCronometro('open')}${iconOnly ? '' : 'Abrir tarefa ativa'}</button>`);
     }
   }
-  return `<div class="${estadoClass.trim()}">${botoes.join('')}</div>`;
+  return `<div class="timer-actions-group">${botoes.join('')}</div>`;
 }
 
 async function refreshCronometroUI() {
@@ -203,7 +203,7 @@ export function renderTimerDock() {
           tarefaNome: t.tarefa_nome,
           projetoId: t.projeto_id,
           size: 'sm',
-          compact: true,
+          iconOnly: true,
           showOpenTask: true,
           showHistory: true,
           showInterval: true,
@@ -233,14 +233,14 @@ export const renderTimerWidget = renderTimerDock;
 export function modalAdicionarIntervalo(sessaoId) {
   abrirModal(`
     <h2>Adicionar intervalo</h2>
-    <div class="form-row"><label>Tipo</label><input id="m-tipo" placeholder="Ex: Lanche, Reunião, Problema técnico..."></div>
+    <div class="form-row"><label for="m-tipo">Tipo</label><input id="m-tipo" placeholder="Ex: Lanche, Reunião, Problema técnico..."></div>
     <div class="form-grid">
-      <div class="form-row"><label>Início</label><input type="datetime-local" id="m-ini" value="${new Date().toISOString().slice(0,16)}"></div>
-      <div class="form-row"><label>Fim (opcional)</label><input type="datetime-local" id="m-fim"></div>
+      <div class="form-row"><label for="m-ini">Início</label><input type="datetime-local" id="m-ini" value="${new Date().toISOString().slice(0,16)}"></div>
+      <div class="form-row"><label for="m-fim">Fim (opcional)</label><input type="datetime-local" id="m-fim"></div>
     </div>
     <div class="modal-footer">
-      <button class="btn" onclick="fecharModal()">Cancelar</button>
-      <button class="btn btn-primary" id="btn-add-int" onclick="criarIntervalo('${sessaoId}')">Adicionar</button>
+      <button type="button" class="btn" onclick="fecharModal()">Cancelar</button>
+      <button type="button" class="btn btn-primary" id="btn-add-int" onclick="criarIntervalo('${sessaoId}')">Adicionar</button>
     </div>`);
 }
 
@@ -307,9 +307,9 @@ export async function renderSessoesTarefa(tarefaId, containerEl) {
             </div>
             <div class="sessao-liquido" ${ativa ? `id="sdur-${s.id}"` : ''}>${fmtDuracao(duracaoSeg)}</div>
             <div class="sessao-actions">
-              <button class="btn btn-ghost btn-icon btn-sm" onclick="editarSessao('${s.id}','${s.inicio}','${s.fim||''}')" title="Editar"><svg width="13" height="13" viewBox="0 0 13 13" fill="none"><path d="M2 9.5V11h1.5l5.5-5.5-1.5-1.5L2 9.5zM10.85 2.65a1 1 0 0 0-1.42 0l-.79.79 1.42 1.42.79-.79a1 1 0 0 0 0-1.42z" fill="currentColor"/></svg></button>
-              <button class="btn btn-ghost btn-icon btn-sm" onclick="modalAdicionarIntervalo('${s.id}')" title="Adicionar intervalo"><svg width="11" height="11" viewBox="0 0 11 11" fill="none"><path d="M5.5 2v7M2 5.5h7" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg></button>
-              <button class="btn btn-danger btn-icon btn-sm" onclick="deletarSessao('${s.id}','${tarefaId}')" title="Excluir"><svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M1.5 1.5l9 9M10.5 1.5l-9 9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></button>
+              <button type="button" class="btn btn-ghost btn-icon btn-sm" onclick="editarSessao('${s.id}','${s.inicio}','${s.fim||''}')" title="Editar" aria-label="Editar"><svg width="13" height="13" viewBox="0 0 13 13" fill="none"><path d="M2 9.5V11h1.5l5.5-5.5-1.5-1.5L2 9.5zM10.85 2.65a1 1 0 0 0-1.42 0l-.79.79 1.42 1.42.79-.79a1 1 0 0 0 0-1.42z" fill="currentColor"/></svg></button>
+              <button type="button" class="btn btn-ghost btn-icon btn-sm" onclick="modalAdicionarIntervalo('${s.id}')" title="Adicionar intervalo" aria-label="Adicionar intervalo"><svg width="11" height="11" viewBox="0 0 11 11" fill="none"><path d="M5.5 2v7M2 5.5h7" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg></button>
+              <button type="button" class="btn btn-danger btn-icon btn-sm" onclick="deletarSessao('${s.id}','${tarefaId}')" title="Excluir" aria-label="Excluir"><svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M1.5 1.5l9 9M10.5 1.5l-9 9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></button>
             </div>
           </div>
           ${intervalosHtml}
@@ -342,11 +342,11 @@ export async function renderSessoesTarefa(tarefaId, containerEl) {
 export async function editarSessao(sessaoId, inicio, fim) {
   abrirModal(`
     <h2>Editar sessão</h2>
-    <div class="form-row"><label>Início</label><input type="datetime-local" id="m-ini" value="${fmtDatetimeInput(inicio)}"></div>
-    <div class="form-row"><label>Fim</label><input type="datetime-local" id="m-fim" value="${fmtDatetimeInput(fim)}"></div>
+    <div class="form-row"><label for="m-ini">Início</label><input type="datetime-local" id="m-ini" value="${fmtDatetimeInput(inicio)}"></div>
+    <div class="form-row"><label for="m-fim">Fim</label><input type="datetime-local" id="m-fim" value="${fmtDatetimeInput(fim)}"></div>
     <div class="modal-footer">
-      <button class="btn" onclick="fecharModal()">Cancelar</button>
-      <button class="btn btn-primary" id="btn-ed-sess" onclick="salvarSessao('${sessaoId}')">Salvar</button>
+      <button type="button" class="btn" onclick="fecharModal()">Cancelar</button>
+      <button type="button" class="btn btn-primary" id="btn-ed-sess" onclick="salvarSessao('${sessaoId}')">Salvar</button>
     </div>`);
 }
 
@@ -381,14 +381,14 @@ export async function editarIntervalo(intervaloId) {
   try { intervalo = await req('GET', `/intervalos/${intervaloId}`); } catch (e) { toast(e.message, 'err'); }
   abrirModal(`
     <h2>Editar intervalo</h2>
-    <div class="form-row"><label>Tipo</label><input id="m-tipo" placeholder="Lanche, Reunião..." value="${esc(intervalo?.tipo || '')}"></div>
+    <div class="form-row"><label for="m-tipo">Tipo</label><input id="m-tipo" placeholder="Lanche, Reunião..." value="${esc(intervalo?.tipo || '')}"></div>
     <div class="form-grid">
-      <div class="form-row"><label>Início</label><input type="datetime-local" id="m-ini" value="${fmtDatetimeInput(intervalo?.inicio || '')}"></div>
-      <div class="form-row"><label>Fim</label><input type="datetime-local" id="m-fim" value="${fmtDatetimeInput(intervalo?.fim || '')}"></div>
+      <div class="form-row"><label for="m-ini">Início</label><input type="datetime-local" id="m-ini" value="${fmtDatetimeInput(intervalo?.inicio || '')}"></div>
+      <div class="form-row"><label for="m-fim">Fim</label><input type="datetime-local" id="m-fim" value="${fmtDatetimeInput(intervalo?.fim || '')}"></div>
     </div>
     <div class="modal-footer">
-      <button class="btn" onclick="fecharModal()">Cancelar</button>
-      <button class="btn btn-primary" id="btn-ed-int" onclick="salvarIntervalo('${intervaloId}')">Salvar</button>
+      <button type="button" class="btn" onclick="fecharModal()">Cancelar</button>
+      <button type="button" class="btn btn-primary" id="btn-ed-int" onclick="salvarIntervalo('${intervaloId}')">Salvar</button>
     </div>`);
 }
 
@@ -430,7 +430,7 @@ export async function expandirSessoes(tarefaId) {
     <div id="sess-inner"><div class="loading"><div class="spinner"></div></div></div>
     <div class="task-details-panel" id="task-details-${tarefaId}">${htmlDetalhesTarefa(tarefaId)}</div>
     <div class="modal-footer">
-      <button class="btn" onclick="fecharModal()">Fechar</button>
+      <button type="button" class="btn" onclick="fecharModal()">Fechar</button>
     </div>
   `, { lg: true });
 
@@ -453,8 +453,8 @@ export function htmlDetalhesTarefa(tarefaId) {
   return `
     <div class="task-details-header">Detalhes da tarefa</div>
     <div class="task-details-add">
-      <input id="task-det-input-${tarefaId}" onkeydown="adicionarDetalheTarefaEnter(event,'${tarefaId}')" placeholder="Ex: Pendência com fornecedor, material faltando, ponto de atenção...">
-      <button class="btn btn-primary btn-sm" onclick="adicionarDetalheTarefa('${tarefaId}')">Adicionar</button>
+      <input id="task-det-input-${tarefaId}" onkeydown="adicionarDetalheTarefaEnter(event,'${tarefaId}')" placeholder="Ex: Pendência com fornecedor..." aria-label="Detalhe da tarefa">
+      <button type="button" class="btn btn-primary btn-sm" onclick="adicionarDetalheTarefa('${tarefaId}')">Adicionar</button>
     </div>
     <div class="task-details-list">${itensHtml || '<div class="inline-muted-sm">Nenhum detalhe adicionado ainda.</div>'}</div>`;
 }

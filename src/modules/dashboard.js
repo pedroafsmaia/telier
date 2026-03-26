@@ -456,7 +456,7 @@ export function renderProjetosDash(projetos, grupos) {
         ondrop="dropProjeto(event,'${grupo.id}')">
         <div class="grupo-card" data-status="${esc(grupoStatus)}">
           <div class="grupo-card-header">
-            <span class="grupo-toggle ${col ? 'collapsed' : ''}" onclick="toggleGrupo('${grupo.id}')" title="${col ? 'Expandir' : 'Recolher'}">▼</span>
+            <button type="button" class="grupo-toggle unstyled-btn ${col ? 'collapsed' : ''}" onclick="toggleGrupo('${grupo.id}')" title="${col ? 'Expandir' : 'Recolher'}" aria-label="Expandir/Recolher">▼</button>
             <div class="grupo-title-area">
               <span class="grupo-nome">${esc(grupo.nome)}</span>
             </div>
@@ -598,7 +598,7 @@ export function renderCardsDash(projetos) {
           <div class="proj-card-dono"><span class="proj-card-dono-label">Responsável</span>${avatar(p.dono_nome,'avatar-sm')} <span>${esc(p.dono_nome||'—')}</span></div>
           ${urgente ? `<div class="proj-urgente ${dias <= 0 ? 'overdue' : 'warning'}"><svg width="11" height="11" viewBox="0 0 24 24" fill="none"><path d="M12 3.5l9 15.5H3l9-15.5z" stroke="currentColor" stroke-width="1.9"/><path d="M12 9v5" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/><circle cx="12" cy="16.7" r="1" fill="currentColor"/></svg>${dias <= 0 ? 'vencido' : dias + 'd'}</div>` : ''}
         </div>
-        <div class="proj-card-actions" onclick="event.stopPropagation()">
+        <div class="proj-card-actions" onclick="event.stopPropagation()" aria-hidden="true">
           <button class="btn btn-primary btn-sm" onclick="abrirProjeto('${p.id}')">Abrir</button>
           ${podeCompartilhar ? `<button class="btn btn-ghost btn-sm" onclick="modalPermissoes('${p.id}')">Compartilhar</button>` : ''}
           ${compartilhado ? `<button class="btn btn-sm" onclick="sairProjetoCompartilhado('${p.id}','${esc(p.nome)}')">Sair</button>` : ''}

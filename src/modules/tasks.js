@@ -192,7 +192,7 @@ export function renderTaskOpsList(tarefas = [], opts = {}) {
             tarefaNome: t.nome || t.tarefa_nome || 'Tarefa',
             projetoId: t.projeto_id,
             size: 'sm',
-            compact: true,
+            iconOnly: true,
             showOpenTask: true,
             showHistory: false,
             showInterval: false,
@@ -770,7 +770,7 @@ export function renderKanbanInterno(el, tarefas) {
       tarefaNome: t.nome,
       projetoId: PROJETO?.id,
       size: 'sm',
-      compact: true,
+      iconOnly: true,
       allowStart: podeCron,
       showOpenTask: false,
       showHistory: false,
@@ -825,7 +825,7 @@ export function renderKanbanInterno(el, tarefas) {
       <div style="display:flex;gap:5px;flex-wrap:wrap;align-items:center;margin-bottom:8px">
         ${tag(t.prioridade, PT[t.prioridade])}
         ${t.data
-          ? `<span class="tag ${urgt?(diasT<=0?'tag-red':'tag-yellow'):'tag-gray'} mono" style="font-size:var(--fs-xs)">
+          ? `<span class="tag ${urgt?(diasT<=0?'tag-red':'tag-yellow'):'tag-gray'} chip-mono">
                ${urgt?`<svg width="9" height="9" viewBox="0 0 24 24" fill="none" style="vertical-align:-1px;margin-right:1px"><path d="M12 3.5l9 15.5H3l9-15.5z" stroke="currentColor" stroke-width="2"/><path d="M12 9v5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><circle cx="12" cy="16.7" r="1" fill="currentColor"/></svg>`:''}${diasT<=0?'vencida':prazoFmt(t.data,true)}
              </span>`
           : ''}
@@ -947,7 +947,7 @@ export function renderListaInterna(el, tarefas) {
       tarefaNome: t.nome,
       projetoId: PROJETO?.id,
       size: 'sm',
-      compact: true,
+      iconOnly: true,
       allowStart: podeCron,
       showOpenTask: false,
       showHistory: false,
@@ -1041,7 +1041,7 @@ export function renderListaInterna(el, tarefas) {
                 `<option value="${s}" ${s===t.status?'selected':''}>${s}</option>`
               ).join('')}
             </select>`
-          : `<span class="tag" style="font-size:var(--fs-xs)">${esc(t.status)}</span>`;
+          : `<span class="tag">${esc(t.status)}</span>`;
         return `<div class="task-card ${t.status==='Concluída'?'concluida':''}" data-status="${esc(t.status)}">
           <div class="task-card-header">
             <div class="task-card-title ${t.foco&&minha?'em-foco':''} ${t.status==='Concluída'?'concluida':''}">${esc(t.nome)}</div>
@@ -1052,7 +1052,7 @@ export function renderListaInterna(el, tarefas) {
             ${t.colaboradores_ids?.length ? renderColabsStack(t.colaboradores_ids) : ''}
             ${tag(t.complexidade, DT[t.complexidade])}
             ${tag(t.prioridade, PT[t.prioridade])}
-            <span class="task-card-chip" style="margin-left:auto;color:var(--text-muted);border:none;background:transparent">${esc(data)}</span>
+            <span class="inline-muted-sm" style="margin-left:auto">${esc(data)}</span>
           </div>
           <div class="task-card-footer">
             <div style="flex:1">${statusBtn}</div>
@@ -1067,7 +1067,7 @@ export function renderListaInterna(el, tarefas) {
                 tarefaNome: t.nome,
                 projetoId: PROJETO?.id,
                 size: 'sm',
-                compact: true,
+                iconOnly: true,
                 allowStart: podeCron,
                 showOpenTask: false,
                 showHistory: true,
@@ -1141,7 +1141,7 @@ export function renderMapa(el, tarefas) {
             tarefaNome: t.nome,
             projetoId: PROJETO?.id,
             size: 'sm',
-            compact: true,
+            iconOnly: true,
             allowStart: podeCron,
             showOpenTask: false,
             showHistory: false,

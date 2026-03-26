@@ -21,8 +21,8 @@
     <div class="auth-wordmark">Acesso ao sistema</div>
     <div class="auth-title">Entrar</div>
     <div class="auth-sub">Identifique-se com as credenciais operacionais do escritório.</div>
-    <div class="form-row"><label>Identificador</label><input type="text" id="l-login" placeholder="usuario.interno" autocomplete="username"></div>
-    <div class="form-row" style="position:relative"><label>Chave de acesso</label><input type="password" id="l-senha" placeholder="Digite sua senha" autocomplete="current-password" style="padding-right:38px"><button type="button" class="eye-toggle" id="l-eye" data-eye-size="16" data-eye-stroke="1.6" onclick="toggleSenhaLogin(this)" title="Mostrar senha" aria-label="Mostrar senha"><svg id="l-eye-icon" width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8S1 12 1 12z" stroke="currentColor" stroke-width="1.6"/><circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="1.6"/></svg></button></div>
+    <div class="form-row"><label for="l-login">Identificador</label><input type="text" id="l-login" placeholder="usuario.interno" autocomplete="username"></div>
+    <div class="form-row" style="position:relative"><label for="l-senha">Chave de acesso</label><input type="password" id="l-senha" placeholder="Digite sua senha" autocomplete="current-password" style="padding-right:38px"><button type="button" class="eye-toggle" id="l-eye" data-eye-size="16" data-eye-stroke="1.6" onclick="toggleSenhaLogin(this)" title="Mostrar senha" aria-label="Mostrar senha"><svg id="l-eye-icon" width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8S1 12 1 12z" stroke="currentColor" stroke-width="1.6"/><circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="1.6"/></svg></button></div>
     <button class="btn btn-primary" id="btn-login" onclick="fazerLogin()">Entrar</button>
     <button class="btn btn-ghost auth-inline-action" onclick="modalCadastroPublico()">Criar minha conta</button>
     <button class="btn btn-ghost auth-inline-action hidden" id="btn-admin-setup" onclick="mostrar('setup')">Criar administrador inicial</button>
@@ -42,9 +42,9 @@
     <div class="auth-wordmark">Primeiro acesso</div>
     <div class="auth-title">Criar administrador</div>
     <div class="auth-sub">Defina a conta matriz que vai administrar estrutura, acessos e operação.</div>
-    <div class="form-row"><label>Responsável técnico</label><input id="s-nome" placeholder="Nome completo do responsável"></div>
-    <div class="form-row"><label>Identificador</label><input type="text" id="s-login" placeholder="admin" autocomplete="username"></div>
-    <div class="form-row" style="position:relative"><label>Chave inicial</label><input type="password" id="s-senha" placeholder="Defina uma senha forte" style="padding-right:38px"><button type="button" class="eye-toggle" data-eye-size="16" data-eye-stroke="1.6" onclick="toggleSenhaSetup(this)" title="Mostrar senha" aria-label="Mostrar senha"><svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8S1 12 1 12z" stroke="currentColor" stroke-width="1.6"/><circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="1.6"/></svg></button></div>
+    <div class="form-row"><label for="s-nome">Responsável técnico</label><input id="s-nome" placeholder="Nome completo do responsável"></div>
+    <div class="form-row"><label for="s-login">Identificador</label><input type="text" id="s-login" placeholder="admin" autocomplete="username"></div>
+    <div class="form-row" style="position:relative"><label for="s-senha">Chave inicial</label><input type="password" id="s-senha" placeholder="Defina uma senha forte" style="padding-right:38px"><button type="button" class="eye-toggle" data-eye-size="16" data-eye-stroke="1.6" onclick="toggleSenhaSetup(this)" title="Mostrar senha" aria-label="Mostrar senha"><svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8S1 12 1 12z" stroke="currentColor" stroke-width="1.6"/><circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="1.6"/></svg></button></div>
     <button class="btn btn-primary" id="btn-setup" onclick="fazerSetup()">Criar conta</button>
     <div id="setup-err" class="auth-err hidden"></div>
   </div>

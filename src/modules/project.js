@@ -89,7 +89,7 @@ export function renderProjeto(proj, tarefas, decisoes, abaAtiva, resumoHoras = [
         tarefaNome: focoMinha.nome,
         projetoId: proj.id,
         size: 'sm',
-        compact: true,
+        iconOnly: true,
         allowStart: true,
         showOpenTask: true,
         showHistory: true,
@@ -134,32 +134,22 @@ export function renderProjeto(proj, tarefas, decisoes, abaAtiva, resumoHoras = [
           ${proj.total_horas > 0 ? `<button class="btn btn-sm" onclick="exportarTempoProjetoCSV('${proj.id}')">Exportar CSV</button>` : ''}
         </div>
       </div>
-      <div class="proj-meta proj-meta-compact">
-        <div class="proj-meta-item">${metaPair('Status', statusProjeto, statusProjeto === 'Bloqueada' ? 'is-alert' : '')}</div>
+      <div class="proj-meta proj-meta-compact" style="margin-bottom:24px">
+        <div class="proj-meta-item">${metaPair('Status', statusProjeto, statusProjeto === 'Bloqueada' ? 'is-alert' : 'is-muted')}</div>
         ${proj.prazo ? `<div class="proj-meta-item">${metaPair('Prazo', prazoFmt(proj.prazo, true), urgente ? 'is-alert' : 'is-muted')}</div>` : ''}
-        <div class="proj-meta-item">${metaPair('Execução', `${conc}/${total}`, 'is-muted')}</div>
+        <div class="proj-meta-item">${metaPair('Progresso', `${conc} de ${total} tarefas`, 'is-info')}</div>
       </div>
-      <div class="project-ops-band">
-        <div class="project-ops-card project-ops-card-actions">
-          <span class="project-ops-label">Ação rápida</span>
-          <strong class="project-ops-main">Entrar em execução</strong>
-          <span class="project-ops-sub">Abra a lista com contexto preservado e retome a próxima tarefa sem reconfigurar a tela.</span>
-          <div class="project-ops-buttons">
-            <button class="btn btn-sm btn-primary" onclick="mudarAba('tarefas')">Ir para tarefas</button>
-            ${canOperateTasks ? `<button class="btn btn-sm" onclick="modalNovaTarefa('${proj.id}')">Nova tarefa</button>` : ''}
-            ${tempoProjetoAtivo ? `<button class="btn btn-sm" onclick="expandirSessoes('${tempoProjetoAtivo.tarefaId}')">Ver registros</button>` : ''}
-          </div>
+      <div class="project-ops-bar">
+        <div class="project-ops-bar-info">
+          ${focoMinha 
+            ? `<div class="section-kicker">Em foco</div><div class="dash-title">${focoTexto}</div>`
+            : `<div class="section-kicker">Próxima ação</div><div class="dash-title">Ir para a fila operacional</div>`
+          }
         </div>
-        <div class="project-ops-card">
-          <span class="project-ops-label">Foco atual</span>
-          <strong class="project-ops-main">${focoTexto}</strong>
-          <span class="project-ops-sub">${focoMinha ? 'Tarefa prioritária para retomada imediata.' : 'Marque uma tarefa em foco para orientar a operação.'}</span>
-          ${focoBtnHtml ? `<div class="project-ops-buttons">${focoBtnHtml}</div>` : ''}
-        </div>
-        <div class="project-ops-card">
-          <span class="project-ops-label">Tempo</span>
-          <strong class="project-ops-main">${timerTexto}</strong>
-          <span class="project-ops-sub">${proj.total_horas > 0 ? `${parseFloat(proj.total_horas).toFixed(1)}h acumuladas no projeto.` : 'Sem horas registradas ainda.'}</span>
+        <div class="project-ops-bar-actions">
+          ${focoBtnHtml ? focoBtnHtml : ''}
+          ${!focoMinha ? `<button class="btn btn-primary" onclick="mudarAba('tarefas')">Abrir tarefas</button>` : ''}
+          ${canOperateTasks ? `<button class="btn" onclick="modalNovaTarefa('${proj.id}')">Nova tarefa</button>` : ''}
         </div>
       </div>
       <details class="proj-hero-details-wrap">
