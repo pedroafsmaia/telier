@@ -517,7 +517,7 @@ export function renderListaInterna(el, tarefas) {
           </th>
           <th>Ações</th>
         </tr></thead>
-        <tbody>${rowsPend || `<tr><td colspan="9" style="text-align:center;color:var(--text-muted);padding:24px"><div style="font-style:italic">Nenhuma tarefa ainda.</div><div style="font-size:var(--fs-080);margin-top:8px;color:var(--text2)">Comece por uma tarefa principal, com prioridade e prazo.</div>${!projetoArquivado ? `<button class="btn btn-sm btn-primary" style="margin-top:10px" onclick="modalNovaTarefa('${PROJETO?.id}')">+ Criar primeira tarefa</button>` : ''}</td></tr>`}${tbodyConc}</tbody>
+        <tbody>${rowsPend || `<tr><td colspan="9" style="text-align:center;color:var(--text-muted);padding:24px"><div style="font-style:italic">Nenhuma tarefa ainda.</div><div style="font-size:var(--fs-080);margin-top:8px;color:var(--text-secondary)">Comece por uma tarefa principal, com prioridade e prazo.</div>${!projetoArquivado ? `<button class="btn btn-sm btn-primary" style="margin-top:10px" onclick="modalNovaTarefa('${PROJETO?.id}')">+ Criar primeira tarefa</button>` : ''}</td></tr>`}${tbodyConc}</tbody>
       </table>
     </div>
     </div>
@@ -561,7 +561,7 @@ export function renderListaInterna(el, tarefas) {
             </div>
           </div>
         </div>`;
-      }).join('') || `<div style="text-align:center;color:var(--text-muted);padding:24px;background:var(--bg-card);border:1px solid var(--border);border-radius:var(--r2)"><div style="font-style:italic">Nenhuma tarefa ainda.</div><div style="font-size:var(--fs-080);margin-top:8px;color:var(--text2)">Comece por uma tarefa principal, com prioridade e prazo.</div>${!projetoArquivado ? `<button class="btn btn-sm btn-primary" style="margin-top:10px" onclick="modalNovaTarefa('${PROJETO?.id}')">+ Criar primeira tarefa</button>` : ''}</div>`}
+      }).join('') || `<div style="text-align:center;color:var(--text-muted);padding:24px;background:var(--bg-card);border:1px solid var(--border);border-radius:var(--r2)"><div style="font-style:italic">Nenhuma tarefa ainda.</div><div style="font-size:var(--fs-080);margin-top:8px;color:var(--text-secondary)">Comece por uma tarefa principal, com prioridade e prazo.</div>${!projetoArquivado ? `<button class="btn btn-sm btn-primary" style="margin-top:10px" onclick="modalNovaTarefa('${PROJETO?.id}')">+ Criar primeira tarefa</button>` : ''}</div>`}
     </div>
     </div>`;
 }
@@ -761,7 +761,7 @@ export function renderDecisoes(projetoId, decisoes, canEdit) {
           <div class="decisao-texto">${esc(d.descricao)}</div>
           <div class="decisao-autor">${avatar(d.dono_nome,'avatar-sm')} ${esc(d.dono_nome||'—')}</div>
         </div>
-        ${(souDono(d.dono_id)||canEdit) ? `<div style="display:flex;gap:4px;flex-shrink:0"><button class="decisao-del" onclick="modalEditarDecisao('${d.id}','${projetoId}',\`${d.descricao.replace(/`/g,'&#96;')}\`,'${d.data||''}')" title="Editar" style="color:var(--text2)"><svg width="13" height="13" viewBox="0 0 13 13" fill="none"><path d="M2 9.5V11h1.5l5.5-5.5-1.5-1.5L2 9.5zM10.85 2.65a1 1 0 0 0-1.42 0l-.79.79 1.42 1.42.79-.79a1 1 0 0 0 0-1.42z" fill="currentColor"/></svg></button><button class="decisao-del" onclick="deletarDecisao('${d.id}','${projetoId}')" title="Excluir"><svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M1.5 1.5l9 9M10.5 1.5l-9 9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></button></div>` : ''}
+        ${(souDono(d.dono_id)||canEdit) ? `<div style="display:flex;gap:4px;flex-shrink:0"><button class="decisao-del" onclick="modalEditarDecisao('${d.id}','${projetoId}',\`${d.descricao.replace(/`/g,'&#96;')}\`,'${d.data||''}')" title="Editar" style="color:var(--text-secondary)"><svg width="13" height="13" viewBox="0 0 13 13" fill="none"><path d="M2 9.5V11h1.5l5.5-5.5-1.5-1.5L2 9.5zM10.85 2.65a1 1 0 0 0-1.42 0l-.79.79 1.42 1.42.79-.79a1 1 0 0 0 0-1.42z" fill="currentColor"/></svg></button><button class="decisao-del" onclick="deletarDecisao('${d.id}','${projetoId}')" title="Excluir"><svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M1.5 1.5l9 9M10.5 1.5l-9 9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></button></div>` : ''}
       </div>`).join('')
     : `<div class="decisoes-empty">Nenhuma decisão registrada ainda.</div>`}
     </div>`;

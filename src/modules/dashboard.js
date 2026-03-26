@@ -247,37 +247,38 @@ export async function renderDash() {
       </div>
       ${compartilhados.length ? `<div class="share-hint share-hint-inline"><strong>${compartilhados.length}</strong> projeto${compartilhados.length===1?'':'s'} compartilhado${compartilhados.length===1?'':'s'} com você no momento.</div>` : ''}
       <div class="dash-toolbar dash-toolbar-studio">
-        <div class="dash-toolbar-row dash-toolbar-primary">
+        <div class="dash-toolbar-row dash-toolbar-primary dash-toolbar-primary-unified">
           <div class="dash-toolbar-searchblock">
             <div class="dash-toolbar-label">Consulta</div>
-            <input type="search" class="search-dash" id="busca-dash" placeholder="Buscar por nome do projeto" value="${esc(BUSCA_DASH)}" oninput="filtrarProjetosBusca(this.value)">
+            <input type="search" class="search-dash" id="busca-dash" placeholder="Buscar projeto ou código" value="${esc(BUSCA_DASH)}" oninput="filtrarProjetosBusca(this.value)">
+          </div>
+          <div class="dash-toolbar-field">
+            <div class="dash-toolbar-label">Grupo</div>
+            <select class="resp-filter select-control flex-shrink-0" onchange="filtrarGrupoDash(this.value)">
+              <option value="todos" ${FILTRO_GRUPO_DASH==='todos'?'selected':''}>Todos os grupos</option>
+              <option value="sem" ${FILTRO_GRUPO_DASH==='sem'?'selected':''}>Sem grupo</option>
+              ${gruposVisiveisBase.map(g => `<option value="${g.id}" ${FILTRO_GRUPO_DASH===g.id?'selected':''}>${esc(g.nome)}</option>`).join('')}
+            </select>
           </div>
           <div class="dash-toolbar-switches">
             <div class="dash-toolbar-label">Acesso</div>
             <div class="segmented">
-            <button class="segmented-btn ${FILTRO_ORIGEM_DASH==='todos'?'ativo':''}" data-origem="todos" onclick="filtrarOrigemDash('todos')">Todos${projetosVisiveisBase.length > 0 ? `<span class="seg-count">${projetosVisiveisBase.length}</span>` : ''}</button>
-            <button class="segmented-btn ${FILTRO_ORIGEM_DASH==='meus'?'ativo':''}" data-origem="meus" onclick="filtrarOrigemDash('meus')">Meus${meus > 0 ? `<span class="seg-count">${meus}</span>` : ''}</button>
-            <button class="segmented-btn ${FILTRO_ORIGEM_DASH==='compartilhados'?'ativo':''}" data-origem="compartilhados" onclick="filtrarOrigemDash('compartilhados')">Compartilhados${compartilhados.length > 0 ? `<span class="seg-count">${compartilhados.length}</span>` : ''}</button>
+              <button class="segmented-btn ${FILTRO_ORIGEM_DASH==='todos'?'ativo':''}" data-origem="todos" onclick="filtrarOrigemDash('todos')">Todos${projetosVisiveisBase.length > 0 ? `<span class="seg-count">${projetosVisiveisBase.length}</span>` : ''}</button>
+              <button class="segmented-btn ${FILTRO_ORIGEM_DASH==='meus'?'ativo':''}" data-origem="meus" onclick="filtrarOrigemDash('meus')">Meus${meus > 0 ? `<span class="seg-count">${meus}</span>` : ''}</button>
+              <button class="segmented-btn ${FILTRO_ORIGEM_DASH==='compartilhados'?'ativo':''}" data-origem="compartilhados" onclick="filtrarOrigemDash('compartilhados')">Compartilhados${compartilhados.length > 0 ? `<span class="seg-count">${compartilhados.length}</span>` : ''}</button>
+            </div>
           </div>
         </div>
-          <div class="dash-toolbar-row dash-toolbar-secondary">
-            <div class="dash-toolbar-field">
-              <div class="dash-toolbar-label">Grupo</div>
-              <select class="resp-filter select-control flex-shrink-0" onchange="filtrarGrupoDash(this.value)">
-              <option value="todos" ${FILTRO_GRUPO_DASH==='todos'?'selected':''}>Todos os grupos</option>
-              <option value="sem" ${FILTRO_GRUPO_DASH==='sem'?'selected':''}>Sem grupo</option>
-              ${gruposVisiveisBase.map(g => `<option value="${g.id}" ${FILTRO_GRUPO_DASH===g.id?'selected':''}>${esc(g.nome)}</option>`).join('')}
-              </select>
-            </div>
-            <div class="dash-toolbar-field dash-toolbar-statusfield">
-              <div class="dash-toolbar-label">Status</div>
-              <div class="dash-status-grid">
-                ${filtros.map(f => { const label = { 'todos':'Todos' }[f] || f; const cnt = statusCountMap[f] || 0; return `<button class="filter-btn ${FILTRO_STATUS===f?'ativo':''}" onclick="setFiltro('${esc(f)}')">${label}${cnt > 0 ? `<span class="seg-count">${cnt}</span>` : ''}</button>`; }).join('')}
-              </div>
+        <div class="dash-toolbar-row dash-toolbar-secondary">
+          <div class="dash-toolbar-field dash-toolbar-statusfield">
+            <div class="dash-toolbar-label">Status</div>
+            <div class="dash-status-grid">
+              ${filtros.map(f => { const label = { 'todos':'Todos' }[f] || f; const cnt = statusCountMap[f] || 0; return `<button class="filter-btn ${FILTRO_STATUS===f?'ativo':''}" onclick="setFiltro('${esc(f)}')">${label}${cnt > 0 ? `<span class="seg-count">${cnt}</span>` : ''}</button>`; }).join('')}
             </div>
           </div>
+        </div>
       </div>
-      <div id="cards-grid-dash">`;
+      <div id="cards-grid-dash" class="dash-results">`;
 
     html += renderProjetosDash(projetosVisiveisBase, gruposVisiveisBase) + '</div>';
     const slide = VISTA_ATUAL === 'projeto';
