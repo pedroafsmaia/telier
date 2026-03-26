@@ -24,8 +24,8 @@
     <div class="form-row"><label>Identificador</label><input type="text" id="l-login" placeholder="usuario.interno" autocomplete="username"></div>
     <div class="form-row" style="position:relative"><label>Chave de acesso</label><input type="password" id="l-senha" placeholder="Digite sua senha" autocomplete="current-password" style="padding-right:38px"><button type="button" class="eye-toggle" id="l-eye" data-eye-size="16" data-eye-stroke="1.6" onclick="toggleSenhaLogin(this)" title="Mostrar senha" aria-label="Mostrar senha"><svg id="l-eye-icon" width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8S1 12 1 12z" stroke="currentColor" stroke-width="1.6"/><circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="1.6"/></svg></button></div>
     <button class="btn btn-primary" id="btn-login" onclick="fazerLogin()">Entrar</button>
-    <button class="btn btn-ghost" style="width:100%;justify-content:flex-start;margin-top:8px" onclick="modalCadastroPublico()">Criar minha conta</button>
-    <button class="btn btn-ghost" id="btn-admin-setup" style="width:100%;justify-content:flex-start;margin-top:8px;display:none" onclick="mostrar('setup')">Criar administrador inicial</button>
+    <button class="btn btn-ghost auth-inline-action" onclick="modalCadastroPublico()">Criar minha conta</button>
+    <button class="btn btn-ghost auth-inline-action hidden" id="btn-admin-setup" onclick="mostrar('setup')">Criar administrador inicial</button>
     <div id="login-err" class="auth-err hidden"></div>
   </div>
 </div>
@@ -113,7 +113,7 @@
             <span class="app-sidebar__user-name sidebar-user-name" id="sidebar-user-name"></span>
           </div>
           <div class="app-sidebar__account-actions sidebar-footer-actions">
-            <button class="btn btn-ghost btn-sm app-sidebar__account-link" id="btn-admin-toggle" style="display:none" onclick="alternarPerfilAdmin()">Modo administrador</button>
+            <button class="btn btn-ghost btn-sm app-sidebar__account-link hidden" id="btn-admin-toggle" onclick="alternarPerfilAdmin()">Modo administrador</button>
             <button class="btn btn-ghost btn-sm app-sidebar__account-link" onclick="fazerLogout()">Sair</button>
           </div>
         </div>
@@ -130,7 +130,7 @@
           <div id="topbar-breadcrumb" class="topbar-breadcrumb"></div>
         </div>
         <div class="topbar-actions">
-          <button class="topbar-bell topbar-icon-btn topbar__icon-button" id="btn-notifs" onclick="abrirNotificacoes()" title="Notificações" style="display:none">
+          <button class="topbar-bell topbar-icon-btn topbar__icon-button hidden" id="btn-notifs" onclick="abrirNotificacoes()" title="Notificações">
             <svg class="topbar__icon" width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M12 3.5a5 5 0 0 0-5 5v2.2c0 .7-.23 1.39-.66 1.94L5 14.5h14l-1.34-1.86a3.3 3.3 0 0 1-.66-1.94V8.5a5 5 0 0 0-5-5z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M9.5 17a2.5 2.5 0 0 0 5 0" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
             <span class="topbar-bell-dot hidden" id="notif-badge">0</span>
           </button>

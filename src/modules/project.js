@@ -88,9 +88,9 @@ export function renderProjeto(proj, tarefas, decisoes, abaAtiva, resumoHoras = [
   const focoBtnHtml = focoMinha && !isArquivado
     ? (focoSessaoAtiva
         ? `<button class="btn btn-sm btn-danger"
-             onclick="pararCronometro('${focoSessaoAtiva[0]}')">■ Parar</button>`
+             onclick="pararCronometro('${focoSessaoAtiva[0]}')">Parar</button>`
         : `<button class="btn btn-sm btn-primary"
-             onclick="iniciarCronometro('${focoMinha.id}','${esc(focoMinha.nome)}')">▶ Iniciar</button>`)
+             onclick="iniciarCronometro('${focoMinha.id}','${esc(focoMinha.nome)}')">Iniciar</button>`)
     : '';
   const dias = diasRestantes(proj.prazo);
   const urgente = dias !== null && dias <= 7 && !projetoConcluido(statusProjeto);
@@ -127,7 +127,7 @@ export function renderProjeto(proj, tarefas, decisoes, abaAtiva, resumoHoras = [
           ${canEdit ? `<button class="btn btn-sm" onclick="modalEditarProjeto('${proj.id}')">Editar</button>` : ''}
           ${souDono(proj.dono_id) ? `<button class="btn btn-sm" onclick="modalPermissoes('${proj.id}')">Adicionar colaborador</button>` : ''}
           ${compartilhado ? `<button class="btn btn-sm" onclick="sairProjetoCompartilhado('${proj.id}','${esc(proj.nome)}')">Sair do projeto</button>` : ''}
-          ${proj.total_horas > 0 ? `<button class="btn btn-sm" onclick="exportarTempoProjetoCSV('${proj.id}')">↓ CSV</button>` : ''}
+          ${proj.total_horas > 0 ? `<button class="btn btn-sm" onclick="exportarTempoProjetoCSV('${proj.id}')">Exportar CSV</button>` : ''}
         </div>
       </div>
       <div class="proj-meta proj-meta-compact">
@@ -149,7 +149,7 @@ export function renderProjeto(proj, tarefas, decisoes, abaAtiva, resumoHoras = [
         <div class="project-ops-card">
           <span class="project-ops-label">Foco atual</span>
           <strong class="project-ops-main">${focoTexto}</strong>
-          <span class="project-ops-sub">${focoMinha ? 'Tarefa prioritária para retomada imediata.' : 'Marque uma tarefa com ★ para orientar a operação.'}</span>
+          <span class="project-ops-sub">${focoMinha ? 'Tarefa prioritária para retomada imediata.' : 'Marque uma tarefa em foco para orientar a operação.'}</span>
           ${focoBtnHtml ? `<div class="project-ops-buttons">${focoBtnHtml}</div>` : ''}
         </div>
         <div class="project-ops-card">
@@ -305,7 +305,7 @@ export async function modalEditarProjeto(id) {
       </select>
     </div>
     <div class="modal-footer">
-      ${souDono(p.dono_id) ? `<button class="btn btn-danger" onclick="deletarProjeto('${id}')" style="margin-right:auto">Excluir</button>` : ''}
+      ${souDono(p.dono_id) ? `<button class="btn btn-danger project-delete-btn" onclick="deletarProjeto('${id}')">Excluir</button>` : ''}
       <button class="btn" onclick="fecharModal()">Cancelar</button>
       <button class="btn btn-primary" id="btn-salvar-proj" onclick="salvarProjeto('${id}')">Salvar</button>
     </div>`);

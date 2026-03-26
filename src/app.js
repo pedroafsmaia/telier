@@ -194,7 +194,7 @@ export function mostrar(tela) {
   ['login','setup','app'].forEach(t => document.getElementById('page-' + t).classList.toggle('hidden', t !== tela));
   const setupBtn = document.getElementById('btn-admin-setup');
   const btnNotifs = document.getElementById('btn-notifs');
-  if (setupBtn) setupBtn.style.display = (tela === 'login' && NEEDS_SETUP) ? 'inline-flex' : 'none';
+  if (setupBtn) setupBtn.classList.toggle('hidden', !(tela === 'login' && NEEDS_SETUP));
   if (btnNotifs && tela !== 'app') btnNotifs.style.display = 'none';
   if (tela === 'app') {
     const userNameEl = document.getElementById('sidebar-user-name');
@@ -229,12 +229,12 @@ export function syncAdminModeUI() {
   const adminLink = document.getElementById('sidebar-link-admin');
   if (!btn) return;
   if (!isAdminRole()) {
-    btn.style.display = 'none';
-    if (adminLink) adminLink.style.display = 'none';
+    btn.classList.add('hidden');
+    if (adminLink) adminLink.classList.add('hidden');
     return;
   }
-  btn.style.display = 'inline-flex';
-  if (adminLink) adminLink.style.display = 'flex';
+  btn.classList.remove('hidden');
+  if (adminLink) adminLink.classList.remove('hidden');
   btn.innerHTML = `<svg width="12" height="12" viewBox="0 0 12 12" fill="none" style="flex-shrink:0"><path d="M1 4l3-3M1 4h4M11 8l-3 3M11 8H7" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>${ADMIN_MODE === 'admin' ? 'Modo administrador' : 'Modo colaborador'}`;
   btn.title = ADMIN_MODE === 'admin'
     ? 'Clique para usar o sistema como colaborador'
