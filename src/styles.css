@@ -940,6 +940,12 @@ body {
   background: var(--bg);
 }
 
+.app-sidebar-rail{
+  min-height:100vh;
+  background:var(--bg-low);
+  border-right:1px solid var(--border);
+}
+
 .app-main {
   min-width: 0;
   display: grid;
@@ -3800,7 +3806,7 @@ html,body{
   top:0;
   height:100vh;
   overflow:hidden;
-  background:var(--bg-low);
+  background:transparent;
 }
 .app-sidebar__inner{
   display:grid;
@@ -3892,6 +3898,27 @@ html,body{
 .today-summary-item{padding:6px 8px;border:1px solid var(--border);border-radius:var(--r);background:var(--bg)}
 .today-summary-label{display:block;font-size:var(--fs-xs);text-transform:uppercase;letter-spacing:.08em;color:var(--text-muted)}
 .today-empty{font-size:var(--fs-sm);color:var(--text-muted);padding:4px 0}
+.today-task-list{
+  margin-top:4px;
+  display:grid;
+  gap:10px;
+}
+.today-task-list__title{
+  font-size:var(--fs-lg);
+  color:var(--text);
+  line-height:1.2;
+}
+.today-task-list__copy{
+  color:var(--text-secondary);
+  font-size:var(--fs-sm);
+}
+.today-task-list .ops-list{
+  border-top:1px solid var(--border);
+}
+
+.ops-row-actions .btn.btn-primary{
+  min-width:110px;
+}
 
 /* Cards: mesma base para agrupados e sem grupo */
 .cards-grid{
@@ -3912,5 +3939,10 @@ html,body{
 .proj-card::before{width:2px}
 
 @media (max-width:960px){
+  .app-sidebar-rail{
+    border-right:none;
+    background:transparent;
+    min-height:0;
+  }
   .today-layout{grid-template-columns:1fr}
 }

@@ -9,6 +9,7 @@ import {
 } from './state.js';
 import { req, fetchProjetos, invalidarCacheProjetos } from './api.js';
 import { toast, toastUndo, setBreadcrumb, setShellView, slideContent } from './ui.js';
+import { carregarTarefasUsuarioAtivas, renderTaskOpsList } from './tasks.js';
 import {
   esc, gv, sel, avatar, tag, prazoFmt, diasRestantes, fmtHoras, fmtDuracao,
   isAdmin, isAdminRole, souDono, projetoConcluido, normalizarStatusProjeto,
@@ -119,6 +120,8 @@ export function renderPainelHoje(projetos, ativas, sessoesRecentes = [], tarefas
   const retomadas = Array.from(retomadaMap.values()).slice(0, 5);
   const horasHoje = parseFloat(resumoHoje?.horas_hoje || 0);
 
+  const tarefasHoje = (tarefasOperacao || []).slice(0, 12);
+
   return `
     <section class="today-panel">
       <div class="today-panel__header">
@@ -139,9 +142,12 @@ export function renderPainelHoje(projetos, ativas, sessoesRecentes = [], tarefas
               <div class="today-priority__meta">
                 <div class="meta-pair"><span class="meta-pair-label">Status</span><span class="meta-pair-value">${esc(prioridade.status || 'A fazer')}</span></div>
                 <div class="meta-pair"><span class="meta-pair-label">Prazo</span><span class="meta-pair-value mono">${esc(prioridade.prazo || 'Sem prazo')}</span></div>
+                <div class="meta-pair"><span class="meta-pair-label">Sessão</span><span class="meta-pair-value">${ativo ? 'Cronômetro em andamento' : 'Sem sessão ativa'}</span></div>
               </div>
               <div class="today-priority__actions">
-                <button class="btn btn-primary" onclick="abrirTarefaContexto('${prioridade.tarefaId}','${prioridade.projetoId}')">Continuar</button>
+                ${ativo
+                  ? `<button class="btn btn-primary" onclick="abrirTarefaContexto('${prioridade.tarefaId}','${prioridade.projetoId}')">Continuar</button>`
+                  : `<button class="btn btn-primary" onclick="iniciarCronometro('${prioridade.tarefaId}','${esc(prioridade.titulo)}')">Iniciar cronômetro</button>`}
                 <button class="btn" onclick="abrirTarefaContexto('${prioridade.tarefaId}','${prioridade.projetoId}')">Abrir tarefa</button>
               </div>`
               : `<div class="today-empty">Nenhuma tarefa em foco. Escolha uma para começar o dia.</div>`}
@@ -175,6 +181,13 @@ export function renderPainelHoje(projetos, ativas, sessoesRecentes = [], tarefas
           </section>
         </aside>
       </div>
+
+      <section class="today-block today-task-list">
+        <div class="task-view-eyebrow">Minhas tarefas</div>
+        <div class="today-task-list__title">Fila operacional do dia</div>
+        <div class="today-task-list__copy">Decida, inicie o cronômetro e siga o fluxo sem trocar de página.</div>
+        ${renderTaskOpsList(tarefasHoje, { emptyMessage: 'Sem tarefas operacionais disponíveis para hoje.' })}
+      </section>
     </section>`;
 }
 
@@ -215,7 +228,7 @@ async function carregarDadosDashboard() {
   const params = new URLSearchParams();
   if (FILTRO_STATUS !== 'todos') params.set('status', FILTRO_STATUS);
   if (isAdminRole() && ADMIN_MODE === 'normal') params.set('as_member', '1');
-  const [projetos, ativas, grupos, ultimaSessao, resumoHoje, focoGlobal, sessoesRecentes, tarefasOperacao] = await Promise.all([
+  const [projetos, ativas, grupos, ultimaSessao, resumoHoje, focoGlobal, sessoesRecentes, tarefasOperacao, tarefasTransversais] = await Promise.all([
     fetchProjetos(params),
     req('GET', `/tempo/ativas${isAdminRole() && ADMIN_MODE === 'normal' ? '?as_member=1' : ''}`).catch(() => []),
     req('GET', `/grupos${isAdminRole() && ADMIN_MODE === 'normal' ? '?as_member=1' : ''}`).catch(() => []),
@@ -224,8 +237,16 @@ async function carregarDadosDashboard() {
     req('GET', '/auth/foco-global').catch(() => null),
     req('GET', '/tempo/sessoes-recentes?limit=6').catch(() => []),
     req('GET', '/tarefas/operacao-hoje').catch(() => []),
+    carregarTarefasUsuarioAtivas().catch(() => ({ tarefas: [] })),
   ]);
-  return { projetos, ativas, grupos, ultimaSessao, resumoHoje, focoGlobal, sessoesRecentes, tarefasOperacao };
+  const mapaTarefas = new Map();
+  (tarefasOperacao || []).forEach(t => mapaTarefas.set(String(t.id || t.tarefa_id), t));
+  (tarefasTransversais?.tarefas || []).forEach(t => {
+    const key = String(t.id || t.tarefa_id);
+    if (!mapaTarefas.has(key)) mapaTarefas.set(key, t);
+  });
+  const tarefasOperacaoMescladas = Array.from(mapaTarefas.values());
+  return { projetos, ativas, grupos, ultimaSessao, resumoHoje, focoGlobal, sessoesRecentes, tarefasOperacao: tarefasOperacaoMescladas };
 }
 
 function notificarPrazos(projetos) {

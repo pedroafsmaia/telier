@@ -114,6 +114,61 @@ function filtrarTarefasTransversais(tarefas) {
   return lista;
 }
 
+export async function carregarTarefasUsuarioAtivas() {
+  const projetos = await fetchProjetos(new URLSearchParams());
+  const projetosAtivos = (projetos || []).filter(p => normalizarStatusProjeto(p.status) !== 'Arquivado');
+  const tarefasPorProjeto = await Promise.all(projetosAtivos.map(async projeto => {
+    const tarefas = await req('GET', `/projetos/${projeto.id}/tarefas`).catch(() => []);
+    return normalizarColaboradoresTarefas(tarefas).map(t => ({
+      ...t,
+      projeto_id: t.projeto_id || projeto.id,
+      projeto_nome: t.projeto_nome || projeto.nome,
+      grupo_id: projeto.grupo_id || null,
+      grupo_nome: projeto.grupo_nome || '',
+      projeto_status: projeto.status,
+    }));
+  }));
+  const tarefas = tarefasPorProjeto.flat().filter(t => t.status !== 'Concluída' || tarefaCompartilhadaComigo(t) || t.dono_id === EU?.id);
+  return {
+    tarefas,
+    projetosFiltro: [...new Map(tarefas.map(t => [t.projeto_id, { id: t.projeto_id, nome: t.projeto_nome }])).values()],
+  };
+}
+
+export function renderTaskOpsList(tarefas = [], opts = {}) {
+  const timerAtivoPorTarefa = {};
+  Object.entries(TIMERS).forEach(([sid, timer]) => { timerAtivoPorTarefa[timer.tarefaId] = sid; });
+  const emptyMessage = opts.emptyMessage || 'Nenhuma tarefa encontrada.';
+  const rows = tarefas.map(t => {
+    const minha = t.dono_id === EU?.id;
+    const podeCron = minha || (t.colaboradores_ids || []).includes(EU?.id) || isAdmin();
+    const sessaoAtiva = timerAtivoPorTarefa[t.id] || t.sessao_ativa_id || null;
+    const acaoLabel = t.status === 'Em andamento' || t.foco ? 'Continuar' : 'Iniciar';
+    const prazoHoje = t.data ? prazoFmt(t.data, true) : '—';
+    return `
+      <article class="ops-row">
+        <div class="ops-row-main">
+          <div class="ops-row-title ${t.status === 'Concluída' ? 'concluida' : ''}">${esc(t.nome || t.tarefa_nome || 'Tarefa sem nome')}</div>
+          <div class="ops-row-context">${esc(t.projeto_nome || '—')}${t.grupo_nome ? ` · ${esc(t.grupo_nome)}` : ''}</div>
+        </div>
+        <div class="ops-row-meta">
+          ${metaPair('Status', t.status || '—', t.status === 'Bloqueada' ? 'is-alert' : 'is-muted')}
+          ${metaPair('Prazo', prazoHoje, t.data && diasRestantes(t.data) <= 0 ? 'is-alert' : 'is-muted')}
+          ${t.prioridade ? metaPair('Prioridade', t.prioridade, t.prioridade === 'Alta' ? 'is-warn' : 'is-muted') : ''}
+        </div>
+        <div class="ops-row-actions">
+          ${sessaoAtiva
+            ? `<button class="btn btn-danger btn-sm" onclick="pararCronometro('${sessaoAtiva}')"><svg width="11" height="11" viewBox="0 0 11 11" fill="none" style="margin-right:4px"><rect x="2" y="2" width="7" height="7" rx="1" fill="currentColor"/></svg>Parar</button>`
+            : (podeCron
+              ? `<button class="btn btn-primary btn-sm" onclick="iniciarCronometro('${t.id}','${esc(t.nome || t.tarefa_nome || 'Tarefa')}')"><svg width="12" height="12" viewBox="0 0 12 12" fill="none" style="margin-right:4px"><path d="M4 2.5l5 3.5-5 3.5v-7z" fill="currentColor"/></svg>${acaoLabel}</button>`
+              : '')}
+          <button class="btn btn-sm" onclick="abrirTarefaContexto('${t.id || t.tarefa_id}','${t.projeto_id}')">Abrir tarefa</button>
+        </div>
+      </article>`;
+  }).join('');
+  return `<div class="ops-list">${rows || `<div class="table-empty-row">${emptyMessage}</div>`}</div>`;
+}
+
 export async function abrirTarefaContexto(taskId, projectId, opts = {}) {
   if (!taskId || !projectId) return;
   if (!opts.fromRoute) {
@@ -172,25 +227,11 @@ export async function renderMinhasTarefas(opts = {}) {
     </div>
   </div>`;
   try {
-    const projetos = await fetchProjetos(new URLSearchParams());
-    const projetosAtivos = (projetos || []).filter(p => normalizarStatusProjeto(p.status) !== 'Arquivado');
-    const tarefasPorProjeto = await Promise.all(projetosAtivos.map(async projeto => {
-      const tarefas = await req('GET', `/projetos/${projeto.id}/tarefas`).catch(() => []);
-      return normalizarColaboradoresTarefas(tarefas).map(t => ({
-        ...t,
-        projeto_id: t.projeto_id || projeto.id,
-        projeto_nome: t.projeto_nome || projeto.nome,
-        grupo_id: projeto.grupo_id || null,
-        grupo_nome: projeto.grupo_nome || '',
-        projeto_status: projeto.status,
-      }));
-    }));
-    const tarefas = tarefasPorProjeto.flat().filter(t => t.status !== 'Concluída' || tarefaCompartilhadaComigo(t) || t.dono_id === EU?.id);
+    const { tarefas, projetosFiltro } = await carregarTarefasUsuarioAtivas();
     const operacaoHoje = await req('GET', '/tarefas/operacao-hoje').catch(() => []);
     const resumoHoje = await req('GET', '/tempo/resumo-hoje').catch(() => null);
     const recentes = await req('GET', '/tempo/sessoes-recentes?limit=6').catch(() => []);
     const tarefasFiltradas = filtrarTarefasTransversais(tarefas);
-    const projetosFiltro = [...new Map(tarefas.map(t => [t.projeto_id, { id: t.projeto_id, nome: t.projeto_nome }])).values()];
     const minhas = tarefas.filter(t => t.dono_id === EU?.id).length;
     const compartilhadas = tarefas.filter(t => tarefaCompartilhadaComigo(t)).length;
     const emAndamento = tarefas.filter(t => t.status === 'Em andamento').length;
@@ -206,9 +247,9 @@ export async function renderMinhasTarefas(opts = {}) {
       <section class="task-home-topbar">
         <div class="task-home-topbar-head">
           <div class="task-home-topbar-main">
-          <div class="section-kicker">Operação transversal</div>
+          <div class="section-kicker">Hoje · visão ampliada</div>
           <div class="dash-title">Minhas tarefas</div>
-          <div class="dash-sub dash-sub-tight">A unidade de trabalho do Telier passa a ser a tarefa. Projeto e grupo entram como contexto estrutural, não como ponto inicial de uso.</div>
+          <div class="dash-sub dash-sub-tight">Mesma superfície operacional da tela Hoje, com filtros e escopo ampliados para gestão transversal.</div>
           </div>
           <div class="task-home-topbar-actions">
             <button class="btn" onclick="continuarUltimaTarefa()">Continuar última tarefa</button>
@@ -287,31 +328,12 @@ export async function renderMinhasTarefas(opts = {}) {
         <div class="task-list-head">
           <div>
             <div class="task-view-eyebrow">Visão transversal</div>
-            <div class="task-view-title">Todas as tarefas no seu contexto de trabalho</div>
-            <div class="task-view-copy">Abra a tarefa diretamente. Use o projeto apenas quando precisar do contexto maior.</div>
+            <div class="task-view-title">Lista completa de tarefas no seu contexto de trabalho</div>
+            <div class="task-view-copy">Mantenha o foco na execução: iniciar, parar e retomar cronômetro ficam na ação principal de cada linha.</div>
           </div>
           <div class="task-view-kpi">${tarefasFiltradas.length} resultado${tarefasFiltradas.length === 1 ? '' : 's'}</div>
         </div>
-        <div class="ops-list">
-          ${tarefasFiltradas.map(t => `
-            <article class="ops-row">
-              <div class="ops-row-main">
-                <div class="ops-row-title ${t.status === 'Concluída' ? 'concluida' : ''}">${esc(t.nome)}</div>
-                <div class="ops-row-context">${esc(t.projeto_nome || '—')}${t.grupo_nome ? ` · ${esc(t.grupo_nome)}` : ''}</div>
-              </div>
-              <div class="ops-row-meta">
-                <div class="resp-chip">${avatar(t.dono_nome,'avatar-sm')} <span>${esc(t.dono_nome || '—')}</span></div>
-                ${metaPair('Prioridade', t.prioridade || '—', t.prioridade === 'Alta' ? 'is-warn' : 'is-muted')}
-                ${metaPair('Status', t.status || '—', t.status === 'Bloqueada' ? 'is-alert' : 'is-muted')}
-                ${metaPair('Prazo', t.data ? prazoFmt(t.data, true) : '—', t.data && diasRestantes(t.data) <= 0 ? 'is-alert' : 'is-muted')}
-              </div>
-              <div class="ops-row-actions">
-                <button class="btn btn-primary btn-sm" onclick="abrirTarefaContexto('${t.id}','${t.projeto_id}')">Abrir</button>
-                <button class="btn btn-ghost btn-sm" onclick="abrirProjeto('${t.projeto_id}')">Projeto</button>
-              </div>
-            </article>
-          `).join('') || `<div class="table-empty-row">Nenhuma tarefa encontrada.</div>`}
-        </div>
+        ${renderTaskOpsList(tarefasFiltradas, { emptyMessage: 'Nenhuma tarefa encontrada.' })}
       </div>`;
 
   } catch (e) {
