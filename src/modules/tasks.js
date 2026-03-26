@@ -169,6 +169,53 @@ export function renderTaskOpsList(tarefas = [], opts = {}) {
   return `<div class="ops-list">${rows || `<div class="table-empty-row">${emptyMessage}</div>`}</div>`;
 }
 
+export function renderTaskOperationalSurface(opts = {}) {
+  const {
+    mode = 'expanded',
+    kicker = '',
+    title = '',
+    description = '',
+    actionsHtml = '',
+    metricsHtml = '',
+    overviewHtml = '',
+    filtersHtml = '',
+    listEyebrow = 'Fila operacional',
+    listTitle = 'Lista operacional',
+    listCopy = '',
+    listKpi = '',
+    tarefas = [],
+    emptyMessage = 'Nenhuma tarefa encontrada.',
+  } = opts;
+
+  const layoutClass = mode === 'today' ? 'task-ops-surface task-ops-surface--today' : 'task-ops-surface task-ops-surface--expanded';
+
+  return `
+    <section class="${layoutClass}">
+      <header class="task-ops-header">
+        <div class="task-ops-header__main">
+          ${kicker ? `<div class="section-kicker">${kicker}</div>` : ''}
+          ${title ? `<h1 class="dash-title">${esc(title)}</h1>` : ''}
+          ${description ? `<p class="dash-sub dash-sub-tight">${esc(description)}</p>` : ''}
+        </div>
+        ${actionsHtml ? `<div class="task-ops-header__actions">${actionsHtml}</div>` : ''}
+      </header>
+      ${metricsHtml ? `<div class="task-ops-metrics">${metricsHtml}</div>` : ''}
+      ${overviewHtml ? `<div class="task-ops-overview">${overviewHtml}</div>` : ''}
+      ${filtersHtml ? filtersHtml : ''}
+      <section class="task-view-surface task-ops-list-surface">
+        <div class="task-view-head">
+          <div>
+            <div class="task-view-eyebrow">${esc(listEyebrow)}</div>
+            <div class="task-view-title">${esc(listTitle)}</div>
+            ${listCopy ? `<div class="task-view-copy">${esc(listCopy)}</div>` : ''}
+          </div>
+          ${listKpi ? `<div class="task-view-kpi">${listKpi}</div>` : ''}
+        </div>
+        ${renderTaskOpsList(tarefas, { emptyMessage })}
+      </section>
+    </section>`;
+}
+
 export async function abrirTarefaContexto(taskId, projectId, opts = {}) {
   if (!taskId || !projectId) return;
   if (!opts.fromRoute) {
@@ -228,7 +275,6 @@ export async function renderMinhasTarefas(opts = {}) {
   </div>`;
   try {
     const { tarefas, projetosFiltro } = await carregarTarefasUsuarioAtivas();
-    const operacaoHoje = await req('GET', '/tarefas/operacao-hoje').catch(() => []);
     const resumoHoje = await req('GET', '/tempo/resumo-hoje').catch(() => null);
     const recentes = await req('GET', '/tempo/sessoes-recentes?limit=6').catch(() => []);
     const tarefasFiltradas = filtrarTarefasTransversais(tarefas);
@@ -243,27 +289,7 @@ export async function renderMinhasTarefas(opts = {}) {
       status === 'todos' ? tarefas.length : tarefas.filter(t => t.status === status).length,
     ]));
 
-    c.innerHTML = `
-      <section class="task-home-topbar">
-        <div class="task-home-topbar-head">
-          <div class="task-home-topbar-main">
-          <div class="section-kicker">Hoje · visão ampliada</div>
-          <div class="dash-title">Minhas tarefas</div>
-          <div class="dash-sub dash-sub-tight">Mesma superfície operacional da tela Hoje, com filtros e escopo ampliados para gestão transversal.</div>
-          </div>
-          <div class="task-home-topbar-actions">
-            <button class="btn" onclick="continuarUltimaTarefa()">Continuar última tarefa</button>
-            <button class="btn btn-primary" onclick="modalNovaTarefa()">Nova tarefa</button>
-          </div>
-        </div>
-        <div class="task-home-metric-strip" aria-label="Métricas de operação">
-          <div class="task-home-metric"><span class="task-home-metric-label">Tarefas visíveis</span><span class="task-home-metric-value">${tarefasFiltradas.length}</span></div>
-          <div class="task-home-metric"><span class="task-home-metric-label">Em andamento</span><span class="task-home-metric-value">${emAndamento}</span></div>
-          <div class="task-home-metric"><span class="task-home-metric-label">Meu foco</span><span class="task-home-metric-value">${comFoco}</span></div>
-          <div class="task-home-metric"><span class="task-home-metric-label">Horas hoje</span><span class="task-home-metric-value">${parseFloat(resumoHoje?.horas_hoje || 0).toFixed(1)}h</span></div>
-        </div>
-      </section>
-      <div class="dash-toolbar task-view-toolbar task-toolbar-studio">
+    const filtersHtml = `<div class="dash-toolbar task-view-toolbar task-toolbar-studio">
         <div class="dash-toolbar-row dash-toolbar-primary">
           <div class="task-toolbar-main dash-toolbar-searchblock">
             <div class="dash-toolbar-label">Consulta</div>
@@ -297,44 +323,31 @@ export async function renderMinhasTarefas(opts = {}) {
             </div>
           </div>
         </div>
-      </div>
-      <div class="task-view-surface">
-        <div class="task-view-head">
-          <div>
-            <div class="task-view-eyebrow">Fila operacional</div>
-            <div class="task-view-title">${operacaoHoje.length} ponto${operacaoHoje.length === 1 ? '' : 's'} de reentrada hoje</div>
-            <div class="task-view-copy">As tarefas abaixo priorizam retomada, foco e continuidade de execução.</div>
-          </div>
-          <div class="task-view-kpi">${recentes.length} recente${recentes.length === 1 ? '' : 's'}</div>
-        </div>
-        <div class="mapa-list">
-          ${(operacaoHoje.length ? operacaoHoje : tarefasFiltradas.slice(0, 6)).map((t, index) => `
-            <div class="mapa-item clickable ${t.foco ? 'is-foco' : ''}" onclick="abrirTarefaContexto('${t.id || t.tarefa_id}','${t.projeto_id}')">
-              <div class="mapa-rank">${String(index + 1).padStart(2, '0')}</div>
-              <div class="mapa-body">
-                <div class="mapa-nome">${esc(t.nome || t.tarefa_nome)}</div>
-                <div class="mapa-sub">${esc(t.projeto_nome || 'Projeto')} ${t.grupo_nome ? `· ${esc(t.grupo_nome)}` : ''}</div>
-              </div>
-              <div class="mapa-tags">
-                ${t.prioridade ? metaPair('Prioridade', t.prioridade, t.prioridade === 'Alta' ? 'is-warn' : 'is-muted') : ''}
-                ${t.status ? metaPair('Status', t.status, t.status === 'Bloqueada' ? 'is-alert' : 'is-muted') : ''}
-                ${t.foco ? metaPair('Foco', 'Ativo', 'is-info') : ''}
-              </div>
-            </div>
-          `).join('') || `<div class="empty-state"><div class="empty-text">Nenhuma tarefa operacional encontrada</div></div>`}
-        </div>
-      </div>
-      <div class="task-view-surface task-list-surface">
-        <div class="task-list-head">
-          <div>
-            <div class="task-view-eyebrow">Visão transversal</div>
-            <div class="task-view-title">Lista completa de tarefas no seu contexto de trabalho</div>
-            <div class="task-view-copy">Mantenha o foco na execução: iniciar, parar e retomar cronômetro ficam na ação principal de cada linha.</div>
-          </div>
-          <div class="task-view-kpi">${tarefasFiltradas.length} resultado${tarefasFiltradas.length === 1 ? '' : 's'}</div>
-        </div>
-        ${renderTaskOpsList(tarefasFiltradas, { emptyMessage: 'Nenhuma tarefa encontrada.' })}
       </div>`;
+
+    c.innerHTML = renderTaskOperationalSurface({
+      mode: 'expanded',
+      kicker: 'Hoje · visão ampliada',
+      title: 'Minhas tarefas',
+      description: 'Mesma superfície operacional da tela Hoje, com filtros e escopo ampliados para gestão transversal.',
+      actionsHtml: `
+        <button class="btn" onclick="continuarUltimaTarefa()">Continuar última tarefa</button>
+        <button class="btn btn-primary" onclick="modalNovaTarefa()">Nova tarefa</button>`,
+      metricsHtml: `
+        <div class="task-home-metric-strip" aria-label="Métricas de operação">
+          <div class="task-home-metric"><span class="task-home-metric-label">Tarefas visíveis</span><span class="task-home-metric-value">${tarefasFiltradas.length}</span></div>
+          <div class="task-home-metric"><span class="task-home-metric-label">Em andamento</span><span class="task-home-metric-value">${emAndamento}</span></div>
+          <div class="task-home-metric"><span class="task-home-metric-label">Meu foco</span><span class="task-home-metric-value">${comFoco}</span></div>
+          <div class="task-home-metric"><span class="task-home-metric-label">Horas hoje</span><span class="task-home-metric-value">${parseFloat(resumoHoje?.horas_hoje || 0).toFixed(1)}h</span></div>
+        </div>`,
+      filtersHtml,
+      listEyebrow: 'Fila operacional',
+      listTitle: 'Lista completa de tarefas no seu contexto de trabalho',
+      listCopy: 'Mantenha o foco na execução: iniciar, parar e retomar cronômetro ficam na ação principal de cada linha.',
+      listKpi: `${tarefasFiltradas.length} resultado${tarefasFiltradas.length === 1 ? '' : 's'} · ${recentes.length} recente${recentes.length === 1 ? '' : 's'}`,
+      tarefas: tarefasFiltradas,
+      emptyMessage: 'Nenhuma tarefa encontrada.',
+    });
 
   } catch (e) {
     c.innerHTML = `<div class="error-block">${esc(e.message)}</div>`;

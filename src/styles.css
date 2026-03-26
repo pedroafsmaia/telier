@@ -930,26 +930,33 @@ body {
 
 #page-app {
   min-height: 100vh;
+  height: 100dvh;
   background: var(--bg);
 }
 
 .app-shell {
   min-height: 100vh;
+  height: 100dvh;
   display: grid;
   grid-template-columns: 248px minmax(0, 1fr);
   background: var(--bg);
+  overflow: hidden;
 }
 
 .app-sidebar-rail{
   min-height:100vh;
+  height:100dvh;
   background:var(--bg-low);
   border-right:1px solid var(--border);
+  position:relative;
+  overflow:hidden;
 }
 
 .app-main {
   min-width: 0;
   display: grid;
   grid-template-rows: 42px minmax(0, 1fr);
+  min-height: 0;
 }
 
 .app-main-scroll {
@@ -1436,10 +1443,6 @@ body {
 }
 
 @media (max-width: 900px) {
-  .app-shell {
-    grid-template-columns: 1fr;
-  }
-
   .topbar {
     padding: 0 18px;
   }
@@ -2167,6 +2170,31 @@ tr:hover td{
 }
 
 /* TOPBAR ESPECÍFICA — MINHAS TAREFAS */
+.task-ops-surface{
+  display:grid;
+  gap:10px;
+}
+.task-ops-header{
+  display:grid;
+  grid-template-columns:minmax(0,1fr) auto;
+  align-items:end;
+  gap:16px;
+}
+.task-ops-header__main{min-width:0}
+.task-ops-header__actions{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  flex-wrap:wrap;
+  justify-content:flex-end;
+}
+.task-ops-header__actions .btn{min-height:var(--btn-h-sm)}
+.task-ops-metrics{
+  display:grid;
+  gap:8px;
+}
+.task-ops-list-surface{margin-top:2px}
+
 .task-home-topbar{
   display:grid;
   gap:10px;
@@ -3046,7 +3074,6 @@ tr:hover td{
 
 @media (max-width: 640px){
   .topbar-menu{display:inline-flex;align-items:center;justify-content:center}
-  .app-shell{grid-template-columns:1fr}
   .topbar{padding:0 12px;gap:8px}
   .topbar-breadcrumb{display:flex;width:100%;min-width:0}
   .topbar-crumb,.topbar-crumb.atual{max-width:38vw}
@@ -3149,7 +3176,6 @@ html,body{
 
 @media (max-width: 900px){
   .topbar-menu{display:inline-flex;align-items:center;justify-content:center}
-  .app-shell{grid-template-columns:1fr}
 
   .topbar{
     padding:0 14px;
@@ -3620,10 +3646,9 @@ html,body{
   padding:0;
   position:sticky;
   top:0;
-  height:100vh;
+  height:100dvh;
   overflow:hidden;
-  border-right:1px solid var(--border);
-  background:var(--bg-low);
+  background:transparent;
 }
 .app-sidebar__inner{
   display:grid;
@@ -3759,6 +3784,16 @@ html,body{
 @media (max-width:900px){
   .app-shell{
     grid-template-columns:1fr;
+    height:auto;
+    min-height:100vh;
+    overflow:visible;
+  }
+  .app-sidebar-rail{
+    height:auto;
+    min-height:0;
+    border-right:none;
+    background:transparent;
+    overflow:visible;
   }
   .app-sidebar{
     position:fixed;
@@ -3766,10 +3801,12 @@ html,body{
     top:0;
     bottom:0;
     width:min(86vw,340px);
-    height:100vh;
+    height:100dvh;
     transform:translateX(-102%);
     transition:transform .2s ease;
     z-index:920;
+    background:var(--bg-low);
+    border-right:1px solid var(--border);
   }
   .app-sidebar__nav{
     gap:6px;
@@ -3794,30 +3831,7 @@ html,body{
 }
 
 /* PRESCRITIVO FINAL — SIDEBAR E DASHBOARD */
-.app-shell{
-  min-height:100vh;
-  align-items:stretch;
-}
-.app-main{
-  min-height:100vh;
-}
-.app-sidebar{
-  position:sticky;
-  top:0;
-  height:100vh;
-  overflow:hidden;
-  background:transparent;
-}
-.app-sidebar__inner{
-  display:grid;
-  grid-template-rows:auto minmax(0,1fr) auto;
-  height:100%;
-}
-.app-sidebar__middle{
-  min-height:0;
-  overflow-y:auto;
-  overflow-x:hidden;
-}
+.app-main{height:100%;min-height:0}
 
 /* Sidebar: contraste neutro e estável */
 .app-sidebar__link,
@@ -3847,11 +3861,9 @@ html,body{
 }
 
 /* Dashboard simplificado em 3 blocos */
-.today-panel{
-  display:grid;
-  gap:10px;
+.task-ops-surface--today .task-ops-list-surface{
+  margin-top:4px;
 }
-.today-panel__header{margin-bottom:2px}
 .today-layout{
   display:grid;
   grid-template-columns:minmax(0,1.4fr) minmax(260px,.8fr);
@@ -3945,4 +3957,11 @@ html,body{
     min-height:0;
   }
   .today-layout{grid-template-columns:1fr}
+  .task-ops-header{
+    grid-template-columns:1fr;
+    align-items:start;
+  }
+  .task-ops-header__actions{
+    justify-content:flex-start;
+  }
 }

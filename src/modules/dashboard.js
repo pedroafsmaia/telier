@@ -9,7 +9,7 @@ import {
 } from './state.js';
 import { req, fetchProjetos, invalidarCacheProjetos } from './api.js';
 import { toast, toastUndo, setBreadcrumb, setShellView, slideContent } from './ui.js';
-import { carregarTarefasUsuarioAtivas, renderTaskOpsList } from './tasks.js';
+import { carregarTarefasUsuarioAtivas, renderTaskOperationalSurface } from './tasks.js';
 import {
   esc, gv, sel, avatar, tag, prazoFmt, diasRestantes, fmtHoras, fmtDuracao,
   isAdmin, isAdminRole, souDono, projetoConcluido, normalizarStatusProjeto,
@@ -120,18 +120,14 @@ export function renderPainelHoje(projetos, ativas, sessoesRecentes = [], tarefas
   const retomadas = Array.from(retomadaMap.values()).slice(0, 5);
   const horasHoje = parseFloat(resumoHoje?.horas_hoje || 0);
 
-  const tarefasHoje = (tarefasOperacao || []).slice(0, 12);
+  const tarefasHoje = (tarefasOperacao || []).slice(0, 8);
 
-  return `
-    <section class="today-panel">
-      <div class="today-panel__header">
-        <div>
-          <div class="section-kicker">Hoje</div>
-          <h1 class="dash-title">Painel diário</h1>
-          <p class="dash-sub dash-sub-tight">Comece pela prioridade do dia e retome o que ficou em andamento.</p>
-        </div>
-      </div>
-
+  return renderTaskOperationalSurface({
+    mode: 'today',
+    kicker: 'Hoje',
+    title: 'Painel diário',
+    description: 'Comece pela prioridade do dia e retome o que ficou em andamento.',
+    overviewHtml: `
       <div class="today-layout">
         <div class="today-layout__main">
           <section class="today-block">
@@ -167,7 +163,6 @@ export function renderPainelHoje(projetos, ativas, sessoesRecentes = [], tarefas
               : `<div class="today-empty">Sem histórico recente para retomar agora.</div>`}
           </section>
         </div>
-
         <aside class="today-layout__side">
           <section class="today-block">
             <div class="task-view-eyebrow">Hoje até agora</div>
@@ -180,15 +175,14 @@ export function renderPainelHoje(projetos, ativas, sessoesRecentes = [], tarefas
             </div>
           </section>
         </aside>
-      </div>
-
-      <section class="today-block today-task-list">
-        <div class="task-view-eyebrow">Minhas tarefas</div>
-        <div class="today-task-list__title">Fila operacional do dia</div>
-        <div class="today-task-list__copy">Decida, inicie o cronômetro e siga o fluxo sem trocar de página.</div>
-        ${renderTaskOpsList(tarefasHoje, { emptyMessage: 'Sem tarefas operacionais disponíveis para hoje.' })}
-      </section>
-    </section>`;
+      </div>`,
+    listEyebrow: 'Minhas tarefas',
+    listTitle: 'Fila operacional do dia',
+    listCopy: 'Decida, inicie o cronômetro e siga o fluxo sem trocar de página.',
+    listKpi: `${tarefasHoje.length} tarefa${tarefasHoje.length === 1 ? '' : 's'} na visão resumida`,
+    tarefas: tarefasHoje,
+    emptyMessage: 'Sem tarefas operacionais disponíveis para hoje.',
+  });
 }
 
 export function toggleStartday() {
