@@ -45,197 +45,137 @@ export function renderInicioDia(projetos, ativas, ultimaSessao = null, focoGloba
 }
 
 export function renderPainelHoje(projetos, ativas, sessoesRecentes = [], tarefasOperacao = [], ultimaSessao = null, focoGlobal = null, resumoHoje = null) {
-  const focoProjeto = projetos.find(p => p.minha_tarefa_foco);
-  const focoNome = focoGlobal?.tarefa_nome || (focoProjeto ? focoProjeto.minha_tarefa_foco : null);
-  const focoProjId = focoGlobal?.projeto_id || focoProjeto?.id;
-  const focoProjNome = focoGlobal?.projeto_nome || (focoProjeto ? focoProjeto.nome : null);
-  const urgenciasProjeto = projetos.filter(p => {
-    const dias = diasRestantes(p.prazo);
-    return dias !== null && dias <= 2 && ![ 'Concluído', 'Arquivado' ].includes(normalizarStatusProjeto(p.status));
-  }).sort((a, b) => (a.prazo || '9999-12-31').localeCompare(b.prazo || '9999-12-31'));
-  const urgenciasTarefa = tarefasOperacao.filter(t => {
-    const dias = diasRestantes(t.data || null);
-    return dias !== null && dias <= 1 && t.status !== 'Concluída';
-  }).sort((a, b) => (a.data || '9999-12-31').localeCompare(b.data || '9999-12-31'));
-  const urgencias = [
-    ...urgenciasTarefa.slice(0, 3).map(t => ({
-      tipo: 'tarefa',
-      id: t.id,
-      nome: t.nome,
-      projeto_id: t.projeto_id,
-      projeto_nome: t.projeto_nome,
-      prazo: t.data,
-    })),
-    ...urgenciasProjeto.slice(0, 3).map(p => ({
-      tipo: 'projeto',
-      nome: p.nome,
-      projeto_id: p.id,
-      projeto_nome: p.nome,
-      prazo: p.prazo,
-    })),
-  ].slice(0, 4);
   const ativo = ativas[0] || null;
-  const retomadas = tarefasOperacao.filter(t => t.foco || t.status === 'Em andamento').slice(0, 4);
-  const recentes = (sessoesRecentes.length ? sessoesRecentes : (ultimaSessao ? [ultimaSessao] : [])).slice(0, 4);
-  const estadoBloco = (itens) => (itens.length === 0 ? 'is-empty' : (itens.length === 1 ? 'is-single' : 'is-list'));
+  const tarefaFoco = tarefasOperacao.find(t => t.foco) || null;
+  const tarefaUrgente = tarefasOperacao
+    .filter(t => {
+      const dias = diasRestantes(t.data || null);
+      return dias !== null && dias <= 1 && t.status !== 'Concluída';
+    })
+    .sort((a, b) => (a.data || '9999-12-31').localeCompare(b.data || '9999-12-31'))[0] || null;
 
-  const renderLinhaRetomada = (t) => {
-    const dias = diasRestantes(t.data || null);
-    const prazo = t.data ? prazoFmt(t.data, true) : 'Sem prazo';
-    return `<button class="startday-op-row" onclick="abrirTarefaContexto('${t.id}','${t.projeto_id}')">
-      <span class="startday-op-main">
-        <span class="startday-op-title">${esc(t.nome)}</span>
-        <span class="startday-op-context">Projeto: ${esc(t.projeto_nome)} · Status: ${esc(t.status)}</span>
-      </span>
-      <span class="startday-op-side">
-        <span class="startday-inline-meta">${t.sessao_ativa_id ? 'Estado: Em curso' : (t.foco ? 'Estado: Foco' : 'Estado: Em andamento')}</span>
-        <span class="mono startday-inline-meta">Prazo: ${esc(prazo)}${dias !== null && dias <= 1 ? ' (hoje)' : ''}</span>
-      </span>
-    </button>`;
+  const prioridade = ativo
+    ? {
+        titulo: ativo.tarefa_nome || 'Tarefa ativa',
+        projeto: ativo.projeto_nome || 'Projeto não informado',
+        status: 'Em andamento',
+        prazo: prazoFmt((tarefasOperacao.find(t => t.id === ativo.tarefa_id)?.data) || null, true),
+        tarefaId: ativo.tarefa_id,
+        projetoId: ativo.projeto_id,
+      }
+    : (focoGlobal?.tarefa_id && focoGlobal?.projeto_id)
+      ? {
+          titulo: focoGlobal.tarefa_nome || 'Tarefa em foco',
+          projeto: focoGlobal.projeto_nome || 'Projeto não informado',
+          status: 'Em foco',
+          prazo: prazoFmt((tarefasOperacao.find(t => t.id === focoGlobal.tarefa_id)?.data) || null, true),
+          tarefaId: focoGlobal.tarefa_id,
+          projetoId: focoGlobal.projeto_id,
+        }
+      : tarefaFoco
+        ? {
+            titulo: tarefaFoco.nome,
+            projeto: tarefaFoco.projeto_nome,
+            status: tarefaFoco.status || 'Em foco',
+            prazo: prazoFmt(tarefaFoco.data || null, true),
+            tarefaId: tarefaFoco.id,
+            projetoId: tarefaFoco.projeto_id,
+          }
+        : tarefaUrgente
+          ? {
+              titulo: tarefaUrgente.nome,
+              projeto: tarefaUrgente.projeto_nome,
+              status: tarefaUrgente.status || 'A fazer',
+              prazo: prazoFmt(tarefaUrgente.data || null, true),
+              tarefaId: tarefaUrgente.id,
+              projetoId: tarefaUrgente.projeto_id,
+            }
+          : null;
+
+  const retomadaMap = new Map();
+  const registrarRetomada = (item) => {
+    if (!item?.tarefaId || retomadaMap.has(item.tarefaId)) return;
+    retomadaMap.set(item.tarefaId, item);
   };
-  const renderLinhaSessaoRecente = (s) => `<button class="startday-op-row startday-op-row--compact" onclick="abrirTarefaContexto('${s.tarefa_id}','${s.projeto_id}')">
-    <span class="startday-op-main">
-      <span class="startday-op-title">${esc(s.tarefa_nome)}</span>
-      <span class="startday-op-context">Projeto: ${esc(s.projeto_nome)}</span>
-    </span>
-    <span class="startday-op-side"><span class="mono startday-inline-meta">Horas: ${fmtHoras(parseFloat(s.horas_liquidas ?? s.horas ?? 0))}</span></span>
-  </button>`;
-  const renderLinhaUrgencia = (item) => {
-    const dias = diasRestantes(item.prazo || null);
-    const acao = item.tipo === 'tarefa'
-      ? `abrirTarefaContexto('${item.id}','${item.projeto_id}')`
-      : `abrirProjeto('${item.projeto_id}')`;
-    const prazo = item.prazo ? prazoFmt(item.prazo, true) : 'Hoje';
-    const criticidade = dias !== null && dias <= 0 ? 'Crítico' : 'Atenção';
-    return `<button class="startday-op-row" onclick="${acao}">
-      <span class="startday-op-main">
-        <span class="startday-op-title">${esc(item.nome)}</span>
-        <span class="startday-op-context">${item.tipo === 'tarefa' ? `Tarefa · ${esc(item.projeto_nome)}` : `Projeto · ${esc(item.projeto_nome)}`}</span>
-      </span>
-      <span class="startday-op-side">
-        <span class="startday-inline-meta">Nível: ${criticidade}</span>
-        <span class="mono startday-inline-meta">Prazo: ${prazo}</span>
-      </span>
-    </button>`;
-  };
 
-  let tempoRodando = 'Sem cronômetros ativos';
-  if (ativo?.inicio) {
-    const seg = Math.floor((Date.now() - new Date(ativo.inicio.replace(' ', 'T') + 'Z').getTime()) / 1000);
-    tempoRodando = `${fmtDuracao(seg)} rodando`;
-  }
-  const ultimaAtividadeTexto = ultimaSessao?.fim
-    ? `Última: ${prazoFmt(ultimaSessao.fim, true)}`
-    : (ultimaSessao?.tarefa_nome ? `Última: ${ultimaSessao.tarefa_nome}` : 'Última: sem registro recente');
-  const estadoSessao = ativo ? 'Sessão ativa' : (focoNome ? 'Pronto para retomada' : 'Sem sessão');
+  (sessoesRecentes || []).forEach((s) => registrarRetomada({
+    tarefaId: s.tarefa_id,
+    projetoId: s.projeto_id,
+    titulo: s.tarefa_nome,
+    projeto: s.projeto_nome,
+    tempo: fmtHoras(parseFloat(s.horas_liquidas ?? s.horas ?? 0)),
+  }));
 
-  const saved = localStorage.getItem(STARTDAY_COLLAPSE_KEY);
-  const collapsed = saved === '1';
+  (tarefasOperacao || [])
+    .filter(t => t.status === 'Em andamento' || t.foco)
+    .forEach((t) => registrarRetomada({
+      tarefaId: t.id,
+      projetoId: t.projeto_id,
+      titulo: t.nome,
+      projeto: t.projeto_nome,
+      tempo: t.sessao_ativa_id ? 'Em curso' : (t.data ? `Prazo ${prazoFmt(t.data, true)}` : 'Sem tempo recente'),
+    }));
+
+  const retomadas = Array.from(retomadaMap.values()).slice(0, 5);
+  const horasHoje = parseFloat(resumoHoje?.horas_hoje || 0);
 
   return `
-    <div class="startday-wrap ${collapsed ? 'collapsed' : ''}" id="startday-wrap">
-      <div class="startday-head">
+    <section class="today-panel">
+      <div class="today-panel__header">
         <div>
           <div class="section-kicker">Hoje</div>
-          <div class="startday-title">Hoje</div>
-          <div class="startday-head-note">Veja o que retomar agora e avance sem perder contexto.</div>
-        </div>
-        <button class="startday-toggle" onclick="toggleStartday()">${collapsed ? 'Expandir' : 'Recolher'}</button>
-      </div>
-      <div class="startday-workspace">
-        <div class="startday-maincol">
-          <section class="startday-session-card ${ativo ? 'is-live' : ''}">
-            <div class="startday-session-head">
-              <div>
-                <div class="task-view-eyebrow">Em foco agora</div>
-                <div class="startday-session-title">${ativo ? esc(ativo.tarefa_nome || 'Tarefa ativa') : (focoNome ? esc(focoNome) : 'Nenhuma sessão ativa')}</div>
-                <div class="startday-session-copy">${ativo
-                  ? `${esc(ativo.projeto_nome || '')}`
-                  : (focoProjNome ? `${esc(focoProjNome)}` : 'Defina foco em uma tarefa para iniciar o dia com direção.')}</div>
-              </div>
-              <div class="startday-session-kpi">${resumoHoje ? `${parseFloat(resumoHoje.horas_hoje || 0).toFixed(1)}h hoje` : '0.0h hoje'}</div>
-            </div>
-            <div class="startday-session-meta-grid">
-              <div class="startday-meta-pair"><span class="startday-meta-label">Projeto</span><span class="startday-meta-value">${esc(ativo?.projeto_nome || focoProjNome || 'Não definido')}</span></div>
-              <div class="startday-meta-pair"><span class="startday-meta-label">Tempo</span><span class="startday-meta-value mono">${esc(tempoRodando)}</span></div>
-              <div class="startday-meta-pair"><span class="startday-meta-label">Estado</span><span class="startday-meta-value">${esc(estadoSessao)}</span></div>
-              <div class="startday-meta-pair"><span class="startday-meta-label">Atividade</span><span class="startday-meta-value">${esc(ultimaAtividadeTexto)}</span></div>
-            </div>
-            <div class="startday-session-actions">
-              ${ativo?.tarefa_id && ativo?.projeto_id
-                ? `<button class="btn btn-primary" onclick="abrirProjeto('${ativo.projeto_id}')">Abrir sessão ativa</button>`
-                : focoProjId
-                  ? `<button class="btn btn-primary" onclick="abrirProjeto('${focoProjId}')">Abrir tarefa em foco</button>`
-                  : `<button class="btn" disabled>Abrir tarefa</button>`}
-              ${ativo?.id ? `<button class="btn" onclick="pararCronometro('${ativo.id}')">Parar cronômetro</button>` : ''}
-              ${ultimaSessao?.tarefa_id && ultimaSessao?.projeto_id && !ativo?.id ? `<button class="btn" onclick="abrirTarefaContexto('${ultimaSessao.tarefa_id}','${ultimaSessao.projeto_id}')">Continuar última tarefa</button>` : ''}
-            </div>
-          </section>
-
-          <section class="startday-list-block">
-            <div class="startday-block-head">
-              <div>
-                <div class="task-view-eyebrow">Prioridades de hoje</div>
-                <div class="task-view-title">${urgencias.length ? `${urgencias.length} ponto${urgencias.length === 1 ? '' : 's'} para agir` : 'Sem urgências imediatas'}</div>
-              </div>
-            </div>
-            <div class="startday-adaptive-block ${estadoBloco(urgencias)}">
-              ${urgencias.length ? (urgencias.length === 1
-                ? renderLinhaUrgencia(urgencias[0])
-                : `<div class="startday-row-list">${urgencias.map(renderLinhaUrgencia).join('')}</div>`)
-                : `<div class="startday-empty-inline">Nenhum prazo crítico por agora.</div>`}
-            </div>
-          </section>
-
-          <section class="startday-list-block">
-            <div class="startday-block-head">
-              <div>
-                <div class="task-view-title">Para retomar agora</div>
-              </div>
-              <button class="btn btn-sm" onclick="goTasks()">Ver minhas tarefas</button>
-            </div>
-            <div class="startday-adaptive-block ${estadoBloco(retomadas)}">
-              ${retomadas.length ? (retomadas.length === 1
-                ? renderLinhaRetomada(retomadas[0])
-                : `<div class="startday-row-list">${retomadas.map(renderLinhaRetomada).join('')}</div>`)
-                : `<div class="startday-empty-inline">Sem tarefa pronta para retomada imediata.</div>`}
-            </div>
-          </section>
-        </div>
-
-        <div class="startday-sidecol">
-          <section class="startday-list-block">
-            <div class="startday-block-head">
-              <div>
-                <div class="task-view-eyebrow">Últimas sessões</div>
-                <div class="task-view-title">De onde você parou</div>
-              </div>
-            </div>
-            <div class="startday-adaptive-block ${estadoBloco(recentes)}">
-              ${recentes.length ? (recentes.length === 1
-                ? renderLinhaSessaoRecente(recentes[0])
-                : `<div class="startday-row-list">${recentes.map(renderLinhaSessaoRecente).join('')}</div>`)
-                : `<div class="startday-empty-inline">Sem sessões recentes.</div>`}
-            </div>
-          </section>
-
-          <section class="startday-list-block">
-            <div class="startday-block-head">
-              <div>
-                <div class="task-view-eyebrow">Resumo do dia</div>
-                <div class="task-view-title">${resumoHoje ? `${parseFloat(resumoHoje.horas_hoje || 0).toFixed(1)}h registradas` : 'Sem tempo lançado'}</div>
-              </div>
-            </div>
-            <div class="startday-summary-grid">
-              <div class="startday-summary-item"><span class="startday-summary-label">Sessões</span><strong>${resumoHoje?.sessoes || 0}</strong></div>
-              <div class="startday-summary-item"><span class="startday-summary-label">Tarefas</span><strong>${resumoHoje?.tarefas || 0}</strong></div>
-              <div class="startday-summary-item"><span class="startday-summary-label">Ativas</span><strong>${ativas.length}</strong></div>
-              <div class="startday-summary-item"><span class="startday-summary-label">Em andamento</span><strong>${tarefasOperacao.filter(t => t.status === 'Em andamento' || t.sessao_ativa_id).length}</strong></div>
-            </div>
-          </section>
+          <h1 class="dash-title">Painel diário</h1>
+          <p class="dash-sub dash-sub-tight">Comece pela prioridade do dia e retome o que ficou em andamento.</p>
         </div>
       </div>
-    </div>`;
+
+      <div class="today-layout">
+        <div class="today-layout__main">
+          <section class="today-block">
+            <div class="task-view-eyebrow">Prioridade do dia</div>
+            ${prioridade ? `
+              <div class="today-priority__title">${esc(prioridade.titulo)}</div>
+              <div class="today-priority__project">Projeto: ${esc(prioridade.projeto || 'Não informado')}</div>
+              <div class="today-priority__meta">
+                <div class="meta-pair"><span class="meta-pair-label">Status</span><span class="meta-pair-value">${esc(prioridade.status || 'A fazer')}</span></div>
+                <div class="meta-pair"><span class="meta-pair-label">Prazo</span><span class="meta-pair-value mono">${esc(prioridade.prazo || 'Sem prazo')}</span></div>
+              </div>
+              <div class="today-priority__actions">
+                <button class="btn btn-primary" onclick="abrirTarefaContexto('${prioridade.tarefaId}','${prioridade.projetoId}')">Continuar</button>
+                <button class="btn" onclick="abrirTarefaContexto('${prioridade.tarefaId}','${prioridade.projetoId}')">Abrir tarefa</button>
+              </div>`
+              : `<div class="today-empty">Nenhuma tarefa em foco. Escolha uma para começar o dia.</div>`}
+          </section>
+
+          <section class="today-block">
+            <div class="task-view-eyebrow">Continuar de onde parou</div>
+            ${retomadas.length
+              ? `<div class="today-resume-list">${retomadas.map(item => `
+                <button class="today-resume-row" onclick="abrirTarefaContexto('${item.tarefaId}','${item.projetoId}')">
+                  <span class="today-resume-row__main">
+                    <span class="today-resume-row__title">${esc(item.titulo)}</span>
+                    <span class="today-resume-row__project">${esc(item.projeto)}</span>
+                  </span>
+                  <span class="today-resume-row__time mono">${esc(item.tempo || '—')}</span>
+                </button>`).join('')}</div>`
+              : `<div class="today-empty">Sem histórico recente para retomar agora.</div>`}
+          </section>
+        </div>
+
+        <aside class="today-layout__side">
+          <section class="today-block">
+            <div class="task-view-eyebrow">Hoje até agora</div>
+            <div class="today-total-hours mono">${horasHoje.toFixed(1)}h</div>
+            <div class="today-summary-grid">
+              <div class="today-summary-item"><span class="today-summary-label">Sessões</span><strong>${resumoHoje?.sessoes || 0}</strong></div>
+              <div class="today-summary-item"><span class="today-summary-label">Tarefas</span><strong>${resumoHoje?.tarefas || 0}</strong></div>
+              <div class="today-summary-item"><span class="today-summary-label">Ativas</span><strong>${ativas.length}</strong></div>
+              <div class="today-summary-item"><span class="today-summary-label">Em andamento</span><strong>${(tarefasOperacao || []).filter(t => t.status === 'Em andamento' || t.sessao_ativa_id).length}</strong></div>
+            </div>
+          </section>
+        </aside>
+      </div>
+    </section>`;
 }
 
 export function toggleStartday() {
@@ -327,20 +267,9 @@ function renderTodayHome(dados) {
   const {
     projetos, ativas, sessoesRecentes, tarefasOperacao, ultimaSessao, focoGlobal, resumoHoje,
   } = dados;
-  return `${renderPainelHoje(projetos, ativas, sessoesRecentes, tarefasOperacao, ultimaSessao, focoGlobal, resumoHoje)}
-    <div class="dash-header dash-header-spaced dash-head-grid">
-      <div class="dash-head-main">
-        <div class="section-kicker">Painel diário</div>
-        <div class="dash-title">Seu fluxo de hoje</div>
-        <div class="dash-sub dash-sub-tight">Comece pela tarefa em foco e avance pelas prioridades do dia.</div>
-      </div>
-      <div class="dash-actions">
-        <button class="btn btn-primary" onclick="continuarUltimaTarefa()">Continuar última tarefa</button>
-        <button class="btn" onclick="modalNovaTarefa()">Nova tarefa</button>
-        <button class="btn" onclick="goTasks()">Minhas tarefas</button>
-      </div>
-    </div>`;
+  return renderPainelHoje(projetos, ativas, sessoesRecentes, tarefasOperacao, ultimaSessao, focoGlobal, resumoHoje);
 }
+
 
 function renderProjectsHome(resumo) {
   const {
@@ -480,7 +409,7 @@ export function renderProjetosDash(projetos, grupos) {
   if (FILTRO_ORIGEM_DASH === 'todos' && compartilhados.length) {
     html += `<div class="shared-spotlight">
       <div class="dash-section-title"><h3>Compartilhados comigo</h3><span class="dash-section-note">Acesso direto ou herdado por grupo</span></div>
-      <div class="cards-grid">${renderCardsDash(compartilhados)}</div>
+      <div class="grupo-content-shell"><div class="cards-grid">${renderCardsDash(compartilhados)}</div></div>
     </div>`;
     listaAgrupada = lista.filter(p => Number(p.compartilhado_comigo) !== 1);
     if (listaAgrupada.length) {
@@ -502,7 +431,7 @@ export function renderProjetosDash(projetos, grupos) {
     const pctConcl = gprojetos.length ? Math.round((concluidos / gprojetos.length) * 100) : 0;
     const grupoStatus = grupo.status || 'Ativo';
     const grupoArquivado = grupoStatus === 'Arquivado';
-    const progressColor = pctConcl === 100 ? 'var(--green)' : 'var(--blue)';
+    const progressColor = pctConcl === 100 ? 'var(--green)' : 'var(--accent)';
     html += `
       <div class="grupo-section ${grupoArquivado ? 'is-archived' : ''}" id="gs-${grupo.id}"
         draggable="true"
@@ -562,11 +491,11 @@ export function renderProjetosDash(projetos, grupos) {
         <div class="grupo-sem-label">Sem grupo</div>
         <div class="grupo-drop-indicator">Solte para remover do grupo</div>
         ${semGrupo.length
-          ? `<div class="cards-grid">${renderCardsDash(semGrupo)}</div>`
+          ? `<div class="grupo-content-shell"><div class="cards-grid">${renderCardsDash(semGrupo)}</div></div>`
           : `<div class="grupo-empty-zone"><span class="grupo-drop-hint">Arraste projetos aqui para desagrupar</span></div>`}
       </div>`;
     } else {
-      html += `<div class="cards-grid">${renderCardsDash(semGrupo)}</div>`;
+      html += `<div class="grupo-content-shell"><div class="cards-grid">${renderCardsDash(semGrupo)}</div></div>`;
     }
   }
 
