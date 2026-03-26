@@ -24,10 +24,6 @@ function projectTabKey(id) {
   return `telier_project_tab_${id}`;
 }
 
-function projectTaskViewKey(id) {
-  return `telier_project_task_view_${id}`;
-}
-
 export async function abrirProjeto(id, opts = {}) {
   if (!opts.fromRoute) {
     return window.goProjeto ? window.goProjeto(id) : null;
@@ -50,8 +46,7 @@ export async function abrirProjeto(id, opts = {}) {
     c.style.opacity = '';
     c.style.pointerEvents = '';
     restaurarEstadoTarefasProjeto(id);
-    const viewSalva = localStorage.getItem(projectTaskViewKey(id)) || 'lista';
-    setTarefasView(viewSalva === 'kanban' ? 'kanban' : 'lista');
+    setTarefasView('lista');
     const abaSalvaRaw = localStorage.getItem(projectTabKey(id)) || 'tarefas';
     const abaSalva = ['tarefas', 'mapa', 'relatorio', 'aovivo'].includes(abaSalvaRaw) ? abaSalvaRaw : 'tarefas';
     slideContent('right');
