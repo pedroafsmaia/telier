@@ -74,7 +74,7 @@ export function toggleSenhaReset(btn) {
 
 export async function fazerLogin() {
   // Import here to avoid circular dependencies
-  const { mostrar } = await import('./app.js');
+  const { mostrar } = await import('../app.js');
   const { carregarTimersAtivos } = await import('./timer.js');
   const { iniciarStatusPoll } = await import('./notifications.js');
 
@@ -217,7 +217,7 @@ export async function fazerSetup() {
       senha: document.getElementById('s-senha').value,
     });
     toast('Conta criada com sucesso!');
-    const { mostrar } = await import('./app.js');
+    const { mostrar } = await import('../app.js');
     mostrar('login');
   } catch (e) {
     errEl.textContent = e.message;
@@ -254,6 +254,6 @@ export async function fazerLogout() {
   localStorage.removeItem('ea_user');
   localStorage.removeItem(ADMIN_MODE_KEY);
   setAdminMode('admin');
-  const { mostrar } = await import('./app.js');
+  const { mostrar } = await import('../app.js');
   mostrar('login');
 }

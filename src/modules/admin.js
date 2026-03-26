@@ -209,7 +209,7 @@ export async function abrirCentralAdmin(aba = 'agora') {
           <td>${esc(d.grupo_nome)}</td>
           <td class="mono">${fmtHoras(h)}</td>
           <td style="width:200px">
-            <div style="height:6px;background:var(--bg4);border-radius:3px;overflow:hidden">
+            <div style="height:6px;background:var(--bg-hover);border-radius:3px;overflow:hidden">
               <div style="height:100%;width:${pct}%;background:var(--accent);border-radius:3px"></div>
             </div>
           </td>
@@ -247,11 +247,13 @@ export async function abrirCentralAdmin(aba = 'agora') {
 }
 
 export async function renderTimelineHoje(el) {
+  if (!el) return;
   el.innerHTML = `<div class="loading"><div class="spinner"></div></div>`;
   try {
     const rows = await req('GET', '/admin/timeline-hoje');
+    if (!el.isConnected) return;
     if (!rows.length) {
-      el.innerHTML = `<div style="color:var(--text3);padding:16px">Sem sessões registradas hoje.</div>`;
+      el.innerHTML = `<div style="color:var(--text-muted);padding:16px">Sem sessões registradas hoje.</div>`;
       return;
     }
     const START = 480, RANGE = 720;
@@ -292,6 +294,7 @@ export async function renderTimelineHoje(el) {
       <div class="timeline-wrap">${rowsHtml}</div>
       <div class="tl-axis">${axis}</div>`;
   } catch (err) {
+    if (!el?.isConnected) return;
     el.innerHTML = `<div class="error-block">${esc(err.message)}</div>`;
   }
 }

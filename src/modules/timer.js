@@ -127,6 +127,8 @@ export function renderTimerDock() {
   }, 1000);
 }
 
+export const renderTimerWidget = renderTimerDock;
+
 export function modalAdicionarIntervalo(sessaoId) {
   abrirModal(`
     <h2>Adicionar intervalo</h2>

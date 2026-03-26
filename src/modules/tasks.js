@@ -230,12 +230,12 @@ export function renderKanbanInterno(el, tarefas) {
         const nome = todosNomes[i] || '?';
         const isDono = id === t.dono_id;
         return `<div class="avatar avatar-sm kanban-av${isDono?' kanban-av-dono':''}"
-                     style="margin-left:${i>0?'-6px':'0'};border:2px solid var(--bg2)"
+                     style="margin-left:${i>0?'-6px':'0'};border:2px solid var(--bg-card)"
                      title="${esc(nome)}${isDono?' (dono)':''}">${iniciais(nome)}</div>`;
       }).join('')}
       ${extra > 0
         ? `<div class="avatar avatar-sm kanban-av-more" title="${esc(tooltipExtra)}"
-               style="margin-left:-6px;border:2px solid var(--bg2)">+${extra}</div>`
+               style="margin-left:-6px;border:2px solid var(--bg-card)">+${extra}</div>`
         : ''}
     </div>`;
 
@@ -252,7 +252,7 @@ export function renderKanbanInterno(el, tarefas) {
                  ondragstart="event.dataTransfer.setData('tarefaId',this.dataset.tarefaId)"
                  onclick="modalEditarTarefa('${t.id}')">
       <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:6px;margin-bottom:6px">
-        <div style="font-size:var(--fs-090);color:${isConcluida?'var(--text3)':'var(--text)'};
+        <div style="font-size:var(--fs-base);color:${isConcluida?'var(--text-muted)':'var(--text)'};
                     ${isConcluida?'text-decoration:line-through;':''}line-height:1.35;flex:1">
           ${esc(t.nome)}
         </div>
@@ -263,7 +263,7 @@ export function renderKanbanInterno(el, tarefas) {
       <div style="display:flex;gap:5px;flex-wrap:wrap;align-items:center;margin-bottom:8px">
         ${tag(t.prioridade, PT[t.prioridade])}
         ${t.data
-          ? `<span class="tag ${urgt?(diasT<=0?'tag-red':'tag-yellow'):'tag-gray'} mono" style="font-size:var(--fs-075)">
+          ? `<span class="tag ${urgt?(diasT<=0?'tag-red':'tag-yellow'):'tag-gray'} mono" style="font-size:var(--fs-xs)">
                ${urgt?`<svg width="9" height="9" viewBox="0 0 24 24" fill="none" style="vertical-align:-1px;margin-right:1px"><path d="M12 3.5l9 15.5H3l9-15.5z" stroke="currentColor" stroke-width="2"/><path d="M12 9v5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><circle cx="12" cy="16.7" r="1" fill="currentColor"/></svg>`:''}${diasT<=0?'vencida':prazoFmt(t.data,true)}
              </span>`
           : ''}
@@ -313,10 +313,10 @@ export function renderKanbanInterno(el, tarefas) {
                  ondrop="this.classList.remove('drag-over');mudarStatus(event.dataTransfer.getData('tarefaId'),'${status}',null)">
       <div class="kanban-col-header" style="border-top-color:${cor}">
         ${status}
-        ${items.length > 0 ? `<span style="color:var(--text3);font-weight:400">${items.length}</span>` : ''}
+        ${items.length > 0 ? `<span style="color:var(--text-muted);font-weight:400">${items.length}</span>` : ''}
       </div>
       ${mostrar.map(cardHtml).join('')}
-      ${extra > 0 ? `<div style="text-align:center;font-size:var(--fs-075);color:var(--text3);padding:6px 0;cursor:pointer"
+      ${extra > 0 ? `<div style="text-align:center;font-size:var(--fs-xs);color:var(--text-muted);padding:6px 0;cursor:pointer"
                          onclick="sessionStorage.setItem('kb_concl_expand','1');renderKanbanInterno(this.closest('#tarefas-view-container,#aba'),TAREFAS)">
                        + ${extra} mais
                      </div>` : ''}
@@ -433,7 +433,7 @@ export function renderListaInterna(el, tarefas) {
   const tbodyConc = concOrdenadas.length ? `
     <tr class="concluidas-sep" onclick="setListaConcluidasExpandida(!LISTA_CONCLUIDAS_EXPANDIDA);renderListaInterna(this.closest('table').parentElement.parentElement,TAREFAS)"
         style="cursor:pointer">
-      <td colspan="9" style="padding:8px 12px;font-size:var(--fs-075);color:var(--text3);background:var(--bg3);user-select:none">
+      <td colspan="9" style="padding:8px 12px;font-size:var(--fs-xs);color:var(--text-muted);background:var(--bg-card);user-select:none">
         ${LISTA_CONCLUIDAS_EXPANDIDA ? '▼' : '▶'}
         ${concOrdenadas.length} concluída${concOrdenadas.length!==1?'s':''}
         — clique para ${LISTA_CONCLUIDAS_EXPANDIDA?'recolher':'expandir'}
@@ -453,13 +453,13 @@ export function renderListaInterna(el, tarefas) {
         autocomplete="off"
       >
       <div id="quick-add-step2" style="display:none;align-items:center;gap:8px;padding:6px 0;flex-wrap:wrap">
-        <span style="font-size:var(--fs-075);color:var(--text3)">Prioridade:</span>
+        <span style="font-size:var(--fs-xs);color:var(--text-muted)">Prioridade:</span>
         <select id="qa-prioridade" class="qa-sel" onkeydown="if(event.key==='Escape')quickAddCancelar()">
           <option>Alta</option>
           <option selected>Média</option>
           <option>Baixa</option>
         </select>
-        <span style="font-size:var(--fs-075);color:var(--text3)">Complexidade:</span>
+        <span style="font-size:var(--fs-xs);color:var(--text-muted)">Complexidade:</span>
         <select id="qa-complexidade" class="qa-sel" onkeydown="if(event.key==='Enter'){event.preventDefault();quickAddConfirmar('${PROJETO?.id}')}else if(event.key==='Escape')quickAddCancelar()">
           <option>Simples</option>
           <option selected>Moderada</option>
@@ -491,7 +491,7 @@ export function renderListaInterna(el, tarefas) {
           </th>
           <th>Ações</th>
         </tr></thead>
-        <tbody>${rowsPend || `<tr><td colspan="9" style="text-align:center;color:var(--text3);padding:24px"><div style="font-style:italic">Nenhuma tarefa ainda.</div><div style="font-size:var(--fs-080);margin-top:8px;color:var(--text2)">Comece por uma tarefa principal, com prioridade e prazo.</div>${!projetoArquivado ? `<button class="btn btn-sm btn-primary" style="margin-top:10px" onclick="modalNovaTarefa('${PROJETO?.id}')">+ Criar primeira tarefa</button>` : ''}</td></tr>`}${tbodyConc}</tbody>
+        <tbody>${rowsPend || `<tr><td colspan="9" style="text-align:center;color:var(--text-muted);padding:24px"><div style="font-style:italic">Nenhuma tarefa ainda.</div><div style="font-size:var(--fs-080);margin-top:8px;color:var(--text2)">Comece por uma tarefa principal, com prioridade e prazo.</div>${!projetoArquivado ? `<button class="btn btn-sm btn-primary" style="margin-top:10px" onclick="modalNovaTarefa('${PROJETO?.id}')">+ Criar primeira tarefa</button>` : ''}</td></tr>`}${tbodyConc}</tbody>
       </table>
     </div>
     </div>
@@ -505,12 +505,12 @@ export function renderListaInterna(el, tarefas) {
         const sessaoAtiva = timerAtivoPorTarefa2[t.id];
         const data = t.data ? prazoFmt(t.data, true) : '—';
         const statusBtn = canEdit
-          ? `<select class="status-sel status-select" style="height:28px;padding:2px 4px;font-size:var(--fs-075)" onchange="mudarStatus('${t.id}',this.value,this)">
+          ? `<select class="status-sel status-select" style="height:28px;padding:2px 4px;font-size:var(--fs-xs)" onchange="mudarStatus('${t.id}',this.value,this)">
               ${['A fazer','Em andamento','Bloqueada','Concluída'].map(s =>
                 `<option value="${s}" ${s===t.status?'selected':''}>${s}</option>`
               ).join('')}
             </select>`
-          : `<span class="tag" style="font-size:var(--fs-075)">${esc(t.status)}</span>`;
+          : `<span class="tag" style="font-size:var(--fs-xs)">${esc(t.status)}</span>`;
         return `<div class="task-card ${t.status==='Concluída'?'concluida':''}" data-status="${esc(t.status)}">
           <div class="task-card-header">
             <div class="task-card-title ${t.foco&&minha?'em-foco':''} ${t.status==='Concluída'?'concluida':''}">${esc(t.nome)}</div>
@@ -521,7 +521,7 @@ export function renderListaInterna(el, tarefas) {
             ${t.colaboradores_ids?.length ? renderColabsStack(t.colaboradores_ids) : ''}
             ${tag(t.complexidade, DT[t.complexidade])}
             ${tag(t.prioridade, PT[t.prioridade])}
-            <span class="task-card-chip" style="margin-left:auto;color:var(--text3);border:none;background:transparent">${esc(data)}</span>
+            <span class="task-card-chip" style="margin-left:auto;color:var(--text-muted);border:none;background:transparent">${esc(data)}</span>
           </div>
           <div class="task-card-footer">
             <div style="flex:1">${statusBtn}</div>
@@ -531,11 +531,11 @@ export function renderListaInterna(el, tarefas) {
               ${canEdit ? `<button class="btn btn-ghost btn-icon btn-sm" onclick="duplicarTarefa('${t.id}')" title="Duplicar"><svg width="13" height="13" viewBox="0 0 13 13" fill="none"><rect x="2" y="3" width="6" height="6" rx="1" stroke="currentColor" stroke-width="1.2"/><rect x="5" y="6" width="6" height="6" rx="1" stroke="currentColor" stroke-width="1.2"/></svg></button>` : ''}
               ${canEdit ? `<button class="btn btn-ghost btn-icon btn-sm" onclick="modalEditarTarefa('${t.id}')" title="Editar"><svg width="13" height="13" viewBox="0 0 13 13" fill="none"><path d="M2 9.5V11h1.5l5.5-5.5-1.5-1.5L2 9.5zM10.85 2.65a1 1 0 0 0-1.42 0l-.79.79 1.42 1.42.79-.79a1 1 0 0 0 0-1.42z" fill="currentColor"/></svg></button>` : ''}
               ${canEdit ? `<button class="btn btn-danger btn-icon btn-sm" onclick="deletarTarefa('${t.id}')" title="Excluir"><svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M1.5 1.5l9 9M10.5 1.5l-9 9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></button>` : ''}
-              ${sessaoAtiva ? `<button class="btn btn-danger btn-sm " onclick="pararCronometro('${sessaoAtiva}')" style="font-size:var(--fs-075)" title="Parar"><svg width="11" height="11" viewBox="0 0 11 11" fill="none" style="margin-right:4px"><rect x="2" y="2" width="7" height="7" rx="1" fill="currentColor"/></svg>Parar</button>` : (podeCron ? `<button class="btn btn-ghost btn-sm" onclick="iniciarCronometro('${t.id}','${esc(t.nome)}')" style="color:var(--green)" title="Iniciar"><svg width="12" height="12" viewBox="0 0 12 12" fill="none" style="margin-right:4px"><path d="M4 2.5l5 3.5-5 3.5v-7z" fill="currentColor"/></svg>Cronômetro</button>` : '')}
+              ${sessaoAtiva ? `<button class="btn btn-danger btn-sm " onclick="pararCronometro('${sessaoAtiva}')" style="font-size:var(--fs-xs)" title="Parar"><svg width="11" height="11" viewBox="0 0 11 11" fill="none" style="margin-right:4px"><rect x="2" y="2" width="7" height="7" rx="1" fill="currentColor"/></svg>Parar</button>` : (podeCron ? `<button class="btn btn-ghost btn-sm" onclick="iniciarCronometro('${t.id}','${esc(t.nome)}')" style="color:var(--green)" title="Iniciar"><svg width="12" height="12" viewBox="0 0 12 12" fill="none" style="margin-right:4px"><path d="M4 2.5l5 3.5-5 3.5v-7z" fill="currentColor"/></svg>Cronômetro</button>` : '')}
             </div>
           </div>
         </div>`;
-      }).join('') || `<div style="text-align:center;color:var(--text3);padding:24px;background:var(--bg2);border:1px solid var(--border);border-radius:var(--r2)"><div style="font-style:italic">Nenhuma tarefa ainda.</div><div style="font-size:var(--fs-080);margin-top:8px;color:var(--text2)">Comece por uma tarefa principal, com prioridade e prazo.</div>${!projetoArquivado ? `<button class="btn btn-sm btn-primary" style="margin-top:10px" onclick="modalNovaTarefa('${PROJETO?.id}')">+ Criar primeira tarefa</button>` : ''}</div>`}
+      }).join('') || `<div style="text-align:center;color:var(--text-muted);padding:24px;background:var(--bg-card);border:1px solid var(--border);border-radius:var(--r2)"><div style="font-style:italic">Nenhuma tarefa ainda.</div><div style="font-size:var(--fs-080);margin-top:8px;color:var(--text2)">Comece por uma tarefa principal, com prioridade e prazo.</div>${!projetoArquivado ? `<button class="btn btn-sm btn-primary" style="margin-top:10px" onclick="modalNovaTarefa('${PROJETO?.id}')">+ Criar primeira tarefa</button>` : ''}</div>`}
     </div>
     </div>`;
 }
@@ -624,7 +624,7 @@ export function renderMapa(el, tarefas) {
               ${tag(t.prioridade, PT[t.prioridade])}
               ${tag(t.complexidade, DT[t.complexidade])}
               ${t.foco&&minha ? '<span class="tag tag-purple">Meu foco</span>' : ''}
-              ${urgt ? `<span class="tag ${diasT<=0?'tag-red':'tag-yellow'} mono" style="font-size:var(--fs-075)">
+              ${urgt ? `<span class="tag ${diasT<=0?'tag-red':'tag-yellow'} mono" style="font-size:var(--fs-xs)">
                           ${diasT<=0?'vencida':diasT+'d'}
                         </span>` : ''}
               ${cronHtml}
@@ -685,7 +685,7 @@ export async function renderRelatorio(el, tarefas) {
           <div class="rel-nome">${esc(t.nome)}</div>
           <div class="resp-chip">${avatar(t.dono_nome,'avatar-sm')}</div>
           ${horasItem(t.id)}
-          <svg width="12" height="12" viewBox="0 0 12 12" fill="none" style="color:var(--text3);flex-shrink:0">
+          <svg width="12" height="12" viewBox="0 0 12 12" fill="none" style="color:var(--text-muted);flex-shrink:0">
             <path d="M4.5 2l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
           </svg>
         </div>`).join('')}

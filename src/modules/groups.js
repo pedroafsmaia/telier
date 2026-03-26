@@ -397,7 +397,7 @@ export function renderGrupoAbaRelatorio(el, projetos) {
         const pct = t ? Math.round(c / t * 100) : 0;
         const vencido = p.prazo && p.prazo < hoje && !['Concluído','Arquivado'].includes(status);
         const diasP   = p.prazo ? diasRestantes(p.prazo) : null;
-        const barColor = isArqP ? 'var(--text3)' : pct === 100 ? 'var(--green)' : vencido ? 'var(--red)' : 'var(--accent)';
+        const barColor = isArqP ? 'var(--text-muted)' : pct === 100 ? 'var(--green)' : vencido ? 'var(--red)' : 'var(--accent)';
         return `
           <div class="mapa-item clickable ${isArqP ? 'is-muted' : ''} ${vencido ? 'is-alert' : ''}" onclick="abrirProjeto('${p.id}')">
             <div class="mapa-body">

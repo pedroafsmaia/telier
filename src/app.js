@@ -1,8 +1,11 @@
 // ── APP ENTRY POINT ──
 import {
   TOKEN, EU, NEEDS_SETUP, FORCE_PASSWORD_CHANGE, ADMIN_MODE, ADMIN_MODE_KEY,
+  TAREFAS, TASK_MOBILE_FILTERS_OPEN, LISTA_CONCLUIDAS_EXPANDIDA,
   API,
   setToken, setEU, setNeedsSetup, setForcePasswordChange, setAdminMode, setNotifTab,
+  setFiltroOrigemTarefas, setFiltroRespTar, setFiltroStatusTarefa,
+  setTaskMobileFiltersOpen, setTarefasView, setListaConcluidasExpandida,
 } from './modules/state.js';
 import { req, invalidarCacheProjetos } from './modules/api.js';
 import { toast, aplicarTema, alternarTema, fecharModal } from './modules/ui.js';
@@ -11,7 +14,7 @@ import { renderDash, carregarFiltrosDash, salvarFiltrosDash, renderInicioDia, to
 import { abrirProjeto, voltarDash, renderProjeto, mudarAba, renderAba, renderProjetoAoVivo, recarregarProjeto, modalNovoProjeto, criarProjeto, modalEditarProjeto, salvarProjeto, deletarProjeto } from './modules/project.js';
 import { abrirGrupo, renderGrupo, mudarAbaGrupo, renderAbaGrupo, renderGrupoAbaProjetos, renderGrupoAbaTarefas, renderGrupoAbaMapa, renderGrupoAbaAoVivo, renderGrupoAbaRelatorio, carregarTarefasGrupo, carregarAoVivoGrupo, carregarAoVivoProjeto, modalNovoGrupo, criarGrupo, modalEditarGrupo, compartilharGrupo, modalCompartilharGrupo, salvarGrupo, adicionarPermGrupo, removerPermGrupo, sairGrupoCompartilhado, sairProjetoCompartilhado, acaoGrupo, modalMoverTodosGrupo, deletarGrupo } from './modules/groups.js';
 import { atualizarBadgeNotificacoes, filtrarNotificacoesPainel, renderPainelNotificacoes, carregarNotificacoes, iniciarPollNotificacoes, carregarStatus, iniciarStatusPoll, marcarNotifLida, marcarTodasNotifLidas, abrirNotificacoes, fecharPainelNotificacoes, carregarColegasAtivos, iniciarPollPresenca, renderPresenceDock, togglePresencePanel, fecharPresencePanelFora } from './modules/notifications.js';
-import { carregarTimersAtivos, iniciarCronometro, pararCronometro, renderTimerWidget, expandirSessoes, adicionarDetalheTarefa, adicionarDetalheTarefaEnter, toggleDetalheTarefa, removerDetalheTarefa } from './modules/timer.js';
+import { carregarTimersAtivos, iniciarCronometro, pararCronometro, renderTimerWidget, renderTimerDock, modalAdicionarIntervalo, criarIntervalo, editarSessao, salvarSessao, deletarSessao, editarIntervalo, salvarIntervalo, deletarIntervalo, expandirSessoes, adicionarDetalheTarefa, adicionarDetalheTarefaEnter, toggleDetalheTarefa, removerDetalheTarefa } from './modules/timer.js';
 import { atualizarPrazoHint, renderColabsStack, renderAoVivoStream, renderAbaTarefas, renderKanbanInterno, criarTarefaKanban, renderListaInterna, ordenarLista, renderMapa, renderRelatorio, renderDecisoes, mudarStatus, toggleFoco, deletarTarefa, modalEditarDecisao, salvarDecisaoEditada, deletarDecisao, modalPermissoes, adicionarPerm, removerPerm, modalNovaTarefa, criarTarefa, modalEditarTarefa, salvarTarefa, duplicarTarefa, quickAddMostrarStep2, quickAddCancelar, quickAddConfirmar, quickAddTarefa, filtrarTarefasBusca, exportarTempoProjetoCSV, modalColabsTarefa, sairTarefaCompartilhada, adicionarColab, removerColab, modalNovaDecisao, criarDecisao } from './modules/tasks.js';
 import { abrirCentralAdmin, renderTimelineHoje, exportarTempoAdminCSV, aplicarFiltroTempoAdmin, limparFiltroTempoAdmin, abrirUsuarioAdmin, modalNovoColega, promoverAdmin, modalNovoColega_legacy, criarColega } from './modules/admin.js';
 import { fazerLogin, fazerSetup, fazerLogout, fazerCadastroPublico, modalCadastroPublico, modalTrocaSenhaObrigatoria, salvarSenhaObrigatoria, modalResetSenhaUsuario, resetarSenhaUsuario, toggleSenhaLogin, toggleSenhaSetup, toggleSenhaCadastro, toggleSenhaObrigatoria, toggleSenhaReset } from './modules/auth.js';
@@ -109,9 +112,23 @@ document.addEventListener('visibilitychange', () => {
 });
 
 // ── EXPOSE _dragJustEnded AS LIVE GETTER ──
-Object.defineProperty(window, '_dragJustEnded', {
-  get() { return getDragJustEnded(); },
-  configurable: true,
+Object.defineProperties(window, {
+  _dragJustEnded: {
+    get() { return getDragJustEnded(); },
+    configurable: true,
+  },
+  TAREFAS: {
+    get() { return TAREFAS; },
+    configurable: true,
+  },
+  TASK_MOBILE_FILTERS_OPEN: {
+    get() { return TASK_MOBILE_FILTERS_OPEN; },
+    configurable: true,
+  },
+  LISTA_CONCLUIDAS_EXPANDIDA: {
+    get() { return LISTA_CONCLUIDAS_EXPANDIDA; },
+    configurable: true,
+  },
 });
 
 // ── EXPOSE ALL FUNCTIONS ON WINDOW ──
@@ -209,6 +226,15 @@ Object.assign(window, {
   iniciarCronometro,
   pararCronometro,
   renderTimerWidget,
+  renderTimerDock,
+  modalAdicionarIntervalo,
+  criarIntervalo,
+  editarSessao,
+  salvarSessao,
+  deletarSessao,
+  editarIntervalo,
+  salvarIntervalo,
+  deletarIntervalo,
   expandirSessoes,
   adicionarDetalheTarefa,
   adicionarDetalheTarefaEnter,
@@ -280,4 +306,10 @@ Object.assign(window, {
   toggleSenhaReset,
   // setters exposed for template string onclicks
   setNotifTab,
+  setFiltroOrigemTarefas,
+  setFiltroRespTar,
+  setFiltroStatusTarefa,
+  setTaskMobileFiltersOpen,
+  setTarefasView,
+  setListaConcluidasExpandida,
 });

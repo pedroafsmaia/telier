@@ -242,7 +242,7 @@ export function modalNovoProjeto(preselectGrupoId = '') {
       <div class="form-row"><label>Prazo</label><input type="date" id="m-prazo"></div>
       <div class="form-row"><label>Área (m²)</label><input type="number" id="m-area" min="0" step="0.01" placeholder="Ex: 250.5"></div>
     </div>
-    <div class="form-row"><label>Grupo <span style="color:var(--text3)">(opcional)</span></label>
+    <div class="form-row"><label>Grupo <span style="color:var(--text-muted)">(opcional)</span></label>
       <select id="m-grupo">
         <option value="">— Sem grupo —</option>
         ${_gruposDash
@@ -281,7 +281,7 @@ export async function modalEditarProjeto(id) {
       <div class="form-row"><label>Prazo</label><input type="date" id="m-prazo" value="${p.prazo||''}"></div>
       <div class="form-row"><label>Área (m²)</label><input type="number" id="m-area" min="0" step="0.01" value="${p.area_m2||''}" placeholder="Ex: 250.5"></div>
     </div>
-    <div class="form-row"><label>Grupo <span style="color:var(--text3)">(opcional)</span></label>
+    <div class="form-row"><label>Grupo <span style="color:var(--text-muted)">(opcional)</span></label>
       <select id="m-grupo">
         <option value="">— Sem grupo —</option>
         ${_gruposDash.map(g => `<option value="${g.id}" ${g.id === p.grupo_id ? 'selected' : ''}>${esc(g.nome)}</option>`).join('')}
