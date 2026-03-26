@@ -11,7 +11,7 @@ import {
 import { req, fetchProjetos, invalidarCacheProjetos } from './api.js';
 import { toast, abrirModal, fecharModal, confirmar, btnLoading, setBreadcrumb, setShellView } from './ui.js';
 import {
-  esc, gv, sel, avatar, iniciais, tag, prazoFmt, diasRestantes,
+  esc, gv, sel, avatar, iniciais, tag, metaPair, prazoFmt, diasRestantes,
   fmtDuracao, fmtHoras, isAdmin, podeEditar, souDono, tarefaCompartilhadaComigo,
   filtrarColecaoTarefas, normalizarColaboradoresTarefas,
   normalizarStatusProjeto, ST, PT, DT, PO, DO, csvEsc,
@@ -275,9 +275,9 @@ export async function renderMinhasTarefas(opts = {}) {
                 <div class="mapa-sub">${esc(t.projeto_nome || 'Projeto')} ${t.grupo_nome ? `· ${esc(t.grupo_nome)}` : ''}</div>
               </div>
               <div class="mapa-tags">
-                ${t.prioridade ? tag(t.prioridade, PT[t.prioridade]) : ''}
-                ${t.status ? tag(t.status) : ''}
-                ${t.foco ? '<span class="tag tag-purple">Foco</span>' : ''}
+                ${t.prioridade ? metaPair('Prioridade', t.prioridade, t.prioridade === 'Alta' ? 'is-warn' : 'is-muted') : ''}
+                ${t.status ? metaPair('Status', t.status, t.status === 'Bloqueada' ? 'is-alert' : 'is-muted') : ''}
+                ${t.foco ? metaPair('Foco', 'Ativo', 'is-info') : ''}
               </div>
             </div>
           `).join('') || `<div class="empty-state"><div class="empty-text">Nenhuma tarefa operacional encontrada</div></div>`}
@@ -292,40 +292,25 @@ export async function renderMinhasTarefas(opts = {}) {
           </div>
           <div class="task-view-kpi">${tarefasFiltradas.length} resultado${tarefasFiltradas.length === 1 ? '' : 's'}</div>
         </div>
-        <div class="table-wrap">
-          <table>
-            <thead>
-              <tr>
-                <th>Tarefa</th>
-                <th>Projeto</th>
-                <th>Grupo</th>
-                <th>Responsável</th>
-                <th>Prioridade</th>
-                <th>Status</th>
-                <th>Prazo</th>
-                <th>Ações</th>
-              </tr>
-            </thead>
-            <tbody>
-              ${tarefasFiltradas.map(t => `
-                <tr>
-                  <td class="${t.status === 'Concluída' ? 'concluida' : ''}">${esc(t.nome)}</td>
-                  <td><span class="tag tag-gray">${esc(t.projeto_nome || '—')}</span></td>
-                  <td>${t.grupo_nome ? `<span class="tag tag-gray">${esc(t.grupo_nome)}</span>` : '—'}</td>
-                  <td><div class="resp-chip">${avatar(t.dono_nome,'avatar-sm')} <span>${esc(t.dono_nome || '—')}</span></div></td>
-                  <td>${tag(t.prioridade, PT[t.prioridade])}</td>
-                  <td>${tag(t.status)}</td>
-                  <td><span class="mono mono-cell-muted">${t.data ? prazoFmt(t.data, true) : '—'}</span></td>
-                  <td>
-                    <div class="td-acoes">
-                      <button class="btn btn-primary btn-sm" onclick="abrirTarefaContexto('${t.id}','${t.projeto_id}')">Abrir tarefa</button>
-                      <button class="btn btn-ghost btn-sm" onclick="abrirProjeto('${t.projeto_id}')">Projeto</button>
-                    </div>
-                  </td>
-                </tr>
-              `).join('') || `<tr><td colspan="8" class="table-empty-row">Nenhuma tarefa encontrada.</td></tr>`}
-            </tbody>
-          </table>
+        <div class="ops-list">
+          ${tarefasFiltradas.map(t => `
+            <article class="ops-row">
+              <div class="ops-row-main">
+                <div class="ops-row-title ${t.status === 'Concluída' ? 'concluida' : ''}">${esc(t.nome)}</div>
+                <div class="ops-row-context">${esc(t.projeto_nome || '—')}${t.grupo_nome ? ` · ${esc(t.grupo_nome)}` : ''}</div>
+              </div>
+              <div class="ops-row-meta">
+                <div class="resp-chip">${avatar(t.dono_nome,'avatar-sm')} <span>${esc(t.dono_nome || '—')}</span></div>
+                ${metaPair('Prioridade', t.prioridade || '—', t.prioridade === 'Alta' ? 'is-warn' : 'is-muted')}
+                ${metaPair('Status', t.status || '—', t.status === 'Bloqueada' ? 'is-alert' : 'is-muted')}
+                ${metaPair('Prazo', t.data ? prazoFmt(t.data, true) : '—', t.data && diasRestantes(t.data) <= 0 ? 'is-alert' : 'is-muted')}
+              </div>
+              <div class="ops-row-actions">
+                <button class="btn btn-primary btn-sm" onclick="abrirTarefaContexto('${t.id}','${t.projeto_id}')">Abrir</button>
+                <button class="btn btn-ghost btn-sm" onclick="abrirProjeto('${t.projeto_id}')">Projeto</button>
+              </div>
+            </article>
+          `).join('') || `<div class="table-empty-row">Nenhuma tarefa encontrada.</div>`}
         </div>
       </div>`;
 
@@ -748,53 +733,34 @@ export function renderListaInterna(el, tarefas) {
     const urgenteTar = diasTarefa !== null && diasTarefa <= 2 && t.status !== 'Concluída';
     const data = dataStr ? prazoFmt(dataStr, true) : '—';
 
-    return `<tr data-status="${esc(t.status)}">
-      <td style="width:36px" onclick="event.stopPropagation()">${pin}</td>
-      <td class="td-nome ${t.foco&&minha?'em-foco':''} ${t.status==='Concluída'?'concluida':''}">
-        <div class="td-nome-main">${esc(t.nome)}</div>
-      </td>
-      <td><div class="resp-chip">${avatar(t.dono_nome,'avatar-sm')} <span>${esc(t.dono_nome||'—')}</span></div>${t.colaboradores_ids?.length ? renderColabsStack(t.colaboradores_ids) : ''}</td>
-      <td>${tag(t.complexidade, DT[t.complexidade])}</td>
-      <td>${tag(t.prioridade, PT[t.prioridade])}</td>
-      <td onclick="event.stopPropagation()">
-        ${canEdit ? `
+    return `<article class="ops-row" data-status="${esc(t.status)}">
+      <div class="ops-row-main">
+        <div class="ops-row-title ${t.foco&&minha?'em-foco':''} ${t.status==='Concluída'?'concluida':''}">${esc(t.nome)}</div>
+        <div class="ops-row-context">${esc(PROJETO?.nome || 'Projeto')} · ${esc(t.dono_nome||'—')}</div>
+      </div>
+      <div class="ops-row-meta">
+        <span onclick="event.stopPropagation()">${pin}</span>
+        ${metaPair('Complexidade', t.complexidade || '—', 'is-muted')}
+        ${metaPair('Prioridade', t.prioridade || '—', t.prioridade === 'Alta' ? 'is-warn' : 'is-muted')}
+        <span onclick="event.stopPropagation()">${canEdit ? `
           <select class="status-sel status-select" onchange="mudarStatus('${t.id}',this.value,this)">
             ${['A fazer','Em andamento','Bloqueada','Concluída'].map(s =>
               `<option value="${s}" ${s===t.status?'selected':''}>${s}</option>`
             ).join('')}
-          </select>` : tag(t.status)}
-      </td>
-      <td>${horas}</td>
-      <td>
-        <span class="mono mono-cell-muted"
-              style="${urgenteTar ? `color:${diasTarefa <= 0 ? 'var(--red)' : 'var(--yellow)'}` : ''}">
-          ${urgenteTar
-            ? `<svg width="10" height="10" viewBox="0 0 24 24" fill="none" style="vertical-align:-1px;margin-right:2px"><path d="M12 3.5l9 15.5H3l9-15.5z" stroke="currentColor" stroke-width="2"/><path d="M12 9v5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><circle cx="12" cy="16.7" r="1" fill="currentColor"/></svg>`
-            : ''}${esc(data)}
-        </span>
-      </td>
-      <td><div class="td-ações">
+          </select>` : metaPair('Status', t.status || '—', t.status === 'Bloqueada' ? 'is-alert' : 'is-muted')}</span>
+        ${metaPair('Prazo', data, urgenteTar ? 'is-alert' : 'is-muted')}
+      </div>
+      <div class="ops-row-actions">
+        ${horas}
         <button class="btn btn-ghost btn-icon btn-sm" onclick="expandirSessoes('${t.id}')" title="Abrir detalhes e registro de tempo"><svg width="14" height="14" viewBox="0 0 14 14" fill="none"><rect x="2" y="2" width="10" height="10" rx="2" stroke="currentColor" stroke-width="1.3"/><path d="M4.5 5.2h5M4.5 7h5M4.5 8.8h3" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg></button>
         ${podeCron ? `<button class="btn btn-ghost btn-icon btn-sm" onclick="modalColabsTarefa('${t.id}')" title="Colaboradores da tarefa"><svg width="14" height="14" viewBox="0 0 14 14" fill="none"><circle cx="5" cy="4.5" r="2" stroke="currentColor" stroke-width="1.3"/><path d="M1.5 11.5c0-1.93 1.57-3.5 3.5-3.5s3.5 1.57 3.5 3.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/><path d="M9 7a2 2 0 1 0 0-4M12 11.5c0-1.65-1.12-3.04-2.66-3.43" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg></button>` : ''}
-        ${canEdit ? `<button class="btn btn-ghost btn-icon btn-sm" onclick="duplicarTarefa('${t.id}')" title="Duplicar tarefa"><svg width="13" height="13" viewBox="0 0 13 13" fill="none"><rect x="2" y="3" width="6" height="6" rx="1" stroke="currentColor" stroke-width="1.2"/><rect x="5" y="6" width="6" height="6" rx="1" stroke="currentColor" stroke-width="1.2"/></svg></button>` : ''}
         ${canEdit ? `<button class="btn btn-ghost btn-icon btn-sm" onclick="modalEditarTarefa('${t.id}')" title="Editar tarefa"><svg width="13" height="13" viewBox="0 0 13 13" fill="none"><path d="M2 9.5V11h1.5l5.5-5.5-1.5-1.5L2 9.5zM10.85 2.65a1 1 0 0 0-1.42 0l-.79.79 1.42 1.42.79-.79a1 1 0 0 0 0-1.42z" fill="currentColor"/></svg></button>` : ''}
-        ${canEdit ? `<button class="btn btn-danger btn-icon btn-sm" onclick="deletarTarefa('${t.id}')" title="Excluir tarefa"><svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M1.5 1.5l9 9M10.5 1.5l-9 9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></button>` : ''}
-      </div></td>
-    </tr>`;
+      </div>
+    </article>`;
   }
 
   const rowsPend = pendOrdenadas.map(t => rowHtml(t)).join('');
   const rowsConc = concOrdenadas.map(t => rowHtml(t)).join('');
-  const tbodyConc = concOrdenadas.length ? `
-    <tr class="concluidas-sep" onclick="alternarListaConcluidasProjeto()"
-        style="cursor:pointer">
-      <td colspan="9" style="padding:8px 12px;font-size:var(--fs-xs);color:var(--text-muted);background:var(--bg-card);user-select:none">
-        ${LISTA_CONCLUIDAS_EXPANDIDA ? '▼' : '▶'}
-        ${concOrdenadas.length} concluída${concOrdenadas.length!==1?'s':''}
-        — clique para ${LISTA_CONCLUIDAS_EXPANDIDA?'recolher':'expandir'}
-      </td>
-    </tr>
-    ${LISTA_CONCLUIDAS_EXPANDIDA ? rowsConc : ''}` : '';
 
   el.innerHTML = `
     <div class="task-view-surface task-list-surface">
@@ -832,30 +798,11 @@ export function renderListaInterna(el, tarefas) {
       </div>
     </form>` : ''}
     <div class="task-table-shell">
-    <div class="table-wrap">
-      <table>
-        <thead><tr>
-          <th></th>
-          <th onclick="ordenarLista('nome')" style="cursor:pointer;user-select:none">
-            Tarefa ${LISTA_SORT.col==='nome' ? (LISTA_SORT.dir==='asc'?'↑':'↓') : ''}
-          </th>
-          <th>Origem</th>
-          <th onclick="ordenarLista('complexidade')" style="cursor:pointer;user-select:none">
-            Complexidade ${LISTA_SORT.col==='complexidade' ? (LISTA_SORT.dir==='asc'?'↑':'↓') : ''}
-          </th>
-          <th onclick="ordenarLista('prioridade')" style="cursor:pointer;user-select:none">
-            Prioridade ${LISTA_SORT.col==='prioridade' ? (LISTA_SORT.dir==='asc'?'↑':'↓') : ''}
-          </th>
-          <th>Status</th>
-          <th>Tempo</th>
-          <th onclick="ordenarLista('data')" style="cursor:pointer;user-select:none">
-            Data ${LISTA_SORT.col==='data' ? (LISTA_SORT.dir==='asc'?'↑':'↓') : ''}
-          </th>
-          <th>Ações</th>
-        </tr></thead>
-        <tbody>${rowsPend || `<tr><td colspan="9" style="text-align:center;color:var(--text-muted);padding:24px"><div style="font-style:italic">Nenhuma tarefa ainda.</div><div style="font-size:var(--fs-080);margin-top:8px;color:var(--text-secondary)">Comece por uma tarefa principal, com prioridade e prazo.</div>${!projetoArquivado ? `<button class="btn btn-sm btn-primary" style="margin-top:10px" onclick="modalNovaTarefa('${PROJETO?.id}')">+ Criar primeira tarefa</button>` : ''}</td></tr>`}${tbodyConc}</tbody>
-      </table>
-    </div>
+      <div class="ops-row-stack">
+        ${rowsPend || `<div style="text-align:center;color:var(--text-muted);padding:24px"><div style="font-style:italic">Nenhuma tarefa ainda.</div><div style="font-size:var(--fs-080);margin-top:8px;color:var(--text-secondary)">Comece por uma tarefa principal, com prioridade e prazo.</div>${!projetoArquivado ? `<button class="btn btn-sm btn-primary" style="margin-top:10px" onclick="modalNovaTarefa('${PROJETO?.id}')">+ Criar primeira tarefa</button>` : ''}</div>`}
+      </div>
+      ${concOrdenadas.length ? `<div class="task-view-copy" style="margin-top:10px;cursor:pointer" onclick="alternarListaConcluidasProjeto()">${LISTA_CONCLUIDAS_EXPANDIDA ? '▼' : '▶'} ${concOrdenadas.length} concluída${concOrdenadas.length!==1?'s':''}</div>` : ''}
+      ${LISTA_CONCLUIDAS_EXPANDIDA ? `<div class="ops-row-stack" style="margin-top:8px">${rowsConc}</div>` : ''}
     </div>
     <div class="tasks-cards task-cards-refined">
       ${todas.map(t => {
@@ -947,7 +894,7 @@ export function renderMapa(el, tarefas) {
           <div class="task-view-eyebrow" style="color:var(--red)">Bloqueadas</div>
           <div class="task-view-copy" style="color:var(--red)">Não iniciar agora:</div>
           <div class="task-status-strip">
-            ${bloqueadas.map(t => `<span class="tag tag-red">${esc(t.nome)}</span>`).join('')}
+            ${bloqueadas.map(t => metaPair('Bloqueada', t.nome, 'is-alert')).join('')}
           </div>
         </div>` : ''}
       <div class="mapa-list">
@@ -984,12 +931,10 @@ export function renderMapa(el, tarefas) {
               <div class="mapa-sub">${esc(t.dono_nome || 'Sem responsável')}</div>
             </div>
             <div class="mapa-tags">
-              ${tag(t.prioridade, PT[t.prioridade])}
-              ${tag(t.complexidade, DT[t.complexidade])}
-              ${t.foco&&minha ? '<span class="tag tag-purple">Meu foco</span>' : ''}
-              ${urgt ? `<span class="tag ${diasT<=0?'tag-red':'tag-yellow'} mono" style="font-size:var(--fs-xs)">
-                          ${diasT<=0?'vencida':diasT+'d'}
-                        </span>` : ''}
+              ${metaPair('Prioridade', t.prioridade, t.prioridade === 'Alta' ? 'is-warn' : 'is-muted')}
+              ${metaPair('Complexidade', t.complexidade, 'is-muted')}
+              ${t.foco&&minha ? metaPair('Foco', 'Meu foco', 'is-info') : ''}
+              ${urgt ? metaPair('Prazo', diasT<=0?'Vencida':`${diasT}d`, diasT<=0?'is-alert':'is-warn') : ''}
               ${cronHtml}
             </div>
           </div>`;

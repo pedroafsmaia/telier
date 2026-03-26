@@ -7,7 +7,7 @@ import {
 import { req, invalidarCacheProjetos } from './api.js';
 import { toast, toastUndo, abrirModal, fecharModal, confirmar, btnLoading, setBreadcrumb, setShellView, slideContent } from './ui.js';
 import {
-  esc, gv, sel, avatar, tag, fmtHoras, prazoFmt, diasRestantes, souDono, isAdmin, normalizarStatusProjeto,
+  esc, gv, sel, avatar, tag, metaPair, fmtHoras, prazoFmt, diasRestantes, souDono, isAdmin, normalizarStatusProjeto,
   formatarFaseProjeto, formatarStatusProjeto, formatarProgressoProjeto,
   PT, PO, DT, DO, normalizarColaboradoresTarefas, tarefaCompartilhadaComigo,
 } from './utils.js';
@@ -72,7 +72,7 @@ export async function renderGroupsHome(opts = {}) {
               <div class="section-kicker">Grupo</div>
               <div class="group-shell-card-title-row">
                 <h3 class="group-shell-card-title">${esc(grupo.nome)}</h3>
-                ${tag(grupo.status || 'Ativo')}
+                ${metaPair('Status', grupo.status || 'Ativo', (grupo.status || 'Ativo') === 'Arquivado' ? 'is-alert' : 'is-muted')}
               </div>
               <p class="group-shell-card-copy">${esc(grupo.descricao || 'Base de coordenação para projetos e tarefas relacionados.')}</p>
             </div>
@@ -221,11 +221,11 @@ export function renderGrupo(grupo, projetos, abaAtiva = 'projetos') {
         </div>
       </div>
       <div class="proj-meta">
-        <div class="proj-meta-item"><span class="proj-meta-label">Status</span>${tag(grupo.status || 'Ativo')}</div>
-        <div class="proj-meta-item"><span class="proj-meta-label">Projetos</span><span class="tag tag-gray">${grupo.total_projetos ?? nProjetos}</span></div>
-        ${grupo.area_total_m2 ? `<div class="proj-meta-item"><span class="proj-meta-label">Área total</span><span class="tag tag-gray mono">${Number(grupo.area_total_m2).toLocaleString('pt-BR')} m²</span></div>` : ''}
-        ${grupo.total_horas ? `<div class="proj-meta-item"><span class="proj-meta-label">Horas totais</span><span class="tag tag-gray mono">${fmtHoras(Number(grupo.total_horas))}</span></div>` : ''}
-        ${nAtrasados > 0 ? `<div class="proj-meta-item"><span class="proj-meta-label is-alert">⚠ Atrasados</span><span class="tag tag-red">${nAtrasados}</span></div>` : ''}
+        <div class="proj-meta-item">${metaPair('Status', grupo.status || 'Ativo', (grupo.status || 'Ativo') === 'Arquivado' ? 'is-alert' : 'is-muted')}</div>
+        <div class="proj-meta-item">${metaPair('Projetos', `${grupo.total_projetos ?? nProjetos}`, 'is-muted')}</div>
+        ${grupo.area_total_m2 ? `<div class="proj-meta-item">${metaPair('Área total', `${Number(grupo.area_total_m2).toLocaleString('pt-BR')} m²`, 'is-muted')}</div>` : ''}
+        ${grupo.total_horas ? `<div class="proj-meta-item">${metaPair('Horas totais', fmtHoras(Number(grupo.total_horas)), 'is-muted')}</div>` : ''}
+        ${nAtrasados > 0 ? `<div class="proj-meta-item">${metaPair('Atrasados', `${nAtrasados}`, 'is-alert')}</div>` : ''}
       </div>
       <div class="dash-metrics-strip detail-metrics-strip">
         <div class="dash-metric">
@@ -368,15 +368,19 @@ export async function renderGrupoAbaTarefas(el) {
       const tbody = document.getElementById('gt-tbody');
       if (!tbody) return;
       tbody.innerHTML = lista.length ? lista.map(t => `
-        <tr onclick="abrirProjeto('${t.projeto_id}')" class="clickable-row">
-          <td><span class="tag tag-gray">${esc(t.projeto_nome || '—')}</span></td>
-          <td class="${t.status==='Concluída'?'concluida':''}">${esc(t.nome)}</td>
-          <td><div class="resp-chip">${avatar(t.dono_nome,'avatar-sm')} <span>${esc(t.dono_nome||'—')}</span></div></td>
-          <td>${tag(t.prioridade, PT[t.prioridade])}</td>
-          <td>${tag(t.status)}</td>
-          <td><span class="mono mono-cell-muted">${t.data ? prazoFmt(t.data,true) : '—'}</span></td>
-        </tr>`).join('')
-      : `<tr><td colspan="6" class="table-empty-row">Nenhuma tarefa encontrada.</td></tr>`;
+        <article class="ops-row clickable-row" onclick="abrirProjeto('${t.projeto_id}')">
+          <div class="ops-row-main">
+            <div class="ops-row-title ${t.status==='Concluída'?'concluida':''}">${esc(t.nome)}</div>
+            <div class="ops-row-context">${esc(t.projeto_nome || '—')}</div>
+          </div>
+          <div class="ops-row-meta">
+            <div class="resp-chip">${avatar(t.dono_nome,'avatar-sm')} <span>${esc(t.dono_nome||'—')}</span></div>
+            ${metaPair('Prioridade', t.prioridade || '—', t.prioridade === 'Alta' ? 'is-warn' : 'is-muted')}
+            ${metaPair('Status', t.status || '—', t.status === 'Bloqueada' ? 'is-alert' : 'is-muted')}
+            ${metaPair('Prazo', t.data ? prazoFmt(t.data,true) : '—', t.data && diasRestantes(t.data) <= 0 ? 'is-alert' : 'is-muted')}
+          </div>
+        </article>`).join('')
+      : `<div class="table-empty-row">Nenhuma tarefa encontrada.</div>`;
     }
 
     window._gtAplicar = () => aplicar();
@@ -417,14 +421,9 @@ export async function renderGrupoAbaTarefas(el) {
         </div>
       </div>
       <div class="task-view-surface">
-      <div class="task-table-shell">
-      <div class="table-scroll">
-        <table class="tasks-table tasks-table-full">
-          <thead><tr><th>Projeto</th><th>Tarefa</th><th>Responsável</th><th>Prioridade</th><th>Status</th><th>Data</th></tr></thead>
-          <tbody id="gt-tbody"></tbody>
-        </table>
-      </div>
-      </div>
+        <div class="task-table-shell">
+          <div id="gt-tbody" class="ops-row-stack"></div>
+        </div>
       </div>`;
 
     window._gtFiltroProjeto = '';
@@ -480,7 +479,7 @@ export async function renderGrupoAbaMapa(el) {
           <div class="task-view-surface" style="padding:12px 14px;background:rgba(231,68,68,.06);border-color:rgba(231,68,68,.2);box-shadow:none">
             <div class="task-view-eyebrow" style="color:var(--red)">Bloqueadas</div>
             <div class="task-status-strip">
-              ${bloqueadas.map(t => `<span class="tag tag-red">${esc(t.nome)}</span>`).join('')}
+              ${bloqueadas.map(t => metaPair('Bloqueada', t.nome, 'is-alert')).join('')}
             </div>
           </div>` : ''}
         <div class="mapa-list">
@@ -496,10 +495,10 @@ export async function renderGrupoAbaMapa(el) {
                   <div class="mapa-sub">${esc(t.projeto_nome || '')} · ${esc(t.dono_nome || 'Sem responsável')}</div>
                 </div>
                 <div class="mapa-tags">
-                  ${tag(t.prioridade, PT[t.prioridade])}
-                  ${tag(t.complexidade || t.dificuldade, DT[t.complexidade || t.dificuldade])}
-                  ${t.foco && t.dono_id === EU?.id ? '<span class="tag tag-purple">Meu foco</span>' : ''}
-                  ${urgt ? `<span class="tag ${diasT <= 0 ? 'tag-red' : 'tag-yellow'} mono">${diasT <= 0 ? 'vencida' : diasT + 'd'}</span>` : ''}
+                  ${metaPair('Prioridade', t.prioridade, t.prioridade === 'Alta' ? 'is-warn' : 'is-muted')}
+                  ${metaPair('Complexidade', t.complexidade || t.dificuldade, 'is-muted')}
+                  ${t.foco && t.dono_id === EU?.id ? metaPair('Foco', 'Meu foco', 'is-info') : ''}
+                  ${urgt ? metaPair('Prazo', diasT <= 0 ? 'Vencida' : `${diasT}d`, diasT <= 0 ? 'is-alert' : 'is-warn') : ''}
                 </div>
               </div>`;
           }).join('')}

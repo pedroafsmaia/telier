@@ -7,7 +7,7 @@ import { req } from './api.js';
 import { invalidarCacheProjetos } from './api.js';
 import { toast, abrirModal, fecharModal, confirmar, btnLoading, setBreadcrumb, setShellView, slideContent } from './ui.js';
 import {
-  esc, gv, sel, avatar, tag, prazoFmt, diasRestantes, fmtHoras,
+  esc, gv, sel, avatar, tag, metaPair, prazoFmt, diasRestantes, fmtHoras,
   isAdmin, podeEditar, souDono, projetoConcluido, normalizarStatusProjeto,
   formatarFaseProjeto, formatarStatusProjeto, formatarPrioridadeProjeto, formatarAreaProjeto,
   normalizarColaboradoresTarefas, PT, FT,
@@ -131,9 +131,9 @@ export function renderProjeto(proj, tarefas, decisoes, abaAtiva, resumoHoras = [
         </div>
       </div>
       <div class="proj-meta proj-meta-compact">
-        <div class="proj-meta-item"><span class="proj-meta-label">Status</span>${tag(statusProjeto)}</div>
-        ${proj.prazo ? `<div class="proj-meta-item"><span class="proj-meta-label">Prazo</span><span class="tag ${urgente?'tag-red':'tag-gray'} mono">${prazoFmt(proj.prazo, true)}</span></div>` : ''}
-        <div class="proj-meta-item"><span class="proj-meta-label">Execução</span><span class="tag tag-gray mono">${conc}/${total}</span></div>
+        <div class="proj-meta-item">${metaPair('Status', statusProjeto, statusProjeto === 'Bloqueada' ? 'is-alert' : '')}</div>
+        ${proj.prazo ? `<div class="proj-meta-item">${metaPair('Prazo', prazoFmt(proj.prazo, true), urgente ? 'is-alert' : 'is-muted')}</div>` : ''}
+        <div class="proj-meta-item">${metaPair('Execução', `${conc}/${total}`, 'is-muted')}</div>
       </div>
       <div class="project-ops-band">
         <div class="project-ops-card project-ops-card-actions">
@@ -162,10 +162,10 @@ export function renderProjeto(proj, tarefas, decisoes, abaAtiva, resumoHoras = [
         <summary class="proj-hero-details-toggle">Detalhes do projeto</summary>
         <div class="proj-hero-details">
           <div class="proj-meta">
-            ${compartilhado ? `<div class="proj-meta-item"><span class="proj-meta-label">Acesso</span><span class="tag tag-cyan">Compartilhado ${proj.origem_compartilhamento==='grupo'?'via grupo':'direto'}</span></div>` : ''}
-            <div class="proj-meta-item"><span class="proj-meta-label">Fase</span>${tag(faseProjeto, FT[faseProjeto])}</div>
-            <div class="proj-meta-item"><span class="proj-meta-label">Prioridade</span>${tag(prioridadeProjeto, PT[prioridadeProjeto])}</div>
-            ${proj.area_m2 ? `<div class="proj-meta-item"><span class="proj-meta-label">Área</span><span class="tag tag-gray mono">${formatarAreaProjeto(proj.area_m2)}</span></div>` : ''}
+            ${compartilhado ? `<div class="proj-meta-item">${metaPair('Acesso', `Compartilhado ${proj.origem_compartilhamento==='grupo'?'via grupo':'direto'}`, 'is-info')}</div>` : ''}
+            <div class="proj-meta-item">${metaPair('Fase', faseProjeto, 'is-muted')}</div>
+            <div class="proj-meta-item">${metaPair('Prioridade', prioridadeProjeto, prioridadeProjeto === 'Alta' ? 'is-warn' : 'is-muted')}</div>
+            ${proj.area_m2 ? `<div class="proj-meta-item">${metaPair('Área', formatarAreaProjeto(proj.area_m2), 'is-muted')}</div>` : ''}
           </div>
           ${resumoHoras?.length > 1 ? `
             <div class="proj-horas-dist">

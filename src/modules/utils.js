@@ -51,6 +51,9 @@ export const PO = { 'Alta':0,'Média':1,'Baixa':2 };
 export const DO = { 'Complexa':0,'Moderada':1,'Simples':2 };
 
 export function tag(t, cls, lbl) { return `<span class="tag ${cls||ST[t]||'tag-gray'}"${lbl?' title="'+esc(lbl)+'"':''}>${esc(t)}</span>`; }
+export function metaPair(label, value, tone = '') {
+  return `<span class="meta-pair"><span class="meta-pair-label">${esc(label)}</span><span class="meta-token ${tone}">${esc(value)}</span></span>`;
+}
 export function normalizarStatusProjeto(status) {
   if (status === 'Concluída') return 'Concluído';
   if (status === 'Aguardando aprovação') return 'Em revisão'; // backward compat
