@@ -59,6 +59,7 @@ export function renderPainelHoje(projetos, ativas, sessoesRecentes = [], tarefas
   const urgencias = [
     ...urgenciasTarefa.slice(0, 3).map(t => ({
       tipo: 'tarefa',
+      id: t.id,
       nome: t.nome,
       projeto_id: t.projeto_id,
       projeto_nome: t.projeto_nome,
@@ -273,6 +274,135 @@ export function renderDashEmptyState(vazioTexto, opts = {}) {
   return `<div class="empty-state"><div class="empty-icon" aria-hidden="true"><svg width="36" height="36" viewBox="0 0 24 24" fill="none"><path d="M3 18h18" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><path d="M7 18V9.5h4V18M13 18V6h4v12" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><path d="M8 7.5l2-2 2 2M14 4l2-2 2 2" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></div><div class="empty-text">${titulo}</div><div class="empty-sub">${vazioTexto}</div>${mostrarGuia ? `<div class="empty-guide"><div class="empty-guide-item">1. Crie um projeto.</div><div class="empty-guide-item">2. Abra o projeto e adicione a primeira tarefa.</div><div class="empty-guide-item">3. Defina prioridade e prazo para organizar o fluxo.</div><div class="empty-cta"><button class="btn btn-sm btn-primary" onclick="modalNovoProjeto()">+ Criar primeiro projeto</button></div></div>` : ''}</div>`;
 }
 
+async function carregarDadosDashboard() {
+  const params = new URLSearchParams();
+  if (FILTRO_STATUS !== 'todos') params.set('status', FILTRO_STATUS);
+  if (isAdminRole() && ADMIN_MODE === 'normal') params.set('as_member', '1');
+  const [projetos, ativas, grupos, ultimaSessao, resumoHoje, focoGlobal, sessoesRecentes, tarefasOperacao] = await Promise.all([
+    fetchProjetos(params),
+    req('GET', `/tempo/ativas${isAdminRole() && ADMIN_MODE === 'normal' ? '?as_member=1' : ''}`).catch(() => []),
+    req('GET', `/grupos${isAdminRole() && ADMIN_MODE === 'normal' ? '?as_member=1' : ''}`).catch(() => []),
+    req('GET', '/tempo/ultima-sessao').catch(() => null),
+    req('GET', '/tempo/resumo-hoje').catch(() => null),
+    req('GET', '/auth/foco-global').catch(() => null),
+    req('GET', '/tempo/sessoes-recentes?limit=6').catch(() => []),
+    req('GET', '/tarefas/operacao-hoje').catch(() => []),
+  ]);
+  return { projetos, ativas, grupos, ultimaSessao, resumoHoje, focoGlobal, sessoesRecentes, tarefasOperacao };
+}
+
+function notificarPrazos(projetos) {
+  projetos.forEach(p => {
+    if (_prazoNotifShown.has(p.id)) return;
+    const dias = diasRestantes(p.prazo);
+    if (dias !== null && dias >= 0 && dias <= 3 && !projetoConcluido(p.status) && p.dono_id === EU?.id) {
+      _prazoNotifShown.add(p.id);
+      const msg = dias === 0
+        ? `"${p.nome}" vence hoje.`
+        : `"${p.nome}" vence em ${dias} dia${dias === 1 ? '' : 's'}.`;
+      toast(`Prazo próximo: ${msg}`, 'ok');
+    }
+  });
+}
+
+function getResumoProjetos(projetos, grupos) {
+  const projetosAtivos = projetos.filter(p => !projetoArquivadoNoDash(p));
+  const projetosArquivados = projetos.filter(p => projetoArquivadoNoDash(p));
+  const projetosVisiveisBase = FILTRO_STATUS === 'Arquivado' ? projetosArquivados : projetosAtivos;
+  const gruposVisiveisBase = (grupos || []).filter(g => FILTRO_STATUS === 'Arquivado'
+    ? (g.status || 'Ativo') === 'Arquivado'
+    : (g.status || 'Ativo') !== 'Arquivado');
+  const compartilhados = projetosVisiveisBase.filter(p => Number(p.compartilhado_comigo) === 1);
+  const emAndamento = projetosAtivos.filter(p => !['Concluído'].includes(normalizarStatusProjeto(p.status))).length;
+  const meus = projetosVisiveisBase.filter(p => Number(p.compartilhado_comigo) !== 1).length;
+  const filtros = ['todos','Em andamento','A fazer','Em revisão','Pausado','Concluído','Arquivado'];
+  const statusCountMap = Object.fromEntries(filtros.map(f => [f,
+    f === 'todos'
+      ? projetosVisiveisBase.length
+      : (f === 'Arquivado'
+        ? projetosArquivados.length
+        : projetosAtivos.filter(p => normalizarStatusProjeto(p.status) === f).length)
+  ]));
+  return { projetosVisiveisBase, gruposVisiveisBase, compartilhados, emAndamento, meus, filtros, statusCountMap };
+}
+
+function renderTodayHome(dados) {
+  const {
+    projetos, ativas, sessoesRecentes, tarefasOperacao, ultimaSessao, focoGlobal, resumoHoje,
+  } = dados;
+  return `${renderPainelHoje(projetos, ativas, sessoesRecentes, tarefasOperacao, ultimaSessao, focoGlobal, resumoHoje)}
+    <div class="dash-header dash-header-spaced dash-head-grid">
+      <div class="dash-head-main">
+        <div class="section-kicker">Navegação operacional</div>
+        <div class="dash-title">Fluxo diário centrado em tarefa</div>
+        <div class="dash-sub dash-sub-tight">Hoje mantém apenas a operação diária: sessão ativa, retomada, foco e urgências.</div>
+      </div>
+      <div class="dash-actions">
+        <button class="btn btn-primary" onclick="continuarUltimaTarefa()">Continuar última tarefa</button>
+        <button class="btn" onclick="modalNovaTarefa()">Nova tarefa</button>
+        <button class="btn" onclick="goTasks()">Minhas tarefas</button>
+      </div>
+    </div>`;
+}
+
+function renderProjectsHome(resumo) {
+  const {
+    projetosVisiveisBase, gruposVisiveisBase, compartilhados, emAndamento, meus, filtros, statusCountMap,
+  } = resumo;
+  return `
+    <div class="dash-header dash-header-spaced dash-head-grid">
+      <div class="dash-head-main">
+        <div class="section-kicker">Base estrutural</div>
+        <div class="dash-title">Projetos</div>
+        <div class="dash-sub dash-sub-tight">Visão estrutural de projetos organizada por grupo. Operação diária fica em Hoje e Minhas tarefas.</div>
+      </div>
+      <div class="dash-actions">
+        <button class="btn" onclick="goTasks()">Minhas tarefas</button>
+        <button class="btn" onclick="modalNovoGrupo()">Novo grupo</button>
+        <button class="btn btn-primary" onclick="modalNovoProjeto()">Novo projeto</button>
+      </div>
+    </div>
+    <div class="dash-metrics-strip">
+      <div class="dash-metric"><span class="dash-metric-label">Base visível</span><span class="dash-metric-value">${projetosVisiveisBase.length}</span></div>
+      <div class="dash-metric"><span class="dash-metric-label">Em operação</span><span class="dash-metric-value">${emAndamento}</span></div>
+      <div class="dash-metric"><span class="dash-metric-label">Compartilhados</span><span class="dash-metric-value">${compartilhados.length}</span></div>
+    </div>
+    ${compartilhados.length ? `<div class="share-hint share-hint-inline"><strong>${compartilhados.length}</strong> projeto${compartilhados.length===1?'':'s'} compartilhado${compartilhados.length===1?'':'s'} com você no momento.</div>` : ''}
+    <div class="dash-toolbar dash-toolbar-studio">
+      <div class="dash-toolbar-row dash-toolbar-primary dash-toolbar-primary-unified">
+        <div class="dash-toolbar-searchblock">
+          <div class="dash-toolbar-label">Consulta</div>
+          <input type="search" class="search-dash" id="busca-dash" placeholder="Buscar projeto ou código" value="${esc(BUSCA_DASH)}" oninput="filtrarProjetosBusca(this.value)">
+        </div>
+        <div class="dash-toolbar-field">
+          <div class="dash-toolbar-label">Grupo</div>
+          <select class="resp-filter select-control flex-shrink-0" onchange="filtrarGrupoDash(this.value)">
+            <option value="todos" ${FILTRO_GRUPO_DASH==='todos'?'selected':''}>Todos os grupos</option>
+            <option value="sem" ${FILTRO_GRUPO_DASH==='sem'?'selected':''}>Sem grupo</option>
+            ${gruposVisiveisBase.map(g => `<option value="${g.id}" ${FILTRO_GRUPO_DASH===g.id?'selected':''}>${esc(g.nome)}</option>`).join('')}
+          </select>
+        </div>
+        <div class="dash-toolbar-switches">
+          <div class="dash-toolbar-label">Acesso</div>
+          <div class="segmented">
+            <button class="segmented-btn ${FILTRO_ORIGEM_DASH==='todos'?'ativo':''}" data-origem="todos" onclick="filtrarOrigemDash('todos')">Todos${projetosVisiveisBase.length > 0 ? `<span class="seg-count">${projetosVisiveisBase.length}</span>` : ''}</button>
+            <button class="segmented-btn ${FILTRO_ORIGEM_DASH==='meus'?'ativo':''}" data-origem="meus" onclick="filtrarOrigemDash('meus')">Meus${meus > 0 ? `<span class="seg-count">${meus}</span>` : ''}</button>
+            <button class="segmented-btn ${FILTRO_ORIGEM_DASH==='compartilhados'?'ativo':''}" data-origem="compartilhados" onclick="filtrarOrigemDash('compartilhados')">Compartilhados${compartilhados.length > 0 ? `<span class="seg-count">${compartilhados.length}</span>` : ''}</button>
+          </div>
+        </div>
+      </div>
+      <div class="dash-toolbar-row dash-toolbar-secondary">
+        <div class="dash-toolbar-field dash-toolbar-statusfield">
+          <div class="dash-toolbar-label">Status</div>
+          <div class="dash-status-grid">
+            ${filtros.map(f => { const label = { 'todos':'Todos' }[f] || f; const cnt = statusCountMap[f] || 0; return `<button class="filter-btn ${FILTRO_STATUS===f?'ativo':''}" onclick="setFiltro('${esc(f)}')">${label}${cnt > 0 ? `<span class="seg-count">${cnt}</span>` : ''}</button>`; }).join('')}
+          </div>
+        </div>
+      </div>
+    </div>
+    <div id="cards-grid-dash" class="dash-results">${renderProjetosDash(projetosVisiveisBase, gruposVisiveisBase)}</div>`;
+}
+
 export async function renderDash(opts = {}) {
   window.scrollTo(0, 0);
   setProjeto(null);
@@ -283,131 +413,21 @@ export async function renderDash(opts = {}) {
   const c = document.getElementById('content');
   c.innerHTML = renderDashLoadingState();
   try {
-    const params = new URLSearchParams();
-    if (FILTRO_STATUS !== 'todos') params.set('status', FILTRO_STATUS);
-    if (isAdminRole() && ADMIN_MODE === 'normal') params.set('as_member', '1');
-    const [projetos, ativas, grupos, ultimaSessao, resumoHoje, focoGlobal, sessoesRecentes, tarefasOperacao] = await Promise.all([
-      fetchProjetos(params),
-      req('GET', `/tempo/ativas${isAdminRole() && ADMIN_MODE === 'normal' ? '?as_member=1' : ''}`).catch(() => []),
-      req('GET', `/grupos${isAdminRole() && ADMIN_MODE === 'normal' ? '?as_member=1' : ''}`).catch(() => []),
-      req('GET', '/tempo/ultima-sessao').catch(() => null),
-      req('GET', '/tempo/resumo-hoje').catch(() => null),
-      req('GET', '/auth/foco-global').catch(() => null),
-      req('GET', '/tempo/sessoes-recentes?limit=6').catch(() => []),
-      req('GET', '/tarefas/operacao-hoje').catch(() => []),
-    ]);
-
+    const dados = await carregarDadosDashboard();
+    const { projetos, ativas, grupos } = dados;
     setProjsDash(projetos);
     setAtivasDash(ativas);
     setGruposDash(grupos);
-
-    projetos.forEach(p => {
-      if (_prazoNotifShown.has(p.id)) return;
-      const dias = diasRestantes(p.prazo);
-      if (dias !== null && dias >= 0 && dias <= 3 && !projetoConcluido(p.status) && p.dono_id === EU?.id) {
-        _prazoNotifShown.add(p.id);
-        const msg = dias === 0
-          ? `"${p.nome}" vence hoje.`
-          : `"${p.nome}" vence em ${dias} dia${dias === 1 ? '' : 's'}.`;
-        toast(`Prazo próximo: ${msg}`, 'ok');
-      }
-    });
-    const projetosAtivos = projetos.filter(p => !projetoArquivadoNoDash(p));
-    const projetosArquivados = projetos.filter(p => projetoArquivadoNoDash(p));
-    const projetosVisiveisBase = FILTRO_STATUS === 'Arquivado' ? projetosArquivados : projetosAtivos;
-    const gruposVisiveisBase = (grupos || []).filter(g => FILTRO_STATUS === 'Arquivado'
-      ? (g.status || 'Ativo') === 'Arquivado'
-      : (g.status || 'Ativo') !== 'Arquivado');
-    const compartilhados = projetosVisiveisBase.filter(p => Number(p.compartilhado_comigo) === 1);
-    const emAndamento = projetosAtivos.filter(p => !['Concluído'].includes(normalizarStatusProjeto(p.status))).length;
-    const meus = projetosVisiveisBase.filter(p => Number(p.compartilhado_comigo) !== 1).length;
-    const filtros = ['todos','Em andamento','A fazer','Em revisão','Pausado','Concluído','Arquivado'];
-    const statusCountMap = Object.fromEntries(filtros.map(f => [f,
-      f === 'todos'
-        ? projetosVisiveisBase.length
-        : (f === 'Arquivado'
-          ? projetosArquivados.length
-          : projetosAtivos.filter(p => normalizarStatusProjeto(p.status) === f).length)
-    ]));
+    notificarPrazos(projetos);
 
     if (routeKind === 'today') {
       const slideHoje = VISTA_ATUAL === 'projeto';
       setVistaAtual('dash');
-      c.innerHTML = `${renderPainelHoje(projetos, ativas, sessoesRecentes, tarefasOperacao, ultimaSessao, focoGlobal, resumoHoje)}
-      <div class="dash-header dash-header-spaced dash-head-grid">
-        <div class="dash-head-main">
-          <div class="section-kicker">Estrutura</div>
-          <div class="dash-title">PrÃ³ximas camadas</div>
-          <div class="dash-sub dash-sub-tight">A operaÃ§Ã£o diÃ¡ria parte da tarefa. Projetos e grupos seguem como estrutura de organizaÃ§Ã£o e contexto.</div>
-        </div>
-        <div class="dash-actions">
-          <button class="btn btn-primary" onclick="goTasks()">Minhas tarefas</button>
-          <button class="btn" onclick="goProjects()">Projetos</button>
-          <button class="btn" onclick="goGroups()">Grupos</button>
-        </div>
-      </div>`;
+      c.innerHTML = renderTodayHome(dados);
       if (slideHoje) slideContent('left');
       return;
     }
-
-    let html = `
-      ${routeKind === 'today' ? renderPainelHoje(projetos, ativas, sessoesRecentes, tarefasOperacao, ultimaSessao, focoGlobal, resumoHoje) : ''}
-      <div class="dash-header dash-header-spaced dash-head-grid">
-        <div class="dash-head-main">
-          <div class="section-kicker">Base de projetos</div>
-          <div class="dash-title">Projetos</div>
-          <div class="dash-sub dash-sub-tight">${routeKind === 'today' ? 'A base de projetos permanece acessível abaixo da operação diária.' : 'Base ativa do escritório, organizada por grupo, status e responsabilidade.'}</div>
-        </div>
-        <div class="dash-actions">
-          <button class="btn" onclick="goTasks()">Minhas tarefas</button>
-          <button class="btn" onclick="modalNovoGrupo()">Novo grupo</button>
-          <button class="btn btn-primary" onclick="modalNovoProjeto()">Novo projeto</button>
-        </div>
-      </div>
-      <div class="dash-metrics-strip">
-        <div class="dash-metric"><span class="dash-metric-label">Base visível</span><span class="dash-metric-value">${projetosVisiveisBase.length}</span></div>
-        <div class="dash-metric"><span class="dash-metric-label">Em operação</span><span class="dash-metric-value">${emAndamento}</span></div>
-        <div class="dash-metric"><span class="dash-metric-label">Compartilhados</span><span class="dash-metric-value">${compartilhados.length}</span></div>
-      </div>
-      ${compartilhados.length ? `<div class="share-hint share-hint-inline"><strong>${compartilhados.length}</strong> projeto${compartilhados.length===1?'':'s'} compartilhado${compartilhados.length===1?'':'s'} com você no momento.</div>` : ''}
-      <div class="dash-toolbar dash-toolbar-studio">
-        <div class="dash-toolbar-row dash-toolbar-primary dash-toolbar-primary-unified">
-          <div class="dash-toolbar-searchblock">
-            <div class="dash-toolbar-label">Consulta</div>
-            <input type="search" class="search-dash" id="busca-dash" placeholder="Buscar projeto ou código" value="${esc(BUSCA_DASH)}" oninput="filtrarProjetosBusca(this.value)">
-          </div>
-          <div class="dash-toolbar-field">
-            <div class="dash-toolbar-label">Grupo</div>
-            <select class="resp-filter select-control flex-shrink-0" onchange="filtrarGrupoDash(this.value)">
-              <option value="todos" ${FILTRO_GRUPO_DASH==='todos'?'selected':''}>Todos os grupos</option>
-              <option value="sem" ${FILTRO_GRUPO_DASH==='sem'?'selected':''}>Sem grupo</option>
-              ${gruposVisiveisBase.map(g => `<option value="${g.id}" ${FILTRO_GRUPO_DASH===g.id?'selected':''}>${esc(g.nome)}</option>`).join('')}
-            </select>
-          </div>
-          <div class="dash-toolbar-switches">
-            <div class="dash-toolbar-label">Acesso</div>
-            <div class="segmented">
-              <button class="segmented-btn ${FILTRO_ORIGEM_DASH==='todos'?'ativo':''}" data-origem="todos" onclick="filtrarOrigemDash('todos')">Todos${projetosVisiveisBase.length > 0 ? `<span class="seg-count">${projetosVisiveisBase.length}</span>` : ''}</button>
-              <button class="segmented-btn ${FILTRO_ORIGEM_DASH==='meus'?'ativo':''}" data-origem="meus" onclick="filtrarOrigemDash('meus')">Meus${meus > 0 ? `<span class="seg-count">${meus}</span>` : ''}</button>
-              <button class="segmented-btn ${FILTRO_ORIGEM_DASH==='compartilhados'?'ativo':''}" data-origem="compartilhados" onclick="filtrarOrigemDash('compartilhados')">Compartilhados${compartilhados.length > 0 ? `<span class="seg-count">${compartilhados.length}</span>` : ''}</button>
-            </div>
-          </div>
-        </div>
-        <div class="dash-toolbar-row dash-toolbar-secondary">
-          <div class="dash-toolbar-field dash-toolbar-statusfield">
-            <div class="dash-toolbar-label">Status</div>
-            <div class="dash-status-grid">
-              ${filtros.map(f => { const label = { 'todos':'Todos' }[f] || f; const cnt = statusCountMap[f] || 0; return `<button class="filter-btn ${FILTRO_STATUS===f?'ativo':''}" onclick="setFiltro('${esc(f)}')">${label}${cnt > 0 ? `<span class="seg-count">${cnt}</span>` : ''}</button>`; }).join('')}
-            </div>
-          </div>
-        </div>
-      </div>
-      <div id="cards-grid-dash" class="dash-results">`;
-    }
-
-    if (routeKind !== 'today') {
-      html += renderProjetosDash(projetosVisiveisBase, gruposVisiveisBase) + '</div>';
-    }
+    const html = renderProjectsHome(getResumoProjetos(projetos, grupos));
     const slide = VISTA_ATUAL === 'projeto';
     setVistaAtual('dash');
     c.innerHTML = html;
