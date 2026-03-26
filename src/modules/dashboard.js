@@ -588,6 +588,22 @@ export function renderCardsDash(projetos) {
     const compartilhado = Number(p.compartilhado_comigo) === 1;
     const origem = p.origem_compartilhamento === 'grupo' ? 'via grupo' : p.origem_compartilhamento === 'manual' ? 'direto' : '';
     const podeCompartilhar = souDono(p.dono_id);
+    const faseTxt = FT[p.fase] || p.fase || 'Não definida';
+    const prioridadeTxt = PT[p.prioridade] || p.prioridade || 'Normal';
+    const prazoTxt = p.prazo ? prazoFmt(p.prazo, true) : 'Sem prazo';
+    const areaTxt = p.area_m2 ? `${p.area_m2.toLocaleString('pt-BR')} m²` : '—';
+    const statusTone = statusProjeto === 'Concluído'
+      ? 'ok'
+      : statusProjeto === 'Em andamento'
+        ? 'info'
+        : statusProjeto === 'Arquivado'
+          ? 'muted'
+          : 'warn';
+    const prazoTone = urgente ? 'warn' : (p.prazo ? 'base' : 'muted');
+    const progressoTxt = total ? `${conc}/${total} tarefas · ${pct}%` : 'Sem tarefas registradas';
+    const compartilhamentoTxt = compartilhado
+      ? `Compartilhado${origem ? ` · ${origem}` : ''}`
+      : 'Projeto interno';
     return `
       <div class="proj-card ${compartilhado ? 'shared' : ''}" data-status="${esc(statusProjeto)}"
         draggable="true"
@@ -595,21 +611,45 @@ export function renderCardsDash(projetos) {
         ondragend="dragProjetoEnd(event)"
         onclick="if(!_dragJustEnded)abrirProjeto('${p.id}')">
         <div class="proj-card-header">
-          <div class="proj-card-nome">${esc(p.nome)}</div>
+          <div class="proj-card-head-main">
+            <div class="proj-card-nome">${esc(p.nome)}</div>
+            <div class="proj-card-context">${esc(compartilhamentoTxt)}</div>
+          </div>
           ${souDono(p.dono_id) ? `<button class="btn btn-ghost btn-icon btn-sm proj-card-edit" onclick="event.stopPropagation();modalEditarProjeto('${p.id}')" title="Editar"><svg width="13" height="13" viewBox="0 0 13 13" fill="none"><path d="M2 9.5V11h1.5l5.5-5.5-1.5-1.5L2 9.5zM10.85 2.65a1 1 0 0 0-1.42 0l-.79.79 1.42 1.42.79-.79a1 1 0 0 0 0-1.42z" fill="currentColor"/></svg></button>` : ''}
         </div>
-        <div class="card-meta">
-          ${compartilhado ? `<div class="card-meta-item"><span class="card-meta-label">Compartilhamento</span><span class="tag tag-cyan">Compartilhado ${origem ? `· ${origem}` : ''}</span></div>` : ''}
-          <div class="card-meta-item"><span class="card-meta-label">Fase</span>${tag(p.fase, FT[p.fase])}</div>
-          <div class="card-meta-item"><span class="card-meta-label">Status</span>${tag(statusProjeto)}</div>
-          <div class="card-meta-item"><span class="card-meta-label">Prioridade</span>${tag(p.prioridade, PT[p.prioridade])}</div>
-          ${p.prazo ? `<div class="card-meta-item"><span class="card-meta-label">Prazo</span><span class="tag ${urgente?'tag-red':'tag-gray'} mono">${prazoFmt(p.prazo, true)}</span></div>` : ''}
-          ${p.area_m2 ? `<div class="card-meta-item"><span class="card-meta-label">Área</span><span class="tag tag-gray mono">${p.area_m2.toLocaleString('pt-BR')} m²</span></div>` : ''}
-          ${timerAtivo ? `<div class="card-meta-item"><span class="card-meta-label">Ativo</span><span class="tag tag-green status-badge-inline"><span class="status-dot-live">●</span> Em progresso</span></div>` : ''}
+        <div class="project-meta-grid card-meta">
+          <div class="project-meta-field">
+            <span class="project-meta-label card-meta-label">Fase</span>
+            <span class="project-meta-value">${esc(faseTxt)}</span>
+          </div>
+          <div class="project-meta-field project-meta-field-${statusTone}">
+            <span class="project-meta-label card-meta-label">Status</span>
+            <span class="project-meta-value">${esc(statusProjeto)}</span>
+          </div>
+          <div class="project-meta-field">
+            <span class="project-meta-label card-meta-label">Prioridade</span>
+            <span class="project-meta-value">${esc(prioridadeTxt)}</span>
+          </div>
+          <div class="project-meta-field project-meta-field-${prazoTone}">
+            <span class="project-meta-label card-meta-label">Prazo</span>
+            <span class="project-meta-value mono">${esc(prazoTxt)}</span>
+          </div>
+          <div class="project-meta-field">
+            <span class="project-meta-label card-meta-label">Área</span>
+            <span class="project-meta-value mono">${esc(areaTxt)}</span>
+          </div>
+          <div class="project-meta-field">
+            <span class="project-meta-label card-meta-label">Progresso</span>
+            <span class="project-meta-value mono">${esc(progressoTxt)}</span>
+          </div>
+          ${timerAtivo ? `<div class="project-meta-field project-meta-field-live">
+            <span class="project-meta-label card-meta-label">Atividade</span>
+            <span class="project-meta-value"><span class="status-dot-live">●</span> Em progresso</span>
+          </div>` : ''}
         </div>
         ${total ? `
         <div class="proj-card-progress">
-          <div class="proj-progress-nums">${conc}/${total} tarefas · ${pct}%</div>
+          <div class="proj-progress-nums">${conc}/${total} tarefas concluídas · ${pct}%</div>
           <div class="proj-progress-bar"><div class="proj-progress-fill ${pct===100?'done':'partial'}" style="width:${pct}%"></div></div>
         </div>` : ''}
         <div class="proj-card-footer">
