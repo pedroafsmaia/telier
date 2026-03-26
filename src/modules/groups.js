@@ -82,7 +82,7 @@ export async function renderGroupsHome(opts = {}) {
           </div>
           <div class="group-shell-card-metrics">
             <div class="dash-metric">
-              <div class="dash-metric-label">Projetos</button>
+              <div></div>
               <div class="dash-metric-value">${totalProjetos}</div>
             </div>
             <div class="dash-metric">
@@ -227,7 +227,7 @@ export function renderGrupo(grupo, projetos, abaAtiva = 'projetos') {
       </div>
       <div class="dash-metrics-strip detail-metrics-strip">
         <div class="dash-metric">
-          <div class="dash-metric-label">Projetos</button>
+          <div></div>
           <div class="dash-metric-value">${grupo.total_projetos ?? nProjetos}</div>
         </div>
         ${grupo.area_total_m2 ? `<div class="dash-metric">
