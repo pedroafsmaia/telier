@@ -5,7 +5,7 @@ import {
   setGrupoAtual, setVistaAtual, setUsuarios, setGrupoTaskMobileFiltersOpen, setGruposDash, setProjsDash,
 } from './state.js';
 import { req, invalidarCacheProjetos } from './api.js';
-import { toast, toastUndo, abrirModal, fecharModal, confirmar, btnLoading, setBreadcrumb, setShellView, slideContent } from './ui.js';
+import { toast, toastUndo, abrirModal, fecharModal, confirmar, btnLoading, setBreadcrumb, slideContent } from './ui.js';
 import {
   esc, gv, sel, avatar, tag, metaPair, fmtHoras, prazoFmt, diasRestantes, souDono, isAdmin, normalizarStatusProjeto,
   formatarFaseProjeto, formatarStatusProjeto, formatarProgressoProjeto,
@@ -18,7 +18,6 @@ export async function renderGroupsHome(opts = {}) {
     return window.goGroups ? window.goGroups() : null;
   }
   window.scrollTo(0, 0);
-  setShellView('groups');
   setVistaAtual('groups');
   document.title = 'Grupos · Telier';
   setBreadcrumb([{ label: 'Grupos' }]);
@@ -165,7 +164,6 @@ export async function abrirGrupo(id, opts = {}) {
     return window.goGrupo ? window.goGrupo(id) : null;
   }
   window.scrollTo(0, 0);
-  setShellView('groups');
   const c = document.getElementById('content');
   c.style.opacity = '0.4';
   c.style.pointerEvents = 'none';
@@ -198,7 +196,7 @@ export function renderGrupo(grupo, projetos, abaAtiva = 'projetos') {
   const podeGer = !!(grupo.pode_gerenciar || souDono(grupo.dono_id) || isAdmin());
 
   setBreadcrumb([
-    { label: 'Grupos', onClick: 'renderGroupsHome()' },
+    { label: 'Grupos', onClick: 'goGroups()' },
     { label: grupo.nome },
   ]);
 
@@ -206,7 +204,7 @@ export function renderGrupo(grupo, projetos, abaAtiva = 'projetos') {
   const nAtrasados = grupo.projetos_atrasados || 0;
 
   document.getElementById('content').innerHTML = `
-    <button class="btn-back" onclick="renderGroupsHome()">← Voltar para grupos</button>
+    <button class="btn-back" onclick="goGroups()">← Voltar para grupos</button>
     <section class="detail-shell"><div class="proj-hero detail-hero" data-status="${esc(grupo.status || 'Ativo')}">
       <div class="proj-hero-top">
         <div class="proj-hero-left">

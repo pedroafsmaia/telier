@@ -4,7 +4,7 @@ import {
   setUsuarios, setAdminTempoFiltro,
 } from './state.js';
 import { req } from './api.js';
-import { toast, abrirModal, fecharModal, btnLoading, setBreadcrumb, setShellView } from './ui.js';
+import { toast, abrirModal, fecharModal, btnLoading, setBreadcrumb } from './ui.js';
 import { esc, gv, avatar, tag, metaPair, fmtHoras, isAdmin, csvEsc, tempoDesde } from './utils.js';
 
 export async function abrirCentralAdmin(aba = 'agora', opts = {}) {
@@ -17,10 +17,9 @@ export async function abrirCentralAdmin(aba = 'agora', opts = {}) {
   }
   const { setProjeto } = await import('./state.js');
   setProjeto(null);
-  setShellView('admin');
   document.title = 'Central Admin · Telier';
   setBreadcrumb([
-    { label: 'Admin', onClick: 'abrirCentralAdmin()' },
+    { label: 'Admin', onClick: 'goAdmin()' },
     { label: 'Central' },
   ]);
 

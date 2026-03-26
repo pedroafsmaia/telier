@@ -5,7 +5,7 @@ import {
 } from './state.js';
 import { req } from './api.js';
 import { invalidarCacheProjetos } from './api.js';
-import { toast, abrirModal, fecharModal, confirmar, btnLoading, setBreadcrumb, setShellView, slideContent } from './ui.js';
+import { toast, abrirModal, fecharModal, confirmar, btnLoading, setBreadcrumb, slideContent } from './ui.js';
 import {
   esc, gv, sel, avatar, tag, metaPair, prazoFmt, diasRestantes, fmtHoras,
   isAdmin, podeEditar, souDono, projetoConcluido, normalizarStatusProjeto,
@@ -40,7 +40,6 @@ export async function abrirProjeto(id, opts = {}) {
       req('GET', `/projetos/${id}/decisoes`),
       req('GET', `/projetos/${id}/horas-por-usuario`).catch(() => []),
     ]);
-    setShellView(projeto.grupo_id ? 'groups' : 'projects');
     setProjeto(projeto);
     setTarefas(normalizarColaboradoresTarefas(tarefas));
     document.title = projeto.nome + ' · Telier';
@@ -109,14 +108,14 @@ export function renderProjeto(proj, tarefas, decisoes, abaAtiva, resumoHoras = [
 
   setBreadcrumb([
     ...(proj.grupo_nome && proj.grupo_id
-      ? [{ label: 'Grupos', onClick: 'renderGroupsHome()' }, { label: proj.grupo_nome, onClick: `abrirGrupo('${proj.grupo_id}')` }]
-      : [{ label: 'Projetos', onClick: 'voltarDash()' }]),
+      ? [{ label: 'Grupos', onClick: 'goGroups()' }, { label: proj.grupo_nome, onClick: `goGrupo('${proj.grupo_id}')` }]
+      : [{ label: 'Projetos', onClick: 'goProjects()' }]),
     { label: proj.nome },
   ]);
 
   const c = document.getElementById('content');
   c.innerHTML = `
-    <button class="btn-back" onclick="${proj.grupo_id ? `abrirGrupo('${proj.grupo_id}')` : 'voltarDash()'}">← Voltar para ${proj.grupo_id ? 'grupo' : 'projetos'}</button>
+    <button class="btn-back" onclick="${proj.grupo_id ? `goGrupo('${proj.grupo_id}')` : 'goProjects()'}">← Voltar para ${proj.grupo_id ? 'grupo' : 'projetos'}</button>
     <section class="detail-shell"><div class="proj-hero detail-hero" data-status="${esc(statusProjeto)}">
       <div class="proj-hero-top">
         <div class="proj-hero-left">

@@ -8,7 +8,7 @@ import {
   setFiltroGrupoDash, setFiltroOrigemDash, setVistaAtual,
 } from './state.js';
 import { req, fetchProjetos, invalidarCacheProjetos } from './api.js';
-import { toast, toastUndo, setBreadcrumb, setShellView, slideContent } from './ui.js';
+import { toast, toastUndo, setBreadcrumb, slideContent } from './ui.js';
 import { carregarTarefasUsuarioAtivas, renderTaskOperationalSurface } from './tasks.js';
 import {
   esc, gv, sel, avatar, tag, prazoFmt, diasRestantes, fmtHoras, fmtDuracao,
@@ -350,7 +350,6 @@ export async function renderDash(opts = {}) {
   const routeKind = opts.routeKind || (window.getCurrentAppRoute?.().name === 'projects' ? 'projects' : 'today');
   document.title = routeKind === 'projects' ? 'Projetos · Telier' : 'Tarefas · Telier';
   setBreadcrumb(routeKind === 'projects' ? [{ label: 'Projetos' }] : [{ label: 'Tarefas' }]);
-  setShellView(routeKind === 'projects' ? 'projects' : 'tasks');
   const c = document.getElementById('content');
   c.innerHTML = renderDashLoadingState();
   try {

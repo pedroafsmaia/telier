@@ -9,7 +9,7 @@ import {
   setTarefasView, setListaSort, setListaConcluidasExpandida, setTaskMobileFiltersOpen,
 } from './state.js';
 import { req, fetchProjetos, invalidarCacheProjetos } from './api.js';
-import { toast, abrirModal, fecharModal, confirmar, btnLoading, setBreadcrumb, setShellView } from './ui.js';
+import { toast, abrirModal, fecharModal, confirmar, btnLoading, setBreadcrumb } from './ui.js';
 import {
   esc, gv, sel, avatar, iniciais, tag, metaPair, prazoFmt, diasRestantes,
   fmtDuracao, fmtHoras, isAdmin, podeEditar, souDono, tarefaCompartilhadaComigo,
@@ -27,12 +27,41 @@ const DIFS = ['Simples','Moderada','Complexa'];
 let _quickAddNome = '';
 let _quickAddStep = 0;
 let _buscaTarefaTick;
+const TASKS_HOME_FILTERS_KEY = 'telier_tasks_home_filters';
 let _myTasksFilters = {
   busca: '',
   origem: 'todos',
   status: 'todos',
   projeto: '',
 };
+let _taskContextOrigin = null;
+
+function sanitizeTasksHomeFilters(raw = {}) {
+  return {
+    busca: typeof raw.busca === 'string' ? raw.busca.slice(0, 120) : '',
+    origem: ['todos', 'meus', 'compartilhadas'].includes(raw.origem) ? raw.origem : 'todos',
+    status: ['todos', 'A fazer', 'Em andamento', 'Bloqueada', 'Concluída'].includes(raw.status) ? raw.status : 'todos',
+    projeto: typeof raw.projeto === 'string' ? raw.projeto : '',
+  };
+}
+
+function loadTasksHomeFilters() {
+  try {
+    const raw = JSON.parse(sessionStorage.getItem(TASKS_HOME_FILTERS_KEY) || '{}');
+    _myTasksFilters = sanitizeTasksHomeFilters(raw);
+  } catch {
+    _myTasksFilters = sanitizeTasksHomeFilters({});
+  }
+}
+
+function saveTasksHomeFilters() {
+  sessionStorage.setItem(TASKS_HOME_FILTERS_KEY, JSON.stringify(_myTasksFilters));
+}
+
+function updateTasksHomeFilters(patch = {}) {
+  _myTasksFilters = sanitizeTasksHomeFilters({ ..._myTasksFilters, ...patch });
+  saveTasksHomeFilters();
+}
 
 function projectTaskUiStateKey(projectId) {
   return `telier_project_task_state_${projectId}`;
@@ -221,12 +250,12 @@ export async function abrirTarefaContexto(taskId, projectId, opts = {}) {
   if (!opts.fromRoute) {
     return window.goTask ? window.goTask(taskId, projectId) : null;
   }
+  _taskContextOrigin = { taskId: String(taskId), projectId: String(projectId) };
   const { abrirProjeto } = await import('./project.js');
   const projetoJaAberto = String(PROJETO?.id || '') === String(projectId);
   if (!projetoJaAberto) {
     await abrirProjeto(projectId, { fromRoute: true });
   }
-  setShellView('tasks');
   if (opts.expandTime) expandirSessoes(taskId);
   else modalEditarTarefa(taskId);
 }
@@ -252,12 +281,9 @@ export async function renderTarefasHome(opts = {}) {
   if (!opts.fromRoute) {
     return window.goTasks ? window.goTasks() : null;
   }
-  _myTasksFilters.busca = window._myTasksBusca ?? _myTasksFilters.busca;
-  _myTasksFilters.origem = window._myTasksOrigem ?? _myTasksFilters.origem;
-  _myTasksFilters.status = window._myTasksStatus ?? _myTasksFilters.status;
-  _myTasksFilters.projeto = window._myTasksProjeto ?? _myTasksFilters.projeto;
+  _taskContextOrigin = null;
+  loadTasksHomeFilters();
   window.scrollTo(0, 0);
-  setShellView('tasks');
   document.title = 'Tarefas · Telier';
   setBreadcrumb([{ label: 'Tarefas' }]);
   const c = document.getElementById('content');
@@ -376,19 +402,19 @@ export async function renderTarefasHome(opts = {}) {
         <div class="dash-toolbar-row dash-toolbar-primary">
           <div class="task-toolbar-main dash-toolbar-searchblock">
             <div class="dash-toolbar-label">Consulta</div>
-            <input type="search" class="search-dash search-tarefa" placeholder="Buscar tarefa, projeto ou grupo..." value="${esc(_myTasksFilters.busca)}" oninput="window._myTasksBusca=this.value;renderTarefasHome({ fromRoute: true })">
+            <input type="search" class="search-dash search-tarefa" placeholder="Buscar tarefa, projeto ou grupo..." value="${esc(_myTasksFilters.busca)}" oninput="setTarefasHomeBusca(this.value)">
           </div>
           <div class="dash-toolbar-switches">
             <div class="dash-toolbar-label">Escopo</div>
             <div class="segmented">
-              <button class="segmented-btn ${_myTasksFilters.origem==='todos'?'ativo':''}" onclick="window._myTasksOrigem='todos';renderTarefasHome({ fromRoute: true })">Todas${tarefasCompletas.length ? `<span class="seg-count">${tarefasCompletas.length}</span>` : ''}</button>
-              <button class="segmented-btn ${_myTasksFilters.origem==='meus'?'ativo':''}" onclick="window._myTasksOrigem='meus';renderTarefasHome({ fromRoute: true })">Minhas${minhas ? `<span class="seg-count">${minhas}</span>` : ''}</button>
-              <button class="segmented-btn ${_myTasksFilters.origem==='compartilhadas'?'ativo':''}" onclick="window._myTasksOrigem='compartilhadas';renderTarefasHome({ fromRoute: true })">Compartilhadas${compartilhadas ? `<span class="seg-count">${compartilhadas}</span>` : ''}</button>
+              <button class="segmented-btn ${_myTasksFilters.origem==='todos'?'ativo':''}" onclick="setTarefasHomeOrigem('todos')">Todas${tarefasCompletas.length ? `<span class="seg-count">${tarefasCompletas.length}</span>` : ''}</button>
+              <button class="segmented-btn ${_myTasksFilters.origem==='meus'?'ativo':''}" onclick="setTarefasHomeOrigem('meus')">Minhas${minhas ? `<span class="seg-count">${minhas}</span>` : ''}</button>
+              <button class="segmented-btn ${_myTasksFilters.origem==='compartilhadas'?'ativo':''}" onclick="setTarefasHomeOrigem('compartilhadas')">Compartilhadas${compartilhadas ? `<span class="seg-count">${compartilhadas}</span>` : ''}</button>
             </div>
           </div>
           <div class="dash-toolbar-field">
             <div class="dash-toolbar-label">Projeto</div>
-            <select class="resp-filter select-control flex-shrink-0" onchange="window._myTasksProjeto=this.value;renderTarefasHome({ fromRoute: true })">
+            <select class="resp-filter select-control flex-shrink-0" onchange="setTarefasHomeProjeto(this.value)">
               <option value="">Todos os projetos</option>
               ${projetosFiltro.map(p => `<option value="${p.id}" ${String(_myTasksFilters.projeto) === String(p.id) ? 'selected' : ''}>${esc(p.nome)}</option>`).join('')}
             </select>
@@ -401,7 +427,7 @@ export async function renderTarefasHome(opts = {}) {
               ${statusTabs.map(status => {
                 const label = status === 'todos' ? 'Todos' : status;
                 const count = statusCountMap[status] || 0;
-                return `<button class="filter-btn ${_myTasksFilters.status===status?'ativo':''}" onclick="window._myTasksStatus='${esc(status)}';renderTarefasHome({ fromRoute: true })">${label}${count ? `<span class="seg-count">${count}</span>` : ''}</button>`;
+                return `<button class="filter-btn ${_myTasksFilters.status===status?'ativo':''}" onclick="setTarefasHomeStatus('${esc(status)}')">${label}${count ? `<span class="seg-count">${count}</span>` : ''}</button>`;
               }).join('')}
             </div>
           </div>
@@ -483,6 +509,36 @@ export async function renderTarefasHome(opts = {}) {
 
 export async function renderMinhasTarefas(opts = {}) {
   return renderTarefasHome(opts);
+}
+
+export function setTarefasHomeBusca(valor = '') {
+  updateTasksHomeFilters({ busca: valor });
+  return renderTarefasHome({ fromRoute: true });
+}
+
+export function setTarefasHomeOrigem(valor = 'todos') {
+  updateTasksHomeFilters({ origem: valor });
+  return renderTarefasHome({ fromRoute: true });
+}
+
+export function setTarefasHomeStatus(valor = 'todos') {
+  updateTasksHomeFilters({ status: valor });
+  return renderTarefasHome({ fromRoute: true });
+}
+
+export function setTarefasHomeProjeto(valor = '') {
+  updateTasksHomeFilters({ projeto: valor });
+  return renderTarefasHome({ fromRoute: true });
+}
+
+export function fecharDetalheTarefaContexto() {
+  fecharModal();
+  if (!_taskContextOrigin?.projectId) return;
+  const rotaAtual = window.getCurrentAppRoute?.();
+  if (rotaAtual?.name === 'task') {
+    window.navigateToRoute?.('project', { id: _taskContextOrigin.projectId }, { replace: true });
+  }
+  _taskContextOrigin = null;
 }
 
 export function atualizarPrazoHint() {
@@ -1427,6 +1483,7 @@ export async function criarTarefa(projetoId) {
 export async function modalEditarTarefa(id) {
   const t = TAREFAS.find(t => t.id === id);
   if (!t) return;
+  const veioDeRotaProfunda = !!_taskContextOrigin?.projectId;
   abrirModal(`
     <h2>Editar tarefa</h2>
     <div class="modal-hint">Esta janela altera apenas a tarefa.</div>
@@ -1445,9 +1502,19 @@ export async function modalEditarTarefa(id) {
       </div>
     </div>
     <div class="modal-footer modal-footer-sticky">
-      <button class="btn" onclick="fecharModal()">Cancelar</button>
+      <button class="btn" onclick="${veioDeRotaProfunda ? 'fecharDetalheTarefaContexto()' : 'fecharModal()'}">Cancelar</button>
       <button class="btn btn-primary" id="btn-salvar-tar" onclick="salvarTarefa('${id}')">Salvar</button>
-    </div>`);
+    </div>`, {
+    onClose: veioDeRotaProfunda
+      ? () => {
+          const rotaAtual = window.getCurrentAppRoute?.();
+          if (rotaAtual?.name === 'task' && _taskContextOrigin?.projectId) {
+            window.navigateToRoute?.('project', { id: _taskContextOrigin.projectId }, { replace: true });
+          }
+          _taskContextOrigin = null;
+        }
+      : undefined,
+  });
   atualizarPrazoHint();
 }
 
@@ -1465,7 +1532,10 @@ export async function salvarTarefa(id) {
       descricao: gv('m-desc') || null,
     });
     invalidarCacheProjetos();
-    fecharModal(); toast('Tarefa atualizada'); await _recarregarProjeto();
+    if (_taskContextOrigin?.projectId) fecharDetalheTarefaContexto();
+    else fecharModal();
+    toast('Tarefa atualizada');
+    await _recarregarProjeto();
   } catch (e) { toast(e.message, 'err'); btnLoading('btn-salvar-tar', false); }
 }
 
