@@ -56,7 +56,8 @@ export function abrirModal(html, opts = {}) {
   const overlay = document.createElement('div');
   overlay.className = 'modal-overlay';
   overlay.id = id;
-  overlay.innerHTML = `<div class="modal ${opts.lg ? 'modal-lg' : ''}">${html}</div>`;
+  const sizeClass = opts.xl ? 'modal-xl' : (opts.lg ? 'modal-lg' : '');
+  overlay.innerHTML = `<div class="modal ${sizeClass}">${html}</div>`;
   if (!opts.locked) {
     overlay.addEventListener('click', e => { if (e.target === overlay) fecharOverlayModal(overlay); });
     const onKey = e => { if (e.key === 'Escape') fecharOverlayModal(overlay); };
@@ -98,10 +99,11 @@ export function setBreadcrumb(partes) {
   const el = document.getElementById('topbar-breadcrumb');
   if (!el) return;
   if (!partes.length) { el.innerHTML = ''; return; }
-  el.innerHTML = partes.map((p, i) => {
-    const isUltimo = i === partes.length - 1;
+  const visible = partes.length > 3 ? [partes[0], { label: '…' }, ...partes.slice(-2)] : partes;
+  el.innerHTML = visible.map((p, i) => {
+    const isUltimo = i === visible.length - 1;
     const cls = isUltimo ? 'topbar-crumb atual' : 'topbar-crumb';
-    const onclick = (!isUltimo && p.onClick) ? `onclick="${p.onClick}"` : '';
+    const onclick = (!isUltimo && p.onClick && p.label !== '…') ? `onclick="${p.onClick}"` : '';
     const sep = i > 0 ? '<span class="topbar-sep-crumb">/</span>' : '';
     return `${sep}<span class="${cls}" ${onclick} title="${esc(p.label)}">${esc(p.label)}</span>`;
   }).join('');

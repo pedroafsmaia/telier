@@ -54,19 +54,18 @@
 <!-- APP -->
 <div id="page-app" class="hidden">
   <div class="app-shell">
-    <aside class="app-sidebar">
+    <div class="sidebar-overlay" id="sidebar-overlay" onclick="closeSidebarDrawer()"></div>
+    <aside class="app-sidebar" id="app-sidebar">
       <div class="sidebar-brand" onclick="goToday()" title="Ir para início">
         <div class="sidebar-wordmark">Telier</div>
         <div class="sidebar-caption">Architectural management</div>
       </div>
 
-      <div class="sidebar-section-label">Ações</div>
-      <div class="sidebar-block">
+      <div class="sidebar-block sidebar-block-cta">
         <button class="btn btn-primary sidebar-cta" onclick="modalNovaTarefa()">Nova tarefa</button>
         <button class="btn btn-ghost sidebar-cta" onclick="continuarUltimaTarefa()">Continuar última tarefa</button>
       </div>
 
-      <div class="sidebar-section-label">Operação</div>
       <nav class="sidebar-nav" aria-label="Navegação principal">
         <button class="sidebar-link is-active" data-shell-view="today" onclick="goToday()">
           <span class="sidebar-link-icon">
@@ -86,10 +85,6 @@
           </span>
           <span>Grupos</span>
         </button>
-      </nav>
-
-      <div class="sidebar-section-label">Estrutura</div>
-      <nav class="sidebar-nav" aria-label="Navegação estrutural">
         <button class="sidebar-link" data-shell-view="projects" onclick="goProjects()">
           <span class="sidebar-link-icon">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M4 4h7v7H4zM13 4h7v4h-7zM13 10h7v10h-7zM4 13h7v7H4z" stroke="currentColor" stroke-width="1.6"/></svg>
@@ -98,8 +93,7 @@
         </button>
       </nav>
 
-      <div class="sidebar-section-label" id="sidebar-label-admin">Administração</div>
-      <nav class="sidebar-nav" aria-label="Navegação administrativa">
+      <nav class="sidebar-nav sidebar-nav-footer" aria-label="Navegação administrativa">
         <button class="sidebar-link" id="sidebar-link-admin" data-shell-view="admin" onclick="goAdmin()">
           <span class="sidebar-link-icon">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M12 3l8 4.5v9L12 21l-8-4.5v-9L12 3z" stroke="currentColor" stroke-width="1.6"/><path d="M12 8v8M8 10.5l4 2 4-2" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
@@ -125,7 +119,7 @@
     <div class="app-main">
       <nav class="topbar">
         <div class="topbar-section topbar-context">
-          <div class="topbar-context-label">Contexto</div>
+          <button class="topbar-menu" id="btn-sidebar-menu" onclick="toggleSidebarDrawer()" aria-label="Abrir navegação">☰</button>
           <div id="topbar-breadcrumb" class="topbar-breadcrumb"></div>
         </div>
         <div class="topbar-actions">

@@ -118,7 +118,7 @@ export function renderPainelHoje(projetos, ativas, sessoesRecentes = [], tarefas
                   ? `<button class="btn btn-primary" onclick="abrirProjeto('${focoProjId}')">Abrir tarefa em foco</button>`
                   : `<button class="btn" disabled>Abrir tarefa</button>`}
               ${ativo?.id ? `<button class="btn" onclick="pararCronometro('${ativo.id}')">Parar cronômetro</button>` : ''}
-              ${ultimaSessao?.tarefa_id && ultimaSessao?.projeto_id && !ativo?.id ? `<button class="btn" onclick="abrirTarefaContexto('${ultimaSessao.tarefa_id}','${ultimaSessao.projeto_id}')">Continuar Ãºltima tarefa</button>` : ''}
+              ${ultimaSessao?.tarefa_id && ultimaSessao?.projeto_id && !ativo?.id ? `<button class="btn" onclick="abrirTarefaContexto('${ultimaSessao.tarefa_id}','${ultimaSessao.projeto_id}')">Continuar última tarefa</button>` : ''}
             </div>
           </section>
 
