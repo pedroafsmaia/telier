@@ -33,7 +33,11 @@ export function avatar(nome, size = '') {
 }
 export function prazoFmt(prazo, curto = false) {
   if (!prazo) return null;
-  const d = new Date(prazo + 'T00:00:00');
+  const base = String(prazo).trim();
+  let d;
+  if (/^\d{4}-\d{2}-\d{2}$/.test(base)) d = new Date(`${base}T00:00:00`);
+  else d = new Date(base.replace(' ', 'T'));
+  if (Number.isNaN(d.getTime())) return null;
   if (curto) return d.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' });
   return d.toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' });
 }

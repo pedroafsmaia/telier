@@ -77,7 +77,7 @@ export function renderPainelHoje(projetos, ativas, sessoesRecentes = [], tarefas
   const ativo = ativas[0] || null;
   const emAndamento = tarefasOperacao.filter(t => t.status === 'Em andamento' || t.sessao_ativa_id);
   const retomadas = tarefasOperacao.filter(t => t.foco || t.status === 'Em andamento').slice(0, 4);
-  const recentes = sessoesRecentes.length ? sessoesRecentes : (ultimaSessao ? [ultimaSessao] : []);
+  const recentes = (sessoesRecentes.length ? sessoesRecentes : (ultimaSessao ? [ultimaSessao] : [])).slice(0, 4);
   const estadoBloco = (itens) => (itens.length === 0 ? 'is-empty' : (itens.length === 1 ? 'is-single' : 'is-list'));
 
   const renderLinhaRetomada = (t) => {
@@ -94,7 +94,7 @@ export function renderPainelHoje(projetos, ativas, sessoesRecentes = [], tarefas
       </span>
     </button>`;
   };
-  const renderLinhaSessaoRecente = (s) => `<button class="startday-op-row" onclick="abrirTarefaContexto('${s.tarefa_id}','${s.projeto_id}')">
+  const renderLinhaSessaoRecente = (s) => `<button class="startday-op-row startday-op-row--compact" onclick="abrirTarefaContexto('${s.tarefa_id}','${s.projeto_id}')">
     <span class="startday-op-main">
       <span class="startday-op-title">${esc(s.tarefa_nome)}</span>
       <span class="startday-op-context">Projeto: ${esc(s.projeto_nome)}</span>
@@ -176,6 +176,21 @@ export function renderPainelHoje(projetos, ativas, sessoesRecentes = [], tarefas
           <section class="startday-list-block">
             <div class="startday-block-head">
               <div>
+                <div class="task-view-eyebrow">Urgências do dia</div>
+                <div class="task-view-title">${urgencias.length ? `${urgencias.length} ponto${urgencias.length === 1 ? '' : 's'} de atenção` : 'Sem urgências imediatas'}</div>
+              </div>
+            </div>
+            <div class="startday-adaptive-block ${estadoBloco(urgencias)}">
+              ${urgencias.length ? (urgencias.length === 1
+                ? renderLinhaUrgencia(urgencias[0])
+                : `<div class="startday-row-list">${urgencias.map(renderLinhaUrgencia).join('')}</div>`)
+                : `<div class="startday-empty-inline">Hoje sem bloqueios críticos por prazo.</div>`}
+            </div>
+          </section>
+
+          <section class="startday-list-block">
+            <div class="startday-block-head">
+              <div>
                 <div class="task-view-title">Retomada rápida</div>
               </div>
               <button class="btn btn-sm" onclick="goTasks()">Ver minhas tarefas</button>
@@ -230,21 +245,6 @@ export function renderPainelHoje(projetos, ativas, sessoesRecentes = [], tarefas
                 ? renderLinhaSessaoRecente(recentes[0])
                 : `<div class="startday-row-list">${recentes.map(renderLinhaSessaoRecente).join('')}</div>`)
                 : `<div class="startday-empty-inline">Nenhuma sessão recente registrada.</div>`}
-            </div>
-          </section>
-
-          <section class="startday-list-block">
-            <div class="startday-block-head">
-              <div>
-                <div class="task-view-eyebrow">Urgências do dia</div>
-                <div class="task-view-title">${urgencias.length ? `${urgencias.length} ponto${urgencias.length === 1 ? '' : 's'} de atenção` : 'Sem urgências imediatas'}</div>
-              </div>
-            </div>
-            <div class="startday-adaptive-block ${estadoBloco(urgencias)}">
-              ${urgencias.length ? (urgencias.length === 1
-                ? renderLinhaUrgencia(urgencias[0])
-                : `<div class="startday-row-list">${urgencias.map(renderLinhaUrgencia).join('')}</div>`)
-                : `<div class="startday-empty-inline">Hoje sem bloqueios críticos por prazo.</div>`}
             </div>
           </section>
 
