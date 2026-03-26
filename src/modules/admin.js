@@ -5,7 +5,7 @@ import {
 } from './state.js';
 import { req } from './api.js';
 import { toast, abrirModal, fecharModal, btnLoading, setBreadcrumb, setShellView } from './ui.js';
-import { esc, gv, avatar, tag, fmtHoras, isAdmin, csvEsc, tempoDesde } from './utils.js';
+import { esc, gv, avatar, tag, metaPair, fmtHoras, isAdmin, csvEsc, tempoDesde } from './utils.js';
 
 export async function abrirCentralAdmin(aba = 'agora', opts = {}) {
   if (!isAdmin()) {
@@ -57,14 +57,17 @@ export async function abrirCentralAdmin(aba = 'agora', opts = {}) {
           <div class="admin-kpi"><div class="admin-kpi-label">Usuários Ativos Agora</div><div class="admin-kpi-val">${new Set(ativas.map(a=>a.usuario_id)).size}</div></div>
         </div>`;
       const rows = ativas.map(a => `
-        <tr>
-          <td>${avatar(a.usuario_nome,'avatar-sm')} ${esc(a.usuario_nome)}</td>
-          <td>${esc(a.projeto_nome)}</td>
-          <td>${esc(a.tarefa_nome)}</td>
-          <td>${tag(a.tarefa_status)}</td>
-          <td class="mono">${tempoDesde(a.inicio)}</td>
-          <td><button class="btn btn-sm" onclick="abrirProjeto('${a.projeto_id}')">Abrir</button></td>
-        </tr>`).join('');
+        <article class="ops-row">
+          <div class="ops-row-main">
+            <div class="ops-row-title">${esc(a.tarefa_nome)}</div>
+            <div class="ops-row-context">${avatar(a.usuario_nome,'avatar-sm')} ${esc(a.usuario_nome)} · ${esc(a.projeto_nome)}</div>
+          </div>
+          <div class="ops-row-meta">
+            ${metaPair('Status', a.tarefa_status, a.tarefa_status === 'Bloqueada' ? 'is-alert' : 'is-muted')}
+            ${metaPair('Tempo ativo', tempoDesde(a.inicio), 'is-muted')}
+          </div>
+          <div class="ops-row-actions"><button class="btn btn-sm" onclick="abrirProjeto('${a.projeto_id}')">Abrir</button></div>
+        </article>`).join('');
       body.innerHTML = `
         <div class="section-shell admin-section">
           <div class="section-head">
@@ -76,10 +79,7 @@ export async function abrirCentralAdmin(aba = 'agora', opts = {}) {
           ${kpi}
         </div>
         <div class="admin-table-wrap admin-section admin-section-spaced">
-          <table>
-            <thead><tr><th>Usuário</th><th>Projeto</th><th>Tarefa</th><th>Status</th><th>Tempo ativo</th><th></th></tr></thead>
-            <tbody>${rows || `<tr><td colspan="6" class="table-empty">Sem atividade no momento.</td></tr>`}</tbody>
-          </table>
+          <div class="ops-list">${rows || `<div class="table-empty">Sem atividade no momento.</div>`}</div>
         </div>
         <div class="admin-cards admin-section">
           ${ativas.map(a => `
@@ -100,14 +100,18 @@ export async function abrirCentralAdmin(aba = 'agora', opts = {}) {
     if (aba === 'usuarios') {
       const usuarios = await req('GET', '/admin/usuarios');
       const rows = usuarios.map(u => `
-        <tr>
-          <td>${avatar(u.nome,'avatar-sm')} ${esc(u.nome)} <span class="inline-user-handle">@${esc(u.usuario_login)}</span></td>
-          <td>${tag(u.papel === 'admin' ? 'Admin' : 'Membro', u.papel === 'admin' ? 'tag-purple' : 'tag-gray')}</td>
-          <td class="mono">${(parseInt(u.projetos_como_dono)||0) + (parseInt(u.projetos_como_editor)||0)}</td>
-          <td class="mono">${parseInt(u.tarefas_em_andamento)||0}</td>
-          <td class="mono">${fmtHoras(Number(u.horas_totais||0))}</td>
-          <td><button class="btn btn-sm" onclick="abrirUsuarioAdmin('${u.id}')">Detalhes</button></td>
-        </tr>`).join('');
+        <article class="ops-row">
+          <div class="ops-row-main">
+            <div class="ops-row-title">${avatar(u.nome,'avatar-sm')} ${esc(u.nome)} <span class="inline-user-handle">@${esc(u.usuario_login)}</span></div>
+            <div class="ops-row-context">${metaPair('Papel', u.papel === 'admin' ? 'Admin' : 'Membro', 'is-muted')}</div>
+          </div>
+          <div class="ops-row-meta">
+            ${metaPair('Projetos', `${(parseInt(u.projetos_como_dono)||0) + (parseInt(u.projetos_como_editor)||0)}`, 'is-muted')}
+            ${metaPair('Em andamento', `${parseInt(u.tarefas_em_andamento)||0}`, 'is-muted')}
+            ${metaPair('Horas', fmtHoras(Number(u.horas_totais||0)), 'is-muted')}
+          </div>
+          <div class="ops-row-actions"><button class="btn btn-sm" onclick="abrirUsuarioAdmin('${u.id}')">Detalhes</button></div>
+        </article>`).join('');
       body.innerHTML = `
         <div class="section-shell admin-section">
           <div class="section-head">
@@ -118,10 +122,7 @@ export async function abrirCentralAdmin(aba = 'agora', opts = {}) {
           </div>
         </div>
         <div class="admin-table-wrap admin-section">
-          <table>
-            <thead><tr><th>Usuário</th><th>Papel</th><th>Projetos no dashboard</th><th>Em andamento</th><th>Horas totais</th><th></th></tr></thead>
-            <tbody>${rows || `<tr><td colspan="6" class="table-empty">Nenhum usuário.</td></tr>`}</tbody>
-          </table>
+          <div class="ops-list">${rows || `<div class="table-empty">Nenhum usuário.</div>`}</div>
         </div>
         <div class="admin-cards admin-section">
           ${usuarios.map(u => `
@@ -143,22 +144,22 @@ export async function abrirCentralAdmin(aba = 'agora', opts = {}) {
         const total = parseInt(p.total_tarefas) || 0;
         const concl = parseInt(p.tarefas_concluidas) || 0;
         const pct = total ? Math.round((concl / total) * 100) : 0;
-        return `
-          <tr>
-            <td>${esc(p.nome)}</td>
-            <td>${esc(p.dono_nome||'—')}</td>
-            <td>${tag(p.status)}</td>
-            <td class="mono">${concl}/${total} (${pct}%)</td>
-            <td class="mono">${fmtHoras(Number(p.horas_totais||0))}</td>
-            <td><button class="btn btn-sm" onclick="abrirProjeto('${p.id}')">Abrir</button></td>
-          </tr>`;
+        return `<article class="ops-row">
+          <div class="ops-row-main">
+            <div class="ops-row-title">${esc(p.nome)}</div>
+            <div class="ops-row-context">${esc(p.dono_nome||'—')}</div>
+          </div>
+          <div class="ops-row-meta">
+            ${metaPair('Status', p.status, p.status === 'Arquivado' ? 'is-alert' : 'is-muted')}
+            ${metaPair('Progresso', `${concl}/${total} (${pct}%)`, 'is-muted')}
+            ${metaPair('Horas', fmtHoras(Number(p.horas_totais||0)), 'is-muted')}
+          </div>
+          <div class="ops-row-actions"><button class="btn btn-sm" onclick="abrirProjeto('${p.id}')">Abrir</button></div>
+        </article>`;
       }).join('');
       body.innerHTML = `
         <div class="table-wrap">
-          <table>
-            <thead><tr><th>Projeto</th><th>Origem</th><th>Status</th><th>Progresso</th><th>Horas</th><th></th></tr></thead>
-            <tbody>${rows || `<tr><td colspan="6" class="table-empty">Nenhum projeto.</td></tr>`}</tbody>
-          </table>
+          <div class="ops-list">${rows || `<div class="table-empty">Nenhum projeto.</div>`}</div>
         </div>`;
       return;
     }
