@@ -111,13 +111,13 @@ export function renderPainelHoje(projetos, ativas, sessoesRecentes = [], tarefas
               <div class="startday-session-kpi">${resumoHoje ? `${parseFloat(resumoHoje.horas_hoje || 0).toFixed(1)}h hoje` : '0.0h hoje'}</div>
             </div>
             <div class="startday-session-actions">
-              ${ativo?.projeto_id
+              ${ativo?.tarefa_id && ativo?.projeto_id
                 ? `<button class="btn btn-primary" onclick="abrirProjeto('${ativo.projeto_id}')">Abrir sessão ativa</button>`
                 : focoProjId
                   ? `<button class="btn btn-primary" onclick="abrirProjeto('${focoProjId}')">Abrir tarefa em foco</button>`
                   : `<button class="btn" disabled>Abrir tarefa</button>`}
               ${ativo?.id ? `<button class="btn" onclick="pararCronometro('${ativo.id}')">Parar cronômetro</button>` : ''}
-              ${tarefaAtiva?.projeto_id && !ativo?.id ? `<button class="btn" onclick="abrirProjeto('${tarefaAtiva.projeto_id}')">Retomar tarefa em andamento</button>` : ''}
+              ${ultimaSessao?.tarefa_id && ultimaSessao?.projeto_id && !ativo?.id ? `<button class="btn" onclick="abrirTarefaContexto('${ultimaSessao.tarefa_id}','${ultimaSessao.projeto_id}')">Continuar Ãºltima tarefa</button>` : ''}
             </div>
           </section>
 
@@ -127,12 +127,13 @@ export function renderPainelHoje(projetos, ativas, sessoesRecentes = [], tarefas
                 <div class="task-view-eyebrow">Retomada rápida</div>
                 <div class="task-view-title">Pontos de reentrada</div>
               </div>
+              <button class="btn btn-sm" onclick="goTasks()">Ver minhas tarefas</button>
             </div>
             <div class="startday-resume-list">
               ${retomadas.length ? retomadas.map(t => {
                 const dias = diasRestantes(t.data || null);
                 const prazo = t.data ? prazoFmt(t.data, true) : 'Sem prazo';
-                return `<button class="startday-resume-item" onclick="abrirProjeto('${t.projeto_id}')">
+                return `<button class="startday-resume-item" onclick="abrirTarefaContexto('${t.id}','${t.projeto_id}')">
                   <span class="startday-resume-main">
                     <span class="startday-resume-title">${esc(t.nome)}</span>
                     <span class="startday-resume-sub">${esc(t.projeto_nome)} · ${esc(t.status)}</span>
@@ -167,7 +168,7 @@ export function renderPainelHoje(projetos, ativas, sessoesRecentes = [], tarefas
                     ${t.sessao_ativa_id ? `<span class="tag tag-green">Cronômetro ativo</span>` : ''}
                     ${t.foco ? `<span class="tag tag-purple">Foco</span>` : ''}
                     ${t.data ? `<span class="tag ${urgente ? 'tag-red' : 'tag-gray'} mono">${prazoFmt(t.data, true)}</span>` : ''}
-                    <button class="btn btn-sm btn-primary" onclick="abrirProjeto('${t.projeto_id}')">Abrir</button>
+                    <button class="btn btn-sm btn-primary" onclick="abrirTarefaContexto('${t.id}','${t.projeto_id}')">Abrir tarefa</button>
                   </div>
                 </div>`;
               }).join('') : `<div class="startday-empty">Nenhuma tarefa em andamento no momento.</div>`}
@@ -185,7 +186,7 @@ export function renderPainelHoje(projetos, ativas, sessoesRecentes = [], tarefas
             </div>
             <div class="startday-session-list">
               ${recentes.length ? recentes.map(s => `
-                <button class="startday-session-item" onclick="abrirProjeto('${s.projeto_id}')">
+                <button class="startday-session-item" onclick="abrirTarefaContexto('${s.tarefa_id}','${s.projeto_id}')">
                   <span class="startday-session-item-main">
                     <span class="startday-session-item-title">${esc(s.tarefa_nome)}</span>
                     <span class="startday-session-item-sub">${esc(s.projeto_nome)}</span>
@@ -206,7 +207,10 @@ export function renderPainelHoje(projetos, ativas, sessoesRecentes = [], tarefas
             <div class="startday-urgency-list">
               ${urgencias.length ? urgencias.map(item => {
                 const dias = diasRestantes(item.prazo || null);
-                return `<button class="startday-urgency-item" onclick="abrirProjeto('${item.projeto_id}')">
+                const acao = item.tipo === 'tarefa'
+                  ? `abrirTarefaContexto('${item.id}','${item.projeto_id}')`
+                  : `abrirProjeto('${item.projeto_id}')`;
+                return `<button class="startday-urgency-item" onclick="${acao}">
                   <span class="startday-urgency-main">
                     <span class="startday-urgency-title">${esc(item.nome)}</span>
                     <span class="startday-urgency-sub">${item.tipo === 'tarefa' ? `Tarefa · ${esc(item.projeto_nome)}` : `Projeto · ${esc(item.projeto_nome)}`}</span>
@@ -326,6 +330,26 @@ export async function renderDash(opts = {}) {
           : projetosAtivos.filter(p => normalizarStatusProjeto(p.status) === f).length)
     ]));
 
+    if (routeKind === 'today') {
+      const slideHoje = VISTA_ATUAL === 'projeto';
+      setVistaAtual('dash');
+      c.innerHTML = `${renderPainelHoje(projetos, ativas, sessoesRecentes, tarefasOperacao, ultimaSessao, focoGlobal, resumoHoje)}
+      <div class="dash-header dash-header-spaced dash-head-grid">
+        <div class="dash-head-main">
+          <div class="section-kicker">Estrutura</div>
+          <div class="dash-title">PrÃ³ximas camadas</div>
+          <div class="dash-sub dash-sub-tight">A operaÃ§Ã£o diÃ¡ria parte da tarefa. Projetos e grupos seguem como estrutura de organizaÃ§Ã£o e contexto.</div>
+        </div>
+        <div class="dash-actions">
+          <button class="btn btn-primary" onclick="goTasks()">Minhas tarefas</button>
+          <button class="btn" onclick="goProjects()">Projetos</button>
+          <button class="btn" onclick="goGroups()">Grupos</button>
+        </div>
+      </div>`;
+      if (slideHoje) slideContent('left');
+      return;
+    }
+
     let html = `
       ${routeKind === 'today' ? renderPainelHoje(projetos, ativas, sessoesRecentes, tarefasOperacao, ultimaSessao, focoGlobal, resumoHoje) : ''}
       <div class="dash-header dash-header-spaced dash-head-grid">
@@ -335,8 +359,7 @@ export async function renderDash(opts = {}) {
           <div class="dash-sub dash-sub-tight">${routeKind === 'today' ? 'A base de projetos permanece acessível abaixo da operação diária.' : 'Base ativa do escritório, organizada por grupo, status e responsabilidade.'}</div>
         </div>
         <div class="dash-actions">
-          ${isAdmin() ? `<button class="btn" onclick="abrirCentralAdmin()">Central admin</button>` : ''}
-          ${isAdmin() ? `<button class="btn" onclick="modalNovoColega()">Cadastrar admin</button>` : ''}
+          <button class="btn" onclick="goTasks()">Minhas tarefas</button>
           <button class="btn" onclick="modalNovoGrupo()">Novo grupo</button>
           <button class="btn btn-primary" onclick="modalNovoProjeto()">Novo projeto</button>
         </div>
@@ -380,8 +403,11 @@ export async function renderDash(opts = {}) {
         </div>
       </div>
       <div id="cards-grid-dash" class="dash-results">`;
+    }
 
-    html += renderProjetosDash(projetosVisiveisBase, gruposVisiveisBase) + '</div>';
+    if (routeKind !== 'today') {
+      html += renderProjetosDash(projetosVisiveisBase, gruposVisiveisBase) + '</div>';
+    }
     const slide = VISTA_ATUAL === 'projeto';
     setVistaAtual('dash');
     c.innerHTML = html;

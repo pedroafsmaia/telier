@@ -15,7 +15,7 @@ import { abrirProjeto, voltarDash, renderProjeto, mudarAba, renderAba, renderPro
 import { renderGroupsHome, abrirGrupo, renderGrupo, mudarAbaGrupo, renderAbaGrupo, renderGrupoAbaProjetos, renderGrupoAbaTarefas, renderGrupoAbaMapa, renderGrupoAbaAoVivo, renderGrupoAbaRelatorio, carregarTarefasGrupo, carregarAoVivoGrupo, carregarAoVivoProjeto, modalNovoGrupo, criarGrupo, modalEditarGrupo, compartilharGrupo, modalCompartilharGrupo, salvarGrupo, adicionarPermGrupo, removerPermGrupo, sairGrupoCompartilhado, sairProjetoCompartilhado, acaoGrupo, modalMoverTodosGrupo, deletarGrupo } from './modules/groups.js';
 import { atualizarBadgeNotificacoes, filtrarNotificacoesPainel, renderPainelNotificacoes, carregarNotificacoes, iniciarPollNotificacoes, carregarStatus, iniciarStatusPoll, marcarNotifLida, marcarTodasNotifLidas, abrirNotificacoes, fecharPainelNotificacoes, carregarColegasAtivos, iniciarPollPresenca, renderPresenceDock, togglePresencePanel, fecharPresencePanelFora } from './modules/notifications.js';
 import { carregarTimersAtivos, iniciarCronometro, pararCronometro, renderTimerWidget, renderTimerDock, modalAdicionarIntervalo, criarIntervalo, editarSessao, salvarSessao, deletarSessao, editarIntervalo, salvarIntervalo, deletarIntervalo, expandirSessoes, adicionarDetalheTarefa, adicionarDetalheTarefaEnter, toggleDetalheTarefa, removerDetalheTarefa } from './modules/timer.js';
-import { atualizarPrazoHint, renderColabsStack, renderAoVivoStream, alternarTarefasView, renderAbaTarefas, renderKanbanInterno, criarTarefaKanban, renderListaInterna, ordenarLista, renderMapa, renderRelatorio, renderDecisoes, mudarStatus, toggleFoco, deletarTarefa, modalEditarDecisao, salvarDecisaoEditada, deletarDecisao, modalPermissoes, adicionarPerm, removerPerm, modalNovaTarefa, criarTarefa, modalEditarTarefa, salvarTarefa, duplicarTarefa, quickAddMostrarStep2, quickAddCancelar, quickAddConfirmar, quickAddTarefa, filtrarTarefasBusca, exportarTempoProjetoCSV, modalColabsTarefa, sairTarefaCompartilhada, adicionarColab, removerColab, modalNovaDecisao, criarDecisao, aplicarFiltroOrigemProjeto, aplicarFiltroResponsavelProjeto, aplicarFiltroStatusProjeto, alternarListaConcluidasProjeto } from './modules/tasks.js';
+import { atualizarPrazoHint, renderColabsStack, renderAoVivoStream, alternarTarefasView, renderAbaTarefas, renderKanbanInterno, criarTarefaKanban, renderListaInterna, ordenarLista, renderMapa, renderRelatorio, renderDecisoes, mudarStatus, toggleFoco, deletarTarefa, modalEditarDecisao, salvarDecisaoEditada, deletarDecisao, modalPermissoes, adicionarPerm, removerPerm, modalNovaTarefa, criarTarefa, modalEditarTarefa, salvarTarefa, duplicarTarefa, quickAddMostrarStep2, quickAddCancelar, quickAddConfirmar, quickAddTarefa, filtrarTarefasBusca, exportarTempoProjetoCSV, modalColabsTarefa, sairTarefaCompartilhada, adicionarColab, removerColab, modalNovaDecisao, criarDecisao, aplicarFiltroOrigemProjeto, aplicarFiltroResponsavelProjeto, aplicarFiltroStatusProjeto, alternarListaConcluidasProjeto, renderMinhasTarefas, abrirTarefaContexto, continuarUltimaTarefa } from './modules/tasks.js';
 import { abrirCentralAdmin, renderTimelineHoje, exportarTempoAdminCSV, aplicarFiltroTempoAdmin, limparFiltroTempoAdmin, abrirUsuarioAdmin, modalNovoColega, promoverAdmin, modalNovoColega_legacy, criarColega } from './modules/admin.js';
 import { fazerLogin, fazerSetup, fazerLogout, fazerCadastroPublico, modalCadastroPublico, modalTrocaSenhaObrigatoria, salvarSenhaObrigatoria, modalResetSenhaUsuario, resetarSenhaUsuario, toggleSenhaLogin, toggleSenhaSetup, toggleSenhaCadastro, toggleSenhaObrigatoria, toggleSenhaReset } from './modules/auth.js';
 import { initShortcuts } from './modules/shortcuts.js';
@@ -34,6 +34,10 @@ function parseHashRoute(hash = window.location.hash) {
   const path = normalizeHash(hash);
   const segs = path.split('/').filter(Boolean);
   if (!segs.length || segs[0] === 'hoje') return { name: 'today', params: {}, hash: '#/hoje' };
+  if (segs[0] === 'tarefas') {
+    if (segs[1] && segs[2]) return { name: 'task', params: { id: segs[1], projectId: segs[2] }, hash: `#/tarefas/${segs[1]}/${segs[2]}` };
+    return { name: 'tasks', params: {}, hash: '#/tarefas' };
+  }
   if (segs[0] === 'projetos') {
     if (segs[1]) return { name: 'project', params: { id: segs[1] }, hash: `#/projetos/${segs[1]}` };
     return { name: 'projects', params: {}, hash: '#/projetos' };
@@ -42,13 +46,20 @@ function parseHashRoute(hash = window.location.hash) {
     if (segs[1]) return { name: 'group', params: { id: segs[1] }, hash: `#/grupos/${segs[1]}` };
     return { name: 'groups', params: {}, hash: '#/grupos' };
   }
+  if (segs[0] === 'admin') {
+    const tab = segs[1] || 'agora';
+    return { name: 'admin', params: { tab }, hash: `#/admin/${tab}` };
+  }
   return { name: 'today', params: {}, hash: '#/hoje' };
 }
 
 function routeToHash(name, params = {}) {
   if (name === 'today') return '#/hoje';
+  if (name === 'tasks') return '#/tarefas';
   if (name === 'projects') return '#/projetos';
   if (name === 'groups') return '#/grupos';
+  if (name === 'admin') return `#/admin/${params.tab || 'agora'}`;
+  if (name === 'task' && params.id && params.projectId) return `#/tarefas/${params.id}/${params.projectId}`;
   if (name === 'project' && params.id) return `#/projetos/${params.id}`;
   if (name === 'group' && params.id) return `#/grupos/${params.id}`;
   return '#/hoje';
@@ -73,6 +84,10 @@ async function renderCurrentRoute(opts = {}) {
     await renderDash({ routeKind: 'today' });
     return;
   }
+  if (route.name === 'tasks') {
+    await renderMinhasTarefas({ fromRoute: true });
+    return;
+  }
   if (route.name === 'projects') {
     await renderDash({ routeKind: 'projects' });
     return;
@@ -87,6 +102,14 @@ async function renderCurrentRoute(opts = {}) {
   }
   if (route.name === 'project' && route.params.id) {
     await abrirProjeto(route.params.id, { fromRoute: true });
+    return;
+  }
+  if (route.name === 'task' && route.params.id && route.params.projectId) {
+    await abrirTarefaContexto(route.params.id, route.params.projectId, { fromRoute: true });
+    return;
+  }
+  if (route.name === 'admin') {
+    await abrirCentralAdmin(route.params.tab || 'agora', { fromRoute: true });
     return;
   }
   window.location.hash = '#/hoje';
@@ -112,8 +135,11 @@ export async function refreshCurrentRoute(opts = {}) {
 }
 
 export function goToday() { return navigateToRoute('today'); }
+export function goTasks() { return navigateToRoute('tasks'); }
 export function goProjects() { return navigateToRoute('projects'); }
 export function goGroups() { return navigateToRoute('groups'); }
+export function goAdmin(tab = 'agora') { return navigateToRoute('admin', { tab }); }
+export function goTask(id, projectId) { return navigateToRoute('task', { id, projectId }); }
 export function goProjeto(id) { return navigateToRoute('project', { id }); }
 export function goGrupo(id) { return navigateToRoute('group', { id }); }
 
@@ -248,8 +274,11 @@ Object.assign(window, {
   mostrar,
   goHome,
   goToday,
+  goTasks,
   goProjects,
   goGroups,
+  goAdmin,
+  goTask,
   goProjeto,
   goGrupo,
   navigateToRoute,
@@ -386,6 +415,9 @@ Object.assign(window, {
   criarTarefa,
   modalEditarTarefa,
   salvarTarefa,
+  renderMinhasTarefas,
+  abrirTarefaContexto,
+  continuarUltimaTarefa,
   duplicarTarefa,
   quickAddMostrarStep2,
   quickAddCancelar,

@@ -8,8 +8,8 @@ import {
   setFiltroOrigemTarefas, setFiltroStatusTarefa, setFiltroRespTar,
   setTarefasView, setListaSort, setListaConcluidasExpandida, setTaskMobileFiltersOpen,
 } from './state.js';
-import { req, invalidarCacheProjetos } from './api.js';
-import { toast, abrirModal, fecharModal, confirmar, btnLoading } from './ui.js';
+import { req, fetchProjetos, invalidarCacheProjetos } from './api.js';
+import { toast, abrirModal, fecharModal, confirmar, btnLoading, setBreadcrumb, setShellView } from './ui.js';
 import {
   esc, gv, sel, avatar, iniciais, tag, prazoFmt, diasRestantes,
   fmtDuracao, fmtHoras, isAdmin, podeEditar, souDono, tarefaCompartilhadaComigo,
@@ -27,6 +27,12 @@ const DIFS = ['Simples','Moderada','Complexa'];
 let _quickAddNome = '';
 let _quickAddStep = 0;
 let _buscaTarefaTick;
+let _myTasksFilters = {
+  busca: '',
+  origem: 'todos',
+  status: 'todos',
+  projeto: '',
+};
 
 function projectTaskUiStateKey(projectId) {
   return `telier_project_task_state_${projectId}`;
@@ -89,6 +95,230 @@ export function restaurarEstadoTarefasProjeto(projectId) {
 async function _recarregarProjeto(aba) {
   const { recarregarProjeto } = await import('./project.js');
   return recarregarProjeto(aba);
+}
+
+function filtrarTarefasTransversais(tarefas) {
+  let lista = [...(tarefas || [])];
+  if (_myTasksFilters.origem === 'meus') lista = lista.filter(t => t.dono_id === EU?.id);
+  else if (_myTasksFilters.origem === 'compartilhadas') lista = lista.filter(t => tarefaCompartilhadaComigo(t));
+  if (_myTasksFilters.status !== 'todos') lista = lista.filter(t => t.status === _myTasksFilters.status);
+  if (_myTasksFilters.projeto) lista = lista.filter(t => String(t.projeto_id) === String(_myTasksFilters.projeto));
+  if (_myTasksFilters.busca) {
+    const busca = _myTasksFilters.busca.toLowerCase();
+    lista = lista.filter(t =>
+      (t.nome || '').toLowerCase().includes(busca) ||
+      (t.projeto_nome || '').toLowerCase().includes(busca) ||
+      (t.grupo_nome || '').toLowerCase().includes(busca)
+    );
+  }
+  return lista;
+}
+
+export async function abrirTarefaContexto(taskId, projectId, opts = {}) {
+  if (!taskId || !projectId) return;
+  if (!opts.fromRoute) {
+    return window.goTask ? window.goTask(taskId, projectId) : null;
+  }
+  const { abrirProjeto } = await import('./project.js');
+  const projetoJaAberto = String(PROJETO?.id || '') === String(projectId);
+  if (!projetoJaAberto) {
+    await abrirProjeto(projectId, { fromRoute: true });
+  }
+  setShellView('tasks');
+  if (opts.expandTime) expandirSessoes(taskId);
+  else modalEditarTarefa(taskId);
+}
+
+export async function continuarUltimaTarefa() {
+  try {
+    const ativas = await req('GET', '/tempo/ativas').catch(() => []);
+    const ativa = (ativas || [])[0];
+    if (ativa?.tarefa_id && ativa?.projeto_id) {
+      return abrirTarefaContexto(ativa.tarefa_id, ativa.projeto_id);
+    }
+    const ultima = await req('GET', '/tempo/ultima-sessao').catch(() => null);
+    if (ultima?.tarefa_id && ultima?.projeto_id) {
+      return abrirTarefaContexto(ultima.tarefa_id, ultima.projeto_id);
+    }
+    toast('Nenhuma tarefa recente para continuar', 'err');
+  } catch (e) {
+    toast(e.message, 'err');
+  }
+}
+
+export async function renderMinhasTarefas(opts = {}) {
+  if (!opts.fromRoute) {
+    return window.goTasks ? window.goTasks() : null;
+  }
+  _myTasksFilters.busca = window._myTasksBusca ?? _myTasksFilters.busca;
+  _myTasksFilters.origem = window._myTasksOrigem ?? _myTasksFilters.origem;
+  _myTasksFilters.status = window._myTasksStatus ?? _myTasksFilters.status;
+  _myTasksFilters.projeto = window._myTasksProjeto ?? _myTasksFilters.projeto;
+  window.scrollTo(0, 0);
+  setShellView('tasks');
+  document.title = 'Minhas tarefas · Telier';
+  setBreadcrumb([{ label: 'Minhas tarefas' }]);
+  const c = document.getElementById('content');
+  c.innerHTML = `<div class="loading"><div class="spinner"></div> Carregando tarefas...</div>`;
+  try {
+    const projetos = await fetchProjetos(new URLSearchParams());
+    const projetosAtivos = (projetos || []).filter(p => normalizarStatusProjeto(p.status) !== 'Arquivado');
+    const tarefasPorProjeto = await Promise.all(projetosAtivos.map(async projeto => {
+      const tarefas = await req('GET', `/projetos/${projeto.id}/tarefas`).catch(() => []);
+      return normalizarColaboradoresTarefas(tarefas).map(t => ({
+        ...t,
+        projeto_id: t.projeto_id || projeto.id,
+        projeto_nome: t.projeto_nome || projeto.nome,
+        grupo_id: projeto.grupo_id || null,
+        grupo_nome: projeto.grupo_nome || '',
+        projeto_status: projeto.status,
+      }));
+    }));
+    const tarefas = tarefasPorProjeto.flat().filter(t => t.status !== 'ConcluÃ­da' || tarefaCompartilhadaComigo(t) || t.dono_id === EU?.id);
+    const operacaoHoje = await req('GET', '/tarefas/operacao-hoje').catch(() => []);
+    const resumoHoje = await req('GET', '/tempo/resumo-hoje').catch(() => null);
+    const recentes = await req('GET', '/tempo/sessoes-recentes?limit=6').catch(() => []);
+    const tarefasFiltradas = filtrarTarefasTransversais(tarefas);
+    const projetosFiltro = [...new Map(tarefas.map(t => [t.projeto_id, { id: t.projeto_id, nome: t.projeto_nome }])).values()];
+    const minhas = tarefas.filter(t => t.dono_id === EU?.id).length;
+    const compartilhadas = tarefas.filter(t => tarefaCompartilhadaComigo(t)).length;
+    const emAndamento = tarefas.filter(t => t.status === 'Em andamento').length;
+    const comFoco = tarefas.filter(t => t.foco && t.dono_id === EU?.id).length;
+
+    const statusTabs = ['todos', 'A fazer', 'Em andamento', 'Bloqueada', 'ConcluÃ­da'];
+    const statusCountMap = Object.fromEntries(statusTabs.map(status => [
+      status,
+      status === 'todos' ? tarefas.length : tarefas.filter(t => t.status === status).length,
+    ]));
+
+    c.innerHTML = `
+      <div class="dash-header dash-header-spaced dash-head-grid">
+        <div class="dash-head-main">
+          <div class="section-kicker">OperaÃ§Ã£o transversal</div>
+          <div class="dash-title">Minhas tarefas</div>
+          <div class="dash-sub dash-sub-tight">A unidade de trabalho do Telier passa a ser a tarefa. Projeto e grupo entram como contexto estrutural, nÃ£o como ponto inicial de uso.</div>
+        </div>
+        <div class="dash-actions">
+          <button class="btn" onclick="continuarUltimaTarefa()">Continuar Ãºltima tarefa</button>
+          <button class="btn btn-primary" onclick="modalNovaTarefa()">Nova tarefa</button>
+        </div>
+      </div>
+      <div class="dash-metrics-strip">
+        <div class="dash-metric"><span class="dash-metric-label">Tarefas visÃ­veis</span><span class="dash-metric-value">${tarefasFiltradas.length}</span></div>
+        <div class="dash-metric"><span class="dash-metric-label">Em andamento</span><span class="dash-metric-value">${emAndamento}</span></div>
+        <div class="dash-metric"><span class="dash-metric-label">Meu foco</span><span class="dash-metric-value">${comFoco}</span></div>
+        <div class="dash-metric"><span class="dash-metric-label">Horas hoje</span><span class="dash-metric-value">${parseFloat(resumoHoje?.horas_hoje || 0).toFixed(1)}h</span></div>
+      </div>
+      <div class="dash-toolbar task-view-toolbar task-toolbar-studio">
+        <div class="dash-toolbar-row dash-toolbar-primary">
+          <div class="task-toolbar-main dash-toolbar-searchblock">
+            <div class="dash-toolbar-label">Consulta</div>
+            <input type="search" class="search-dash search-tarefa" placeholder="Buscar tarefa, projeto ou grupo..." value="${esc(_myTasksFilters.busca)}" oninput="window._myTasksBusca=this.value;renderMinhasTarefas({ fromRoute: true })">
+          </div>
+          <div class="dash-toolbar-switches">
+            <div class="dash-toolbar-label">Escopo</div>
+            <div class="segmented">
+              <button class="segmented-btn ${_myTasksFilters.origem==='todos'?'ativo':''}" onclick="window._myTasksOrigem='todos';renderMinhasTarefas({ fromRoute: true })">Todas${tarefas.length ? `<span class="seg-count">${tarefas.length}</span>` : ''}</button>
+              <button class="segmented-btn ${_myTasksFilters.origem==='meus'?'ativo':''}" onclick="window._myTasksOrigem='meus';renderMinhasTarefas({ fromRoute: true })">Minhas${minhas ? `<span class="seg-count">${minhas}</span>` : ''}</button>
+              <button class="segmented-btn ${_myTasksFilters.origem==='compartilhadas'?'ativo':''}" onclick="window._myTasksOrigem='compartilhadas';renderMinhasTarefas({ fromRoute: true })">Compartilhadas${compartilhadas ? `<span class="seg-count">${compartilhadas}</span>` : ''}</button>
+            </div>
+          </div>
+          <div class="dash-toolbar-field">
+            <div class="dash-toolbar-label">Projeto</div>
+            <select class="resp-filter select-control flex-shrink-0" onchange="window._myTasksProjeto=this.value;renderMinhasTarefas({ fromRoute: true })">
+              <option value="">Todos os projetos</option>
+              ${projetosFiltro.map(p => `<option value="${p.id}" ${String(_myTasksFilters.projeto) === String(p.id) ? 'selected' : ''}>${esc(p.nome)}</option>`).join('')}
+            </select>
+          </div>
+        </div>
+        <div class="dash-toolbar-row dash-toolbar-secondary">
+          <div class="dash-toolbar-field dash-toolbar-statusfield">
+            <div class="dash-toolbar-label">Status</div>
+            <div class="dash-status-grid">
+              ${statusTabs.map(status => {
+                const label = status === 'todos' ? 'Todos' : status;
+                const count = statusCountMap[status] || 0;
+                return `<button class="filter-btn ${_myTasksFilters.status===status?'ativo':''}" onclick="window._myTasksStatus='${esc(status)}';renderMinhasTarefas({ fromRoute: true })">${label}${count ? `<span class="seg-count">${count}</span>` : ''}</button>`;
+              }).join('')}
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="task-view-surface">
+        <div class="task-view-head">
+          <div>
+            <div class="task-view-eyebrow">Fila operacional</div>
+            <div class="task-view-title">${operacaoHoje.length} ponto${operacaoHoje.length === 1 ? '' : 's'} de reentrada hoje</div>
+            <div class="task-view-copy">As tarefas abaixo priorizam retomada, foco e continuidade de execuÃ§Ã£o.</div>
+          </div>
+          <div class="task-view-kpi">${recentes.length} recente${recentes.length === 1 ? '' : 's'}</div>
+        </div>
+        <div class="mapa-list">
+          ${(operacaoHoje.length ? operacaoHoje : tarefasFiltradas.slice(0, 6)).map((t, index) => `
+            <div class="mapa-item clickable ${t.foco ? 'is-foco' : ''}" onclick="abrirTarefaContexto('${t.id || t.tarefa_id}','${t.projeto_id}')">
+              <div class="mapa-rank">${String(index + 1).padStart(2, '0')}</div>
+              <div class="mapa-body">
+                <div class="mapa-nome">${esc(t.nome || t.tarefa_nome)}</div>
+                <div class="mapa-sub">${esc(t.projeto_nome || 'Projeto')} ${t.grupo_nome ? `Â· ${esc(t.grupo_nome)}` : ''}</div>
+              </div>
+              <div class="mapa-tags">
+                ${t.prioridade ? tag(t.prioridade, PT[t.prioridade]) : ''}
+                ${t.status ? tag(t.status) : ''}
+                ${t.foco ? '<span class="tag tag-purple">Foco</span>' : ''}
+              </div>
+            </div>
+          `).join('') || `<div class="empty-state"><div class="empty-text">Nenhuma tarefa operacional encontrada</div></div>`}
+        </div>
+      </div>
+      <div class="task-view-surface task-list-surface">
+        <div class="task-list-head">
+          <div>
+            <div class="task-view-eyebrow">VisÃ£o transversal</div>
+            <div class="task-view-title">Todas as tarefas no seu contexto de trabalho</div>
+            <div class="task-view-copy">Abra a tarefa diretamente. Use o projeto apenas quando precisar do contexto maior.</div>
+          </div>
+          <div class="task-view-kpi">${tarefasFiltradas.length} resultado${tarefasFiltradas.length === 1 ? '' : 's'}</div>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Tarefa</th>
+                <th>Projeto</th>
+                <th>Grupo</th>
+                <th>ResponsÃ¡vel</th>
+                <th>Prioridade</th>
+                <th>Status</th>
+                <th>Prazo</th>
+                <th>AÃ§Ãµes</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${tarefasFiltradas.map(t => `
+                <tr>
+                  <td class="${t.status === 'ConcluÃ­da' ? 'concluida' : ''}">${esc(t.nome)}</td>
+                  <td><span class="tag tag-gray">${esc(t.projeto_nome || 'â€”')}</span></td>
+                  <td>${t.grupo_nome ? `<span class="tag tag-gray">${esc(t.grupo_nome)}</span>` : 'â€”'}</td>
+                  <td><div class="resp-chip">${avatar(t.dono_nome,'avatar-sm')} <span>${esc(t.dono_nome || 'â€”')}</span></div></td>
+                  <td>${tag(t.prioridade, PT[t.prioridade])}</td>
+                  <td>${tag(t.status)}</td>
+                  <td><span class="mono mono-cell-muted">${t.data ? prazoFmt(t.data, true) : 'â€”'}</span></td>
+                  <td>
+                    <div class="td-aÃ§Ãµes">
+                      <button class="btn btn-primary btn-sm" onclick="abrirTarefaContexto('${t.id}','${t.projeto_id}')">Abrir tarefa</button>
+                      <button class="btn btn-ghost btn-sm" onclick="abrirProjeto('${t.projeto_id}')">Projeto</button>
+                    </div>
+                  </td>
+                </tr>
+              `).join('') || `<tr><td colspan="8" class="table-empty-row">Nenhuma tarefa encontrada.</td></tr>`}
+            </tbody>
+          </table>
+        </div>
+      </div>`;
+
+  } catch (e) {
+    c.innerHTML = `<div class="error-block">${esc(e.message)}</div>`;
+  }
 }
 
 export function atualizarPrazoHint() {
@@ -1003,10 +1233,26 @@ export async function removerPerm(projetoId, usuarioId) {
   }, { titulo: 'Remover colaborador', btnTexto: 'Remover', danger: true });
 }
 
-export async function modalNovaTarefa(projetoId) {
+export async function modalNovaTarefa(projetoId = '') {
+  let projetoSelect = '';
+  if (!projetoId) {
+    const projetos = await fetchProjetos(new URLSearchParams());
+    const projetosAtivos = (projetos || []).filter(p => normalizarStatusProjeto(p.status) !== 'Arquivado');
+    projetoSelect = `
+    <div class="modal-section">
+      <div class="modal-section-title">Contexto estrutural</div>
+      <div class="form-row"><label>Projeto</label>
+        <select id="m-projeto-id">
+          <option value="">Selecione um projeto</option>
+          ${projetosAtivos.map(p => `<option value="${p.id}">${esc(p.nome)}${p.grupo_nome ? ` · ${esc(p.grupo_nome)}` : ''}</option>`).join('')}
+        </select>
+      </div>
+    </div>`;
+  }
   abrirModal(`
     <h2>Nova tarefa</h2>
     <div class="modal-hint">Esta janela altera apenas a tarefa.</div>
+    ${projetoSelect}
     <div class="modal-section">
       <div class="modal-section-title">Detalhes da tarefa</div>
       <div class="form-row"><label>Título da tarefa</label><input id="m-nome" placeholder="Ex: Detalhar corte da escada"></div>
@@ -1029,11 +1275,13 @@ export async function modalNovaTarefa(projetoId) {
 }
 
 export async function criarTarefa(projetoId) {
+  const projetoDestino = projetoId || gv('m-projeto-id');
   const nome = gv('m-nome').trim();
+  if (!projetoDestino) { toast('Selecione um projeto', 'err'); return; }
   if (!nome) { toast('Nome obrigatório', 'err'); return; }
   btnLoading('btn-criar-tar', true);
   try {
-    await req('POST', `/projetos/${projetoId}/tarefas`, {
+    await req('POST', `/projetos/${projetoDestino}/tarefas`, {
       nome,
       status: gv('m-status'),
       prioridade: gv('m-prior'),
@@ -1042,7 +1290,9 @@ export async function criarTarefa(projetoId) {
       descricao: gv('m-desc') || null,
     });
     invalidarCacheProjetos();
-    fecharModal(); toast('Tarefa criada'); await _recarregarProjeto('lista');
+    fecharModal(); toast('Tarefa criada');
+    if (PROJETO?.id && String(PROJETO.id) === String(projetoDestino)) await _recarregarProjeto('lista');
+    else if (window.goTasks) await window.goTasks();
   } catch (e) { toast(e.message, 'err'); btnLoading('btn-criar-tar', false); }
 }
 

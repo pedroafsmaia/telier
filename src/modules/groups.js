@@ -170,7 +170,7 @@ export async function abrirGrupo(id, opts = {}) {
     const projetosDoGrupo = projetos.filter(p => p.grupo_id === id);
     c.style.opacity = '';
     c.style.pointerEvents = '';
-    const abaSalva = sessionStorage.getItem(`telier_grupo_aba_${id}`) || 'projetos';
+    const abaSalva = sessionStorage.getItem(`telier_grupo_aba_${id}`) || 'tarefas';
     slideContent('right');
     renderGrupo(grupo, projetosDoGrupo, abaSalva);
     setVistaAtual('grupo');
@@ -250,8 +250,8 @@ export function renderGrupo(grupo, projetos, abaAtiva = 'projetos') {
         </div>` : ''}
     </div></section>
     <div class="abas abas-spaced detail-nav">
-      <button class="aba ${abaAtiva==='projetos'?'ativa':''}" data-aba="projetos" onclick="mudarAbaGrupo('projetos')">Projetos${nProjetos ? ` <span class="tab-count">${nProjetos}</span>` : ''}</button>
       <button class="aba ${abaAtiva==='tarefas'?'ativa':''}" data-aba="tarefas" onclick="mudarAbaGrupo('tarefas')">Tarefas</button>
+      <button class="aba ${abaAtiva==='projetos'?'ativa':''}" data-aba="projetos" onclick="mudarAbaGrupo('projetos')">Projetos${nProjetos ? ` <span class="tab-count">${nProjetos}</span>` : ''}</button>
     </div>
     <div id="aba-grupo"></div>`;
 

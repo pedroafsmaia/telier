@@ -7,10 +7,13 @@ import { req } from './api.js';
 import { toast, abrirModal, fecharModal, btnLoading, setBreadcrumb, setShellView } from './ui.js';
 import { esc, gv, avatar, tag, fmtHoras, isAdmin, csvEsc, tempoDesde } from './utils.js';
 
-export async function abrirCentralAdmin(aba = 'agora') {
+export async function abrirCentralAdmin(aba = 'agora', opts = {}) {
   if (!isAdmin()) {
     toast('Disponível apenas no perfil admin', 'err');
     return;
+  }
+  if (!opts.fromRoute) {
+    return window.goAdmin ? window.goAdmin(aba) : null;
   }
   const { setProjeto } = await import('./state.js');
   setProjeto(null);

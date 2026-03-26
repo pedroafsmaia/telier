@@ -61,7 +61,8 @@
       </div>
 
       <div class="sidebar-block">
-        <button class="btn btn-primary sidebar-cta" onclick="modalNovoProjeto()">+ Novo projeto</button>
+        <button class="btn btn-primary sidebar-cta" onclick="continuarUltimaTarefa()">Continuar última tarefa</button>
+        <button class="btn btn-ghost sidebar-cta" onclick="modalNovaTarefa()">Nova tarefa</button>
       </div>
 
       <div class="sidebar-section-label">Navegação</div>
@@ -71,6 +72,12 @@
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M12 6v6l4 2" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><circle cx="12" cy="12" r="8" stroke="currentColor" stroke-width="1.6"/></svg>
           </span>
           <span>Hoje</span>
+        </button>
+        <button class="sidebar-link" data-shell-view="tasks" onclick="goTasks()">
+          <span class="sidebar-link-icon">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M5 6.5h14M5 12h14M5 17.5h8" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><path d="M3 6.5h.01M3 12h.01M3 17.5h.01" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg>
+          </span>
+          <span>Minhas tarefas</span>
         </button>
         <button class="sidebar-link" data-shell-view="projects" onclick="goProjects()">
           <span class="sidebar-link-icon">
@@ -84,7 +91,7 @@
           </span>
           <span>Grupos</span>
         </button>
-        <button class="sidebar-link" id="sidebar-link-admin" data-shell-view="admin" onclick="abrirCentralAdmin()">
+        <button class="sidebar-link" id="sidebar-link-admin" data-shell-view="admin" onclick="goAdmin()">
           <span class="sidebar-link-icon">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M12 3l8 4.5v9L12 21l-8-4.5v-9L12 3z" stroke="currentColor" stroke-width="1.6"/><path d="M12 8v8M8 10.5l4 2 4-2" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
           </span>
