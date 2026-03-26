@@ -159,7 +159,18 @@ export async function renderMinhasTarefas(opts = {}) {
   document.title = 'Minhas tarefas · Telier';
   setBreadcrumb([{ label: 'Minhas tarefas' }]);
   const c = document.getElementById('content');
-  c.innerHTML = `<div class="loading"><div class="spinner"></div> Carregando tarefas...</div>`;
+  c.innerHTML = `<div class="skeleton-list" aria-live="polite" aria-busy="true">
+    <div class="skeleton-block">
+      <div class="skeleton-line w-45"></div>
+      <div class="skeleton-line w-80"></div>
+      <div class="skeleton-line w-100"></div>
+    </div>
+    <div class="skeleton-block">
+      <div class="skeleton-line w-30"></div>
+      <div class="skeleton-line w-100"></div>
+      <div class="skeleton-line w-60"></div>
+    </div>
+  </div>`;
   try {
     const projetos = await fetchProjetos(new URLSearchParams());
     const projetosAtivos = (projetos || []).filter(p => normalizarStatusProjeto(p.status) !== 'Arquivado');
@@ -994,7 +1005,11 @@ export async function renderRelatorio(el, tarefas) {
   if (RELATORIO_CACHE && RELATORIO_CACHE.projetoId === projetoId && (Date.now() - RELATORIO_CACHE.ts) < 60000) {
     resumoMap = RELATORIO_CACHE.resumoMap;
   } else {
-    el.innerHTML = `<div class="loading"><div class="spinner"></div> Calculando horas...</div>`;
+    el.innerHTML = `<div class="skeleton-block" aria-live="polite" aria-busy="true">
+      <div class="skeleton-line w-30"></div>
+      <div class="skeleton-line w-100"></div>
+      <div class="skeleton-line w-80"></div>
+    </div>`;
     const byTarefa = await req('GET', `/projetos/${projetoId}/relatorio`);
     resumoMap = byTarefa;
     setRelatorioCache({ projetoId, ts: Date.now(), resumoMap });

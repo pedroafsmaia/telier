@@ -39,7 +39,12 @@ export async function abrirCentralAdmin(aba = 'agora', opts = {}) {
         <button class="admin-tab ${aba==='tempo'?'ativo':''}" onclick="abrirCentralAdmin('tempo')">Tempo</button>
         <button class="admin-tab ${aba==='grupos'?'ativo':''}" onclick="abrirCentralAdmin('grupos')">Grupos</button>
       </div>
-      <div id="admin-body" class="admin-body"><div class="loading"><div class="spinner"></div> Carregando painel admin...</div></div>
+      <div id="admin-body" class="admin-body">
+        <div class="skeleton-list" aria-live="polite" aria-busy="true">
+          <div class="skeleton-block"><div class="skeleton-line w-45"></div><div class="skeleton-line w-100"></div><div class="skeleton-line w-80"></div></div>
+          <div class="skeleton-block"><div class="skeleton-line w-30"></div><div class="skeleton-line w-100"></div><div class="skeleton-line w-60"></div></div>
+        </div>
+      </div>
     </div>`;
 
   const body = document.getElementById('admin-body');
@@ -278,7 +283,11 @@ export async function abrirCentralAdmin(aba = 'agora', opts = {}) {
 
 export async function renderTimelineHoje(el) {
   if (!el) return;
-  el.innerHTML = `<div class="loading"><div class="spinner"></div></div>`;
+  el.innerHTML = `<div class="skeleton-block" aria-live="polite" aria-busy="true">
+    <div class="skeleton-line w-30"></div>
+    <div class="skeleton-line w-100"></div>
+    <div class="skeleton-line w-80"></div>
+  </div>`;
   try {
     const rows = await req('GET', '/admin/timeline-hoje');
     if (!el.isConnected) return;

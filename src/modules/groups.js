@@ -23,7 +23,10 @@ export async function renderGroupsHome(opts = {}) {
   document.title = 'Grupos · Telier';
   setBreadcrumb([{ label: 'Grupos' }]);
   const c = document.getElementById('content');
-  c.innerHTML = `<div class="loading"><div class="spinner"></div> Carregando grupos...</div>`;
+  c.innerHTML = `<div class="skeleton-list" aria-live="polite" aria-busy="true">
+    <div class="skeleton-block"><div class="skeleton-line w-45"></div><div class="skeleton-line w-100"></div><div class="skeleton-line w-60"></div></div>
+    <div class="skeleton-block"><div class="skeleton-line w-30"></div><div class="skeleton-line w-100"></div><div class="skeleton-line w-80"></div></div>
+  </div>`;
   try {
     const [grupos, projetos, ativas] = await Promise.all([
       req('GET', '/grupos').catch(() => []),
@@ -329,7 +332,10 @@ export function renderGrupoAbaProjetos(el, projetos) {
 
 export async function renderGrupoAbaTarefas(el) {
   if (!GRUPO_ATUAL?.id) return;
-  el.innerHTML = `<div class="loading"><div class="spinner"></div> Carregando tarefas...</div>`;
+  el.innerHTML = `<div class="skeleton-list" aria-live="polite" aria-busy="true">
+    <div class="skeleton-block"><div class="skeleton-line w-30"></div><div class="skeleton-line w-100"></div><div class="skeleton-line w-80"></div></div>
+    <div class="skeleton-block"><div class="skeleton-line w-45"></div><div class="skeleton-line w-100"></div><div class="skeleton-line w-60"></div></div>
+  </div>`;
   try {
     const tarefas = await carregarTarefasGrupo();
     const responsaveis = [...new Map(tarefas.map(t => [t.dono_id, { id: t.dono_id, nome: t.dono_nome }])).values()];
@@ -434,7 +440,11 @@ export async function renderGrupoAbaTarefas(el) {
 
 export async function renderGrupoAbaMapa(el) {
   if (!GRUPO_ATUAL?.id) return;
-  el.innerHTML = `<div class="loading"><div class="spinner"></div> Carregando mapa...</div>`;
+  el.innerHTML = `<div class="skeleton-block" aria-live="polite" aria-busy="true">
+    <div class="skeleton-line w-45"></div>
+    <div class="skeleton-line w-100"></div>
+    <div class="skeleton-line w-100"></div>
+  </div>`;
   try {
     const tarefas = await carregarTarefasGrupo();
     const pendentes = tarefas
@@ -500,7 +510,11 @@ export async function renderGrupoAbaMapa(el) {
 
 export async function renderGrupoAbaAoVivo(el) {
   if (!GRUPO_ATUAL?.id) return;
-  el.innerHTML = `<div class="loading"><div class="spinner"></div> Verificando sessões ativas...</div>`;
+  el.innerHTML = `<div class="skeleton-block" aria-live="polite" aria-busy="true">
+    <div class="skeleton-line w-30"></div>
+    <div class="skeleton-line w-100"></div>
+    <div class="skeleton-line w-60"></div>
+  </div>`;
   try {
     const sessoes = await carregarAoVivoGrupo();
     if (!sessoes.length) {
