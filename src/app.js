@@ -149,6 +149,22 @@ export function toggleSidebarDrawer() {
   document.body.classList.toggle('sidebar-drawer-open');
 }
 
+function bindResponsiveShellEvents() {
+  const mobileMq = window.matchMedia('(max-width: 900px)');
+  const syncDrawerState = () => {
+    if (!mobileMq.matches) closeSidebarDrawer();
+  };
+  syncDrawerState();
+  if (typeof mobileMq.addEventListener === 'function') {
+    mobileMq.addEventListener('change', syncDrawerState);
+  } else if (typeof mobileMq.addListener === 'function') {
+    mobileMq.addListener(syncDrawerState);
+  }
+  document.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape') closeSidebarDrawer();
+  });
+}
+
 // ── INIT ──
 async function init() {
   if (API === 'SUBSTITUA_PELA_URL_DO_SEU_WORKER') {
@@ -239,6 +255,7 @@ export function alternarPerfilAdmin() {
 window.addEventListener('load', async () => {
   const temaSalvo = localStorage.getItem('ea_tema') || 'dark';
   aplicarTema(temaSalvo);
+  bindResponsiveShellEvents();
   carregarFiltrosDash();
   initShortcuts();
   await init();
