@@ -161,6 +161,7 @@ export function fmtHoras(horas) {
 export function fmtDatetime(iso) {
   if (!iso) return '—';
   const d = new Date(iso.replace(' ', 'T') + 'Z');
+  if (Number.isNaN(d.getTime())) return 'Data indisponível';
   return d.toLocaleDateString('pt-BR') + ' ' + d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
 }
 

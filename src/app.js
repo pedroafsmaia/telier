@@ -235,10 +235,10 @@ export function syncAdminModeUI() {
   }
   btn.style.display = 'inline-flex';
   if (adminLink) adminLink.style.display = 'flex';
-  btn.innerHTML = `<svg width="12" height="12" viewBox="0 0 12 12" fill="none" style="flex-shrink:0"><path d="M1 4l3-3M1 4h4M11 8l-3 3M11 8H7" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>${ADMIN_MODE === 'admin' ? 'Visão admin' : 'Visão membro'}`;
+  btn.innerHTML = `<svg width="12" height="12" viewBox="0 0 12 12" fill="none" style="flex-shrink:0"><path d="M1 4l3-3M1 4h4M11 8l-3 3M11 8H7" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>${ADMIN_MODE === 'admin' ? 'Modo administrador' : 'Modo colaborador'}`;
   btn.title = ADMIN_MODE === 'admin'
-    ? 'Clique para usar o sistema como usuário normal'
-    : 'Clique para voltar ao perfil admin';
+    ? 'Clique para usar o sistema como colaborador'
+    : 'Clique para voltar ao modo administrador';
 }
 
 export function alternarPerfilAdmin() {
@@ -247,7 +247,7 @@ export function alternarPerfilAdmin() {
   setAdminMode(novoModo);
   localStorage.setItem(ADMIN_MODE_KEY, novoModo);
   syncAdminModeUI();
-  toast(novoModo === 'admin' ? 'Modo admin ativado' : 'Modo membro ativado');
+  toast(novoModo === 'admin' ? 'Modo administrador ativado' : 'Modo colaborador ativado');
   refreshCurrentRoute({ invalidateProjects: true });
 }
 

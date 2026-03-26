@@ -75,7 +75,6 @@ export function renderPainelHoje(projetos, ativas, sessoesRecentes = [], tarefas
     })),
   ].slice(0, 4);
   const ativo = ativas[0] || null;
-  const emAndamento = tarefasOperacao.filter(t => t.status === 'Em andamento' || t.sessao_ativa_id);
   const retomadas = tarefasOperacao.filter(t => t.foco || t.status === 'Em andamento').slice(0, 4);
   const recentes = (sessoesRecentes.length ? sessoesRecentes : (ultimaSessao ? [ultimaSessao] : [])).slice(0, 4);
   const estadoBloco = (itens) => (itens.length === 0 ? 'is-empty' : (itens.length === 1 ? 'is-single' : 'is-list'));
@@ -137,9 +136,9 @@ export function renderPainelHoje(projetos, ativas, sessoesRecentes = [], tarefas
     <div class="startday-wrap ${collapsed ? 'collapsed' : ''}" id="startday-wrap">
       <div class="startday-head">
         <div>
-          <div class="section-kicker">Operação diária</div>
+          <div class="section-kicker">Hoje</div>
           <div class="startday-title">Hoje</div>
-          <div class="startday-head-note">Entrada de trabalho do dia: sessão ativa, retomada, urgências e acesso direto à tarefa certa.</div>
+          <div class="startday-head-note">Veja o que retomar agora e avance sem perder contexto.</div>
         </div>
         <button class="startday-toggle" onclick="toggleStartday()">${collapsed ? 'Expandir' : 'Recolher'}</button>
       </div>
@@ -148,7 +147,7 @@ export function renderPainelHoje(projetos, ativas, sessoesRecentes = [], tarefas
           <section class="startday-session-card ${ativo ? 'is-live' : ''}">
             <div class="startday-session-head">
               <div>
-                <div class="task-view-eyebrow">Sessão ativa</div>
+                <div class="task-view-eyebrow">Em foco agora</div>
                 <div class="startday-session-title">${ativo ? esc(ativo.tarefa_nome || 'Tarefa ativa') : (focoNome ? esc(focoNome) : 'Nenhuma sessão ativa')}</div>
                 <div class="startday-session-copy">${ativo
                   ? `${esc(ativo.projeto_nome || '')}`
@@ -176,22 +175,22 @@ export function renderPainelHoje(projetos, ativas, sessoesRecentes = [], tarefas
           <section class="startday-list-block">
             <div class="startday-block-head">
               <div>
-                <div class="task-view-eyebrow">Urgências do dia</div>
-                <div class="task-view-title">${urgencias.length ? `${urgencias.length} ponto${urgencias.length === 1 ? '' : 's'} de atenção` : 'Sem urgências imediatas'}</div>
+                <div class="task-view-eyebrow">Prioridades de hoje</div>
+                <div class="task-view-title">${urgencias.length ? `${urgencias.length} ponto${urgencias.length === 1 ? '' : 's'} para agir` : 'Sem urgências imediatas'}</div>
               </div>
             </div>
             <div class="startday-adaptive-block ${estadoBloco(urgencias)}">
               ${urgencias.length ? (urgencias.length === 1
                 ? renderLinhaUrgencia(urgencias[0])
                 : `<div class="startday-row-list">${urgencias.map(renderLinhaUrgencia).join('')}</div>`)
-                : `<div class="startday-empty-inline">Hoje sem bloqueios críticos por prazo.</div>`}
+                : `<div class="startday-empty-inline">Nenhum prazo crítico por agora.</div>`}
             </div>
           </section>
 
           <section class="startday-list-block">
             <div class="startday-block-head">
               <div>
-                <div class="task-view-title">Retomada rápida</div>
+                <div class="task-view-title">Para retomar agora</div>
               </div>
               <button class="btn btn-sm" onclick="goTasks()">Ver minhas tarefas</button>
             </div>
@@ -199,37 +198,9 @@ export function renderPainelHoje(projetos, ativas, sessoesRecentes = [], tarefas
               ${retomadas.length ? (retomadas.length === 1
                 ? renderLinhaRetomada(retomadas[0])
                 : `<div class="startday-row-list">${retomadas.map(renderLinhaRetomada).join('')}</div>`)
-                : `<div class="startday-empty-inline">Nenhuma tarefa pronta para retomada imediata.</div>`}
+                : `<div class="startday-empty-inline">Sem tarefa pronta para retomada imediata.</div>`}
             </div>
           </section>
-
-          ${emAndamento.length ? `<section class="startday-list-block">
-            <div class="startday-block-head">
-              <div>
-                <div class="task-view-title">${emAndamento.length} tarefa${emAndamento.length === 1 ? '' : 's'} em execução</div>
-              </div>
-            </div>
-            <div class="startday-adaptive-block ${estadoBloco(emAndamento)}">
-              <div class="startday-row-list">
-              ${emAndamento.map(t => {
-                const dias = diasRestantes(t.data || null);
-                const urgente = dias !== null && dias <= 1;
-                return `<div class="startday-task-item ${t.sessao_ativa_id ? 'is-live' : ''}">
-                  <div class="startday-task-main">
-                    <div class="startday-task-title">${esc(t.nome)}</div>
-                    <div class="startday-task-sub">Projeto: ${esc(t.projeto_nome)} · Status: ${esc(t.status)}${t.dono_nome ? ` · Responsável: ${esc(t.dono_nome)}` : ''}</div>
-                  </div>
-                  <div class="startday-task-side">
-                    ${t.sessao_ativa_id ? `<span class="startday-inline-meta">Estado: Cronômetro ativo</span>` : ''}
-                    ${t.foco ? `<span class="startday-inline-meta">Foco: Sim</span>` : ''}
-                    ${t.data ? `<span class="mono startday-inline-meta">Prazo: ${prazoFmt(t.data, true)}${urgente ? ' (crítico)' : ''}</span>` : ''}
-                    <button class="btn btn-sm btn-primary" onclick="abrirTarefaContexto('${t.id}','${t.projeto_id}')">Abrir tarefa</button>
-                  </div>
-                </div>`;
-              }).join('')}
-              </div>
-            </div>
-          </section>` : ''}
         </div>
 
         <div class="startday-sidecol">
@@ -237,14 +208,14 @@ export function renderPainelHoje(projetos, ativas, sessoesRecentes = [], tarefas
             <div class="startday-block-head">
               <div>
                 <div class="task-view-eyebrow">Últimas sessões</div>
-                <div class="task-view-title">Retome de onde parou</div>
+                <div class="task-view-title">De onde você parou</div>
               </div>
             </div>
             <div class="startday-adaptive-block ${estadoBloco(recentes)}">
               ${recentes.length ? (recentes.length === 1
                 ? renderLinhaSessaoRecente(recentes[0])
                 : `<div class="startday-row-list">${recentes.map(renderLinhaSessaoRecente).join('')}</div>`)
-                : `<div class="startday-empty-inline">Nenhuma sessão recente registrada.</div>`}
+                : `<div class="startday-empty-inline">Sem sessões recentes.</div>`}
             </div>
           </section>
 
@@ -259,7 +230,7 @@ export function renderPainelHoje(projetos, ativas, sessoesRecentes = [], tarefas
               <div class="startday-summary-item"><span class="startday-summary-label">Sessões</span><strong>${resumoHoje?.sessoes || 0}</strong></div>
               <div class="startday-summary-item"><span class="startday-summary-label">Tarefas</span><strong>${resumoHoje?.tarefas || 0}</strong></div>
               <div class="startday-summary-item"><span class="startday-summary-label">Ativas</span><strong>${ativas.length}</strong></div>
-              <div class="startday-summary-item"><span class="startday-summary-label">Em andamento</span><strong>${emAndamento.length}</strong></div>
+              <div class="startday-summary-item"><span class="startday-summary-label">Em andamento</span><strong>${tarefasOperacao.filter(t => t.status === 'Em andamento' || t.sessao_ativa_id).length}</strong></div>
             </div>
           </section>
         </div>
@@ -359,9 +330,9 @@ function renderTodayHome(dados) {
   return `${renderPainelHoje(projetos, ativas, sessoesRecentes, tarefasOperacao, ultimaSessao, focoGlobal, resumoHoje)}
     <div class="dash-header dash-header-spaced dash-head-grid">
       <div class="dash-head-main">
-        <div class="section-kicker">Navegação operacional</div>
-        <div class="dash-title">Fluxo diário centrado em tarefa</div>
-        <div class="dash-sub dash-sub-tight">Hoje mantém apenas a operação diária: sessão ativa, retomada, foco e urgências.</div>
+        <div class="section-kicker">Painel diário</div>
+        <div class="dash-title">Seu fluxo de hoje</div>
+        <div class="dash-sub dash-sub-tight">Comece pela tarefa em foco e avance pelas prioridades do dia.</div>
       </div>
       <div class="dash-actions">
         <button class="btn btn-primary" onclick="continuarUltimaTarefa()">Continuar última tarefa</button>
@@ -380,7 +351,7 @@ function renderProjectsHome(resumo) {
       <div class="dash-head-main">
         <div class="section-kicker">Base estrutural</div>
         <div class="dash-title">Projetos</div>
-        <div class="dash-sub dash-sub-tight">Visão estrutural de projetos organizada por grupo. Operação diária fica em Hoje e Minhas tarefas.</div>
+        <div class="dash-sub dash-sub-tight">Visão de projetos por grupo. Para execução diária, use Hoje e Minhas tarefas.</div>
       </div>
       <div class="dash-actions">
         <button class="btn" onclick="goTasks()">Minhas tarefas</button>
@@ -573,7 +544,7 @@ export function renderProjetosDash(projetos, grupos) {
           <div class="grupo-card-body">
             <div class="grupo-drop-indicator tight">Solte para mover para ${esc(grupo.nome)}</div>
             ${gprojetos.length
-              ? `<div class="grupo-content-shell"><div class="grupo-project-grid">${renderCardsDash(gprojetos)}</div></div>`
+              ? `<div class="grupo-content-shell"><div class="cards-grid">${renderCardsDash(gprojetos)}</div></div>`
               : `<div class="grupo-empty-zone with-action"><span class="grupo-drop-hint">Arraste projetos aqui</span><button class="btn btn-sm" onclick="event.stopPropagation();modalNovoProjeto('${grupo.id}')">+ Criar projeto neste grupo</button></div>`}
           </div>`}
         </div>

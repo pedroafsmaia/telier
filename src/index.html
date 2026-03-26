@@ -114,11 +114,11 @@
         <div class="app-sidebar__bottom sidebar-zone sidebar-zone-bottom">
           <div class="sidebar-panel app-sidebar__presence" id="topbar-presence" style="display:none"></div>
           <div class="app-sidebar__user sidebar-user-meta">
-            <span class="app-sidebar__user-label sidebar-user-label">Usuário</span>
+            <span class="app-sidebar__user-label sidebar-user-label">Conta</span>
             <span class="app-sidebar__user-name sidebar-user-name" id="sidebar-user-name"></span>
           </div>
           <div class="app-sidebar__account-actions sidebar-footer-actions">
-            <button class="btn btn-ghost btn-sm app-sidebar__account-link" id="btn-admin-toggle" style="display:none" onclick="alternarPerfilAdmin()">Visão admin</button>
+            <button class="btn btn-ghost btn-sm app-sidebar__account-link" id="btn-admin-toggle" style="display:none" onclick="alternarPerfilAdmin()">Modo administrador</button>
             <button class="btn btn-ghost btn-sm app-sidebar__account-link" onclick="fazerLogout()">Sair</button>
           </div>
         </div>
@@ -128,7 +128,9 @@
     <div class="app-main">
       <nav class="topbar">
         <div class="topbar-section topbar-context">
-          <button class="topbar-menu topbar-icon-btn topbar__icon-button" id="btn-sidebar-menu" onclick="toggleSidebarDrawer()" aria-label="Abrir navegação">☰</button>
+          <button class="topbar-menu topbar-icon-btn topbar__icon-button" id="btn-sidebar-menu" onclick="toggleSidebarDrawer()" aria-label="Abrir navegação">
+            <svg class="topbar__icon" width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M4 7h16M4 12h16M4 17h16" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+          </button>
           <div id="topbar-breadcrumb" class="topbar-breadcrumb"></div>
         </div>
         <div class="topbar-actions">
