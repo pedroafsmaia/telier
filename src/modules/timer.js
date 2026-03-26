@@ -96,9 +96,17 @@ export function renderTimerDock() {
     const longo = horas >= TIMER_AVISO_HORAS;
     return `
       <div class="timer-card ativo${longo ? ' timer-longo' : ''}" id="tcard-${sessaoId}">
-        <div class="timer-card-proj">${esc(t.projeto_nome)}</div>
+        <div class="timer-card-grid">
+          <div class="timer-card-proj">
+            <span class="timer-card-label">Projeto</span>
+            <span class="timer-card-proj-name">${esc(t.projeto_nome)}</span>
+          </div>
+          <div class="timer-card-status">
+            <div class="timer-dot"></div>
+            <span>Em curso</span>
+          </div>
+        </div>
         <div class="timer-card-header">
-          <div class="timer-dot"></div>
           <div class="timer-card-nome">${esc(t.tarefa_nome)}</div>
         </div>
         <div class="timer-display${longo ? ' timer-alerta' : ''}" id="tdisp-${sessaoId}">${fmtDuracao(segundos)}</div>

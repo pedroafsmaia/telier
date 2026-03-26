@@ -23,19 +23,20 @@ export async function abrirCentralAdmin(aba = 'agora') {
 
   const c = document.getElementById('content');
   c.innerHTML = `
-    <div class="admin-wrap">
-      <div class="admin-head">
-        <div class="admin-title">Central Admin</div>
+    <div class="admin-wrap admin-shell">
+      <div class="admin-head admin-shell-head">
+        <div class="section-kicker">Administração</div>
+        <div class="admin-title">Central admin</div>
         <div class="admin-note">Gestão de usuários, projetos, tarefas e tempo.</div>
       </div>
-      <div class="admin-tabs">
+      <div class="admin-tabs admin-tabs-rail">
         <button class="admin-tab ${aba==='agora'?'ativo':''}" onclick="abrirCentralAdmin('agora')">Agora</button>
         <button class="admin-tab ${aba==='usuarios'?'ativo':''}" onclick="abrirCentralAdmin('usuarios')">Usuários</button>
         <button class="admin-tab ${aba==='projetos'?'ativo':''}" onclick="abrirCentralAdmin('projetos')">Projetos</button>
         <button class="admin-tab ${aba==='tempo'?'ativo':''}" onclick="abrirCentralAdmin('tempo')">Tempo</button>
         <button class="admin-tab ${aba==='grupos'?'ativo':''}" onclick="abrirCentralAdmin('grupos')">Grupos</button>
       </div>
-      <div id="admin-body"><div class="loading"><div class="spinner"></div> Carregando painel admin...</div></div>
+      <div id="admin-body" class="admin-body"><div class="loading"><div class="spinner"></div> Carregando painel admin...</div></div>
     </div>`;
 
   const body = document.getElementById('admin-body');
@@ -56,14 +57,23 @@ export async function abrirCentralAdmin(aba = 'agora') {
           <td class="mono">${tempoDesde(a.inicio)}</td>
           <td><button class="btn btn-sm" onclick="abrirProjeto('${a.projeto_id}')">Abrir</button></td>
         </tr>`).join('');
-      body.innerHTML = kpi + `
-        <div class="admin-table-wrap" style="margin-top:10px">
+      body.innerHTML = `
+        <div class="section-shell admin-section">
+          <div class="section-head">
+            <div>
+              <div class="section-kicker">Monitoramento</div>
+              <div class="section-title">Atividade em curso</div>
+            </div>
+          </div>
+          ${kpi}
+        </div>
+        <div class="admin-table-wrap admin-section admin-section-spaced">
           <table>
             <thead><tr><th>Usuário</th><th>Projeto</th><th>Tarefa</th><th>Status</th><th>Tempo ativo</th><th></th></tr></thead>
             <tbody>${rows || `<tr><td colspan="6" class="table-empty">Sem atividade no momento.</td></tr>`}</tbody>
           </table>
         </div>
-        <div class="admin-cards">
+        <div class="admin-cards admin-section">
           ${ativas.map(a => `
             <div class="admin-card">
               <div class="admin-card-title">${avatar(a.usuario_nome,'avatar-sm')} ${esc(a.usuario_nome)}</div>
@@ -74,7 +84,7 @@ export async function abrirCentralAdmin(aba = 'agora') {
               </div>
             </div>`).join('')}
         </div>
-        <div id="timeline-hoje-wrap" style="margin-top:16px"></div>`;
+        <div id="timeline-hoje-wrap" class="admin-section admin-timeline-wrap"></div>`;
       renderTimelineHoje(document.getElementById('timeline-hoje-wrap'));
       return;
     }
@@ -91,13 +101,21 @@ export async function abrirCentralAdmin(aba = 'agora') {
           <td><button class="btn btn-sm" onclick="abrirUsuarioAdmin('${u.id}')">Detalhes</button></td>
         </tr>`).join('');
       body.innerHTML = `
-        <div class="admin-table-wrap">
+        <div class="section-shell admin-section">
+          <div class="section-head">
+            <div>
+              <div class="section-kicker">Usuários</div>
+              <div class="section-title">Base de acesso</div>
+            </div>
+          </div>
+        </div>
+        <div class="admin-table-wrap admin-section">
           <table>
             <thead><tr><th>Usuário</th><th>Papel</th><th>Projetos no dashboard</th><th>Em andamento</th><th>Horas totais</th><th></th></tr></thead>
             <tbody>${rows || `<tr><td colspan="6" class="table-empty">Nenhum usuário.</td></tr>`}</tbody>
           </table>
         </div>
-        <div class="admin-cards">
+        <div class="admin-cards admin-section">
           ${usuarios.map(u => `
             <div class="admin-card">
               <div class="admin-card-title">${avatar(u.nome,'avatar-sm')} ${esc(u.nome)} ${tag(u.papel === 'admin' ? 'Admin' : 'Membro', u.papel === 'admin' ? 'tag-purple' : 'tag-gray')}</div>
@@ -153,7 +171,15 @@ export async function abrirCentralAdmin(aba = 'agora') {
           <td class="mono">${fmtHoras(Number(l.horas_liquidas||0))}</td>
         </tr>`).join('');
       body.innerHTML = `
-        <div class="admin-tools">
+        <div class="section-shell admin-section">
+          <div class="section-head">
+            <div>
+              <div class="section-kicker">Tempo</div>
+              <div class="section-title">Registros líquidos</div>
+            </div>
+          </div>
+        </div>
+        <div class="admin-tools admin-section">
           <div class="tool-field">
             <label>Usuário</label>
             <select id="adm-usuario">
@@ -173,17 +199,17 @@ export async function abrirCentralAdmin(aba = 'agora') {
           <button class="btn btn-sm" onclick="limparFiltroTempoAdmin()">Limpar</button>
           <button class="btn btn-sm btn-primary" onclick="exportarTempoAdminCSV()">Exportar CSV</button>
         </div>
-        <div class="admin-grid" style="margin-bottom:10px">
+        <div class="admin-grid admin-section admin-section-blockend">
           <div class="admin-kpi"><div class="admin-kpi-label">Horas líquidas registradas</div><div class="admin-kpi-val">${fmtHoras(total)}</div></div>
           <div class="admin-kpi"><div class="admin-kpi-label">Itens de tempo</div><div class="admin-kpi-val">${linhas.length}</div></div>
         </div>
-        <div class="admin-table-wrap">
+        <div class="admin-table-wrap admin-section">
           <table>
             <thead><tr><th>Usuário</th><th>Projeto</th><th>Tarefa</th><th>Horas</th></tr></thead>
             <tbody>${rows || `<tr><td colspan="4" class="table-empty">Nenhum registro de tempo.</td></tr>`}</tbody>
           </table>
         </div>
-        <div class="admin-cards">
+        <div class="admin-cards admin-section">
           ${linhas.map(l => `
             <div class="admin-card">
               <div class="admin-card-title">${esc(l.projeto_nome)} · ${esc(l.tarefa_nome)}</div>
@@ -209,21 +235,21 @@ export async function abrirCentralAdmin(aba = 'agora') {
         return `<tr>
           <td>${esc(d.grupo_nome)}</td>
           <td class="mono">${fmtHoras(h)}</td>
-          <td style="width:200px">
-            <div style="height:6px;background:var(--bg-hover);border-radius:3px;overflow:hidden">
-              <div style="height:100%;width:${pct}%;background:var(--accent);border-radius:3px"></div>
+          <td class="admin-bar-cell">
+            <div class="admin-bar-track">
+              <div class="admin-bar-fill" style="width:${pct}%"></div>
             </div>
           </td>
         </tr>`;
       }).join('');
       body.innerHTML = `
-        <div class="admin-tools" style="margin-bottom:10px">
+        <div class="admin-tools admin-section-blockend">
           <div class="tool-field"><label>De</label><input type="date" id="adm-de" value="${esc(ADMIN_TEMPO_FILTRO.de)}"></div>
           <div class="tool-field"><label>Até</label><input type="date" id="adm-ate" value="${esc(ADMIN_TEMPO_FILTRO.ate)}"></div>
           <button class="btn btn-sm" onclick="aplicarFiltroTempoAdmin();abrirCentralAdmin('grupos')">Aplicar</button>
           <button class="btn btn-sm" onclick="limparFiltroTempoAdmin();abrirCentralAdmin('grupos')">Limpar</button>
         </div>
-        <div class="admin-grid" style="margin-bottom:10px">
+        <div class="admin-grid admin-section-blockend">
           <div class="admin-kpi">
             <div class="admin-kpi-label">Total geral</div>
             <div class="admin-kpi-val">${fmtHoras(totalGeral)}</div>
@@ -243,7 +269,7 @@ export async function abrirCentralAdmin(aba = 'agora') {
     }
 
   } catch (e) {
-    body.innerHTML = `<div class="text-danger" style="padding:16px">${esc(e.message)}</div>`;
+    body.innerHTML = `<div class="text-danger admin-feedback">${esc(e.message)}</div>`;
   }
 }
 

@@ -54,8 +54,10 @@ export function renderGrupo(grupo, projetos, abaAtiva = 'projetos') {
     <section class="detail-shell"><div class="proj-hero detail-hero" data-status="${esc(grupo.status || 'Ativo')}">
       <div class="proj-hero-top">
         <div class="proj-hero-left">
+          <div class="section-kicker">Grupo</div>
           <div class="proj-nome ${isArq ? 'is-muted' : ''}">${esc(grupo.nome)}</div>
           ${grupo.descricao ? `<div class="proj-dono muted-detail">${esc(grupo.descricao)}</div>` : ''}
+          <div class="dash-sub dash-sub-tight">Estrutura de coordenação para agrupar projetos, operação compartilhada e acompanhamento transversal.</div>
         </div>
         <div class="proj-hero-actions">
           ${podeGer ? `<button class="btn btn-sm" onclick="modalEditarGrupo('${grupo.id}')">Editar grupo</button>` : ''}
@@ -68,6 +70,24 @@ export function renderGrupo(grupo, projetos, abaAtiva = 'projetos') {
         ${grupo.area_total_m2 ? `<div class="proj-meta-item"><span class="proj-meta-label">Área total</span><span class="tag tag-gray mono">${Number(grupo.area_total_m2).toLocaleString('pt-BR')} m²</span></div>` : ''}
         ${grupo.total_horas ? `<div class="proj-meta-item"><span class="proj-meta-label">Horas totais</span><span class="tag tag-gray mono">${fmtHoras(Number(grupo.total_horas))}</span></div>` : ''}
         ${nAtrasados > 0 ? `<div class="proj-meta-item"><span class="proj-meta-label is-alert">⚠ Atrasados</span><span class="tag tag-red">${nAtrasados}</span></div>` : ''}
+      </div>
+      <div class="dash-metrics-strip detail-metrics-strip">
+        <div class="dash-metric">
+          <div class="dash-metric-label">Projetos</div>
+          <div class="dash-metric-value">${grupo.total_projetos ?? nProjetos}</div>
+        </div>
+        ${grupo.area_total_m2 ? `<div class="dash-metric">
+          <div class="dash-metric-label">Área total</div>
+          <div class="dash-metric-value">${Number(grupo.area_total_m2).toLocaleString('pt-BR')} m²</div>
+        </div>` : ''}
+        ${grupo.total_horas ? `<div class="dash-metric">
+          <div class="dash-metric-label">Horas totais</div>
+          <div class="dash-metric-value">${fmtHoras(Number(grupo.total_horas))}</div>
+        </div>` : ''}
+        ${nAtrasados > 0 ? `<div class="dash-metric">
+          <div class="dash-metric-label">Atrasados</div>
+          <div class="dash-metric-value">${nAtrasados}</div>
+        </div>` : ''}
       </div>
       ${isArq ? `
         <div class="alert-banner">

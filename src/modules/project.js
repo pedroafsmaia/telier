@@ -107,8 +107,10 @@ export function renderProjeto(proj, tarefas, decisoes, abaAtiva, resumoHoras = [
     <section class="detail-shell"><div class="proj-hero detail-hero" data-status="${esc(statusProjeto)}">
       <div class="proj-hero-top">
         <div class="proj-hero-left">
+          <div class="section-kicker">Projeto</div>
           <div class="proj-nome">${esc(proj.nome)}</div>
           <div class="proj-dono">${avatar(proj.dono_nome,'avatar-sm')} <span>${esc(proj.dono_nome||'—')}</span></div>
+          <div class="dash-sub dash-sub-tight">Base operacional do projeto, com situação, prazo, carga e distribuição de trabalho.</div>
         </div>
         <div class="proj-hero-actions">
           ${canEdit ? `<button class="btn btn-sm" onclick="modalEditarProjeto('${proj.id}')">Editar</button>` : ''}
@@ -138,23 +140,25 @@ export function renderProjeto(proj, tarefas, decisoes, abaAtiva, resumoHoras = [
             </div>` : ''}
         </div>
       </details>
-      <div class="proj-stats">
-        <div class="proj-stat">
-          <div class="proj-stat-label">Tarefas</div>
-          <div class="proj-stat-val">${conc}/${total}</div>
+      <div class="dash-metrics-strip detail-metrics-strip">
+        <div class="dash-metric">
+          <div class="dash-metric-label">Execução</div>
+          <div class="dash-metric-value">${conc}/${total}</div>
         </div>
-        <div class="proj-stat">
-          <div class="proj-stat-label">Progresso</div>
-          <div class="proj-stat-val">${pct}%</div>
+        <div class="dash-metric">
+          <div class="dash-metric-label">Progresso</div>
+          <div class="dash-metric-value">${pct}%</div>
         </div>
-        ${dias !== null ? `<div class="proj-stat">
-          <div class="proj-stat-label">Prazo</div>
-          <div class="proj-stat-val ${dias <= 0 ? 'is-overdue' : urgente ? 'is-warning' : ''}">${dias <= 0 ? 'Vencido' : dias + ' dias'}</div>
+        ${dias !== null ? `<div class="dash-metric">
+          <div class="dash-metric-label">Prazo</div>
+          <div class="dash-metric-value ${dias <= 0 ? 'is-overdue' : urgente ? 'is-warning' : ''}">${dias <= 0 ? 'Vencido' : dias + ' dias'}</div>
         </div>` : ''}
-        ${proj.total_horas > 0 ? `<div class="proj-stat">
-          <div class="proj-stat-label">Horas</div>
-          <div class="proj-stat-val">${parseFloat(proj.total_horas).toFixed(1)}h</div>
+        ${proj.total_horas > 0 ? `<div class="dash-metric">
+          <div class="dash-metric-label">Horas</div>
+          <div class="dash-metric-value">${parseFloat(proj.total_horas).toFixed(1)}h</div>
         </div>` : ''}
+      </div>
+      <div class="proj-stats detail-progress-band">
         <div class="proj-prog-wrap">
           <div class="proj-prog-bar"><div class="proj-prog-fill ${pct===100?'done':'partial'}" style="width:${pct}%"></div></div>
         </div>

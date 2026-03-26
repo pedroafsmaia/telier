@@ -43,15 +43,21 @@ export function renderPainelNotificacoes() {
       ? `marcarNotifLida('${n.id}', () => { fecharPainelNotificacoes(); abrirProjeto('${n.entidade_id}'); })`
       : `marcarNotifLida('${n.id}')`;
     return `<div class="notif-item ${n.lida_em ? '' : 'nao-lida'}" onclick="${onOpen}">
-      <div class="notif-title">${esc(n.titulo || 'Notificação')}</div>
-      <div class="notif-meta">${esc(dataFmt)}${n.ator_nome ? ` · por ${esc(n.ator_nome)}` : ''}</div>
+      <div class="notif-item-head">
+        <div class="notif-title">${esc(n.titulo || 'Notificação')}</div>
+        <div class="notif-stamp">${esc(dataFmt)}</div>
+      </div>
+      <div class="notif-meta">${n.ator_nome ? `por ${esc(n.ator_nome)}` : 'Sistema'}</div>
       ${n.mensagem ? `<div class="notif-msg">${esc(n.mensagem)}</div>` : ''}
     </div>`;
   }).join('') || '<div class="empty-state is-plain"><div class="empty-icon" aria-hidden="true"><svg width="28" height="28" viewBox="0 0 24 24" fill="none"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><path d="M13.73 21a2 2 0 0 1-3.46 0" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg></div><div class="empty-text">Tudo limpo por aqui</div><div class="empty-sub">Sem notificações nesta aba.</div></div>';
 
   panel.innerHTML = `
     <div class="notif-panel-head">
-      <div class="notif-panel-title">Notificações</div>
+      <div>
+        <div class="section-kicker">Comunicações</div>
+        <div class="notif-panel-title">Notificações</div>
+      </div>
       <button class="btn btn-ghost btn-sm" onclick="fecharPainelNotificacoes()">Fechar</button>
     </div>
     <div class="notif-tabs">
