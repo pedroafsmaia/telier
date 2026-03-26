@@ -62,13 +62,14 @@ export async function abrirProjeto(id, opts = {}) {
 
 export function voltarDash() {
   slideContent('left');
-  const saved = localStorage.getItem('telier_last_dashboard_hash') || '#/hoje';
+  const saved = localStorage.getItem('telier_last_dashboard_hash') || '#/tarefas';
   if (window.navigateToRoute) {
     if (saved === '#/projetos') return window.navigateToRoute('projects', {}, { invalidateProjects: true });
-    return window.navigateToRoute('today', {}, { invalidateProjects: true });
+    return window.navigateToRoute('tasks', {}, { invalidateProjects: true });
   }
   invalidarCacheProjetos();
-  import('./dashboard.js').then(({ renderDash }) => renderDash({ routeKind: 'today' }));
+  if (window.goTasks) return window.goTasks();
+  import('./tasks.js').then(({ renderTarefasHome }) => renderTarefasHome({ fromRoute: true }));
 }
 
 export function renderProjeto(proj, tarefas, decisoes, abaAtiva, resumoHoras = []) {

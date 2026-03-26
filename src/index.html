@@ -59,7 +59,7 @@
       <aside class="app-sidebar" id="app-sidebar">
         <div class="app-sidebar__inner">
         <div class="app-sidebar__top sidebar-zone sidebar-zone-top">
-          <div class="app-sidebar__brand sidebar-brand" onclick="goToday()" title="Ir para início">
+          <div class="app-sidebar__brand sidebar-brand" onclick="goTasks()" title="Ir para tarefas">
             <div class="app-sidebar__logo sidebar-wordmark">TELIER</div>
             <div class="app-sidebar__subtitle sidebar-caption">ARCHITECTURAL MANAGEMENT</div>
           </div>
@@ -74,17 +74,11 @@
 
         <div class="app-sidebar__middle sidebar-zone sidebar-zone-center">
           <nav class="app-sidebar__nav sidebar-nav" aria-label="Navegação principal">
-            <a class="app-sidebar__link sidebar-link is-active" data-shell-view="today" href="#/hoje" onclick="closeSidebarDrawer()">
-              <span class="app-sidebar__link-icon sidebar-link-icon">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M12 6v6l4 2" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><circle cx="12" cy="12" r="8" stroke="currentColor" stroke-width="1.6"/></svg>
-              </span>
-              <span class="app-sidebar__link-label">Hoje</span>
-            </a>
-            <a class="app-sidebar__link sidebar-link" data-shell-view="tasks" href="#/tarefas" onclick="closeSidebarDrawer()">
+            <a class="app-sidebar__link sidebar-link is-active" data-shell-view="tasks" href="#/tarefas" onclick="closeSidebarDrawer()">
               <span class="app-sidebar__link-icon sidebar-link-icon">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M5 6.5h14M5 12h14M5 17.5h8" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><path d="M3 6.5h.01M3 12h.01M3 17.5h.01" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg>
               </span>
-              <span class="app-sidebar__link-label">Minhas tarefas</span>
+              <span class="app-sidebar__link-label">Tarefas</span>
             </a>
             <a class="app-sidebar__link sidebar-link sidebar-link-structure" data-shell-view="projects" href="#/projetos" onclick="closeSidebarDrawer()">
               <span class="app-sidebar__link-icon sidebar-link-icon">

@@ -176,7 +176,7 @@ export function renderPainelHoje(projetos, ativas, sessoesRecentes = [], tarefas
           </section>
         </aside>
       </div>`,
-    listEyebrow: 'Minhas tarefas',
+    listEyebrow: 'Tarefas',
     listTitle: 'Fila operacional do dia',
     listCopy: 'Decida, inicie o cronômetro e siga o fluxo sem trocar de página.',
     listKpi: `${tarefasHoje.length} tarefa${tarefasHoje.length === 1 ? '' : 's'} na visão resumida`,
@@ -295,10 +295,10 @@ function renderProjectsHome(resumo) {
       <div class="dash-head-main">
         <div class="section-kicker">Base estrutural</div>
         <div class="dash-title">Projetos</div>
-        <div class="dash-sub dash-sub-tight">Visão de projetos por grupo. Para execução diária, use Hoje e Minhas tarefas.</div>
+        <div class="dash-sub dash-sub-tight">Visão de projetos por grupo. Para execução diária, use Tarefas.</div>
       </div>
       <div class="dash-actions">
-        <button class="btn" onclick="goTasks()">Minhas tarefas</button>
+        <button class="btn" onclick="goTasks()">Tarefas</button>
         <button class="btn" onclick="modalNovoGrupo()">Novo grupo</button>
         <button class="btn btn-primary" onclick="modalNovoProjeto()">Novo projeto</button>
       </div>
@@ -348,9 +348,9 @@ export async function renderDash(opts = {}) {
   window.scrollTo(0, 0);
   setProjeto(null);
   const routeKind = opts.routeKind || (window.getCurrentAppRoute?.().name === 'projects' ? 'projects' : 'today');
-  document.title = routeKind === 'projects' ? 'Projetos · Telier' : 'Hoje · Telier';
-  setBreadcrumb(routeKind === 'projects' ? [{ label: 'Projetos' }] : [{ label: 'Hoje' }]);
-  setShellView(routeKind === 'projects' ? 'projects' : 'today');
+  document.title = routeKind === 'projects' ? 'Projetos · Telier' : 'Tarefas · Telier';
+  setBreadcrumb(routeKind === 'projects' ? [{ label: 'Projetos' }] : [{ label: 'Tarefas' }]);
+  setShellView(routeKind === 'projects' ? 'projects' : 'tasks');
   const c = document.getElementById('content');
   c.innerHTML = renderDashLoadingState();
   try {

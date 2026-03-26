@@ -248,7 +248,7 @@ export async function continuarUltimaTarefa() {
   }
 }
 
-export async function renderMinhasTarefas(opts = {}) {
+export async function renderTarefasHome(opts = {}) {
   if (!opts.fromRoute) {
     return window.goTasks ? window.goTasks() : null;
   }
@@ -258,8 +258,8 @@ export async function renderMinhasTarefas(opts = {}) {
   _myTasksFilters.projeto = window._myTasksProjeto ?? _myTasksFilters.projeto;
   window.scrollTo(0, 0);
   setShellView('tasks');
-  document.title = 'Minhas tarefas · Telier';
-  setBreadcrumb([{ label: 'Minhas tarefas' }]);
+  document.title = 'Tarefas · Telier';
+  setBreadcrumb([{ label: 'Tarefas' }]);
   const c = document.getElementById('content');
   c.innerHTML = `<div class="skeleton-list" aria-live="polite" aria-busy="true">
     <div class="skeleton-block">
@@ -274,38 +274,121 @@ export async function renderMinhasTarefas(opts = {}) {
     </div>
   </div>`;
   try {
-    const { tarefas, projetosFiltro } = await carregarTarefasUsuarioAtivas();
-    const resumoHoje = await req('GET', '/tempo/resumo-hoje').catch(() => null);
-    const recentes = await req('GET', '/tempo/sessoes-recentes?limit=6').catch(() => []);
-    const tarefasFiltradas = filtrarTarefasTransversais(tarefas);
-    const minhas = tarefas.filter(t => t.dono_id === EU?.id).length;
-    const compartilhadas = tarefas.filter(t => tarefaCompartilhadaComigo(t)).length;
-    const emAndamento = tarefas.filter(t => t.status === 'Em andamento').length;
-    const comFoco = tarefas.filter(t => t.foco && t.dono_id === EU?.id).length;
+    const [dadosTarefas, resumoHoje, recentes, ativas, focoGlobal, tarefasOperacao] = await Promise.all([
+      carregarTarefasUsuarioAtivas(),
+      req('GET', '/tempo/resumo-hoje').catch(() => null),
+      req('GET', '/tempo/sessoes-recentes?limit=6').catch(() => []),
+      req('GET', '/tempo/ativas').catch(() => []),
+      req('GET', '/auth/foco-global').catch(() => null),
+      req('GET', '/tarefas/operacao-hoje').catch(() => []),
+    ]);
+    const { tarefas, projetosFiltro } = dadosTarefas;
+    const mapaTarefas = new Map();
+    (tarefasOperacao || []).forEach(t => mapaTarefas.set(String(t.id || t.tarefa_id), t));
+    (tarefas || []).forEach(t => {
+      const key = String(t.id || t.tarefa_id);
+      if (!mapaTarefas.has(key)) mapaTarefas.set(key, t);
+    });
+    const tarefasCompletas = Array.from(mapaTarefas.values());
+    const tarefasFiltradas = filtrarTarefasTransversais(tarefasCompletas);
+    const minhas = tarefasCompletas.filter(t => t.dono_id === EU?.id).length;
+    const compartilhadas = tarefasCompletas.filter(t => tarefaCompartilhadaComigo(t)).length;
 
+    const ativo = (ativas || [])[0] || null;
+    const tarefaFoco = tarefasCompletas.find(t => t.foco) || null;
+    const tarefaUrgente = tarefasCompletas
+      .filter(t => {
+        const dias = diasRestantes(t.data || null);
+        return dias !== null && dias <= 1 && t.status !== 'Concluída';
+      })
+      .sort((a, b) => (a.data || '9999-12-31').localeCompare(b.data || '9999-12-31'))[0] || null;
+
+    const prioridade = ativo
+      ? {
+          titulo: ativo.tarefa_nome || 'Tarefa ativa',
+          projeto: ativo.projeto_nome || 'Projeto não informado',
+          status: 'Em andamento',
+          prazo: prazoFmt((tarefasCompletas.find(t => String(t.id) === String(ativo.tarefa_id))?.data) || null, true),
+          tarefaId: ativo.tarefa_id,
+          projetoId: ativo.projeto_id,
+        }
+      : (focoGlobal?.tarefa_id && focoGlobal?.projeto_id)
+        ? {
+            titulo: focoGlobal.tarefa_nome || 'Tarefa em foco',
+            projeto: focoGlobal.projeto_nome || 'Projeto não informado',
+            status: 'Em foco',
+            prazo: prazoFmt((tarefasCompletas.find(t => String(t.id) === String(focoGlobal.tarefa_id))?.data) || null, true),
+            tarefaId: focoGlobal.tarefa_id,
+            projetoId: focoGlobal.projeto_id,
+          }
+        : tarefaFoco
+          ? {
+              titulo: tarefaFoco.nome,
+              projeto: tarefaFoco.projeto_nome,
+              status: tarefaFoco.status || 'Em foco',
+              prazo: prazoFmt(tarefaFoco.data || null, true),
+              tarefaId: tarefaFoco.id,
+              projetoId: tarefaFoco.projeto_id,
+            }
+          : tarefaUrgente
+            ? {
+                titulo: tarefaUrgente.nome,
+                projeto: tarefaUrgente.projeto_nome,
+                status: tarefaUrgente.status || 'A fazer',
+                prazo: prazoFmt(tarefaUrgente.data || null, true),
+                tarefaId: tarefaUrgente.id,
+                projetoId: tarefaUrgente.projeto_id,
+              }
+            : null;
+
+    const retomadaMap = new Map();
+    const registrarRetomada = (item) => {
+      if (!item?.tarefaId || retomadaMap.has(item.tarefaId)) return;
+      retomadaMap.set(item.tarefaId, item);
+    };
+
+    (recentes || []).forEach((s) => registrarRetomada({
+      tarefaId: s.tarefa_id,
+      projetoId: s.projeto_id,
+      titulo: s.tarefa_nome,
+      projeto: s.projeto_nome,
+      tempo: fmtHoras(parseFloat(s.horas_liquidas ?? s.horas ?? 0)),
+    }));
+
+    tarefasCompletas
+      .filter(t => t.status === 'Em andamento' || t.foco)
+      .forEach((t) => registrarRetomada({
+        tarefaId: t.id,
+        projetoId: t.projeto_id,
+        titulo: t.nome,
+        projeto: t.projeto_nome,
+        tempo: t.sessao_ativa_id ? 'Em curso' : (t.data ? `Prazo ${prazoFmt(t.data, true)}` : 'Sem tempo recente'),
+      }));
+
+    const retomadas = Array.from(retomadaMap.values()).slice(0, 5);
     const statusTabs = ['todos', 'A fazer', 'Em andamento', 'Bloqueada', 'Concluída'];
     const statusCountMap = Object.fromEntries(statusTabs.map(status => [
       status,
-      status === 'todos' ? tarefas.length : tarefas.filter(t => t.status === status).length,
+      status === 'todos' ? tarefasCompletas.length : tarefasCompletas.filter(t => t.status === status).length,
     ]));
 
     const filtersHtml = `<div class="dash-toolbar task-view-toolbar task-toolbar-studio">
         <div class="dash-toolbar-row dash-toolbar-primary">
           <div class="task-toolbar-main dash-toolbar-searchblock">
             <div class="dash-toolbar-label">Consulta</div>
-            <input type="search" class="search-dash search-tarefa" placeholder="Buscar tarefa, projeto ou grupo..." value="${esc(_myTasksFilters.busca)}" oninput="window._myTasksBusca=this.value;renderMinhasTarefas({ fromRoute: true })">
+            <input type="search" class="search-dash search-tarefa" placeholder="Buscar tarefa, projeto ou grupo..." value="${esc(_myTasksFilters.busca)}" oninput="window._myTasksBusca=this.value;renderTarefasHome({ fromRoute: true })">
           </div>
           <div class="dash-toolbar-switches">
             <div class="dash-toolbar-label">Escopo</div>
             <div class="segmented">
-              <button class="segmented-btn ${_myTasksFilters.origem==='todos'?'ativo':''}" onclick="window._myTasksOrigem='todos';renderMinhasTarefas({ fromRoute: true })">Todas${tarefas.length ? `<span class="seg-count">${tarefas.length}</span>` : ''}</button>
-              <button class="segmented-btn ${_myTasksFilters.origem==='meus'?'ativo':''}" onclick="window._myTasksOrigem='meus';renderMinhasTarefas({ fromRoute: true })">Minhas${minhas ? `<span class="seg-count">${minhas}</span>` : ''}</button>
-              <button class="segmented-btn ${_myTasksFilters.origem==='compartilhadas'?'ativo':''}" onclick="window._myTasksOrigem='compartilhadas';renderMinhasTarefas({ fromRoute: true })">Compartilhadas${compartilhadas ? `<span class="seg-count">${compartilhadas}</span>` : ''}</button>
+              <button class="segmented-btn ${_myTasksFilters.origem==='todos'?'ativo':''}" onclick="window._myTasksOrigem='todos';renderTarefasHome({ fromRoute: true })">Todas${tarefasCompletas.length ? `<span class="seg-count">${tarefasCompletas.length}</span>` : ''}</button>
+              <button class="segmented-btn ${_myTasksFilters.origem==='meus'?'ativo':''}" onclick="window._myTasksOrigem='meus';renderTarefasHome({ fromRoute: true })">Minhas${minhas ? `<span class="seg-count">${minhas}</span>` : ''}</button>
+              <button class="segmented-btn ${_myTasksFilters.origem==='compartilhadas'?'ativo':''}" onclick="window._myTasksOrigem='compartilhadas';renderTarefasHome({ fromRoute: true })">Compartilhadas${compartilhadas ? `<span class="seg-count">${compartilhadas}</span>` : ''}</button>
             </div>
           </div>
           <div class="dash-toolbar-field">
             <div class="dash-toolbar-label">Projeto</div>
-            <select class="resp-filter select-control flex-shrink-0" onchange="window._myTasksProjeto=this.value;renderMinhasTarefas({ fromRoute: true })">
+            <select class="resp-filter select-control flex-shrink-0" onchange="window._myTasksProjeto=this.value;renderTarefasHome({ fromRoute: true })">
               <option value="">Todos os projetos</option>
               ${projetosFiltro.map(p => `<option value="${p.id}" ${String(_myTasksFilters.projeto) === String(p.id) ? 'selected' : ''}>${esc(p.nome)}</option>`).join('')}
             </select>
@@ -318,32 +401,76 @@ export async function renderMinhasTarefas(opts = {}) {
               ${statusTabs.map(status => {
                 const label = status === 'todos' ? 'Todos' : status;
                 const count = statusCountMap[status] || 0;
-                return `<button class="filter-btn ${_myTasksFilters.status===status?'ativo':''}" onclick="window._myTasksStatus='${esc(status)}';renderMinhasTarefas({ fromRoute: true })">${label}${count ? `<span class="seg-count">${count}</span>` : ''}</button>`;
+                return `<button class="filter-btn ${_myTasksFilters.status===status?'ativo':''}" onclick="window._myTasksStatus='${esc(status)}';renderTarefasHome({ fromRoute: true })">${label}${count ? `<span class="seg-count">${count}</span>` : ''}</button>`;
               }).join('')}
             </div>
           </div>
         </div>
       </div>`;
 
+    const horasHoje = parseFloat(resumoHoje?.horas_hoje || 0);
+
     c.innerHTML = renderTaskOperationalSurface({
-      mode: 'expanded',
-      kicker: 'Hoje · visão ampliada',
-      title: 'Minhas tarefas',
-      description: 'Mesma superfície operacional da tela Hoje, com filtros e escopo ampliados para gestão transversal.',
+      mode: 'today',
+      kicker: 'Operação diária',
+      title: 'Tarefas',
+      description: 'Priorize, retome e execute o trabalho em uma única superfície operacional.',
       actionsHtml: `
         <button class="btn" onclick="continuarUltimaTarefa()">Continuar última tarefa</button>
         <button class="btn btn-primary" onclick="modalNovaTarefa()">Nova tarefa</button>`,
-      metricsHtml: `
-        <div class="task-home-metric-strip" aria-label="Métricas de operação">
-          <div class="task-home-metric"><span class="task-home-metric-label">Tarefas visíveis</span><span class="task-home-metric-value">${tarefasFiltradas.length}</span></div>
-          <div class="task-home-metric"><span class="task-home-metric-label">Em andamento</span><span class="task-home-metric-value">${emAndamento}</span></div>
-          <div class="task-home-metric"><span class="task-home-metric-label">Meu foco</span><span class="task-home-metric-value">${comFoco}</span></div>
-          <div class="task-home-metric"><span class="task-home-metric-label">Horas hoje</span><span class="task-home-metric-value">${parseFloat(resumoHoje?.horas_hoje || 0).toFixed(1)}h</span></div>
+      overviewHtml: `
+        <div class="today-layout">
+          <div class="today-layout__main">
+            <section class="today-block">
+              <div class="task-view-eyebrow">Prioridade do dia</div>
+              ${prioridade ? `
+                <div class="today-priority__title">${esc(prioridade.titulo)}</div>
+                <div class="today-priority__project">Projeto: ${esc(prioridade.projeto || 'Não informado')}</div>
+                <div class="today-priority__meta">
+                  <div class="meta-pair"><span class="meta-pair-label">Status</span><span class="meta-pair-value">${esc(prioridade.status || 'A fazer')}</span></div>
+                  <div class="meta-pair"><span class="meta-pair-label">Prazo</span><span class="meta-pair-value mono">${esc(prioridade.prazo || 'Sem prazo')}</span></div>
+                  <div class="meta-pair"><span class="meta-pair-label">Sessão</span><span class="meta-pair-value">${ativo ? 'Cronômetro em andamento' : 'Sem sessão ativa'}</span></div>
+                </div>
+                <div class="today-priority__actions">
+                  ${ativo
+                    ? `<button class="btn btn-primary" onclick="abrirTarefaContexto('${prioridade.tarefaId}','${prioridade.projetoId}')">Continuar</button>`
+                    : `<button class="btn btn-primary" onclick="iniciarCronometro('${prioridade.tarefaId}','${esc(prioridade.titulo)}')">Iniciar cronômetro</button>`}
+                  <button class="btn" onclick="abrirTarefaContexto('${prioridade.tarefaId}','${prioridade.projetoId}')">Abrir tarefa</button>
+                </div>`
+                : `<div class="today-empty">Nenhuma tarefa em foco. Escolha uma para começar o dia.</div>`}
+            </section>
+
+            <section class="today-block">
+              <div class="task-view-eyebrow">Continuar de onde parou</div>
+              ${retomadas.length
+                ? `<div class="today-resume-list">${retomadas.map(item => `
+                  <button class="today-resume-row" onclick="abrirTarefaContexto('${item.tarefaId}','${item.projetoId}')">
+                    <span class="today-resume-row__main">
+                      <span class="today-resume-row__title">${esc(item.titulo)}</span>
+                      <span class="today-resume-row__project">${esc(item.projeto)}</span>
+                    </span>
+                    <span class="today-resume-row__time mono">${esc(item.tempo || '—')}</span>
+                  </button>`).join('')}</div>`
+                : `<div class="today-empty">Sem histórico recente para retomar agora.</div>`}
+            </section>
+          </div>
+          <aside class="today-layout__side">
+            <section class="today-block">
+              <div class="task-view-eyebrow">Hoje até agora</div>
+              <div class="today-total-hours mono">${horasHoje.toFixed(1)}h</div>
+              <div class="today-summary-grid">
+                <div class="today-summary-item"><span class="today-summary-label">Sessões</span><strong>${resumoHoje?.sessoes || 0}</strong></div>
+                <div class="today-summary-item"><span class="today-summary-label">Tarefas</span><strong>${resumoHoje?.tarefas || 0}</strong></div>
+                <div class="today-summary-item"><span class="today-summary-label">Ativas</span><strong>${(ativas || []).length}</strong></div>
+                <div class="today-summary-item"><span class="today-summary-label">Em andamento</span><strong>${tarefasCompletas.filter(t => t.status === 'Em andamento' || t.sessao_ativa_id).length}</strong></div>
+              </div>
+            </section>
+          </aside>
         </div>`,
       filtersHtml,
-      listEyebrow: 'Fila operacional',
-      listTitle: 'Lista completa de tarefas no seu contexto de trabalho',
-      listCopy: 'Mantenha o foco na execução: iniciar, parar e retomar cronômetro ficam na ação principal de cada linha.',
+      listEyebrow: 'Tarefas',
+      listTitle: 'Lista operacional de tarefas',
+      listCopy: 'Use os filtros para definir escopo e execute com cronômetro diretamente na linha da tarefa.',
       listKpi: `${tarefasFiltradas.length} resultado${tarefasFiltradas.length === 1 ? '' : 's'} · ${recentes.length} recente${recentes.length === 1 ? '' : 's'}`,
       tarefas: tarefasFiltradas,
       emptyMessage: 'Nenhuma tarefa encontrada.',
@@ -352,6 +479,10 @@ export async function renderMinhasTarefas(opts = {}) {
   } catch (e) {
     c.innerHTML = `<div class="error-block">${esc(e.message)}</div>`;
   }
+}
+
+export async function renderMinhasTarefas(opts = {}) {
+  return renderTarefasHome(opts);
 }
 
 export function atualizarPrazoHint() {
