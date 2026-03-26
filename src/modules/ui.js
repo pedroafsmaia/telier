@@ -48,6 +48,10 @@ export function fecharOverlayModal(overlay) {
     document.removeEventListener('keydown', overlay._onKeydown);
     overlay._onKeydown = null;
   }
+  if (typeof overlay._onClose === 'function') {
+    try { overlay._onClose(); } catch {}
+    overlay._onClose = null;
+  }
   overlay.remove();
 }
 
@@ -58,6 +62,7 @@ export function abrirModal(html, opts = {}) {
   overlay.id = id;
   const sizeClass = opts.xl ? 'modal-xl' : (opts.lg ? 'modal-lg' : '');
   overlay.innerHTML = `<div class="modal ${sizeClass}">${html}</div>`;
+  if (typeof opts.onClose === 'function') overlay._onClose = opts.onClose;
   if (!opts.locked) {
     overlay.addEventListener('click', e => { if (e.target === overlay) fecharOverlayModal(overlay); });
     const onKey = e => { if (e.key === 'Escape') fecharOverlayModal(overlay); };
@@ -113,6 +118,17 @@ export function setShellView(view) {
   document.querySelectorAll('.sidebar-link[data-shell-view]').forEach(link => {
     link.classList.toggle('is-active', link.dataset.shellView === view);
   });
+}
+
+export function setShellViewFromRoute(routeName) {
+  const view = (routeName === 'projects' || routeName === 'project')
+    ? 'projects'
+    : (routeName === 'groups' || routeName === 'group')
+      ? 'groups'
+      : routeName === 'admin'
+        ? 'admin'
+        : 'tasks';
+  setShellView(view);
 }
 
 // ── BUTTON LOADING ──

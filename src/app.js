@@ -8,14 +8,14 @@ import {
   setTaskMobileFiltersOpen, setTarefasView, setListaConcluidasExpandida,
 } from './modules/state.js';
 import { req, invalidarCacheProjetos } from './modules/api.js';
-import { toast, aplicarTema, alternarTema, fecharModal } from './modules/ui.js';
+import { toast, aplicarTema, alternarTema, fecharModal, setShellViewFromRoute } from './modules/ui.js';
 import { isAdminRole } from './modules/utils.js';
-import { renderDash, carregarFiltrosDash, salvarFiltrosDash, renderInicioDia, toggleStartday, renderDashLoadingState, renderDashEmptyState, renderProjetosDash, renderCardsDash, filtrarProjetosBusca, filtrarGrupoDash, filtrarOrigemDash, setFiltro, getDragJustEnded, dragProjeto, dragProjetoEnd, dragGrupo, dragGrupoEnd, dragOver, dragLeave, dropProjeto, toggleGrupo } from './modules/dashboard.js';
+import { renderDash, carregarFiltrosDash, salvarFiltrosDash, toggleStartday, renderDashLoadingState, renderDashEmptyState, renderProjetosDash, renderCardsDash, filtrarProjetosBusca, filtrarGrupoDash, filtrarOrigemDash, setFiltro, getDragJustEnded, dragProjeto, dragProjetoEnd, dragGrupo, dragGrupoEnd, dragOver, dragLeave, dropProjeto, toggleGrupo } from './modules/dashboard.js';
 import { abrirProjeto, voltarDash, renderProjeto, mudarAba, renderAba, renderProjetoAoVivo, recarregarProjeto, modalNovoProjeto, criarProjeto, modalEditarProjeto, salvarProjeto, deletarProjeto } from './modules/project.js';
 import { renderGroupsHome, abrirGrupo, renderGrupo, mudarAbaGrupo, renderAbaGrupo, renderGrupoAbaProjetos, renderGrupoAbaTarefas, renderGrupoAbaMapa, renderGrupoAbaAoVivo, renderGrupoAbaRelatorio, carregarTarefasGrupo, carregarAoVivoGrupo, carregarAoVivoProjeto, modalNovoGrupo, criarGrupo, modalEditarGrupo, compartilharGrupo, modalCompartilharGrupo, salvarGrupo, adicionarPermGrupo, removerPermGrupo, sairGrupoCompartilhado, sairProjetoCompartilhado, acaoGrupo, modalMoverTodosGrupo, deletarGrupo } from './modules/groups.js';
 import { atualizarBadgeNotificacoes, filtrarNotificacoesPainel, renderPainelNotificacoes, carregarNotificacoes, iniciarPollNotificacoes, carregarStatus, iniciarStatusPoll, marcarNotifLida, marcarTodasNotifLidas, abrirNotificacoes, fecharPainelNotificacoes, carregarColegasAtivos, iniciarPollPresenca, renderPresenceDock, togglePresencePanel, fecharPresencePanelFora } from './modules/notifications.js';
 import { carregarTimersAtivos, iniciarCronometro, pararCronometro, renderTimerWidget, renderTimerDock, modalAdicionarIntervalo, criarIntervalo, editarSessao, salvarSessao, deletarSessao, editarIntervalo, salvarIntervalo, deletarIntervalo, expandirSessoes, adicionarDetalheTarefa, adicionarDetalheTarefaEnter, toggleDetalheTarefa, removerDetalheTarefa } from './modules/timer.js';
-import { atualizarPrazoHint, renderColabsStack, renderAoVivoStream, alternarTarefasView, renderAbaTarefas, renderKanbanInterno, criarTarefaKanban, renderListaInterna, ordenarLista, renderMapa, renderRelatorio, renderDecisoes, mudarStatus, toggleFoco, deletarTarefa, modalEditarDecisao, salvarDecisaoEditada, deletarDecisao, modalPermissoes, adicionarPerm, removerPerm, modalNovaTarefa, criarTarefa, modalEditarTarefa, salvarTarefa, duplicarTarefa, quickAddMostrarStep2, quickAddCancelar, quickAddConfirmar, quickAddTarefa, filtrarTarefasBusca, exportarTempoProjetoCSV, modalColabsTarefa, sairTarefaCompartilhada, adicionarColab, removerColab, modalNovaDecisao, criarDecisao, aplicarFiltroOrigemProjeto, aplicarFiltroResponsavelProjeto, aplicarFiltroStatusProjeto, alternarListaConcluidasProjeto, renderTarefasHome, abrirTarefaContexto, continuarUltimaTarefa } from './modules/tasks.js';
+import { atualizarPrazoHint, renderColabsStack, renderAoVivoStream, alternarTarefasView, renderAbaTarefas, renderKanbanInterno, criarTarefaKanban, renderListaInterna, ordenarLista, renderMapa, renderRelatorio, renderDecisoes, mudarStatus, toggleFoco, deletarTarefa, modalEditarDecisao, salvarDecisaoEditada, deletarDecisao, modalPermissoes, adicionarPerm, removerPerm, modalNovaTarefa, criarTarefa, modalEditarTarefa, salvarTarefa, duplicarTarefa, quickAddMostrarStep2, quickAddCancelar, quickAddConfirmar, quickAddTarefa, filtrarTarefasBusca, exportarTempoProjetoCSV, modalColabsTarefa, sairTarefaCompartilhada, adicionarColab, removerColab, modalNovaDecisao, criarDecisao, aplicarFiltroOrigemProjeto, aplicarFiltroResponsavelProjeto, aplicarFiltroStatusProjeto, alternarListaConcluidasProjeto, renderTarefasHome, abrirTarefaContexto, continuarUltimaTarefa, setTarefasHomeBusca, setTarefasHomeOrigem, setTarefasHomeStatus, setTarefasHomeProjeto, fecharDetalheTarefaContexto } from './modules/tasks.js';
 import { abrirCentralAdmin, renderTimelineHoje, exportarTempoAdminCSV, aplicarFiltroTempoAdmin, limparFiltroTempoAdmin, abrirUsuarioAdmin, modalNovoColega, promoverAdmin, modalNovoColega_legacy, criarColega } from './modules/admin.js';
 import { fazerLogin, fazerSetup, fazerLogout, fazerCadastroPublico, modalCadastroPublico, modalTrocaSenhaObrigatoria, salvarSenhaObrigatoria, modalResetSenhaUsuario, resetarSenhaUsuario, toggleSenhaLogin, toggleSenhaSetup, toggleSenhaCadastro, toggleSenhaObrigatoria, toggleSenhaReset } from './modules/auth.js';
 import { initShortcuts } from './modules/shortcuts.js';
@@ -73,7 +73,12 @@ function rememberDashboardHash(hash = window.location.hash) {
 
 async function renderCurrentRoute(opts = {}) {
   const route = parseHashRoute();
+  if (window.location.hash !== route.hash) {
+    window.location.replace(route.hash);
+    return;
+  }
   _routeState = route;
+  setShellViewFromRoute(route.name);
   if (route.name === 'tasks' || route.name === 'projects') {
     rememberDashboardHash(route.hash);
   }
@@ -314,7 +319,6 @@ Object.assign(window, {
   renderDash,
   carregarFiltrosDash,
   salvarFiltrosDash,
-  renderInicioDia,
   toggleStartday,
   renderDashLoadingState,
   renderDashEmptyState,
@@ -438,6 +442,11 @@ Object.assign(window, {
   renderTarefasHome,
   abrirTarefaContexto,
   continuarUltimaTarefa,
+  setTarefasHomeBusca,
+  setTarefasHomeOrigem,
+  setTarefasHomeStatus,
+  setTarefasHomeProjeto,
+  fecharDetalheTarefaContexto,
   duplicarTarefa,
   quickAddMostrarStep2,
   quickAddCancelar,
