@@ -102,8 +102,8 @@ export function setBreadcrumb(partes) {
     const isUltimo = i === partes.length - 1;
     const cls = isUltimo ? 'topbar-crumb atual' : 'topbar-crumb';
     const onclick = (!isUltimo && p.onClick) ? `onclick="${p.onClick}"` : '';
-    const sep = i === 0 ? '<span class="topbar-sep-crumb">/</span>' : '';
-    return `${sep}<span class="${cls}" ${onclick} title="${esc(p.label)}">${esc(p.label)}</span>${!isUltimo ? '<span class="topbar-sep-crumb">/</span>' : ''}`;
+    const sep = i > 0 ? '<span class="topbar-sep-crumb">/</span>' : '';
+    return `${sep}<span class="${cls}" ${onclick} title="${esc(p.label)}">${esc(p.label)}</span>`;
   }).join('');
 }
 

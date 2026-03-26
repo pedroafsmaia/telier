@@ -47,8 +47,7 @@ export function initShortcuts() {
       if (e.key === 'g' || e.key === 'G') {
         if (PROJETO) {
           e.preventDefault();
-          const { renderDash } = await import('./dashboard.js');
-          renderDash();
+          if (window.goToday) window.goToday();
         }
       }
     }

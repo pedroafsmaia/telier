@@ -1,11 +1,7 @@
 // ── PROJECT ──
 import {
-  EU, PROJETO, TAREFAS, TIMERS, VISTA_ATUAL, TAREFAS_VIEW, _gruposDash,
-  FILTRO_RESP_TAR, FILTRO_ORIGEM_TAREFAS, FILTRO_STATUS_TAREFA, BUSCA_TAREFA,
-  LISTA_SORT, LISTA_CONCLUIDAS_EXPANDIDA,
-  setProjeto, setTarefas, setTarefasView, setListaSort, setListaConcluidasExpandida,
-  setBuscaTarefa, setFiltroRespTar, setFiltroOrigemTarefas, setFiltroStatusTarefa,
-  setVistaAtual,
+  EU, PROJETO, TAREFAS, TIMERS, _gruposDash,
+  setProjeto, setTarefas, setTarefasView, setVistaAtual,
 } from './state.js';
 import { req } from './api.js';
 import { invalidarCacheProjetos } from './api.js';
@@ -13,30 +9,33 @@ import { toast, abrirModal, fecharModal, confirmar, btnLoading, setBreadcrumb, s
 import {
   esc, gv, sel, avatar, tag, prazoFmt, diasRestantes, fmtHoras,
   isAdmin, podeEditar, souDono, projetoConcluido, normalizarStatusProjeto,
-  normalizarColaboradoresTarefas, ST, PT, FT,
+  normalizarColaboradoresTarefas, PT, FT,
 } from './utils.js';
 import {
   renderAbaTarefas, renderMapa, renderRelatorio, renderDecisoes,
-  renderAoVivoStream,
+  renderAoVivoStream, restaurarEstadoTarefasProjeto,
 } from './tasks.js';
 
 const FASES = ['Estudo preliminar','Anteprojeto','Projeto básico','Projeto executivo','Em obra'];
 const STATUS_PROJ = ['A fazer','Em andamento','Em revisão','Pausado','Concluído','Arquivado'];
 const PRIORS = ['Alta','Média','Baixa'];
 
-export async function abrirProjeto(id) {
+function projectTabKey(id) {
+  return `telier_project_tab_${id}`;
+}
+
+function projectTaskViewKey(id) {
+  return `telier_project_task_view_${id}`;
+}
+
+export async function abrirProjeto(id, opts = {}) {
+  if (!opts.fromRoute) {
+    return window.goProjeto ? window.goProjeto(id) : null;
+  }
   window.scrollTo(0, 0);
-  setShellView('dashboard');
   const c = document.getElementById('content');
   c.style.opacity = '0.4';
   c.style.pointerEvents = 'none';
-  setBuscaTarefa('');
-  setFiltroRespTar('');
-  setFiltroOrigemTarefas('todos');
-  setFiltroStatusTarefa('todos');
-  setListaSort({ col: null, dir: 'asc' });
-  setListaConcluidasExpandida(false);
-  sessionStorage.removeItem('kb_concl_expand');
   try {
     const [projeto, tarefas, decisoes, resumoHoras] = await Promise.all([
       req('GET', `/projetos/${id}`),
@@ -44,14 +43,17 @@ export async function abrirProjeto(id) {
       req('GET', `/projetos/${id}/decisoes`),
       req('GET', `/projetos/${id}/horas-por-usuario`).catch(() => []),
     ]);
+    setShellView(projeto.grupo_id ? 'groups' : 'projects');
     setProjeto(projeto);
     setTarefas(normalizarColaboradoresTarefas(tarefas));
     document.title = projeto.nome + ' · Telier';
     c.style.opacity = '';
     c.style.pointerEvents = '';
-    const abaSalvaRaw = localStorage.getItem(`telier_aba_${id}`) || 'tarefas';
-    setTarefasView(abaSalvaRaw === 'lista' || abaSalvaRaw === 'kanban' ? abaSalvaRaw : 'kanban');
-    const abaSalva = ['tarefas', 'mapa', 'relatorio'].includes(abaSalvaRaw) ? abaSalvaRaw : 'tarefas';
+    restaurarEstadoTarefasProjeto(id);
+    const viewSalva = localStorage.getItem(projectTaskViewKey(id)) || 'lista';
+    setTarefasView(viewSalva === 'kanban' ? 'kanban' : 'lista');
+    const abaSalvaRaw = localStorage.getItem(projectTabKey(id)) || 'tarefas';
+    const abaSalva = ['tarefas', 'mapa', 'relatorio', 'aovivo'].includes(abaSalvaRaw) ? abaSalvaRaw : 'tarefas';
     slideContent('right');
     renderProjeto(projeto, TAREFAS, decisoes, abaSalva, resumoHoras);
     setVistaAtual('projeto');
@@ -64,8 +66,13 @@ export async function abrirProjeto(id) {
 
 export function voltarDash() {
   slideContent('left');
+  const saved = localStorage.getItem('telier_last_dashboard_hash') || '#/hoje';
+  if (window.navigateToRoute) {
+    if (saved === '#/projetos') return window.navigateToRoute('projects', {}, { invalidateProjects: true });
+    return window.navigateToRoute('today', {}, { invalidateProjects: true });
+  }
   invalidarCacheProjetos();
-  import('./dashboard.js').then(({ renderDash }) => renderDash());
+  import('./dashboard.js').then(({ renderDash }) => renderDash({ routeKind: 'today' }));
 }
 
 export function renderProjeto(proj, tarefas, decisoes, abaAtiva, resumoHoras = []) {
@@ -76,7 +83,6 @@ export function renderProjeto(proj, tarefas, decisoes, abaAtiva, resumoHoras = [
   );
   const total = tarefas.length;
   const conc = tarefas.filter(t => t.status === 'Concluída').length;
-  const pct = total ? Math.round(conc / total * 100) : 0;
   const focoMinha = tarefas.find(t => t.foco && t.dono_id === EU?.id);
   const focoSessaoAtiva = focoMinha
     ? Object.entries(TIMERS).find(([, t]) => t.tarefaId === focoMinha.id)
@@ -92,25 +98,32 @@ export function renderProjeto(proj, tarefas, decisoes, abaAtiva, resumoHoras = [
   const urgente = dias !== null && dias <= 7 && !projetoConcluido(statusProjeto);
   const canEdit = podeEditar(proj);
   const compartilhado = Number(proj.compartilhado_comigo) === 1;
+  const canOperateTasks = !isArquivado && canEdit;
+  const sessaoAtivaProjeto = Object.entries(TIMERS).find(([, timer]) => String(timer.projeto_id) === String(proj.id));
+  const tempoProjetoAtivo = sessaoAtivaProjeto?.[1] || null;
+  const focoTexto = focoMinha
+    ? esc(focoMinha.nome)
+    : 'Nenhuma tarefa em foco';
+  const timerTexto = tempoProjetoAtivo
+    ? `${esc(tempoProjetoAtivo.tarefa_nome)} em curso`
+    : 'Nenhum cronômetro ativo';
 
   setBreadcrumb([
-    { label: 'Projetos', onClick: 'voltarDash()' },
     ...(proj.grupo_nome && proj.grupo_id
-      ? [{ label: proj.grupo_nome, onClick: `abrirGrupo('${proj.grupo_id}')` }]
-      : []),
+      ? [{ label: 'Grupos', onClick: 'renderGroupsHome()' }, { label: proj.grupo_nome, onClick: `abrirGrupo('${proj.grupo_id}')` }]
+      : [{ label: 'Projetos', onClick: 'voltarDash()' }]),
     { label: proj.nome },
   ]);
 
   const c = document.getElementById('content');
   c.innerHTML = `
-    <button class="btn-back" onclick="voltarDash()">← Voltar para projetos</button>
+    <button class="btn-back" onclick="${proj.grupo_id ? `abrirGrupo('${proj.grupo_id}')` : 'voltarDash()'}">← Voltar para ${proj.grupo_id ? 'grupo' : 'projetos'}</button>
     <section class="detail-shell"><div class="proj-hero detail-hero" data-status="${esc(statusProjeto)}">
       <div class="proj-hero-top">
         <div class="proj-hero-left">
           <div class="section-kicker">Projeto</div>
           <div class="proj-nome">${esc(proj.nome)}</div>
-          <div class="proj-dono">${avatar(proj.dono_nome,'avatar-sm')} <span>${esc(proj.dono_nome||'—')}</span></div>
-          <div class="dash-sub dash-sub-tight">Base operacional do projeto, com situação, prazo, carga e distribuição de trabalho.</div>
+          <div class="proj-dono">${avatar(proj.dono_nome,'avatar-sm')} <span>${esc(proj.dono_nome||'—')}</span>${proj.grupo_nome ? `<span class="proj-context-chip">${esc(proj.grupo_nome)}</span>` : ''}</div>
         </div>
         <div class="proj-hero-actions">
           ${canEdit ? `<button class="btn btn-sm" onclick="modalEditarProjeto('${proj.id}')">Editar</button>` : ''}
@@ -119,8 +132,33 @@ export function renderProjeto(proj, tarefas, decisoes, abaAtiva, resumoHoras = [
           ${proj.total_horas > 0 ? `<button class="btn btn-sm" onclick="exportarTempoProjetoCSV('${proj.id}')">↓ CSV</button>` : ''}
         </div>
       </div>
-      <div class="proj-meta">
+      <div class="proj-meta proj-meta-compact">
         <div class="proj-meta-item"><span class="proj-meta-label">Status</span>${tag(statusProjeto)}</div>
+        ${proj.prazo ? `<div class="proj-meta-item"><span class="proj-meta-label">Prazo</span><span class="tag ${urgente?'tag-red':'tag-gray'} mono">${prazoFmt(proj.prazo, true)}</span></div>` : ''}
+        <div class="proj-meta-item"><span class="proj-meta-label">Execução</span><span class="tag tag-gray mono">${conc}/${total}</span></div>
+      </div>
+      <div class="project-ops-band">
+        <div class="project-ops-card project-ops-card-actions">
+          <span class="project-ops-label">Ação rápida</span>
+          <strong class="project-ops-main">Entrar em execução</strong>
+          <span class="project-ops-sub">Abra a lista com contexto preservado e retome a próxima tarefa sem reconfigurar a tela.</span>
+          <div class="project-ops-buttons">
+            <button class="btn btn-sm btn-primary" onclick="mudarAba('tarefas')">Ir para tarefas</button>
+            ${canOperateTasks ? `<button class="btn btn-sm" onclick="modalNovaTarefa('${proj.id}')">Nova tarefa</button>` : ''}
+            ${tempoProjetoAtivo ? `<button class="btn btn-sm" onclick="expandirSessoes('${tempoProjetoAtivo.tarefaId}')">Ver tempo</button>` : ''}
+          </div>
+        </div>
+        <div class="project-ops-card">
+          <span class="project-ops-label">Foco atual</span>
+          <strong class="project-ops-main">${focoTexto}</strong>
+          <span class="project-ops-sub">${focoMinha ? 'Tarefa prioritária para retomada imediata.' : 'Marque uma tarefa com ★ para orientar a operação.'}</span>
+          ${focoBtnHtml ? `<div class="project-ops-buttons">${focoBtnHtml}</div>` : ''}
+        </div>
+        <div class="project-ops-card">
+          <span class="project-ops-label">Tempo</span>
+          <strong class="project-ops-main">${timerTexto}</strong>
+          <span class="project-ops-sub">${proj.total_horas > 0 ? `${parseFloat(proj.total_horas).toFixed(1)}h acumuladas no projeto.` : 'Sem horas registradas ainda.'}</span>
+        </div>
       </div>
       <details class="proj-hero-details-wrap">
         <summary class="proj-hero-details-toggle">Detalhes do projeto</summary>
@@ -129,7 +167,6 @@ export function renderProjeto(proj, tarefas, decisoes, abaAtiva, resumoHoras = [
             ${compartilhado ? `<div class="proj-meta-item"><span class="proj-meta-label">Acesso</span><span class="tag tag-cyan">Compartilhado ${proj.origem_compartilhamento==='grupo'?'via grupo':'direto'}</span></div>` : ''}
             <div class="proj-meta-item"><span class="proj-meta-label">Fase</span>${tag(proj.fase, FT[proj.fase])}</div>
             <div class="proj-meta-item"><span class="proj-meta-label">Prioridade</span>${tag(proj.prioridade, PT[proj.prioridade])}</div>
-            ${proj.prazo ? `<div class="proj-meta-item"><span class="proj-meta-label">Prazo</span><span class="tag ${urgente?'tag-red':'tag-gray'} mono">${prazoFmt(proj.prazo)}</span></div>` : ''}
             ${proj.area_m2 ? `<div class="proj-meta-item"><span class="proj-meta-label">Área</span><span class="tag tag-gray mono">${proj.area_m2.toLocaleString('pt-BR')} m²</span></div>` : ''}
           </div>
           ${resumoHoras?.length > 1 ? `
@@ -140,32 +177,6 @@ export function renderProjeto(proj, tarefas, decisoes, abaAtiva, resumoHoras = [
             </div>` : ''}
         </div>
       </details>
-      <div class="dash-metrics-strip detail-metrics-strip">
-        <div class="dash-metric">
-          <div class="dash-metric-label">Execução</div>
-          <div class="dash-metric-value">${conc}/${total}</div>
-        </div>
-        <div class="dash-metric">
-          <div class="dash-metric-label">Progresso</div>
-          <div class="dash-metric-value">${pct}%</div>
-        </div>
-        ${dias !== null ? `<div class="dash-metric">
-          <div class="dash-metric-label">Prazo</div>
-          <div class="dash-metric-value ${dias <= 0 ? 'is-overdue' : urgente ? 'is-warning' : ''}">${dias <= 0 ? 'Vencido' : dias + ' dias'}</div>
-        </div>` : ''}
-        ${proj.total_horas > 0 ? `<div class="dash-metric">
-          <div class="dash-metric-label">Horas</div>
-          <div class="dash-metric-value">${parseFloat(proj.total_horas).toFixed(1)}h</div>
-        </div>` : ''}
-      </div>
-      <div class="proj-stats detail-progress-band">
-        <div class="proj-prog-wrap">
-          <div class="proj-prog-bar"><div class="proj-prog-fill ${pct===100?'done':'partial'}" style="width:${pct}%"></div></div>
-        </div>
-      </div>
-      ${focoMinha
-        ? `<div class="proj-foco-banner"><span class="fl">Meu foco</span><span class="fn">${esc(focoMinha.nome)}</span>${focoBtnHtml}</div>`
-        : `<div class="proj-foco-empty">Nenhuma tarefa em foco — use ★ na aba Tarefas para definir</div>`}
     </div></section>
     ${isArquivado ? `
       <div class="alert-banner block-gap">
@@ -188,7 +199,7 @@ export function renderProjeto(proj, tarefas, decisoes, abaAtiva, resumoHoras = [
 export function mudarAba(aba) {
   document.querySelectorAll('.aba').forEach(b => b.classList.toggle('ativa', b.dataset.aba === aba));
   renderAba(aba, TAREFAS);
-  if (PROJETO?.id) localStorage.setItem(`telier_aba_${PROJETO.id}`, aba);
+  if (PROJETO?.id) localStorage.setItem(projectTabKey(PROJETO.id), aba);
 }
 
 export function renderAba(aba, tarefas) {
@@ -269,8 +280,7 @@ export async function criarProjeto() {
     const areaVal = gv('m-area');
     await req('POST', '/projetos', { nome, fase: gv('m-fase'), status: gv('m-status'), prioridade: gv('m-prior'), prazo: gv('m-prazo')||null, area_m2: areaVal ? parseFloat(areaVal) : null, grupo_id: gv('m-grupo') || null });
     fecharModal(); toast('Projeto criado'); invalidarCacheProjetos();
-    const { renderDash } = await import('./dashboard.js');
-    renderDash();
+    if (window.refreshCurrentRoute) await window.refreshCurrentRoute({ invalidateProjects: true });
   } catch (e) { toast(e.message, 'err'); btnLoading('btn-criar-proj', false); }
 }
 
@@ -311,8 +321,7 @@ export async function salvarProjeto(id) {
     if (PROJETO?.id === id) {
       await recarregarProjeto();
     } else {
-      const { renderDash } = await import('./dashboard.js');
-      renderDash();
+      if (window.refreshCurrentRoute) await window.refreshCurrentRoute({ invalidateProjects: true });
     }
   } catch (e) { toast(e.message, 'err'); btnLoading('btn-salvar-proj', false); }
 }
@@ -328,8 +337,7 @@ export async function deletarProjeto(id) {
     try {
       await req('DELETE', `/projetos/${id}`);
       fecharModal(); toast('Projeto excluído'); invalidarCacheProjetos();
-      const { renderDash } = await import('./dashboard.js');
-      renderDash();
+      if (window.refreshCurrentRoute) await window.refreshCurrentRoute({ invalidateProjects: true });
     }
     catch (e) { toast(e.message, 'err'); }
   }, { titulo: 'Excluir projeto', btnTexto: 'Excluir', danger: true });

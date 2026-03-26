@@ -55,7 +55,7 @@
 <div id="page-app" class="hidden">
   <div class="app-shell">
     <aside class="app-sidebar">
-      <div class="sidebar-brand" onclick="goHome()" title="Ir para início">
+      <div class="sidebar-brand" onclick="goToday()" title="Ir para início">
         <div class="sidebar-wordmark">Telier</div>
         <div class="sidebar-caption">Architectural management</div>
       </div>
@@ -64,20 +64,27 @@
         <button class="btn btn-primary sidebar-cta" onclick="modalNovoProjeto()">+ Novo projeto</button>
       </div>
 
+      <div class="sidebar-section-label">Navegação</div>
       <nav class="sidebar-nav" aria-label="Navegação principal">
-        <button class="sidebar-link is-active" data-shell-view="dashboard" onclick="goHome()">
+        <button class="sidebar-link is-active" data-shell-view="today" onclick="goToday()">
+          <span class="sidebar-link-icon">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M12 6v6l4 2" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><circle cx="12" cy="12" r="8" stroke="currentColor" stroke-width="1.6"/></svg>
+          </span>
+          <span>Hoje</span>
+        </button>
+        <button class="sidebar-link" data-shell-view="projects" onclick="goProjects()">
           <span class="sidebar-link-icon">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M4 4h7v7H4zM13 4h7v4h-7zM13 10h7v10h-7zM4 13h7v7H4z" stroke="currentColor" stroke-width="1.6"/></svg>
           </span>
           <span>Projetos</span>
         </button>
-        <button class="sidebar-link" data-shell-view="groups" onclick="goHome()">
+        <button class="sidebar-link" data-shell-view="groups" onclick="goGroups()">
           <span class="sidebar-link-icon">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M4 7h16M4 12h10M4 17h13" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
           </span>
           <span>Grupos</span>
         </button>
-        <button class="sidebar-link" data-shell-view="admin" onclick="abrirCentralAdmin()">
+        <button class="sidebar-link" id="sidebar-link-admin" data-shell-view="admin" onclick="abrirCentralAdmin()">
           <span class="sidebar-link-icon">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M12 3l8 4.5v9L12 21l-8-4.5v-9L12 3z" stroke="currentColor" stroke-width="1.6"/><path d="M12 8v8M8 10.5l4 2 4-2" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
           </span>
@@ -90,7 +97,7 @@
       <div class="sidebar-footer">
         <div class="sidebar-user-meta">
           <span class="sidebar-user-label">Usuário</span>
-          <span class="sidebar-user-name" id="topbar-nome"></span>
+          <span class="sidebar-user-name" id="sidebar-user-name"></span>
         </div>
         <div class="sidebar-footer-actions">
           <button class="btn btn-ghost btn-sm" id="btn-admin-toggle" style="display:none" onclick="alternarPerfilAdmin()">Visão admin</button>
@@ -101,8 +108,8 @@
 
     <div class="app-main">
       <nav class="topbar">
-        <div class="topbar-section">
-          <div class="topbar-logo" onclick="goHome()" title="Ir para início">TELIER</div>
+        <div class="topbar-section topbar-context">
+          <div class="topbar-context-label">Contexto</div>
           <div id="topbar-breadcrumb" class="topbar-breadcrumb"></div>
         </div>
         <div class="topbar-actions">

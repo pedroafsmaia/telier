@@ -12,13 +12,110 @@ import { toast, aplicarTema, alternarTema, fecharModal } from './modules/ui.js';
 import { isAdminRole } from './modules/utils.js';
 import { renderDash, carregarFiltrosDash, salvarFiltrosDash, renderInicioDia, toggleStartday, renderDashLoadingState, renderDashEmptyState, renderProjetosDash, renderCardsDash, filtrarProjetosBusca, filtrarGrupoDash, filtrarOrigemDash, setFiltro, getDragJustEnded, dragProjeto, dragProjetoEnd, dragGrupo, dragGrupoEnd, dragOver, dragLeave, dropProjeto, toggleGrupo } from './modules/dashboard.js';
 import { abrirProjeto, voltarDash, renderProjeto, mudarAba, renderAba, renderProjetoAoVivo, recarregarProjeto, modalNovoProjeto, criarProjeto, modalEditarProjeto, salvarProjeto, deletarProjeto } from './modules/project.js';
-import { abrirGrupo, renderGrupo, mudarAbaGrupo, renderAbaGrupo, renderGrupoAbaProjetos, renderGrupoAbaTarefas, renderGrupoAbaMapa, renderGrupoAbaAoVivo, renderGrupoAbaRelatorio, carregarTarefasGrupo, carregarAoVivoGrupo, carregarAoVivoProjeto, modalNovoGrupo, criarGrupo, modalEditarGrupo, compartilharGrupo, modalCompartilharGrupo, salvarGrupo, adicionarPermGrupo, removerPermGrupo, sairGrupoCompartilhado, sairProjetoCompartilhado, acaoGrupo, modalMoverTodosGrupo, deletarGrupo } from './modules/groups.js';
+import { renderGroupsHome, abrirGrupo, renderGrupo, mudarAbaGrupo, renderAbaGrupo, renderGrupoAbaProjetos, renderGrupoAbaTarefas, renderGrupoAbaMapa, renderGrupoAbaAoVivo, renderGrupoAbaRelatorio, carregarTarefasGrupo, carregarAoVivoGrupo, carregarAoVivoProjeto, modalNovoGrupo, criarGrupo, modalEditarGrupo, compartilharGrupo, modalCompartilharGrupo, salvarGrupo, adicionarPermGrupo, removerPermGrupo, sairGrupoCompartilhado, sairProjetoCompartilhado, acaoGrupo, modalMoverTodosGrupo, deletarGrupo } from './modules/groups.js';
 import { atualizarBadgeNotificacoes, filtrarNotificacoesPainel, renderPainelNotificacoes, carregarNotificacoes, iniciarPollNotificacoes, carregarStatus, iniciarStatusPoll, marcarNotifLida, marcarTodasNotifLidas, abrirNotificacoes, fecharPainelNotificacoes, carregarColegasAtivos, iniciarPollPresenca, renderPresenceDock, togglePresencePanel, fecharPresencePanelFora } from './modules/notifications.js';
 import { carregarTimersAtivos, iniciarCronometro, pararCronometro, renderTimerWidget, renderTimerDock, modalAdicionarIntervalo, criarIntervalo, editarSessao, salvarSessao, deletarSessao, editarIntervalo, salvarIntervalo, deletarIntervalo, expandirSessoes, adicionarDetalheTarefa, adicionarDetalheTarefaEnter, toggleDetalheTarefa, removerDetalheTarefa } from './modules/timer.js';
-import { atualizarPrazoHint, renderColabsStack, renderAoVivoStream, renderAbaTarefas, renderKanbanInterno, criarTarefaKanban, renderListaInterna, ordenarLista, renderMapa, renderRelatorio, renderDecisoes, mudarStatus, toggleFoco, deletarTarefa, modalEditarDecisao, salvarDecisaoEditada, deletarDecisao, modalPermissoes, adicionarPerm, removerPerm, modalNovaTarefa, criarTarefa, modalEditarTarefa, salvarTarefa, duplicarTarefa, quickAddMostrarStep2, quickAddCancelar, quickAddConfirmar, quickAddTarefa, filtrarTarefasBusca, exportarTempoProjetoCSV, modalColabsTarefa, sairTarefaCompartilhada, adicionarColab, removerColab, modalNovaDecisao, criarDecisao } from './modules/tasks.js';
+import { atualizarPrazoHint, renderColabsStack, renderAoVivoStream, alternarTarefasView, renderAbaTarefas, renderKanbanInterno, criarTarefaKanban, renderListaInterna, ordenarLista, renderMapa, renderRelatorio, renderDecisoes, mudarStatus, toggleFoco, deletarTarefa, modalEditarDecisao, salvarDecisaoEditada, deletarDecisao, modalPermissoes, adicionarPerm, removerPerm, modalNovaTarefa, criarTarefa, modalEditarTarefa, salvarTarefa, duplicarTarefa, quickAddMostrarStep2, quickAddCancelar, quickAddConfirmar, quickAddTarefa, filtrarTarefasBusca, exportarTempoProjetoCSV, modalColabsTarefa, sairTarefaCompartilhada, adicionarColab, removerColab, modalNovaDecisao, criarDecisao, aplicarFiltroOrigemProjeto, aplicarFiltroResponsavelProjeto, aplicarFiltroStatusProjeto, alternarListaConcluidasProjeto } from './modules/tasks.js';
 import { abrirCentralAdmin, renderTimelineHoje, exportarTempoAdminCSV, aplicarFiltroTempoAdmin, limparFiltroTempoAdmin, abrirUsuarioAdmin, modalNovoColega, promoverAdmin, modalNovoColega_legacy, criarColega } from './modules/admin.js';
 import { fazerLogin, fazerSetup, fazerLogout, fazerCadastroPublico, modalCadastroPublico, modalTrocaSenhaObrigatoria, salvarSenhaObrigatoria, modalResetSenhaUsuario, resetarSenhaUsuario, toggleSenhaLogin, toggleSenhaSetup, toggleSenhaCadastro, toggleSenhaObrigatoria, toggleSenhaReset } from './modules/auth.js';
 import { initShortcuts } from './modules/shortcuts.js';
+
+const LAST_DASHBOARD_HASH_KEY = 'telier_last_dashboard_hash';
+let _routerReady = false;
+let _routeState = { name: 'today', params: {} };
+
+function normalizeHash(hash) {
+  const raw = (hash || '').replace(/^#/, '').trim();
+  if (!raw) return '/hoje';
+  return raw.startsWith('/') ? raw : `/${raw}`;
+}
+
+function parseHashRoute(hash = window.location.hash) {
+  const path = normalizeHash(hash);
+  const segs = path.split('/').filter(Boolean);
+  if (!segs.length || segs[0] === 'hoje') return { name: 'today', params: {}, hash: '#/hoje' };
+  if (segs[0] === 'projetos') {
+    if (segs[1]) return { name: 'project', params: { id: segs[1] }, hash: `#/projetos/${segs[1]}` };
+    return { name: 'projects', params: {}, hash: '#/projetos' };
+  }
+  if (segs[0] === 'grupos') {
+    if (segs[1]) return { name: 'group', params: { id: segs[1] }, hash: `#/grupos/${segs[1]}` };
+    return { name: 'groups', params: {}, hash: '#/grupos' };
+  }
+  return { name: 'today', params: {}, hash: '#/hoje' };
+}
+
+function routeToHash(name, params = {}) {
+  if (name === 'today') return '#/hoje';
+  if (name === 'projects') return '#/projetos';
+  if (name === 'groups') return '#/grupos';
+  if (name === 'project' && params.id) return `#/projetos/${params.id}`;
+  if (name === 'group' && params.id) return `#/grupos/${params.id}`;
+  return '#/hoje';
+}
+
+function rememberDashboardHash(hash = window.location.hash) {
+  const route = parseHashRoute(hash);
+  if (route.name === 'today' || route.name === 'projects') {
+    localStorage.setItem(LAST_DASHBOARD_HASH_KEY, route.hash);
+  }
+}
+
+async function renderCurrentRoute(opts = {}) {
+  const route = parseHashRoute();
+  _routeState = route;
+  if (route.name === 'today' || route.name === 'projects') {
+    rememberDashboardHash(route.hash);
+  }
+  if (opts.invalidateProjects) invalidarCacheProjetos();
+
+  if (route.name === 'today') {
+    await renderDash({ routeKind: 'today' });
+    return;
+  }
+  if (route.name === 'projects') {
+    await renderDash({ routeKind: 'projects' });
+    return;
+  }
+  if (route.name === 'groups') {
+    await renderGroupsHome({ fromRoute: true });
+    return;
+  }
+  if (route.name === 'group' && route.params.id) {
+    await abrirGrupo(route.params.id, { fromRoute: true });
+    return;
+  }
+  if (route.name === 'project' && route.params.id) {
+    await abrirProjeto(route.params.id, { fromRoute: true });
+    return;
+  }
+  window.location.hash = '#/hoje';
+}
+
+export async function navigateToRoute(name, params = {}, opts = {}) {
+  const hash = routeToHash(name, params);
+  if (opts.invalidateProjects) invalidarCacheProjetos();
+  if (window.location.hash !== hash) {
+    if (opts.replace) window.location.replace(hash);
+    else window.location.hash = hash;
+    return;
+  }
+  await renderCurrentRoute(opts);
+}
+
+export function getCurrentAppRoute() {
+  return { ..._routeState, params: { ..._routeState.params } };
+}
+
+export async function refreshCurrentRoute(opts = {}) {
+  await renderCurrentRoute(opts);
+}
+
+export function goToday() { return navigateToRoute('today'); }
+export function goProjects() { return navigateToRoute('projects'); }
+export function goGroups() { return navigateToRoute('groups'); }
+export function goProjeto(id) { return navigateToRoute('project', { id }); }
+export function goGrupo(id) { return navigateToRoute('group', { id }); }
 
 // ── INIT ──
 async function init() {
@@ -52,11 +149,23 @@ export function mostrar(tela) {
   if (setupBtn) setupBtn.style.display = (tela === 'login' && NEEDS_SETUP) ? 'inline-flex' : 'none';
   if (btnNotifs && tela !== 'app') btnNotifs.style.display = 'none';
   if (tela === 'app') {
-    document.getElementById('topbar-nome').textContent = EU?.nome || '';
+    const userNameEl = document.getElementById('sidebar-user-name');
+    if (userNameEl) userNameEl.textContent = EU?.nome || '';
     atualizarBadgeNotificacoes(0);
     iniciarStatusPoll();
     syncAdminModeUI();
-    renderDash();
+    if (!_routerReady) {
+      window.addEventListener('hashchange', () => {
+        if (document.getElementById('page-app')?.classList.contains('hidden')) return;
+        renderCurrentRoute();
+      });
+      _routerReady = true;
+    }
+    if (!window.location.hash || window.location.hash === '#') {
+      window.location.hash = '#/hoje';
+    } else {
+      renderCurrentRoute();
+    }
     if (FORCE_PASSWORD_CHANGE) {
       setTimeout(() => modalTrocaSenhaObrigatoria(), 120);
     }
@@ -64,18 +173,20 @@ export function mostrar(tela) {
 }
 
 export function goHome() {
-  invalidarCacheProjetos();
-  renderDash();
+  return goToday();
 }
 
 export function syncAdminModeUI() {
   const btn = document.getElementById('btn-admin-toggle');
+  const adminLink = document.getElementById('sidebar-link-admin');
   if (!btn) return;
   if (!isAdminRole()) {
     btn.style.display = 'none';
+    if (adminLink) adminLink.style.display = 'none';
     return;
   }
   btn.style.display = 'inline-flex';
+  if (adminLink) adminLink.style.display = 'flex';
   btn.innerHTML = `<svg width="12" height="12" viewBox="0 0 12 12" fill="none" style="flex-shrink:0"><path d="M1 4l3-3M1 4h4M11 8l-3 3M11 8H7" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>${ADMIN_MODE === 'admin' ? 'Visão admin' : 'Visão membro'}`;
   btn.title = ADMIN_MODE === 'admin'
     ? 'Clique para usar o sistema como usuário normal'
@@ -89,7 +200,7 @@ export function alternarPerfilAdmin() {
   localStorage.setItem(ADMIN_MODE_KEY, novoModo);
   syncAdminModeUI();
   toast(novoModo === 'admin' ? 'Modo admin ativado' : 'Modo membro ativado');
-  renderDash();
+  refreshCurrentRoute({ invalidateProjects: true });
 }
 
 // ── WINDOW EVENT HANDLERS ──
@@ -136,6 +247,14 @@ Object.assign(window, {
   // app
   mostrar,
   goHome,
+  goToday,
+  goProjects,
+  goGroups,
+  goProjeto,
+  goGrupo,
+  navigateToRoute,
+  refreshCurrentRoute,
+  getCurrentAppRoute,
   syncAdminModeUI,
   alternarPerfilAdmin,
   // ui
@@ -179,6 +298,7 @@ Object.assign(window, {
   salvarProjeto,
   deletarProjeto,
   // groups
+  renderGroupsHome,
   abrirGrupo,
   renderGrupo,
   mudarAbaGrupo,
@@ -244,6 +364,7 @@ Object.assign(window, {
   atualizarPrazoHint,
   renderColabsStack,
   renderAoVivoStream,
+  alternarTarefasView,
   renderAbaTarefas,
   renderKanbanInterno,
   criarTarefaKanban,
@@ -278,6 +399,10 @@ Object.assign(window, {
   removerColab,
   modalNovaDecisao,
   criarDecisao,
+  aplicarFiltroOrigemProjeto,
+  aplicarFiltroResponsavelProjeto,
+  aplicarFiltroStatusProjeto,
+  alternarListaConcluidasProjeto,
   // admin
   abrirCentralAdmin,
   renderTimelineHoje,

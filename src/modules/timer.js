@@ -4,7 +4,7 @@ import {
   TIMER_AVISO_HORAS,
   setTimers, setRelatorioCache,
 } from './state.js';
-import { req } from './api.js';
+import { req, invalidarCacheProjetos } from './api.js';
 import { toast, abrirModal, fecharModal, confirmar, btnLoading } from './ui.js';
 import { esc, gv, fmtDuracao, fmtHoras, fmtDatetime, fmtDatetimeInput, agora, isAdmin, listarDetalhesTarefa, salvarDetalhesTarefa } from './utils.js';
 
@@ -58,6 +58,7 @@ export async function iniciarCronometro(tarefaId, tarefaNome) {
       projeto_id: PROJETO?.id || '',
       inicio,
     };
+    invalidarCacheProjetos();
     renderTimerDock();
     atualizarTempoListaVisivel();
     toast('Cronômetro iniciado');
@@ -70,6 +71,7 @@ export async function pararCronometro(sessaoId) {
   try {
     await req('PUT', `/tempo/${sessaoId}/parar`, { fim: agora() });
     delete TIMERS[sessaoId];
+    invalidarCacheProjetos();
     renderTimerDock();
     atualizarTempoListaVisivel();
     toast('Cronômetro parado');
@@ -159,6 +161,7 @@ export async function criarIntervalo(sessaoId) {
     const ini = gv('m-ini').replace('T', ' ');
     const fim = gv('m-fim') ? gv('m-fim').replace('T', ' ') : null;
     await req('POST', `/tempo/${sessaoId}/intervalos`, { tipo, inicio: ini, fim });
+    invalidarCacheProjetos();
     fecharModal(); toast('Intervalo adicionado');
     if (PROJETO) {
       const { recarregarProjeto } = await import('./project.js');
@@ -263,6 +266,7 @@ export async function salvarSessao(sessaoId) {
   try {
     const fim = fimVal ? fimVal.replace('T',' ') : null;
     await req('PUT', `/tempo/${sessaoId}`, { inicio: ini.replace('T',' '), fim });
+    invalidarCacheProjetos();
     fecharModal(); toast('Sessão atualizada');
     setRelatorioCache(null);
     if (PROJETO) {
@@ -276,6 +280,7 @@ export async function deletarSessao(sessaoId, tarefaId) {
   confirmar('Excluir esta sessão e todos os seus intervalos? Esta ação não pode ser desfeita.', async () => {
     try {
       await req('DELETE', `/tempo/${sessaoId}`);
+      invalidarCacheProjetos();
       toast('Sessão excluída');
       if (PROJETO) {
         const { recarregarProjeto } = await import('./project.js');
@@ -303,6 +308,7 @@ export async function salvarIntervalo(id) {
   btnLoading('btn-ed-int', true);
   try {
     await req('PUT', `/intervalos/${id}`, { tipo: gv('m-tipo'), inicio: gv('m-ini').replace('T',' '), fim: gv('m-fim') ? gv('m-fim').replace('T',' ') : null });
+    invalidarCacheProjetos();
     fecharModal(); toast('Intervalo atualizado');
     if (PROJETO) {
       const { recarregarProjeto } = await import('./project.js');
@@ -315,6 +321,7 @@ export async function deletarIntervalo(id, tarefaId) {
   confirmar('Excluir este intervalo? Esta ação não pode ser desfeita.', async () => {
     try {
       await req('DELETE', `/intervalos/${id}`);
+      invalidarCacheProjetos();
       toast('Intervalo excluído');
       if (PROJETO) {
         const { recarregarProjeto } = await import('./project.js');

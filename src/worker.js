@@ -2529,6 +2529,92 @@ export default {
       return ok(row || null);
     }
 
+    // GET /tempo/sessoes-recentes — últimas sessões concluídas do usuário
+    if (path === '/tempo/sessoes-recentes' && method === 'GET') {
+      const [u, e] = await requireAuth(request, env);
+      if (e) return fail('Não autorizado', 401);
+      const limit = Math.min(Math.max(parseInt(url.searchParams.get('limit') || '6', 10) || 6, 1), 12);
+      const rows = await env.DB.prepare(`
+        SELECT st.id, st.tarefa_id, t.nome as tarefa_nome,
+               p.id as projeto_id, p.nome as projeto_nome,
+               st.inicio, st.fim,
+               ROUND(
+                 (julianday(st.fim) - julianday(st.inicio)) * 24
+                 - COALESCE((
+                     SELECT SUM((julianday(i.fim) - julianday(i.inicio)) * 24)
+                     FROM intervalos i
+                     WHERE i.sessao_id = st.id AND i.fim IS NOT NULL
+                   ), 0)
+               , 2) as horas_liquidas
+        FROM sessoes_tempo st
+        JOIN tarefas t ON t.id = st.tarefa_id
+        JOIN projetos p ON p.id = t.projeto_id
+        WHERE st.usuario_id = ? AND st.fim IS NOT NULL
+        ORDER BY st.fim DESC
+        LIMIT ?
+      `).bind(u.uid, limit).all();
+      return ok(rows.results || []);
+    }
+
+    // GET /tarefas/operacao-hoje — fila operacional diária do usuário
+    if (path === '/tarefas/operacao-hoje' && method === 'GET') {
+      const [u, e] = await requireAuth(request, env);
+      if (e) return fail('Não autorizado', 401);
+      const rows = await env.DB.prepare(`
+        SELECT
+          t.id,
+          t.nome,
+          t.status,
+          t.prioridade,
+          t.dificuldade as complexidade,
+          t.data,
+          t.foco,
+          p.id as projeto_id,
+          p.nome as projeto_nome,
+          p.status as projeto_status,
+          pu.nome as dono_nome,
+          st.id as sessao_ativa_id,
+          st.inicio as sessao_ativa_inicio
+        FROM tarefas t
+        JOIN projetos p ON p.id = t.projeto_id
+        LEFT JOIN usuarios pu ON pu.id = t.dono_id
+        LEFT JOIN sessoes_tempo st
+          ON st.tarefa_id = t.id
+         AND st.usuario_id = ?
+         AND st.fim IS NULL
+        WHERE
+          (
+            t.dono_id = ?
+            OR EXISTS (
+              SELECT 1
+              FROM colaboradores_tarefa ct
+              WHERE ct.tarefa_id = t.id AND ct.usuario_id = ?
+            )
+          )
+          AND t.status != 'Concluída'
+          AND COALESCE(p.status, '') != 'Arquivado'
+        ORDER BY
+          CASE WHEN st.id IS NOT NULL THEN 0 ELSE 1 END,
+          CASE WHEN t.foco = 1 THEN 0 ELSE 1 END,
+          CASE t.status
+            WHEN 'Em andamento' THEN 0
+            WHEN 'Bloqueada' THEN 1
+            WHEN 'A fazer' THEN 2
+            ELSE 3
+          END,
+          CASE
+            WHEN t.data IS NULL THEN 3
+            WHEN DATE(t.data) < DATE('now') THEN 0
+            WHEN DATE(t.data) = DATE('now') THEN 1
+            ELSE 2
+          END,
+          COALESCE(t.data, '9999-12-31') ASC,
+          t.criado_em ASC
+        LIMIT 12
+      `).bind(u.uid, u.uid, u.uid).all();
+      return ok(rows.results || []);
+    }
+
     if (path === '/tempo/resumo-hoje' && method === 'GET') {
       const [u, e] = await requireAuth(request, env);
       if (e) return fail('Não autorizado', 401);

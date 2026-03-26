@@ -2,14 +2,161 @@
 import {
   EU, GRUPO_ATUAL, USUARIOS, _gruposDash,
   GRUPO_TASK_MOBILE_FILTERS_OPEN,
-  setGrupoAtual, setVistaAtual, setUsuarios, setGrupoTaskMobileFiltersOpen,
+  setGrupoAtual, setVistaAtual, setUsuarios, setGrupoTaskMobileFiltersOpen, setGruposDash, setProjsDash,
 } from './state.js';
 import { req, invalidarCacheProjetos } from './api.js';
 import { toast, toastUndo, abrirModal, fecharModal, confirmar, btnLoading, setBreadcrumb, setShellView, slideContent } from './ui.js';
 import { esc, gv, sel, avatar, tag, fmtHoras, prazoFmt, diasRestantes, souDono, isAdmin, normalizarStatusProjeto, PT, PO, DT, DO, normalizarColaboradoresTarefas, tarefaCompartilhadaComigo } from './utils.js';
 import { renderAoVivoStream } from './tasks.js';
 
-export async function abrirGrupo(id) {
+export async function renderGroupsHome(opts = {}) {
+  if (!opts.fromRoute) {
+    return window.goGroups ? window.goGroups() : null;
+  }
+  window.scrollTo(0, 0);
+  setShellView('groups');
+  setVistaAtual('groups');
+  document.title = 'Grupos · Telier';
+  setBreadcrumb([{ label: 'Grupos' }]);
+  const c = document.getElementById('content');
+  c.innerHTML = `<div class="loading"><div class="spinner"></div> Carregando grupos...</div>`;
+  try {
+    const [grupos, projetos, ativas] = await Promise.all([
+      req('GET', '/grupos').catch(() => []),
+      req('GET', '/projetos').catch(() => []),
+      req('GET', '/tempo/ativas').catch(() => []),
+    ]);
+    setGruposDash(grupos);
+    setProjsDash(projetos);
+
+    const gruposOrdenados = [...(grupos || [])].sort((a, b) => {
+      const ao = Number(a.ordem || 0);
+      const bo = Number(b.ordem || 0);
+      if (ao !== bo) return ao - bo;
+      return (a.nome || '').localeCompare(b.nome || '');
+    });
+    const projetosAtivos = (projetos || []).filter(p => normalizarStatusProjeto(p.status) !== 'Arquivado');
+    const semGrupo = projetosAtivos.filter(p => !p.grupo_id);
+    const projetosComGrupo = projetosAtivos.filter(p => p.grupo_id);
+
+    const htmlGrupos = gruposOrdenados.map(grupo => {
+      const projetosGrupo = projetosAtivos.filter(p => String(p.grupo_id) === String(grupo.id));
+      const totalProjetos = projetosGrupo.length;
+      const totalTarefas = projetosGrupo.reduce((acc, p) => acc + Number(p.total_tarefas || 0), 0);
+      const concluidas = projetosGrupo.reduce((acc, p) => acc + Number(p.tarefas_concluidas || 0), 0);
+      const pendentes = Math.max(0, totalTarefas - concluidas);
+      const sessoesAtivas = (ativas || []).filter(a => projetosGrupo.some(p => String(p.id) === String(a.projeto_id))).length;
+      const atrasados = projetosGrupo.filter(p => {
+        const dias = diasRestantes(p.prazo);
+        return dias !== null && dias < 0 && !['Concluído', 'Arquivado'].includes(normalizarStatusProjeto(p.status));
+      }).length;
+      const preview = projetosGrupo
+        .sort((a, b) => {
+          const ad = a.prazo || '9999-99-99';
+          const bd = b.prazo || '9999-99-99';
+          return ad.localeCompare(bd) || (a.nome || '').localeCompare(b.nome || '');
+        })
+        .slice(0, 3);
+
+      return `
+        <article class="group-shell-card" data-status="${esc(grupo.status || 'Ativo')}">
+          <div class="group-shell-card-head">
+            <div class="group-shell-card-main">
+              <div class="section-kicker">Grupo</div>
+              <div class="group-shell-card-title-row">
+                <h3 class="group-shell-card-title">${esc(grupo.nome)}</h3>
+                ${tag(grupo.status || 'Ativo')}
+              </div>
+              <p class="group-shell-card-copy">${esc(grupo.descricao || 'Base de coordenação para projetos e tarefas relacionados.')}</p>
+            </div>
+            <div class="group-shell-card-actions">
+              <button class="btn btn-sm btn-primary" onclick="abrirGrupo('${grupo.id}')">Abrir grupo</button>
+              <button class="btn btn-sm" onclick="modalEditarGrupo('${grupo.id}')">Editar</button>
+            </div>
+          </div>
+          <div class="group-shell-card-metrics">
+            <div class="dash-metric">
+              <div class="dash-metric-label">Projetos</div>
+              <div class="dash-metric-value">${totalProjetos}</div>
+            </div>
+            <div class="dash-metric">
+              <div class="dash-metric-label">Pendências</div>
+              <div class="dash-metric-value">${pendentes}</div>
+            </div>
+            <div class="dash-metric">
+              <div class="dash-metric-label">Tempo em curso</div>
+              <div class="dash-metric-value">${sessoesAtivas}</div>
+            </div>
+            <div class="dash-metric">
+              <div class="dash-metric-label">Atrasados</div>
+              <div class="dash-metric-value ${atrasados ? 'is-overdue' : ''}">${atrasados}</div>
+            </div>
+          </div>
+          <div class="group-shell-project-strip">
+            <div class="group-shell-project-strip-head">
+              <span>Projetos do grupo</span>
+              <span>${concluidas}/${totalTarefas} tarefas concluídas</span>
+            </div>
+            ${preview.length ? preview.map(projeto => `
+              <button class="group-shell-project-row" onclick="abrirProjeto('${projeto.id}')">
+                <span class="group-shell-project-name">${esc(projeto.nome)}</span>
+                <span class="group-shell-project-meta">${Number(projeto.total_tarefas || 0)} tarefas</span>
+              </button>
+            `).join('') : `<div class="group-shell-empty">Nenhum projeto vinculado a este grupo.</div>`}
+          </div>
+        </article>`;
+    }).join('');
+
+    c.innerHTML = `
+      <div class="dash-header dash-header-spaced dash-head-grid">
+        <div class="dash-head-main">
+          <div class="section-kicker">Estrutura operacional</div>
+          <div class="dash-title">Grupos</div>
+          <div class="dash-sub dash-sub-tight">A navegação estrutural do Telier parte daqui: grupos organizam projetos e concentram a operação por contexto de trabalho.</div>
+        </div>
+        <div class="dash-actions">
+          <button class="btn" onclick="goProjects()">Ver projetos</button>
+          <button class="btn btn-primary" onclick="modalNovoGrupo()">Novo grupo</button>
+        </div>
+      </div>
+      <div class="dash-metrics-strip group-shell-summary">
+        <div class="dash-metric"><div class="dash-metric-label">Grupos ativos</div><div class="dash-metric-value">${gruposOrdenados.length}</div></div>
+        <div class="dash-metric"><div class="dash-metric-label">Projetos vinculados</div><div class="dash-metric-value">${projetosComGrupo.length}</div></div>
+        <div class="dash-metric"><div class="dash-metric-label">Projetos sem grupo</div><div class="dash-metric-value">${semGrupo.length}</div></div>
+      </div>
+      <div class="groups-shell-grid">
+        <section class="groups-shell-main">
+          ${htmlGrupos || `<div class="empty-state"><div class="empty-text">Nenhum grupo cadastrado</div><div class="empty-sub">Crie um grupo para recuperar a navegação estrutural do sistema.</div><div class="empty-cta"><button class="btn btn-primary" onclick="modalNovoGrupo()">Criar grupo</button></div></div>`}
+        </section>
+        <aside class="groups-shell-side">
+          <div class="section-shell group-shell-side-card">
+            <div class="section-head">
+              <div>
+                <div class="section-kicker">Sem grupo</div>
+                <div class="section-title">${semGrupo.length} projeto${semGrupo.length !== 1 ? 's' : ''}</div>
+              </div>
+            </div>
+            <div class="group-shell-side-copy">Projetos fora de grupos continuam acessíveis, mas ficam fora da navegação principal do escritório.</div>
+            <div class="group-shell-side-list">
+              ${semGrupo.slice(0, 5).map(projeto => `
+                <button class="group-shell-side-item" onclick="abrirProjeto('${projeto.id}')">
+                  <span>${esc(projeto.nome)}</span>
+                  <span>${Number(projeto.total_tarefas || 0)} tarefas</span>
+                </button>
+              `).join('') || `<div class="group-shell-empty">Nenhum projeto solto no momento.</div>`}
+            </div>
+          </div>
+        </aside>
+      </div>`;
+  } catch (e) {
+    c.innerHTML = `<div class="error-block">${esc(e.message)}<div class="muted-detail"><button class="btn btn-sm" onclick="renderGroupsHome()">Tentar novamente</button></div></div>`;
+  }
+}
+
+export async function abrirGrupo(id, opts = {}) {
+  if (!opts.fromRoute) {
+    return window.goGrupo ? window.goGrupo(id) : null;
+  }
   window.scrollTo(0, 0);
   setShellView('groups');
   const c = document.getElementById('content');
@@ -37,12 +184,14 @@ export async function abrirGrupo(id) {
 export function renderGrupo(grupo, projetos, abaAtiva = 'projetos') {
   setGrupoAtual(grupo);
   GRUPO_ATUAL._projetos = projetos;
+  GRUPO_ATUAL._tarefasCache = null;
+  GRUPO_ATUAL._tarefasCacheKey = null;
   const isArq = (grupo.status || 'Ativo') === 'Arquivado';
   const isPaus = (grupo.status || 'Ativo') === 'Pausado';
   const podeGer = !!(grupo.pode_gerenciar || souDono(grupo.dono_id) || isAdmin());
 
   setBreadcrumb([
-    { label: 'Projetos', onClick: 'voltarDash()' },
+    { label: 'Grupos', onClick: 'renderGroupsHome()' },
     { label: grupo.nome },
   ]);
 
@@ -50,7 +199,7 @@ export function renderGrupo(grupo, projetos, abaAtiva = 'projetos') {
   const nAtrasados = grupo.projetos_atrasados || 0;
 
   document.getElementById('content').innerHTML = `
-    <button class="btn-back" onclick="voltarDash()">← Voltar para projetos</button>
+    <button class="btn-back" onclick="renderGroupsHome()">← Voltar para grupos</button>
     <section class="detail-shell"><div class="proj-hero detail-hero" data-status="${esc(grupo.status || 'Ativo')}">
       <div class="proj-hero-top">
         <div class="proj-hero-left">
@@ -103,9 +252,6 @@ export function renderGrupo(grupo, projetos, abaAtiva = 'projetos') {
     <div class="abas abas-spaced detail-nav">
       <button class="aba ${abaAtiva==='projetos'?'ativa':''}" data-aba="projetos" onclick="mudarAbaGrupo('projetos')">Projetos${nProjetos ? ` <span class="tab-count">${nProjetos}</span>` : ''}</button>
       <button class="aba ${abaAtiva==='tarefas'?'ativa':''}" data-aba="tarefas" onclick="mudarAbaGrupo('tarefas')">Tarefas</button>
-      <button class="aba ${abaAtiva==='mapa'?'ativa':''}" data-aba="mapa" onclick="mudarAbaGrupo('mapa')">Mapa de Foco</button>
-      <button class="aba ${abaAtiva==='relatorio'?'ativa':''}" data-aba="relatorio" onclick="mudarAbaGrupo('relatorio')">Relat&oacute;rio</button>
-      <button class="aba ${abaAtiva==='aovivo'?'ativa':''}" data-aba="aovivo" onclick="mudarAbaGrupo('aovivo')">Ao vivo</button>
     </div>
     <div id="aba-grupo"></div>`;
 
@@ -122,18 +268,13 @@ export function mudarAbaGrupo(aba) {
 export function renderAbaGrupo(aba, projetos) {
   const el = document.getElementById('aba-grupo');
   if (!el) return;
-  if (aba === 'projetos') renderGrupoAbaProjetos(el, projetos);
-  else if (aba === 'tarefas') renderGrupoAbaTarefas(el);
-  else if (aba === 'mapa') renderGrupoAbaMapa(el);
-  else if (aba === 'aovivo') renderGrupoAbaAoVivo(el);
-  else if (aba === 'relatorio') renderGrupoAbaRelatorio(el, projetos);
+  if (aba === 'tarefas') renderGrupoAbaTarefas(el);
+  else renderGrupoAbaProjetos(el, projetos);
 }
 
 export async function carregarTarefasGrupo(grupo = GRUPO_ATUAL) {
   if (!grupo) return [];
   const projetos = grupo._projetos || [];
-  const cacheKey = projetos.map(p => p.id).join('|');
-  if (grupo._tarefasCacheKey === cacheKey && Array.isArray(grupo._tarefasCache)) return grupo._tarefasCache;
   const listas = await Promise.all(projetos.map(p =>
     req('GET', `/projetos/${p.id}/tarefas`).catch(() => []).then(tarefas =>
       normalizarColaboradoresTarefas(tarefas).map(t => ({
@@ -146,8 +287,6 @@ export async function carregarTarefasGrupo(grupo = GRUPO_ATUAL) {
     )
   ));
   const tarefas = listas.flat();
-  grupo._tarefasCacheKey = cacheKey;
-  grupo._tarefasCache = tarefas;
   return tarefas;
 }
 
@@ -473,8 +612,7 @@ export async function criarGrupo() {
   try {
     await req('POST', '/grupos', { nome, status: gv('m-grupo-status'), descricao: gv('m-grupo-desc') || null });
     fecharModal(); toast('Grupo criado'); invalidarCacheProjetos();
-    const { renderDash } = await import('./dashboard.js');
-    renderDash();
+    if (window.refreshCurrentRoute) await window.refreshCurrentRoute({ invalidateProjects: true });
   } catch (e) { toast(e.message, 'err'); btnLoading('btn-criar-grupo', false); }
 }
 
@@ -567,8 +705,7 @@ export async function salvarGrupo(id) {
   try {
     await req('PUT', `/grupos/${id}`, { nome, status: gv('m-grupo-status'), descricao: gv('m-grupo-desc') || null });
     fecharModal(); toast('Grupo atualizado'); invalidarCacheProjetos();
-    const { renderDash } = await import('./dashboard.js');
-    renderDash();
+    if (window.refreshCurrentRoute) await window.refreshCurrentRoute({ invalidateProjects: true });
   } catch (e) { toast(e.message, 'err'); btnLoading('btn-salvar-grupo', false); }
 }
 
@@ -578,8 +715,10 @@ export async function adicionarPermGrupo(grupoId) {
   btnLoading('btn-add-perm-grupo', true);
   try {
     await req('POST', `/grupos/${grupoId}/permissoes`, { usuario_id });
+    invalidarCacheProjetos();
     toast('Colaborador adicionado ao grupo');
     fecharModal();
+    if (window.refreshCurrentRoute) await window.refreshCurrentRoute({ invalidateProjects: true });
     modalCompartilharGrupo(grupoId);
   } catch (e) { toast(e.message, 'err'); btnLoading('btn-add-perm-grupo', false); }
 }
@@ -587,8 +726,10 @@ export async function adicionarPermGrupo(grupoId) {
 export async function removerPermGrupo(grupoId, usuarioId) {
   try {
     await req('DELETE', `/grupos/${grupoId}/permissoes/${usuarioId}`);
+    invalidarCacheProjetos();
     toast('Colaborador removido do grupo');
     fecharModal();
+    if (window.refreshCurrentRoute) await window.refreshCurrentRoute({ invalidateProjects: true });
     modalCompartilharGrupo(grupoId);
   } catch (e) { toast(e.message, 'err'); }
 }
@@ -603,8 +744,7 @@ export async function sairGrupoCompartilhado(grupoId, nomeGrupo) {
         await req('DELETE', `/grupos/${grupoId}/sair`);
         toast('Você saiu do grupo');
         invalidarCacheProjetos();
-        const { renderDash } = await import('./dashboard.js');
-        renderDash();
+        if (window.refreshCurrentRoute) await window.refreshCurrentRoute({ invalidateProjects: true });
       } catch (e) { toast(e.message, 'err'); }
     }, 4200);
     toastUndo('Saída do grupo agendada', () => {
@@ -625,8 +765,7 @@ export async function sairProjetoCompartilhado(projetoId, nomeProjeto) {
         await req('DELETE', `/projetos/${projetoId}/sair`);
         toast('Você saiu do projeto');
         invalidarCacheProjetos();
-        const { renderDash } = await import('./dashboard.js');
-        renderDash();
+        if (window.refreshCurrentRoute) await window.refreshCurrentRoute({ invalidateProjects: true });
       } catch (e) { toast(e.message, 'err'); }
     }, 4200);
     toastUndo('Saída do projeto agendada', () => {
@@ -642,8 +781,7 @@ export async function acaoGrupo(grupoId, action, destino = null) {
     await req('PATCH', `/grupos/${grupoId}`, { action, destino_grupo_id: destino });
     toast('Ação aplicada no grupo');
     invalidarCacheProjetos();
-    const { renderDash } = await import('./dashboard.js');
-    renderDash();
+    if (window.refreshCurrentRoute) await window.refreshCurrentRoute({ invalidateProjects: true });
   } catch (e) { toast(e.message, 'err'); }
 }
 
@@ -667,8 +805,7 @@ export function deletarGrupo(id, nome) {
       await req('DELETE', `/grupos/${id}`);
       toast('Grupo excluído');
       invalidarCacheProjetos();
-      const { renderDash } = await import('./dashboard.js');
-      renderDash();
+      if (window.navigateToRoute) await window.navigateToRoute('groups', {}, { invalidateProjects: true });
     }
     catch (e) { toast(e.message, 'err'); }
   }, { titulo: 'Excluir grupo', btnTexto: 'Excluir', danger: true });

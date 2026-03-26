@@ -1,12 +1,11 @@
 // ── DASHBOARD ──
 import {
   EU, PROJETO, ADMIN_MODE, FILTRO_STATUS, BUSCA_DASH, _projsDash, _ativasDash, _gruposDash,
-  FILTRO_GRUPO_DASH, FILTRO_ORIGEM_DASH, FILTRO_RESP_TAR, FILTRO_ORIGEM_TAREFAS, FILTRO_STATUS_TAREFA, BUSCA_TAREFA,
+  FILTRO_GRUPO_DASH, FILTRO_ORIGEM_DASH,
   VISTA_ATUAL, _prazoNotifShown,
   DASH_FILTERS_KEY, DASH_STATUS_OPCOES, STARTDAY_COLLAPSE_KEY,
   setProjeto, setFiltroStatus, setBuscaDash, setProjsDash, setAtivasDash, setGruposDash,
-  setFiltroGrupoDash, setFiltroOrigemDash, setFiltroRespTar, setFiltroOrigemTarefas,
-  setFiltroStatusTarefa, setBuscaTarefa, setVistaAtual,
+  setFiltroGrupoDash, setFiltroOrigemDash, setVistaAtual,
 } from './state.js';
 import { req, fetchProjetos, invalidarCacheProjetos } from './api.js';
 import { toast, toastUndo, setBreadcrumb, setShellView, slideContent } from './ui.js';
@@ -41,16 +40,43 @@ export function salvarFiltrosDash() {
 }
 
 export function renderInicioDia(projetos, ativas, ultimaSessao = null, focoGlobal = null, resumoHoje = null) {
+  return renderPainelHoje(projetos, ativas, [], [], ultimaSessao, focoGlobal, resumoHoje);
+}
+
+export function renderPainelHoje(projetos, ativas, sessoesRecentes = [], tarefasOperacao = [], ultimaSessao = null, focoGlobal = null, resumoHoje = null) {
   const focoProjeto = projetos.find(p => p.minha_tarefa_foco);
   const focoNome = focoGlobal?.tarefa_nome || (focoProjeto ? focoProjeto.minha_tarefa_foco : null);
   const focoProjId = focoGlobal?.projeto_id || focoProjeto?.id;
   const focoProjNome = focoGlobal?.projeto_nome || (focoProjeto ? focoProjeto.nome : null);
-  const urgentes = projetos.filter(p => {
+  const urgenciasProjeto = projetos.filter(p => {
     const dias = diasRestantes(p.prazo);
-    return dias !== null && dias <= 7 && ![ 'Concluído', 'Arquivado' ].includes(normalizarStatusProjeto(p.status));
+    return dias !== null && dias <= 2 && ![ 'Concluído', 'Arquivado' ].includes(normalizarStatusProjeto(p.status));
   }).sort((a, b) => (a.prazo || '9999-12-31').localeCompare(b.prazo || '9999-12-31'));
-  const proximoUrgente = urgentes[0] || null;
+  const urgenciasTarefa = tarefasOperacao.filter(t => {
+    const dias = diasRestantes(t.data || null);
+    return dias !== null && dias <= 1 && t.status !== 'Concluída';
+  }).sort((a, b) => (a.data || '9999-12-31').localeCompare(b.data || '9999-12-31'));
+  const urgencias = [
+    ...urgenciasTarefa.slice(0, 3).map(t => ({
+      tipo: 'tarefa',
+      nome: t.nome,
+      projeto_id: t.projeto_id,
+      projeto_nome: t.projeto_nome,
+      prazo: t.data,
+    })),
+    ...urgenciasProjeto.slice(0, 3).map(p => ({
+      tipo: 'projeto',
+      nome: p.nome,
+      projeto_id: p.id,
+      projeto_nome: p.nome,
+      prazo: p.prazo,
+    })),
+  ].slice(0, 4);
   const ativo = ativas[0] || null;
+  const tarefaAtiva = tarefasOperacao.find(t => t.sessao_ativa_id) || null;
+  const emAndamento = tarefasOperacao.filter(t => t.status === 'Em andamento' || t.sessao_ativa_id);
+  const retomadas = tarefasOperacao.filter(t => t.foco || t.status === 'Em andamento').slice(0, 4);
+  const recentes = sessoesRecentes.length ? sessoesRecentes : (ultimaSessao ? [ultimaSessao] : []);
 
   let tempoRodando = 'Sem cronômetros ativos';
   if (ativo?.inicio) {
@@ -64,72 +90,148 @@ export function renderInicioDia(projetos, ativas, ultimaSessao = null, focoGloba
   return `
     <div class="startday-wrap ${collapsed ? 'collapsed' : ''}" id="startday-wrap">
       <div class="startday-head">
-        <div class="startday-title">Começar meu dia</div>
+        <div>
+          <div class="section-kicker">Operação diária</div>
+          <div class="startday-title">Hoje</div>
+          <div class="startday-head-note">Entrada de trabalho do dia: sessão ativa, retomada, urgências e acesso direto à tarefa certa.</div>
+        </div>
         <button class="startday-toggle" onclick="toggleStartday()">${collapsed ? 'Expandir' : 'Recolher'}</button>
       </div>
-      <div class="startday-grid">
-        <div class="startday-card">
-          <h4><svg width="14" height="14" viewBox="0 0 24 24" fill="none" style="vertical-align:-2px;margin-right:4px"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.6"/><circle cx="12" cy="12" r="4" stroke="currentColor" stroke-width="1.6"/><circle cx="12" cy="12" r="1" fill="currentColor"/></svg>Foco atual</h4>
-          <div class="startday-main">${focoNome ? esc(focoNome) : 'Nenhuma tarefa em foco'}</div>
-          <div class="startday-sub">${focoNome
-            ? `Projeto: ${esc(focoProjNome || '')}`
-            : 'Abra um projeto, marque ★ em uma tarefa para definir foco'}</div>
-          <div class="startday-actions">
-            ${focoProjId
-              ? `<button class="btn btn-sm btn-primary" onclick="abrirProjeto('${focoProjId}')">Retomar foco</button>`
-              : `<button class="btn btn-sm" disabled>Retomar foco</button>`}
-          </div>
+      <div class="startday-workspace">
+        <div class="startday-maincol">
+          <section class="startday-session-card ${ativo ? 'is-live' : ''}">
+            <div class="startday-session-head">
+              <div>
+                <div class="task-view-eyebrow">Sessão ativa</div>
+                <div class="startday-session-title">${ativo ? esc(ativo.tarefa_nome || 'Tarefa ativa') : (focoNome ? esc(focoNome) : 'Nenhuma sessão ativa')}</div>
+                <div class="startday-session-copy">${ativo
+                  ? `${esc(ativo.projeto_nome || '')} · ${tempoRodando}`
+                  : (focoProjNome ? `${esc(focoProjNome)} · pronta para retomada` : 'Defina foco em uma tarefa para iniciar o dia com direção.')}</div>
+              </div>
+              <div class="startday-session-kpi">${resumoHoje ? `${parseFloat(resumoHoje.horas_hoje || 0).toFixed(1)}h hoje` : '0.0h hoje'}</div>
+            </div>
+            <div class="startday-session-actions">
+              ${ativo?.projeto_id
+                ? `<button class="btn btn-primary" onclick="abrirProjeto('${ativo.projeto_id}')">Abrir sessão ativa</button>`
+                : focoProjId
+                  ? `<button class="btn btn-primary" onclick="abrirProjeto('${focoProjId}')">Abrir tarefa em foco</button>`
+                  : `<button class="btn" disabled>Abrir tarefa</button>`}
+              ${ativo?.id ? `<button class="btn" onclick="pararCronometro('${ativo.id}')">Parar cronômetro</button>` : ''}
+              ${tarefaAtiva?.projeto_id && !ativo?.id ? `<button class="btn" onclick="abrirProjeto('${tarefaAtiva.projeto_id}')">Retomar tarefa em andamento</button>` : ''}
+            </div>
+          </section>
+
+          <section class="startday-section-card">
+            <div class="startday-block-head">
+              <div>
+                <div class="task-view-eyebrow">Retomada rápida</div>
+                <div class="task-view-title">Pontos de reentrada</div>
+              </div>
+            </div>
+            <div class="startday-resume-list">
+              ${retomadas.length ? retomadas.map(t => {
+                const dias = diasRestantes(t.data || null);
+                const prazo = t.data ? prazoFmt(t.data, true) : 'Sem prazo';
+                return `<button class="startday-resume-item" onclick="abrirProjeto('${t.projeto_id}')">
+                  <span class="startday-resume-main">
+                    <span class="startday-resume-title">${esc(t.nome)}</span>
+                    <span class="startday-resume-sub">${esc(t.projeto_nome)} · ${esc(t.status)}</span>
+                  </span>
+                  <span class="startday-resume-meta">
+                    ${t.sessao_ativa_id ? `<span class="tag tag-green">Em curso</span>` : ''}
+                    ${t.foco ? `<span class="tag tag-purple">Foco</span>` : ''}
+                    <span class="mono">${esc(prazo)}${dias !== null && dias <= 1 ? ' · hoje' : ''}</span>
+                  </span>
+                </button>`;
+              }).join('') : `<div class="startday-empty">Nenhuma tarefa pronta para retomada imediata.</div>`}
+            </div>
+          </section>
+
+          <section class="startday-section-card">
+            <div class="startday-block-head">
+              <div>
+                <div class="task-view-eyebrow">Em andamento</div>
+                <div class="task-view-title">${emAndamento.length} tarefa${emAndamento.length === 1 ? '' : 's'} em execução</div>
+              </div>
+            </div>
+            <div class="startday-task-list">
+              ${emAndamento.length ? emAndamento.map(t => {
+                const dias = diasRestantes(t.data || null);
+                const urgente = dias !== null && dias <= 1;
+                return `<div class="startday-task-item ${t.sessao_ativa_id ? 'is-live' : ''}">
+                  <div class="startday-task-main">
+                    <div class="startday-task-title">${esc(t.nome)}</div>
+                    <div class="startday-task-sub">${esc(t.projeto_nome)} · ${esc(t.status)}${t.dono_nome ? ` · ${esc(t.dono_nome)}` : ''}</div>
+                  </div>
+                  <div class="startday-task-side">
+                    ${t.sessao_ativa_id ? `<span class="tag tag-green">Cronômetro ativo</span>` : ''}
+                    ${t.foco ? `<span class="tag tag-purple">Foco</span>` : ''}
+                    ${t.data ? `<span class="tag ${urgente ? 'tag-red' : 'tag-gray'} mono">${prazoFmt(t.data, true)}</span>` : ''}
+                    <button class="btn btn-sm btn-primary" onclick="abrirProjeto('${t.projeto_id}')">Abrir</button>
+                  </div>
+                </div>`;
+              }).join('') : `<div class="startday-empty">Nenhuma tarefa em andamento no momento.</div>`}
+            </div>
+          </section>
         </div>
 
-        <div class="startday-card">
-          <h4><svg width="14" height="14" viewBox="0 0 24 24" fill="none" style="vertical-align:-2px;margin-right:4px"><path d="M12 3.5l9 15.5H3l9-15.5z" stroke="currentColor" stroke-width="1.6"/><path d="M12 9v5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><circle cx="12" cy="16.7" r="1" fill="currentColor"/></svg>Pendências urgentes</h4>
-          <div class="startday-main">${urgentes.length ? `${urgentes.length} projeto(s) com prazo até 7 dias` : 'Sem urgências por prazo'}</div>
-          <div class="startday-sub">${proximoUrgente ? `${esc(proximoUrgente.nome)} · ${prazoFmt(proximoUrgente.prazo, true)}` : 'Tudo em dia por enquanto'}</div>
-          <div class="startday-actions">
-            ${proximoUrgente
-              ? `<button class="btn btn-sm btn-primary" onclick="abrirProjeto('${proximoUrgente.id}')">Ver mais urgente</button>`
-              : `<button class="btn btn-sm" disabled>Ver mais urgente</button>`}
-          </div>
-        </div>
+        <div class="startday-sidecol">
+          <section class="startday-side-card">
+            <div class="startday-block-head">
+              <div>
+                <div class="task-view-eyebrow">Últimas sessões</div>
+                <div class="task-view-title">Retome de onde parou</div>
+              </div>
+            </div>
+            <div class="startday-session-list">
+              ${recentes.length ? recentes.map(s => `
+                <button class="startday-session-item" onclick="abrirProjeto('${s.projeto_id}')">
+                  <span class="startday-session-item-main">
+                    <span class="startday-session-item-title">${esc(s.tarefa_nome)}</span>
+                    <span class="startday-session-item-sub">${esc(s.projeto_nome)}</span>
+                  </span>
+                  <span class="startday-session-item-meta mono">${fmtHoras(parseFloat(s.horas_liquidas ?? s.horas ?? 0))}</span>
+                </button>
+              `).join('') : `<div class="startday-empty">Nenhuma sessão recente registrada.</div>`}
+            </div>
+          </section>
 
-        <div class="startday-card">
-          <h4><svg width="14" height="14" viewBox="0 0 24 24" fill="none" style="vertical-align:-2px;margin-right:4px"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>Cronômetro</h4>
-          <div class="startday-main">${ativo ? esc(ativo.tarefa_nome || 'Tarefa ativa') : 'Nenhuma tarefa ativa'}</div>
-          <div class="startday-sub">${tempoRodando}</div>
-          <div class="startday-actions">
-            ${ativo?.projeto_id
-              ? `<button class="btn btn-sm btn-primary" onclick="abrirProjeto('${ativo.projeto_id}')">Abrir tarefa ativa</button>`
-              : `<button class="btn btn-sm" disabled>Abrir tarefa ativa</button>`}
-          </div>
-        </div>
+          <section class="startday-side-card">
+            <div class="startday-block-head">
+              <div>
+                <div class="task-view-eyebrow">Urgências do dia</div>
+                <div class="task-view-title">${urgencias.length ? `${urgencias.length} ponto${urgencias.length === 1 ? '' : 's'} de atenção` : 'Sem urgências imediatas'}</div>
+              </div>
+            </div>
+            <div class="startday-urgency-list">
+              ${urgencias.length ? urgencias.map(item => {
+                const dias = diasRestantes(item.prazo || null);
+                return `<button class="startday-urgency-item" onclick="abrirProjeto('${item.projeto_id}')">
+                  <span class="startday-urgency-main">
+                    <span class="startday-urgency-title">${esc(item.nome)}</span>
+                    <span class="startday-urgency-sub">${item.tipo === 'tarefa' ? `Tarefa · ${esc(item.projeto_nome)}` : `Projeto · ${esc(item.projeto_nome)}`}</span>
+                  </span>
+                  <span class="tag ${dias !== null && dias <= 0 ? 'tag-red' : 'tag-yellow'} mono">${item.prazo ? prazoFmt(item.prazo, true) : 'Hoje'}</span>
+                </button>`;
+              }).join('') : `<div class="startday-empty">Hoje sem bloqueios críticos por prazo.</div>`}
+            </div>
+          </section>
 
-        <div class="startday-card">
-          <h4><svg width="14" height="14" viewBox="0 0 24 24" fill="none" style="vertical-align:-2px;margin-right:4px"><path d="M12 8v8l4.5 2.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="1.6"/></svg>Última sessão</h4>
-          <div class="startday-main">
-            ${ultimaSessao ? esc(ultimaSessao.tarefa_nome) : 'Nenhuma sessão anterior'}
-          </div>
-          <div class="startday-sub">
-            ${ultimaSessao
-              ? `${esc(ultimaSessao.projeto_nome)} · ${ultimaSessao.horas}h`
-              : 'Inicie seu primeiro cronômetro'}
-          </div>
-          <div class="startday-actions">
-            ${ultimaSessao
-              ? `<button class="btn btn-sm btn-primary"
-                    onclick="abrirProjeto('${ultimaSessao.projeto_id}')">Retomar tarefa</button>`
-                  : `<button class="btn btn-sm" disabled>Retomar tarefa</button>`}
-          </div>
+          <section class="startday-side-card">
+            <div class="startday-block-head">
+              <div>
+                <div class="task-view-eyebrow">Resumo do dia</div>
+                <div class="task-view-title">${resumoHoje ? `${parseFloat(resumoHoje.horas_hoje || 0).toFixed(1)}h registradas` : 'Sem tempo lançado'}</div>
+              </div>
+            </div>
+            <div class="startday-summary-grid">
+              <div class="startday-summary-item"><span class="startday-summary-label">Sessões</span><strong>${resumoHoje?.sessoes || 0}</strong></div>
+              <div class="startday-summary-item"><span class="startday-summary-label">Tarefas</span><strong>${resumoHoje?.tarefas || 0}</strong></div>
+              <div class="startday-summary-item"><span class="startday-summary-label">Ativas</span><strong>${ativas.length}</strong></div>
+              <div class="startday-summary-item"><span class="startday-summary-label">Em andamento</span><strong>${emAndamento.length}</strong></div>
+            </div>
+          </section>
         </div>
-
-        ${resumoHoje && Number(resumoHoje.horas_hoje || 0) > 0 ? `
-        <div class="startday-card">
-          <h4>Hoje</h4>
-          <div class="startday-main">${parseFloat(resumoHoje.horas_hoje).toFixed(1)}h trabalhadas</div>
-          <div class="startday-sub">${resumoHoje.tarefas} tarefa${resumoHoje.tarefas !== 1 ? 's' : ''} · ${resumoHoje.sessoes} sess${resumoHoje.sessoes !== 1 ? 'ões' : 'ão'}</div>
-          <div class="startday-actions">
-            <button class="btn btn-sm" onclick="abrirCentralAdmin('tempo')">Ver relatório</button>
-          </div>
-        </div>` : ''}
       </div>
     </div>`;
 }
@@ -167,29 +269,28 @@ export function renderDashEmptyState(vazioTexto, opts = {}) {
   return `<div class="empty-state"><div class="empty-icon" aria-hidden="true"><svg width="36" height="36" viewBox="0 0 24 24" fill="none"><path d="M3 18h18" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><path d="M7 18V9.5h4V18M13 18V6h4v12" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><path d="M8 7.5l2-2 2 2M14 4l2-2 2 2" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></div><div class="empty-text">${titulo}</div><div class="empty-sub">${vazioTexto}</div>${mostrarGuia ? `<div class="empty-guide"><div class="empty-guide-item">1. Crie um projeto.</div><div class="empty-guide-item">2. Abra o projeto e adicione a primeira tarefa.</div><div class="empty-guide-item">3. Defina prioridade e prazo para organizar o fluxo.</div><div class="empty-cta"><button class="btn btn-sm btn-primary" onclick="modalNovoProjeto()">+ Criar primeiro projeto</button></div></div>` : ''}</div>`;
 }
 
-export async function renderDash() {
+export async function renderDash(opts = {}) {
   window.scrollTo(0, 0);
   setProjeto(null);
-  setFiltroRespTar('');
-  setBuscaTarefa('');
-  setFiltroOrigemTarefas('todos');
-  setFiltroStatusTarefa('todos');
-  document.title = 'Telier';
-  setBreadcrumb([]);
-  setShellView('dashboard');
+  const routeKind = opts.routeKind || (window.getCurrentAppRoute?.().name === 'projects' ? 'projects' : 'today');
+  document.title = routeKind === 'projects' ? 'Projetos · Telier' : 'Hoje · Telier';
+  setBreadcrumb(routeKind === 'projects' ? [{ label: 'Projetos' }] : [{ label: 'Hoje' }]);
+  setShellView(routeKind === 'projects' ? 'projects' : 'today');
   const c = document.getElementById('content');
   c.innerHTML = renderDashLoadingState();
   try {
     const params = new URLSearchParams();
     if (FILTRO_STATUS !== 'todos') params.set('status', FILTRO_STATUS);
     if (isAdminRole() && ADMIN_MODE === 'normal') params.set('as_member', '1');
-    const [projetos, ativas, grupos, ultimaSessao, resumoHoje, focoGlobal] = await Promise.all([
+    const [projetos, ativas, grupos, ultimaSessao, resumoHoje, focoGlobal, sessoesRecentes, tarefasOperacao] = await Promise.all([
       fetchProjetos(params),
       req('GET', `/tempo/ativas${isAdminRole() && ADMIN_MODE === 'normal' ? '?as_member=1' : ''}`).catch(() => []),
       req('GET', `/grupos${isAdminRole() && ADMIN_MODE === 'normal' ? '?as_member=1' : ''}`).catch(() => []),
       req('GET', '/tempo/ultima-sessao').catch(() => null),
       req('GET', '/tempo/resumo-hoje').catch(() => null),
       req('GET', '/auth/foco-global').catch(() => null),
+      req('GET', '/tempo/sessoes-recentes?limit=6').catch(() => []),
+      req('GET', '/tarefas/operacao-hoje').catch(() => []),
     ]);
 
     setProjsDash(projetos);
@@ -226,12 +327,12 @@ export async function renderDash() {
     ]));
 
     let html = `
-      ${renderInicioDia(projetos, ativas, ultimaSessao, focoGlobal, resumoHoje)}
+      ${routeKind === 'today' ? renderPainelHoje(projetos, ativas, sessoesRecentes, tarefasOperacao, ultimaSessao, focoGlobal, resumoHoje) : ''}
       <div class="dash-header dash-header-spaced dash-head-grid">
         <div class="dash-head-main">
           <div class="section-kicker">Base de projetos</div>
           <div class="dash-title">Projetos</div>
-          <div class="dash-sub dash-sub-tight">Base ativa do escritório, organizada por grupo, status e responsabilidade.</div>
+          <div class="dash-sub dash-sub-tight">${routeKind === 'today' ? 'A base de projetos permanece acessível abaixo da operação diária.' : 'Base ativa do escritório, organizada por grupo, status e responsabilidade.'}</div>
         </div>
         <div class="dash-actions">
           ${isAdmin() ? `<button class="btn" onclick="abrirCentralAdmin()">Central admin</button>` : ''}

@@ -38,7 +38,7 @@ export let FILTRO_ORIGEM_TAREFAS = 'todos';
 export let FILTRO_STATUS_TAREFA = 'todos';
 export let TASK_MOBILE_FILTERS_OPEN = false;
 export let GRUPO_TASK_MOBILE_FILTERS_OPEN = false;
-export let TAREFAS_VIEW = 'kanban'; // 'kanban' | 'lista'
+export let TAREFAS_VIEW = 'lista'; // 'kanban' | 'lista'
 export let LISTA_SORT = { col: null, dir: 'asc' };
 export let LISTA_CONCLUIDAS_EXPANDIDA = false;
 export let BUSCA_TAREFA = '';
@@ -56,7 +56,9 @@ export const _prazoNotifShown = new Set();
 export const STARTDAY_COLLAPSE_KEY = 'telier_startday_collapsed';
 export const TIMER_AVISO_HORAS = 4;
 export const DASH_FILTERS_KEY = 'telier_dash_filters_v1';
+export const GROUPS_HOME_FILTERS_KEY = 'telier_groups_home_filters_v1';
 export const DASH_STATUS_OPCOES = new Set(['todos', 'Em andamento', 'A fazer', 'Em revisão', 'Pausado', 'Concluído', 'Arquivado']);
+export const GROUPS_STATUS_OPCOES = new Set(['todos', 'Ativo', 'Pausado', 'Arquivado']);
 export const REQ_TIMEOUT_MS = 15000;
 export const PROJ_CACHE_KEY = 'telier_proj_cache';
 export const PROJ_CACHE_TTL = 10000;
@@ -64,6 +66,17 @@ export let _pendingUndoAction = null;
 export let FORCE_PASSWORD_CHANGE = false;
 export let TIMERS = {}; // { sessaoId: { tarefaId, tarefa_nome, projeto_nome, projeto_id, inicio } }
 export const SESSAO_TICKS = new Map();
+export let GROUPS_HOME_BUSCA = '';
+export let GROUPS_HOME_STATUS = 'todos';
+export let GROUPS_HOME_SORT = 'ordem';
+export let GRUPO_TAREFAS_FILTROS = {
+  status: 'todos',
+  prioridade: 'todos',
+  responsavel: '',
+  projeto: '',
+  busca: '',
+  origem: 'todos',
+};
 
 // Setters
 export function setToken(v) { TOKEN = v; }
@@ -104,3 +117,7 @@ export function setNotifTab(v) { NOTIF_TAB = v; }
 export function setPendingUndoAction(v) { _pendingUndoAction = v; }
 export function setForcePasswordChange(v) { FORCE_PASSWORD_CHANGE = v; }
 export function setTimers(v) { TIMERS = v; }
+export function setGroupsHomeBusca(v) { GROUPS_HOME_BUSCA = v; }
+export function setGroupsHomeStatus(v) { GROUPS_HOME_STATUS = v; }
+export function setGroupsHomeSort(v) { GROUPS_HOME_SORT = v; }
+export function setGrupoTarefasFiltros(v) { GRUPO_TAREFAS_FILTROS = v; }

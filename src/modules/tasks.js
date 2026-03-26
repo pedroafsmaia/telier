@@ -8,7 +8,7 @@ import {
   setFiltroOrigemTarefas, setFiltroStatusTarefa, setFiltroRespTar,
   setTarefasView, setListaSort, setListaConcluidasExpandida, setTaskMobileFiltersOpen,
 } from './state.js';
-import { req } from './api.js';
+import { req, invalidarCacheProjetos } from './api.js';
 import { toast, abrirModal, fecharModal, confirmar, btnLoading } from './ui.js';
 import {
   esc, gv, sel, avatar, iniciais, tag, prazoFmt, diasRestantes,
@@ -27,6 +27,64 @@ const DIFS = ['Simples','Moderada','Complexa'];
 let _quickAddNome = '';
 let _quickAddStep = 0;
 let _buscaTarefaTick;
+
+function projectTaskUiStateKey(projectId) {
+  return `telier_project_task_state_${projectId}`;
+}
+
+function persistProjectTaskUiState(projectId = PROJETO?.id) {
+  if (!projectId) return;
+  try {
+    localStorage.setItem(projectTaskUiStateKey(projectId), JSON.stringify({
+      busca: BUSCA_TAREFA,
+      origem: FILTRO_ORIGEM_TAREFAS,
+      status: FILTRO_STATUS_TAREFA,
+      responsavel: FILTRO_RESP_TAR,
+      sort: LISTA_SORT,
+      concluidasExpandida: LISTA_CONCLUIDAS_EXPANDIDA,
+    }));
+  } catch {}
+}
+
+export function restaurarEstadoTarefasProjeto(projectId) {
+  const defaults = {
+    busca: '',
+    origem: 'todos',
+    status: 'todos',
+    responsavel: '',
+    sort: { col: null, dir: 'asc' },
+    concluidasExpandida: false,
+  };
+  let state = defaults;
+  if (projectId) {
+    try {
+      const raw = localStorage.getItem(projectTaskUiStateKey(projectId));
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        state = {
+          busca: typeof parsed?.busca === 'string' ? parsed.busca : defaults.busca,
+          origem: ['todos', 'meus', 'compartilhadas'].includes(parsed?.origem) ? parsed.origem : defaults.origem,
+          status: ['todos', 'A fazer', 'Em andamento', 'Bloqueada', 'Concluída'].includes(parsed?.status) ? parsed.status : defaults.status,
+          responsavel: typeof parsed?.responsavel === 'string' ? parsed.responsavel : defaults.responsavel,
+          sort: parsed?.sort && typeof parsed.sort === 'object'
+            ? {
+                col: ['nome', 'prioridade', 'complexidade', 'data'].includes(parsed.sort.col) ? parsed.sort.col : null,
+                dir: parsed.sort.dir === 'desc' ? 'desc' : 'asc',
+              }
+            : defaults.sort,
+          concluidasExpandida: parsed?.concluidasExpandida === true,
+        };
+      }
+    } catch {}
+  }
+  setBuscaTarefa(state.busca);
+  setFiltroOrigemTarefas(state.origem);
+  setFiltroStatusTarefa(state.status);
+  setFiltroRespTar(state.responsavel);
+  setListaSort(state.sort);
+  setListaConcluidasExpandida(state.concluidasExpandida);
+  setTaskMobileFiltersOpen(false);
+}
 
 async function _recarregarProjeto(aba) {
   const { recarregarProjeto } = await import('./project.js');
@@ -94,6 +152,38 @@ export function renderAoVivoStream(sessoes, opts = {}) {
     </div>`;
 }
 
+export function alternarTarefasView(view) {
+  const nextView = view === 'kanban' ? 'kanban' : 'lista';
+  setTarefasView(nextView);
+  if (PROJETO?.id) localStorage.setItem(`telier_project_task_view_${PROJETO.id}`, nextView);
+  renderAbaTarefas(document.getElementById('aba'), TAREFAS);
+}
+
+export function aplicarFiltroOrigemProjeto(valor) {
+  setFiltroOrigemTarefas(valor);
+  persistProjectTaskUiState();
+  renderAbaTarefas(document.getElementById('aba'), TAREFAS);
+}
+
+export function aplicarFiltroResponsavelProjeto(valor) {
+  setFiltroRespTar(valor);
+  persistProjectTaskUiState();
+  renderAbaTarefas(document.getElementById('aba'), TAREFAS);
+}
+
+export function aplicarFiltroStatusProjeto(valor) {
+  setFiltroStatusTarefa(valor);
+  persistProjectTaskUiState();
+  renderAbaTarefas(document.getElementById('aba'), TAREFAS);
+}
+
+export function alternarListaConcluidasProjeto() {
+  setListaConcluidasExpandida(!LISTA_CONCLUIDAS_EXPANDIDA);
+  persistProjectTaskUiState();
+  const tableShell = document.querySelector('#tarefas-view-container .task-list-surface');
+  if (tableShell) renderListaInterna(document.getElementById('tarefas-view-container'), TAREFAS);
+}
+
 export function renderAbaTarefas(el, tarefas) {
   const projetoArquivado = (
     normalizarStatusProjeto(PROJETO?.status) === 'Arquivado' ||
@@ -116,9 +206,12 @@ export function renderAbaTarefas(el, tarefas) {
       <div>
         <div class="section-kicker">Operação</div>
         <div class="task-view-title">Tarefas do projeto</div>
-        <div class="task-view-copy">Controle ativo de execução, responsabilidade e ritmo de entrega.</div>
+        <div class="task-view-copy">Abra o projeto já no ponto de execução: buscar, filtrar, priorizar e agir.</div>
       </div>
-      <div class="task-view-kpi">${pendentes} pendente${pendentes!==1?'s':''} · ${concluidas} concluída${concluidas!==1?'s':''}</div>
+      <div class="task-surface-actions">
+        <div class="task-view-kpi">${pendentes} pendente${pendentes!==1?'s':''} · ${concluidas} concluída${concluidas!==1?'s':''}</div>
+        ${!projetoArquivado ? `<button class="btn btn-primary btn-sm" onclick="modalNovaTarefa('${PROJETO?.id}')">Nova tarefa</button>` : ''}
+      </div>
     </div>
     <div class="dash-toolbar task-view-toolbar task-toolbar-studio">
       <div class="dash-toolbar-row dash-toolbar-primary">
@@ -130,16 +223,16 @@ export function renderAbaTarefas(el, tarefas) {
         <div class="dash-toolbar-switches">
           <div class="dash-toolbar-label">Escopo</div>
           <div class="segmented">
-            <button class="segmented-btn ${FILTRO_ORIGEM_TAREFAS==='todos'?'ativo':''}" onclick="setFiltroOrigemTarefas('todos');renderAbaTarefas(document.getElementById('aba'),TAREFAS)">Todas${tarefas.length ? `<span class="seg-count">${tarefas.length}</span>` : ''}</button>
-            <button class="segmented-btn ${FILTRO_ORIGEM_TAREFAS==='meus'?'ativo':''}" onclick="setFiltroOrigemTarefas('meus');renderAbaTarefas(document.getElementById('aba'),TAREFAS)">Minhas${meus ? `<span class="seg-count">${meus}</span>` : ''}</button>
-            <button class="segmented-btn ${FILTRO_ORIGEM_TAREFAS==='compartilhadas'?'ativo':''}" onclick="setFiltroOrigemTarefas('compartilhadas');renderAbaTarefas(document.getElementById('aba'),TAREFAS)">Compartilhadas${compartilhadas ? `<span class="seg-count">${compartilhadas}</span>` : ''}</button>
+            <button class="segmented-btn ${FILTRO_ORIGEM_TAREFAS==='todos'?'ativo':''}" onclick="aplicarFiltroOrigemProjeto('todos')">Todas${tarefas.length ? `<span class="seg-count">${tarefas.length}</span>` : ''}</button>
+            <button class="segmented-btn ${FILTRO_ORIGEM_TAREFAS==='meus'?'ativo':''}" onclick="aplicarFiltroOrigemProjeto('meus')">Minhas${meus ? `<span class="seg-count">${meus}</span>` : ''}</button>
+            <button class="segmented-btn ${FILTRO_ORIGEM_TAREFAS==='compartilhadas'?'ativo':''}" onclick="aplicarFiltroOrigemProjeto('compartilhadas')">Compartilhadas${compartilhadas ? `<span class="seg-count">${compartilhadas}</span>` : ''}</button>
           </div>
         </div>
         <div class="task-toolbar-actions">
           <button class="btn btn-sm task-mobile-filter-btn" onclick="setTaskMobileFiltersOpen(!TASK_MOBILE_FILTERS_OPEN);renderAbaTarefas(document.getElementById('aba'),TAREFAS)">Filtros</button>
           <div class="view-toggle">
             <button class="view-toggle-btn ${TAREFAS_VIEW==='lista'?'ativo':''}"
-                    onclick="setTarefasView('lista');renderAbaTarefas(document.getElementById('aba'),TAREFAS)"
+                    onclick="alternarTarefasView('lista')"
                     title="Vista lista">
               <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
                 <rect x="2" y="2" width="10" height="2" rx="1" fill="currentColor"/>
@@ -148,7 +241,7 @@ export function renderAbaTarefas(el, tarefas) {
               </svg>
             </button>
             <button class="view-toggle-btn ${TAREFAS_VIEW==='kanban'?'ativo':''}"
-                    onclick="setTarefasView('kanban');renderAbaTarefas(document.getElementById('aba'),TAREFAS)"
+                    onclick="alternarTarefasView('kanban')"
                     title="Vista kanban">
               <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
                 <rect x="1" y="2" width="3.5" height="10" rx="1" fill="currentColor"/>
@@ -157,7 +250,6 @@ export function renderAbaTarefas(el, tarefas) {
               </svg>
             </button>
           </div>
-          ${!projetoArquivado ? `<button class="btn btn-primary btn-sm" onclick="modalNovaTarefa('${PROJETO?.id}')">Nova tarefa</button>` : ''}
         </div>
       </div>
       <div class="dash-toolbar-row dash-toolbar-secondary task-mobile-secondary ${TASK_MOBILE_FILTERS_OPEN ? 'is-open' : ''}">
@@ -165,7 +257,7 @@ export function renderAbaTarefas(el, tarefas) {
             ${responsaveis.length > 1 ? `
               <div class="dash-toolbar-field">
                 <div class="dash-toolbar-label">Responsável</div>
-                <select class="resp-filter select-control" onchange="setFiltroRespTar(this.value);renderAbaTarefas(document.getElementById('aba'),TAREFAS)">
+                <select class="resp-filter select-control" onchange="aplicarFiltroResponsavelProjeto(this.value)">
                 <option value="">Todos os responsáveis</option>
                 ${responsaveis.map(r => `<option value="${r.id}" ${FILTRO_RESP_TAR===r.id?'selected':''}>${esc(r.nome)}</option>`).join('')}
                 </select>
@@ -176,7 +268,7 @@ export function renderAbaTarefas(el, tarefas) {
             ${statusTabs.map(s => {
               const label = s === 'todos' ? 'Todos' : s;
               const cnt = statusCountMap[s] || 0;
-              return `<button class="filter-btn ${FILTRO_STATUS_TAREFA===s?'ativo':''}" onclick="setFiltroStatusTarefa('${esc(s)}');renderAbaTarefas(document.getElementById('aba'),TAREFAS)">${label}${cnt ? `<span class="seg-count">${cnt}</span>` : ''}</button>`;
+              return `<button class="filter-btn ${FILTRO_STATUS_TAREFA===s?'ativo':''}" onclick="aplicarFiltroStatusProjeto('${esc(s)}')">${label}${cnt ? `<span class="seg-count">${cnt}</span>` : ''}</button>`;
             }).join('')}
               </div>
             </div>
@@ -405,7 +497,7 @@ export function renderListaInterna(el, tarefas) {
     const horas = sessaoAtiva
       ? `<button class="btn btn-sm btn-danger" onclick="pararCronometro('${sessaoAtiva}')" title="Parar cronômetro"><svg width="11" height="11" viewBox="0 0 11 11" fill="none" style="margin-right:4px"><rect x="2" y="2" width="7" height="7" rx="1" fill="currentColor"/></svg>Parar</button>`
       : podeCron
-        ? `<button class="btn btn-ghost btn-icon btn-sm" onclick="iniciarCronometro('${t.id}','${esc(t.nome)}')" title="Iniciar cronômetro" style="color:var(--green)"><svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M4 2.5l5 3.5-5 3.5v-7z" fill="currentColor"/></svg></button>`
+        ? `<button class="btn btn-ghost btn-sm" onclick="iniciarCronometro('${t.id}','${esc(t.nome)}')" title="Iniciar cronômetro" style="color:var(--green)"><svg width="12" height="12" viewBox="0 0 12 12" fill="none" style="margin-right:4px"><path d="M4 2.5l5 3.5-5 3.5v-7z" fill="currentColor"/></svg>Iniciar</button>`
         : '';
 
     const dataStr = t.data || null;
@@ -451,7 +543,7 @@ export function renderListaInterna(el, tarefas) {
   const rowsPend = pendOrdenadas.map(t => rowHtml(t)).join('');
   const rowsConc = concOrdenadas.map(t => rowHtml(t)).join('');
   const tbodyConc = concOrdenadas.length ? `
-    <tr class="concluidas-sep" onclick="setListaConcluidasExpandida(!LISTA_CONCLUIDAS_EXPANDIDA);renderListaInterna(this.closest('table').parentElement.parentElement,TAREFAS)"
+    <tr class="concluidas-sep" onclick="alternarListaConcluidasProjeto()"
         style="cursor:pointer">
       <td colspan="9" style="padding:8px 12px;font-size:var(--fs-xs);color:var(--text-muted);background:var(--bg-card);user-select:none">
         ${LISTA_CONCLUIDAS_EXPANDIDA ? '▼' : '▶'}
@@ -467,6 +559,7 @@ export function renderListaInterna(el, tarefas) {
       <div>
         <div class="task-view-eyebrow">Operação do projeto</div>
         <div class="task-view-title">Lista de tarefas</div>
+        <div class="task-view-copy">As ações de execução ficam acima da dobra e a lista continua no mesmo contexto do projeto.</div>
       </div>
       <div class="task-view-kpi">${pendFilt.length} pendente${pendFilt.length!==1?'s':''} · ${concFilt.length} concluída${concFilt.length!==1?'s':''}</div>
     </div>
@@ -572,6 +665,7 @@ export function ordenarLista(col) {
   } else {
     setListaSort({ col, dir: 'asc' });
   }
+  persistProjectTaskUiState();
   const el = document.getElementById('tarefas-view-container') || document.getElementById('aba');
   if (el) renderListaInterna(el, TAREFAS);
 }
@@ -774,6 +868,7 @@ export async function mudarStatus(tarefaId, novoStatus, selEl) {
     await req('PATCH', `/tarefas/${tarefaId}`, { status: novoStatus });
     setTarefas(TAREFAS.map(t => t.id === tarefaId ? { ...t, status: novoStatus } : t));
     setRelatorioCache(null);
+    invalidarCacheProjetos();
     toast('Status atualizado');
     if (PROJETO) {
       const conc = TAREFAS.filter(t => t.status === 'Concluída').length;
@@ -794,13 +889,14 @@ export async function mudarStatus(tarefaId, novoStatus, selEl) {
 export async function toggleFoco(id, focoAtual) {
   try {
     focoAtual ? await req('DELETE', `/tarefas/${id}/foco`) : await req('PUT', `/tarefas/${id}/foco`);
+    invalidarCacheProjetos();
     await _recarregarProjeto();
   } catch (e) { toast(e.message, 'err'); }
 }
 
 export async function deletarTarefa(id) {
   confirmar('Excluir esta tarefa? Esta ação não pode ser desfeita.', async () => {
-    try { await req('DELETE', `/tarefas/${id}`); toast('Tarefa excluída'); await _recarregarProjeto(); }
+    try { await req('DELETE', `/tarefas/${id}`); invalidarCacheProjetos(); toast('Tarefa excluída'); await _recarregarProjeto(); }
     catch (e) { toast(e.message, 'err'); }
   }, { titulo: 'Excluir tarefa', btnTexto: 'Excluir', danger: true });
 }
@@ -880,6 +976,7 @@ export async function adicionarPerm(projetoId) {
   btnLoading('btn-add-perm', true);
   try {
     await req('POST', `/projetos/${projetoId}/permissoes`, { usuario_id: uid });
+    invalidarCacheProjetos();
     toast('Colaborador adicionado ao projeto');
     fecharModal();
     if (PROJETO?.id === projetoId) {
@@ -894,6 +991,7 @@ export async function removerPerm(projetoId, usuarioId) {
   confirmar('Remover este colaborador do projeto? Ele perderá o acesso de edição.', async () => {
     try {
       await req('DELETE', `/projetos/${projetoId}/permissoes/${usuarioId}`);
+      invalidarCacheProjetos();
       toast('Colaborador removido do projeto');
       fecharModal();
       if (PROJETO?.id === projetoId) {
@@ -943,6 +1041,7 @@ export async function criarTarefa(projetoId) {
       data: gv('m-data')||null,
       descricao: gv('m-desc') || null,
     });
+    invalidarCacheProjetos();
     fecharModal(); toast('Tarefa criada'); await _recarregarProjeto('lista');
   } catch (e) { toast(e.message, 'err'); btnLoading('btn-criar-tar', false); }
 }
@@ -987,6 +1086,7 @@ export async function salvarTarefa(id) {
       data: gv('m-data')||null,
       descricao: gv('m-desc') || null,
     });
+    invalidarCacheProjetos();
     fecharModal(); toast('Tarefa atualizada'); await _recarregarProjeto();
   } catch (e) { toast(e.message, 'err'); btnLoading('btn-salvar-tar', false); }
 }
@@ -994,6 +1094,7 @@ export async function salvarTarefa(id) {
 export async function duplicarTarefa(id) {
   try {
     await req('POST', `/tarefas/${id}/duplicar`, {});
+    invalidarCacheProjetos();
     toast('Tarefa duplicada');
     await _recarregarProjeto('lista');
   } catch (e) {
@@ -1029,6 +1130,7 @@ export async function quickAddConfirmar(projetoId) {
       prioridade,
       dificuldade: complexidade,
     });
+    invalidarCacheProjetos();
     quickAddCancelar();
     toast('Tarefa criada');
     await _recarregarProjeto('lista');
@@ -1053,6 +1155,7 @@ export function filtrarTarefasBusca(value) {
   clearTimeout(_buscaTarefaTick);
   _buscaTarefaTick = setTimeout(() => {
     setBuscaTarefa(value);
+    persistProjectTaskUiState();
     renderAbaTarefas(document.getElementById('aba'), TAREFAS);
   }, 180);
 }
@@ -1123,6 +1226,7 @@ export async function sairTarefaCompartilhada(tarefaId, nomeTarefa) {
   confirmar(`Sair da tarefa "${nomeTarefa}"? Você deixará de ser colaborador desta tarefa.`, async () => {
     try {
       await req('DELETE', `/tarefas/${tarefaId}/sair`);
+      invalidarCacheProjetos();
       fecharModal();
       toast('Você saiu da tarefa');
       await _recarregarProjeto('lista');
@@ -1136,6 +1240,7 @@ export async function adicionarColab(tarefaId) {
   btnLoading('btn-add-colab', true);
   try {
     await req('POST', `/tarefas/${tarefaId}/colaboradores`, { usuario_id: uid });
+    invalidarCacheProjetos();
     toast('Colaborador adicionado');
     fecharModal();
     modalColabsTarefa(tarefaId);
@@ -1146,6 +1251,7 @@ export async function removerColab(tarefaId, usuarioId) {
   confirmar('Remover este colaborador da tarefa? Ele não poderá mais iniciar o cronômetro nesta tarefa.', async () => {
     try {
       await req('DELETE', `/tarefas/${tarefaId}/colaboradores/${usuarioId}`);
+      invalidarCacheProjetos();
       toast('Colaborador removido');
       fecharModal();
       modalColabsTarefa(tarefaId);
