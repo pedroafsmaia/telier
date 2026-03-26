@@ -264,6 +264,7 @@ async function ensureGrupoSchema(env) {
       FOREIGN KEY (usuario_id) REFERENCES usuarios(id) ON DELETE CASCADE
     )
   `).run();
+  try { await env.DB.prepare('ALTER TABLE projetos ADD COLUMN grupo_id TEXT REFERENCES grupos_projetos(id) ON DELETE SET NULL').run(); } catch {}
   try { await env.DB.prepare('ALTER TABLE grupos_projetos ADD COLUMN descricao TEXT').run(); } catch {}
   try { await env.DB.prepare('ALTER TABLE grupos_projetos ADD COLUMN status TEXT DEFAULT "Ativo"').run(); } catch {}
   try { await env.DB.prepare('ALTER TABLE permissoes_projeto ADD COLUMN origem TEXT DEFAULT "manual"').run(); } catch {}

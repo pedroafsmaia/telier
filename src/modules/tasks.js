@@ -442,8 +442,14 @@ export function renderListaInterna(el, tarefas) {
     ${LISTA_CONCLUIDAS_EXPANDIDA ? rowsConc : ''}` : '';
 
   el.innerHTML = `
-    <div class="task-view-surface">
-    <div class="tarefas-info">${pendFilt.length} pendente${pendFilt.length!==1?'s':''} · ${concFilt.length} concluída${concFilt.length!==1?'s':''}</div>
+    <div class="task-view-surface task-list-surface">
+    <div class="task-list-head">
+      <div>
+        <div class="task-view-eyebrow">Operação do projeto</div>
+        <div class="task-view-title">Lista de tarefas</div>
+      </div>
+      <div class="task-view-kpi">${pendFilt.length} pendente${pendFilt.length!==1?'s':''} · ${concFilt.length} concluída${concFilt.length!==1?'s':''}</div>
+    </div>
     ${!projetoArquivado ? `<form class="quick-add-form" onsubmit="quickAddTarefa(event,'${PROJETO?.id}')">
       <input
         type="text"
@@ -495,7 +501,7 @@ export function renderListaInterna(el, tarefas) {
       </table>
     </div>
     </div>
-    <div class="tasks-cards">
+    <div class="tasks-cards task-cards-refined">
       ${todas.map(t => {
         const minha = t.dono_id === EU?.id;
         const canEdit = !projetoArquivado && (minha || podeEditar(PROJETO) || isAdmin());
@@ -702,7 +708,7 @@ export async function renderRelatorio(el, tarefas) {
   , 0);
 
   el.innerHTML = `
-    <div class="task-view-surface">
+    <div class="task-view-surface report-surface">
       <div class="task-view-head">
         <div>
           <div class="task-view-eyebrow">Relatório do projeto</div>
@@ -719,9 +725,13 @@ export function renderDecisoes(projetoId, decisoes, canEdit) {
   const el = document.getElementById('decisoes-sec');
   if (!el) return;
   el.innerHTML = `
+    <div class="decisoes-shell">
     <div class="decisoes-sep"></div>
     <div class="decisoes-header">
-      <div class="decisoes-title">Decisões e referências</div>
+      <div>
+        <div class="section-kicker">Registro do projeto</div>
+        <div class="decisoes-title">Decisões e referências</div>
+      </div>
       ${canEdit ? `<button class="btn btn-sm" onclick="modalNovaDecisao('${projetoId}')">+ Adicionar</button>` : ''}
     </div>
     ${decisoes.length ? decisoes.map(d => `
@@ -733,7 +743,8 @@ export function renderDecisoes(projetoId, decisoes, canEdit) {
         </div>
         ${(souDono(d.dono_id)||canEdit) ? `<div style="display:flex;gap:4px;flex-shrink:0"><button class="decisao-del" onclick="modalEditarDecisao('${d.id}','${projetoId}',\`${d.descricao.replace(/`/g,'&#96;')}\`,'${d.data||''}')" title="Editar" style="color:var(--text2)"><svg width="13" height="13" viewBox="0 0 13 13" fill="none"><path d="M2 9.5V11h1.5l5.5-5.5-1.5-1.5L2 9.5zM10.85 2.65a1 1 0 0 0-1.42 0l-.79.79 1.42 1.42.79-.79a1 1 0 0 0 0-1.42z" fill="currentColor"/></svg></button><button class="decisao-del" onclick="deletarDecisao('${d.id}','${projetoId}')" title="Excluir"><svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M1.5 1.5l9 9M10.5 1.5l-9 9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></button></div>` : ''}
       </div>`).join('')
-    : `<div class="decisoes-empty">Nenhuma decisão registrada ainda.</div>`}`;
+    : `<div class="decisoes-empty">Nenhuma decisão registrada ainda.</div>`}
+    </div>`;
 }
 
 export async function mudarStatus(tarefaId, novoStatus, selEl) {
