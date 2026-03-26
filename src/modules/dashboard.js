@@ -142,9 +142,9 @@ export function renderPainelHoje(projetos, ativas, sessoesRecentes = [], tarefas
               </div>
               <div class="today-priority__actions">
                 ${ativo
-                  ? `<button class="btn btn-primary" onclick="abrirTarefaContexto('${prioridade.tarefaId}','${prioridade.projetoId}')">Continuar</button>`
+                  ? `<button class="btn btn-primary" onclick="abrirTarefaContexto('${prioridade.tarefaId}','${prioridade.projetoId}')">Abrir tarefa</button>`
                   : `<button class="btn btn-primary" onclick="iniciarCronometro('${prioridade.tarefaId}','${esc(prioridade.titulo)}')">Iniciar cronômetro</button>`}
-                <button class="btn" onclick="abrirTarefaContexto('${prioridade.tarefaId}','${prioridade.projetoId}')">Abrir tarefa</button>
+                ${ativo ? '' : `<button class="btn" onclick="abrirTarefaContexto('${prioridade.tarefaId}','${prioridade.projetoId}')">Abrir tarefa</button>`}
               </div>`
               : `<div class="today-empty">Nenhuma tarefa em foco. Escolha uma para começar o dia.</div>`}
           </section>

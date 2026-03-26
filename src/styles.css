@@ -659,6 +659,8 @@ tr:hover .td-ações{opacity:1}
 .timer-card-proj { font-size:var(--fs-xs); color:var(--text-muted); margin-bottom:4px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
 .timer-display { font-family:var(--ff-mono); font-size:var(--fs-xl); font-weight:500; color:var(--green); letter-spacing:.05em; }
 .timer-actions { display:flex; gap:6px; margin-top:10px; }
+.timer-actions-group{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.timer-actions-group--compact .btn{min-height:var(--btn-h-sm);padding:0 10px;font-size:var(--fs-xs);letter-spacing:.08em;text-transform:uppercase}
 .timer-dot { width:8px; height:8px; border-radius:2px; background:var(--green); flex-shrink:0; }
 .timer-dot.pausado { background:var(--text-muted); animation:none; }
 
@@ -733,7 +735,6 @@ tr:hover .td-ações{opacity:1}
 .kanban-card { background:var(--bg); border:1px solid var(--border); border-radius:var(--r); padding:10px; margin-bottom:8px; cursor:grab; transition:border-color .15s; }
 .kanban-card:hover { border-color:var(--border-strong); }
 .kanban-card:active { cursor:grabbing; opacity:.8; }
-.kanban-cron-btn{font-size:var(--fs-xs);padding:3px 7px;height:26px;display:flex;align-items:center;white-space:nowrap}
 .kanban-avs{display:flex;align-items:center}
 .kanban-av-dono{opacity:1}
 .kanban-av-more{background:var(--bg-hover);color:var(--text-muted);font-size:.55rem}
