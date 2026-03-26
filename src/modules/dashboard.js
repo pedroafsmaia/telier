@@ -78,6 +78,47 @@ export function renderPainelHoje(projetos, ativas, sessoesRecentes = [], tarefas
   const emAndamento = tarefasOperacao.filter(t => t.status === 'Em andamento' || t.sessao_ativa_id);
   const retomadas = tarefasOperacao.filter(t => t.foco || t.status === 'Em andamento').slice(0, 4);
   const recentes = sessoesRecentes.length ? sessoesRecentes : (ultimaSessao ? [ultimaSessao] : []);
+  const estadoBloco = (itens) => (itens.length === 0 ? 'is-empty' : (itens.length === 1 ? 'is-single' : 'is-list'));
+
+  const renderLinhaRetomada = (t) => {
+    const dias = diasRestantes(t.data || null);
+    const prazo = t.data ? prazoFmt(t.data, true) : 'Sem prazo';
+    return `<button class="startday-op-row" onclick="abrirTarefaContexto('${t.id}','${t.projeto_id}')">
+      <span class="startday-op-main">
+        <span class="startday-op-title">${esc(t.nome)}</span>
+        <span class="startday-op-context">Projeto: ${esc(t.projeto_nome)} · Status: ${esc(t.status)}</span>
+      </span>
+      <span class="startday-op-side">
+        <span class="startday-inline-meta">${t.sessao_ativa_id ? 'Estado: Em curso' : (t.foco ? 'Estado: Foco' : 'Estado: Em andamento')}</span>
+        <span class="mono startday-inline-meta">Prazo: ${esc(prazo)}${dias !== null && dias <= 1 ? ' (hoje)' : ''}</span>
+      </span>
+    </button>`;
+  };
+  const renderLinhaSessaoRecente = (s) => `<button class="startday-op-row" onclick="abrirTarefaContexto('${s.tarefa_id}','${s.projeto_id}')">
+    <span class="startday-op-main">
+      <span class="startday-op-title">${esc(s.tarefa_nome)}</span>
+      <span class="startday-op-context">Projeto: ${esc(s.projeto_nome)}</span>
+    </span>
+    <span class="startday-op-side"><span class="mono startday-inline-meta">Horas: ${fmtHoras(parseFloat(s.horas_liquidas ?? s.horas ?? 0))}</span></span>
+  </button>`;
+  const renderLinhaUrgencia = (item) => {
+    const dias = diasRestantes(item.prazo || null);
+    const acao = item.tipo === 'tarefa'
+      ? `abrirTarefaContexto('${item.id}','${item.projeto_id}')`
+      : `abrirProjeto('${item.projeto_id}')`;
+    const prazo = item.prazo ? prazoFmt(item.prazo, true) : 'Hoje';
+    const criticidade = dias !== null && dias <= 0 ? 'Crítico' : 'Atenção';
+    return `<button class="startday-op-row" onclick="${acao}">
+      <span class="startday-op-main">
+        <span class="startday-op-title">${esc(item.nome)}</span>
+        <span class="startday-op-context">${item.tipo === 'tarefa' ? `Tarefa · ${esc(item.projeto_nome)}` : `Projeto · ${esc(item.projeto_nome)}`}</span>
+      </span>
+      <span class="startday-op-side">
+        <span class="startday-inline-meta">Nível: ${criticidade}</span>
+        <span class="mono startday-inline-meta">Prazo: ${prazo}</span>
+      </span>
+    </button>`;
+  };
 
   let tempoRodando = 'Sem cronômetros ativos';
   if (ativo?.inicio) {
@@ -139,21 +180,11 @@ export function renderPainelHoje(projetos, ativas, sessoesRecentes = [], tarefas
               </div>
               <button class="btn btn-sm" onclick="goTasks()">Ver minhas tarefas</button>
             </div>
-            <div class="startday-row-list">
-              ${retomadas.length ? retomadas.map(t => {
-                const dias = diasRestantes(t.data || null);
-                const prazo = t.data ? prazoFmt(t.data, true) : 'Sem prazo';
-                return `<button class="startday-resume-item" onclick="abrirTarefaContexto('${t.id}','${t.projeto_id}')">
-                  <span class="startday-resume-main">
-                    <span class="startday-resume-title">${esc(t.nome)}</span>
-                    <span class="startday-resume-sub">Projeto: ${esc(t.projeto_nome)} · Status: ${esc(t.status)}</span>
-                  </span>
-                  <span class="startday-resume-meta">
-                    <span class="startday-inline-meta">${t.sessao_ativa_id ? 'Estado: Em curso' : (t.foco ? 'Estado: Foco' : 'Estado: Em andamento')}</span>
-                    <span class="mono startday-inline-meta">Prazo: ${esc(prazo)}${dias !== null && dias <= 1 ? ' (hoje)' : ''}</span>
-                  </span>
-                </button>`;
-              }).join('') : `<div class="startday-empty">Nenhuma tarefa pronta para retomada imediata.</div>`}
+            <div class="startday-adaptive-block ${estadoBloco(retomadas)}">
+              ${retomadas.length ? (retomadas.length === 1
+                ? renderLinhaRetomada(retomadas[0])
+                : `<div class="startday-row-list">${retomadas.map(renderLinhaRetomada).join('')}</div>`)
+                : `<div class="startday-empty-inline">Nenhuma tarefa pronta para retomada imediata.</div>`}
             </div>
           </section>
 
@@ -163,7 +194,8 @@ export function renderPainelHoje(projetos, ativas, sessoesRecentes = [], tarefas
                 <div class="task-view-title">${emAndamento.length} tarefa${emAndamento.length === 1 ? '' : 's'} em execução</div>
               </div>
             </div>
-            <div class="startday-row-list">
+            <div class="startday-adaptive-block ${estadoBloco(emAndamento)}">
+              <div class="startday-row-list">
               ${emAndamento.map(t => {
                 const dias = diasRestantes(t.data || null);
                 const urgente = dias !== null && dias <= 1;
@@ -180,56 +212,43 @@ export function renderPainelHoje(projetos, ativas, sessoesRecentes = [], tarefas
                   </div>
                 </div>`;
               }).join('')}
+              </div>
             </div>
           </section>` : ''}
         </div>
 
         <div class="startday-sidecol">
-          <section class="startday-side-card">
+          <section class="startday-list-block">
             <div class="startday-block-head">
               <div>
                 <div class="task-view-eyebrow">Últimas sessões</div>
                 <div class="task-view-title">Retome de onde parou</div>
               </div>
             </div>
-            <div class="startday-session-list">
-              ${recentes.length ? recentes.map(s => `
-                <button class="startday-session-item" onclick="abrirTarefaContexto('${s.tarefa_id}','${s.projeto_id}')">
-                  <span class="startday-session-item-main">
-                    <span class="startday-session-item-title">${esc(s.tarefa_nome)}</span>
-                    <span class="startday-session-item-sub">${esc(s.projeto_nome)}</span>
-                  </span>
-                  <span class="startday-session-item-meta mono">${fmtHoras(parseFloat(s.horas_liquidas ?? s.horas ?? 0))}</span>
-                </button>
-              `).join('') : `<div class="startday-empty">Nenhuma sessão recente registrada.</div>`}
+            <div class="startday-adaptive-block ${estadoBloco(recentes)}">
+              ${recentes.length ? (recentes.length === 1
+                ? renderLinhaSessaoRecente(recentes[0])
+                : `<div class="startday-row-list">${recentes.map(renderLinhaSessaoRecente).join('')}</div>`)
+                : `<div class="startday-empty-inline">Nenhuma sessão recente registrada.</div>`}
             </div>
           </section>
 
-          <section class="startday-side-card">
+          <section class="startday-list-block">
             <div class="startday-block-head">
               <div>
                 <div class="task-view-eyebrow">Urgências do dia</div>
                 <div class="task-view-title">${urgencias.length ? `${urgencias.length} ponto${urgencias.length === 1 ? '' : 's'} de atenção` : 'Sem urgências imediatas'}</div>
               </div>
             </div>
-            <div class="startday-urgency-list">
-              ${urgencias.length ? urgencias.map(item => {
-                const dias = diasRestantes(item.prazo || null);
-                const acao = item.tipo === 'tarefa'
-                  ? `abrirTarefaContexto('${item.id}','${item.projeto_id}')`
-                  : `abrirProjeto('${item.projeto_id}')`;
-                return `<button class="startday-urgency-item" onclick="${acao}">
-                  <span class="startday-urgency-main">
-                    <span class="startday-urgency-title">${esc(item.nome)}</span>
-                    <span class="startday-urgency-sub">${item.tipo === 'tarefa' ? `Tarefa · ${esc(item.projeto_nome)}` : `Projeto · ${esc(item.projeto_nome)}`}</span>
-                  </span>
-                  <span class="tag ${dias !== null && dias <= 0 ? 'tag-red' : 'tag-yellow'} mono">${item.prazo ? prazoFmt(item.prazo, true) : 'Hoje'}</span>
-                </button>`;
-              }).join('') : `<div class="startday-empty">Hoje sem bloqueios críticos por prazo.</div>`}
+            <div class="startday-adaptive-block ${estadoBloco(urgencias)}">
+              ${urgencias.length ? (urgencias.length === 1
+                ? renderLinhaUrgencia(urgencias[0])
+                : `<div class="startday-row-list">${urgencias.map(renderLinhaUrgencia).join('')}</div>`)
+                : `<div class="startday-empty-inline">Hoje sem bloqueios críticos por prazo.</div>`}
             </div>
           </section>
 
-          <section class="startday-side-card">
+          <section class="startday-list-block">
             <div class="startday-block-head">
               <div>
                 <div class="task-view-eyebrow">Resumo do dia</div>
