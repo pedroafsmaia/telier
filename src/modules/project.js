@@ -9,7 +9,7 @@ import {
 } from './state.js';
 import { req } from './api.js';
 import { invalidarCacheProjetos } from './api.js';
-import { toast, abrirModal, fecharModal, confirmar, btnLoading, setBreadcrumb, slideContent } from './ui.js';
+import { toast, abrirModal, fecharModal, confirmar, btnLoading, setBreadcrumb, setShellView, slideContent } from './ui.js';
 import {
   esc, gv, sel, avatar, tag, prazoFmt, diasRestantes, fmtHoras,
   isAdmin, podeEditar, souDono, projetoConcluido, normalizarStatusProjeto,
@@ -26,6 +26,7 @@ const PRIORS = ['Alta','Média','Baixa'];
 
 export async function abrirProjeto(id) {
   window.scrollTo(0, 0);
+  setShellView('dashboard');
   const c = document.getElementById('content');
   c.style.opacity = '0.4';
   c.style.pointerEvents = 'none';
@@ -103,7 +104,7 @@ export function renderProjeto(proj, tarefas, decisoes, abaAtiva, resumoHoras = [
   const c = document.getElementById('content');
   c.innerHTML = `
     <button class="btn-back" onclick="voltarDash()">← Voltar para projetos</button>
-    <div class="proj-hero" data-status="${esc(statusProjeto)}">
+    <section class="detail-shell"><div class="proj-hero detail-hero" data-status="${esc(statusProjeto)}">
       <div class="proj-hero-top">
         <div class="proj-hero-left">
           <div class="proj-nome">${esc(proj.nome)}</div>
@@ -161,13 +162,13 @@ export function renderProjeto(proj, tarefas, decisoes, abaAtiva, resumoHoras = [
       ${focoMinha
         ? `<div class="proj-foco-banner"><span class="fl">Meu foco</span><span class="fn">${esc(focoMinha.nome)}</span>${focoBtnHtml}</div>`
         : `<div class="proj-foco-empty">Nenhuma tarefa em foco — use ★ na aba Tarefas para definir</div>`}
-    </div>
+    </div></section>
     ${isArquivado ? `
       <div class="alert-banner block-gap">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><rect x="3" y="10" width="18" height="11" rx="2" stroke="currentColor" stroke-width="1.6"/><path d="M7 10V7a5 5 0 0 1 10 0v3" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
         Projeto arquivado — somente leitura. Edições, novas tarefas e cronômetro estão desabilitados.
       </div>` : ''}
-    <div class="abas">
+    <div class="abas detail-nav">
       <button class="aba ${(abaAtiva==='tarefas'||abaAtiva==='lista'||abaAtiva==='kanban')?'ativa':''}" data-aba="tarefas" onclick="mudarAba('tarefas')">Tarefas</button>
       <button class="aba ${abaAtiva==='mapa'?'ativa':''}" data-aba="mapa" onclick="mudarAba('mapa')">Mapa de Foco</button>
       <button class="aba ${abaAtiva==='relatorio'?'ativa':''}" data-aba="relatorio" onclick="mudarAba('relatorio')">Relat&oacute;rio</button>

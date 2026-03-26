@@ -107,6 +107,12 @@ export function setBreadcrumb(partes) {
   }).join('');
 }
 
+export function setShellView(view) {
+  document.querySelectorAll('.sidebar-link[data-shell-view]').forEach(link => {
+    link.classList.toggle('is-active', link.dataset.shellView === view);
+  });
+}
+
 // ── BUTTON LOADING ──
 export function btnLoading(id, on) {
   const b = document.getElementById(id);

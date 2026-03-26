@@ -9,7 +9,7 @@ import {
   setFiltroStatusTarefa, setBuscaTarefa, setVistaAtual,
 } from './state.js';
 import { req, fetchProjetos, invalidarCacheProjetos } from './api.js';
-import { toast, toastUndo, setBreadcrumb, slideContent } from './ui.js';
+import { toast, toastUndo, setBreadcrumb, setShellView, slideContent } from './ui.js';
 import {
   esc, gv, sel, avatar, tag, prazoFmt, diasRestantes, fmtHoras, fmtDuracao,
   isAdmin, isAdminRole, souDono, projetoConcluido, normalizarStatusProjeto,
@@ -176,6 +176,7 @@ export async function renderDash() {
   setFiltroStatusTarefa('todos');
   document.title = 'Telier';
   setBreadcrumb([]);
+  setShellView('dashboard');
   const c = document.getElementById('content');
   c.innerHTML = renderDashLoadingState();
   try {

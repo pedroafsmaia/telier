@@ -1,5 +1,21 @@
 // ── STATE ──
-export const API = 'https://telier-api.pedroafsmaia.workers.dev';
+function resolveApiBase() {
+  const fallback = 'https://telier-api.pedroafsmaia.workers.dev';
+  if (typeof window === 'undefined') return fallback;
+  try {
+    const url = new URL(window.location.href);
+    const apiParam = url.searchParams.get('api');
+    if (apiParam) {
+      localStorage.setItem('ea_api', apiParam);
+      return apiParam;
+    }
+    return localStorage.getItem('ea_api') || fallback;
+  } catch {
+    return fallback;
+  }
+}
+
+export const API = resolveApiBase();
 export let TOKEN = localStorage.getItem('ea_token');
 export let EU = JSON.parse(localStorage.getItem('ea_user') || 'null');
 export let PROJETO = null;

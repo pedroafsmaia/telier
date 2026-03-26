@@ -5,12 +5,13 @@ import {
   setGrupoAtual, setVistaAtual, setUsuarios, setGrupoTaskMobileFiltersOpen,
 } from './state.js';
 import { req, invalidarCacheProjetos } from './api.js';
-import { toast, toastUndo, abrirModal, fecharModal, confirmar, btnLoading, setBreadcrumb, slideContent } from './ui.js';
+import { toast, toastUndo, abrirModal, fecharModal, confirmar, btnLoading, setBreadcrumb, setShellView, slideContent } from './ui.js';
 import { esc, gv, sel, avatar, tag, fmtHoras, prazoFmt, diasRestantes, souDono, isAdmin, normalizarStatusProjeto, PT, PO, DT, DO, normalizarColaboradoresTarefas, tarefaCompartilhadaComigo } from './utils.js';
 import { renderAoVivoStream } from './tasks.js';
 
 export async function abrirGrupo(id) {
   window.scrollTo(0, 0);
+  setShellView('groups');
   const c = document.getElementById('content');
   c.style.opacity = '0.4';
   c.style.pointerEvents = 'none';
@@ -50,7 +51,7 @@ export function renderGrupo(grupo, projetos, abaAtiva = 'projetos') {
 
   document.getElementById('content').innerHTML = `
     <button class="btn-back" onclick="voltarDash()">← Voltar para projetos</button>
-    <div class="proj-hero" data-status="${esc(grupo.status || 'Ativo')}">
+    <section class="detail-shell"><div class="proj-hero detail-hero" data-status="${esc(grupo.status || 'Ativo')}">
       <div class="proj-hero-top">
         <div class="proj-hero-left">
           <div class="proj-nome ${isArq ? 'is-muted' : ''}">${esc(grupo.nome)}</div>
@@ -78,8 +79,8 @@ export function renderGrupo(grupo, projetos, abaAtiva = 'projetos') {
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="1.6"/><path d="M10 8v8M14 8v8" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
           Grupo pausado — atividades em espera.
         </div>` : ''}
-    </div>
-    <div class="abas abas-spaced">
+    </div></section>
+    <div class="abas abas-spaced detail-nav">
       <button class="aba ${abaAtiva==='projetos'?'ativa':''}" data-aba="projetos" onclick="mudarAbaGrupo('projetos')">Projetos${nProjetos ? ` <span class="tab-count">${nProjetos}</span>` : ''}</button>
       <button class="aba ${abaAtiva==='tarefas'?'ativa':''}" data-aba="tarefas" onclick="mudarAbaGrupo('tarefas')">Tarefas</button>
       <button class="aba ${abaAtiva==='mapa'?'ativa':''}" data-aba="mapa" onclick="mudarAbaGrupo('mapa')">Mapa de Foco</button>
@@ -150,7 +151,16 @@ export function renderGrupoAbaProjetos(el, projetos) {
     return;
   }
   import('./dashboard.js').then(({ renderCardsDash }) => {
-    el.innerHTML = `<div class="cards-grid">${renderCardsDash(projetos)}</div>`;
+    el.innerHTML = `
+      <div class="section-shell">
+        <div class="section-head">
+          <div>
+            <div class="section-kicker">Projetos do grupo</div>
+            <div class="section-title">${projetos.length} projeto${projetos.length !== 1 ? 's' : ''}</div>
+          </div>
+        </div>
+        <div class="cards-grid cards-grid-projects">${renderCardsDash(projetos)}</div>
+      </div>`;
   });
 }
 
