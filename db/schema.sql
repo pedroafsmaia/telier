@@ -1,6 +1,11 @@
 -- Telier — Schema D1 v4
 -- Execute no painel Cloudflare D1 > Console
 
+CREATE TABLE IF NOT EXISTS schema_migrations (
+  version INTEGER PRIMARY KEY,
+  applied_at TEXT DEFAULT (datetime('now'))
+);
+
 CREATE TABLE IF NOT EXISTS usuarios (
   id TEXT PRIMARY KEY,
   nome TEXT NOT NULL,
@@ -182,3 +187,10 @@ CREATE INDEX IF NOT EXISTS idx_sessoes_fim       ON sessoes_tempo(fim);
 CREATE UNIQUE INDEX IF NOT EXISTS idx_sessoes_tempo_usuario_ativa ON sessoes_tempo(usuario_id) WHERE fim IS NULL;
 CREATE INDEX IF NOT EXISTS idx_intervalos_sessao ON intervalos(sessao_id);
 CREATE INDEX IF NOT EXISTS idx_colab_tarefa      ON colaboradores_tarefa(tarefa_id);
+
+-- Novos índices V7 (Performance Operacional)
+CREATE INDEX IF NOT EXISTS idx_projetos_grupo_status ON projetos(grupo_id, status);
+CREATE INDEX IF NOT EXISTS idx_tarefas_projeto_dono ON tarefas(projeto_id, dono_id);
+CREATE INDEX IF NOT EXISTS idx_projetos_dono ON projetos(dono_id);
+CREATE INDEX IF NOT EXISTS idx_sessoes_tempo_usuario_tarefa ON sessoes_tempo(usuario_id, tarefa_id);
+CREATE INDEX IF NOT EXISTS idx_sessoes_tempo_inicio_fim ON sessoes_tempo(inicio, fim);
