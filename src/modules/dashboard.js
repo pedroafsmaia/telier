@@ -75,7 +75,6 @@ export function renderPainelHoje(projetos, ativas, sessoesRecentes = [], tarefas
     })),
   ].slice(0, 4);
   const ativo = ativas[0] || null;
-  const tarefaAtiva = tarefasOperacao.find(t => t.sessao_ativa_id) || null;
   const emAndamento = tarefasOperacao.filter(t => t.status === 'Em andamento' || t.sessao_ativa_id);
   const retomadas = tarefasOperacao.filter(t => t.foco || t.status === 'Em andamento').slice(0, 4);
   const recentes = sessoesRecentes.length ? sessoesRecentes : (ultimaSessao ? [ultimaSessao] : []);
@@ -85,6 +84,10 @@ export function renderPainelHoje(projetos, ativas, sessoesRecentes = [], tarefas
     const seg = Math.floor((Date.now() - new Date(ativo.inicio.replace(' ', 'T') + 'Z').getTime()) / 1000);
     tempoRodando = `${fmtDuracao(seg)} rodando`;
   }
+  const ultimaAtividadeTexto = ultimaSessao?.fim
+    ? `Última: ${prazoFmt(ultimaSessao.fim, true)}`
+    : (ultimaSessao?.tarefa_nome ? `Última: ${ultimaSessao.tarefa_nome}` : 'Última: sem registro recente');
+  const estadoSessao = ativo ? 'Sessão ativa' : (focoNome ? 'Pronto para retomada' : 'Sem sessão');
 
   const saved = localStorage.getItem(STARTDAY_COLLAPSE_KEY);
   const collapsed = saved === '1';
@@ -107,10 +110,16 @@ export function renderPainelHoje(projetos, ativas, sessoesRecentes = [], tarefas
                 <div class="task-view-eyebrow">Sessão ativa</div>
                 <div class="startday-session-title">${ativo ? esc(ativo.tarefa_nome || 'Tarefa ativa') : (focoNome ? esc(focoNome) : 'Nenhuma sessão ativa')}</div>
                 <div class="startday-session-copy">${ativo
-                  ? `${esc(ativo.projeto_nome || '')} · ${tempoRodando}`
-                  : (focoProjNome ? `${esc(focoProjNome)} · pronta para retomada` : 'Defina foco em uma tarefa para iniciar o dia com direção.')}</div>
+                  ? `${esc(ativo.projeto_nome || '')}`
+                  : (focoProjNome ? `${esc(focoProjNome)}` : 'Defina foco em uma tarefa para iniciar o dia com direção.')}</div>
               </div>
               <div class="startday-session-kpi">${resumoHoje ? `${parseFloat(resumoHoje.horas_hoje || 0).toFixed(1)}h hoje` : '0.0h hoje'}</div>
+            </div>
+            <div class="startday-session-meta-grid">
+              <div class="startday-meta-pair"><span class="startday-meta-label">Projeto</span><span class="startday-meta-value">${esc(ativo?.projeto_nome || focoProjNome || 'Não definido')}</span></div>
+              <div class="startday-meta-pair"><span class="startday-meta-label">Tempo</span><span class="startday-meta-value mono">${esc(tempoRodando)}</span></div>
+              <div class="startday-meta-pair"><span class="startday-meta-label">Estado</span><span class="startday-meta-value">${esc(estadoSessao)}</span></div>
+              <div class="startday-meta-pair"><span class="startday-meta-label">Atividade</span><span class="startday-meta-value">${esc(ultimaAtividadeTexto)}</span></div>
             </div>
             <div class="startday-session-actions">
               ${ativo?.tarefa_id && ativo?.projeto_id
@@ -123,59 +132,56 @@ export function renderPainelHoje(projetos, ativas, sessoesRecentes = [], tarefas
             </div>
           </section>
 
-          <section class="startday-section-card">
+          <section class="startday-list-block">
             <div class="startday-block-head">
               <div>
-                <div class="task-view-eyebrow">Retomada rápida</div>
-                <div class="task-view-title">Pontos de reentrada</div>
+                <div class="task-view-title">Retomada rápida</div>
               </div>
               <button class="btn btn-sm" onclick="goTasks()">Ver minhas tarefas</button>
             </div>
-            <div class="startday-resume-list">
+            <div class="startday-row-list">
               ${retomadas.length ? retomadas.map(t => {
                 const dias = diasRestantes(t.data || null);
                 const prazo = t.data ? prazoFmt(t.data, true) : 'Sem prazo';
                 return `<button class="startday-resume-item" onclick="abrirTarefaContexto('${t.id}','${t.projeto_id}')">
                   <span class="startday-resume-main">
                     <span class="startday-resume-title">${esc(t.nome)}</span>
-                    <span class="startday-resume-sub">${esc(t.projeto_nome)} · ${esc(t.status)}</span>
+                    <span class="startday-resume-sub">Projeto: ${esc(t.projeto_nome)} · Status: ${esc(t.status)}</span>
                   </span>
                   <span class="startday-resume-meta">
-                    ${t.sessao_ativa_id ? `<span class="tag tag-green">Em curso</span>` : ''}
-                    ${t.foco ? `<span class="tag tag-purple">Foco</span>` : ''}
-                    <span class="mono">${esc(prazo)}${dias !== null && dias <= 1 ? ' · hoje' : ''}</span>
+                    <span class="startday-inline-meta">${t.sessao_ativa_id ? 'Estado: Em curso' : (t.foco ? 'Estado: Foco' : 'Estado: Em andamento')}</span>
+                    <span class="mono startday-inline-meta">Prazo: ${esc(prazo)}${dias !== null && dias <= 1 ? ' (hoje)' : ''}</span>
                   </span>
                 </button>`;
               }).join('') : `<div class="startday-empty">Nenhuma tarefa pronta para retomada imediata.</div>`}
             </div>
           </section>
 
-          <section class="startday-section-card">
+          ${emAndamento.length ? `<section class="startday-list-block">
             <div class="startday-block-head">
               <div>
-                <div class="task-view-eyebrow">Em andamento</div>
                 <div class="task-view-title">${emAndamento.length} tarefa${emAndamento.length === 1 ? '' : 's'} em execução</div>
               </div>
             </div>
-            <div class="startday-task-list">
-              ${emAndamento.length ? emAndamento.map(t => {
+            <div class="startday-row-list">
+              ${emAndamento.map(t => {
                 const dias = diasRestantes(t.data || null);
                 const urgente = dias !== null && dias <= 1;
                 return `<div class="startday-task-item ${t.sessao_ativa_id ? 'is-live' : ''}">
                   <div class="startday-task-main">
                     <div class="startday-task-title">${esc(t.nome)}</div>
-                    <div class="startday-task-sub">${esc(t.projeto_nome)} · ${esc(t.status)}${t.dono_nome ? ` · ${esc(t.dono_nome)}` : ''}</div>
+                    <div class="startday-task-sub">Projeto: ${esc(t.projeto_nome)} · Status: ${esc(t.status)}${t.dono_nome ? ` · Responsável: ${esc(t.dono_nome)}` : ''}</div>
                   </div>
                   <div class="startday-task-side">
-                    ${t.sessao_ativa_id ? `<span class="tag tag-green">Cronômetro ativo</span>` : ''}
-                    ${t.foco ? `<span class="tag tag-purple">Foco</span>` : ''}
-                    ${t.data ? `<span class="tag ${urgente ? 'tag-red' : 'tag-gray'} mono">${prazoFmt(t.data, true)}</span>` : ''}
+                    ${t.sessao_ativa_id ? `<span class="startday-inline-meta">Estado: Cronômetro ativo</span>` : ''}
+                    ${t.foco ? `<span class="startday-inline-meta">Foco: Sim</span>` : ''}
+                    ${t.data ? `<span class="mono startday-inline-meta">Prazo: ${prazoFmt(t.data, true)}${urgente ? ' (crítico)' : ''}</span>` : ''}
                     <button class="btn btn-sm btn-primary" onclick="abrirTarefaContexto('${t.id}','${t.projeto_id}')">Abrir tarefa</button>
                   </div>
                 </div>`;
-              }).join('') : `<div class="startday-empty">Nenhuma tarefa em andamento no momento.</div>`}
+              }).join('')}
             </div>
-          </section>
+          </section>` : ''}
         </div>
 
         <div class="startday-sidecol">
