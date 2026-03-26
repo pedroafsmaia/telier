@@ -112,11 +112,23 @@ export function renderAbaTarefas(el, tarefas) {
   ]));
 
   const toolbarHtml = `
-    <div class="dash-toolbar task-view-toolbar">
-      <div class="dash-toolbar-row">
-        <div class="task-toolbar-main">
+    <div class="task-surface-head">
+      <div>
+        <div class="section-kicker">Operação</div>
+        <div class="task-view-title">Tarefas do projeto</div>
+        <div class="task-view-copy">Controle ativo de execução, responsabilidade e ritmo de entrega.</div>
+      </div>
+      <div class="task-view-kpi">${pendentes} pendente${pendentes!==1?'s':''} · ${concluidas} concluída${concluidas!==1?'s':''}</div>
+    </div>
+    <div class="dash-toolbar task-view-toolbar task-toolbar-studio">
+      <div class="dash-toolbar-row dash-toolbar-primary">
+        <div class="task-toolbar-main dash-toolbar-searchblock">
+          <div class="dash-toolbar-label">Consulta</div>
           <input type="search" class="search-dash search-tarefa" placeholder="Buscar tarefa..."
                  value="${esc(BUSCA_TAREFA)}" oninput="filtrarTarefasBusca(this.value)">
+        </div>
+        <div class="dash-toolbar-switches">
+          <div class="dash-toolbar-label">Escopo</div>
           <div class="segmented">
             <button class="segmented-btn ${FILTRO_ORIGEM_TAREFAS==='todos'?'ativo':''}" onclick="setFiltroOrigemTarefas('todos');renderAbaTarefas(document.getElementById('aba'),TAREFAS)">Todas${tarefas.length ? `<span class="seg-count">${tarefas.length}</span>` : ''}</button>
             <button class="segmented-btn ${FILTRO_ORIGEM_TAREFAS==='meus'?'ativo':''}" onclick="setFiltroOrigemTarefas('meus');renderAbaTarefas(document.getElementById('aba'),TAREFAS)">Minhas${meus ? `<span class="seg-count">${meus}</span>` : ''}</button>
@@ -145,21 +157,29 @@ export function renderAbaTarefas(el, tarefas) {
               </svg>
             </button>
           </div>
-          ${!projetoArquivado ? `<button class="btn btn-primary btn-sm" onclick="modalNovaTarefa('${PROJETO?.id}')">+ Nova tarefa</button>` : ''}
+          ${!projetoArquivado ? `<button class="btn btn-primary btn-sm" onclick="modalNovaTarefa('${PROJETO?.id}')">Nova tarefa</button>` : ''}
         </div>
       </div>
-      <div class="dash-toolbar-row task-mobile-secondary ${TASK_MOBILE_FILTERS_OPEN ? 'is-open' : ''}">
-          <div class="task-toolbar-summary">
+      <div class="dash-toolbar-row dash-toolbar-secondary task-mobile-secondary ${TASK_MOBILE_FILTERS_OPEN ? 'is-open' : ''}">
+          <div class="task-toolbar-summary task-toolbar-summary-grid">
             ${responsaveis.length > 1 ? `
-              <select class="resp-filter select-control" onchange="setFiltroRespTar(this.value);renderAbaTarefas(document.getElementById('aba'),TAREFAS)">
+              <div class="dash-toolbar-field">
+                <div class="dash-toolbar-label">Responsável</div>
+                <select class="resp-filter select-control" onchange="setFiltroRespTar(this.value);renderAbaTarefas(document.getElementById('aba'),TAREFAS)">
                 <option value="">Todos os responsáveis</option>
                 ${responsaveis.map(r => `<option value="${r.id}" ${FILTRO_RESP_TAR===r.id?'selected':''}>${esc(r.nome)}</option>`).join('')}
-              </select>` : ''}
+                </select>
+              </div>` : ''}
+            <div class="dash-toolbar-field dash-toolbar-statusfield">
+              <div class="dash-toolbar-label">Status</div>
+              <div class="dash-status-grid">
             ${statusTabs.map(s => {
               const label = s === 'todos' ? 'Todos' : s;
               const cnt = statusCountMap[s] || 0;
               return `<button class="filter-btn ${FILTRO_STATUS_TAREFA===s?'ativo':''}" onclick="setFiltroStatusTarefa('${esc(s)}');renderAbaTarefas(document.getElementById('aba'),TAREFAS)">${label}${cnt ? `<span class="seg-count">${cnt}</span>` : ''}</button>`;
             }).join('')}
+              </div>
+            </div>
           </div>
           <div class="task-view-kpi">${pendentes} pendente${pendentes!==1?'s':''} · ${concluidas} concluída${concluidas!==1?'s':''}</div>
         </div>
