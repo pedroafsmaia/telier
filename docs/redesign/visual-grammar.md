@@ -89,6 +89,12 @@ Este documento define regras duráveis de interface para o Telier.
 ### Estados de hover/ativo
 **Deve ser:** discreto, profissional, orientado a foco/seleção.
 **Evitar:** efeitos chamativos (glow, blur, animação exagerada).
+**Regra adicional:** elementos clicáveis devem combinar mais de um sinal perceptivo (ex.: borda + contraste + deslocamento leve), sem depender apenas de cor.
+
+### Loading e feedback operacional
+- Listas, cards e painéis devem priorizar skeleton com estrutura estável durante carregamento.
+- Spinner é reservado para ações pontuais sem estrutura previsível.
+- Ações assíncronas devem ter estado explícito de processamento no próprio controle acionado.
 
 ## 5. Tipografia
 Papéis tipográficos obrigatórios:

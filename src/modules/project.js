@@ -213,7 +213,11 @@ export function renderAba(aba, tarefas) {
 
 export async function renderProjetoAoVivo(el) {
   if (!PROJETO?.id) return;
-  el.innerHTML = `<div class="loading"><div class="spinner"></div> Verificando sess&otilde;es ativas...</div>`;
+  el.innerHTML = `<div class="skeleton-block" aria-live="polite" aria-busy="true">
+    <div class="skeleton-line w-45"></div>
+    <div class="skeleton-line w-100"></div>
+    <div class="skeleton-line w-60"></div>
+  </div>`;
   try {
     const { carregarAoVivoProjeto } = await import('./groups.js');
     const sessoes = await carregarAoVivoProjeto(PROJETO.id);

@@ -9,7 +9,7 @@ export function toast(msg, tipo = 'ok') {
   if (_pendingUndoAction?.timeout) clearTimeout(_pendingUndoAction.timeout);
   setPendingUndoAction(null);
   el.textContent = msg;
-  el.className = tipo === 'err' ? 'toast-err' : '';
+  el.className = tipo === 'err' ? 'toast-err' : 'toast-ok';
   clearTimeout(_toastTimer);
   _toastTimer = setTimeout(() => el.classList.add('hidden'), 3000);
 }
@@ -119,7 +119,10 @@ export function setShellView(view) {
 export function btnLoading(id, on) {
   const b = document.getElementById(id);
   if (!b) return;
+  if (on && !b.dataset.loadingLabel) b.dataset.loadingLabel = b.textContent.trim();
+  if (!on && b.dataset.loadingLabel) delete b.dataset.loadingLabel;
   b.disabled = on;
+  b.setAttribute('aria-busy', on ? 'true' : 'false');
   b.classList.toggle('btn-loading', on);
 }
 
