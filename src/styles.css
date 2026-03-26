@@ -1434,58 +1434,6 @@ body {
     grid-template-columns: 1fr;
   }
 
-  .app-sidebar {
-    position: static;
-    height: auto;
-    padding: 16px 0 12px;
-    border-right: none;
-    border-bottom: 1px solid var(--border);
-  }
-
-  .sidebar-section-label {
-    display: none;
-  }
-
-  .sidebar-block,
-  .sidebar-panel,
-  .sidebar-footer {
-    padding-left: 18px;
-    padding-right: 18px;
-  }
-
-  .sidebar-nav {
-    flex-direction: row;
-    flex-wrap: wrap;
-    gap: 8px;
-    padding-left: 18px;
-    padding-right: 18px;
-    overflow-x: auto;
-  }
-
-  .sidebar-link {
-    width: auto;
-    margin: 0;
-    min-height: 36px;
-    padding: 0 12px;
-    border-left: none;
-    border-bottom: 2px solid transparent;
-    border-radius: var(--r);
-    background: var(--bg);
-  }
-
-  .sidebar-link.is-active {
-    border-bottom-color: var(--accent);
-  }
-
-  .sidebar-footer {
-    margin-top: 18px;
-  }
-
-  .sidebar-footer-actions {
-    flex-direction: row;
-    flex-wrap: wrap;
-  }
-
   .topbar {
     padding: 0 18px;
   }
@@ -2561,8 +2509,8 @@ tr:hover td{
   background:transparent;
 }
 .startday-head{
-  margin-bottom:14px;
-  padding-bottom:10px;
+  margin-bottom:10px;
+  padding-bottom:8px;
   border-bottom:1px solid var(--border);
 }
 .startday-head-note{
@@ -2591,12 +2539,12 @@ tr:hover td{
 .startday-workspace{
   display:grid;
   grid-template-columns:minmax(0,1.45fr) minmax(280px,.8fr);
-  gap:10px;
+  gap:8px;
 }
 .startday-maincol,
 .startday-sidecol{
   display:grid;
-  gap:8px;
+  gap:6px;
 }
 .startday-session-card,
 .startday-section-card,
@@ -2609,7 +2557,7 @@ tr:hover td{
 .startday-list-block{
   border:1px solid var(--border);
   border-radius:var(--r);
-  padding:8px 10px 6px;
+  padding:7px 10px 6px;
   background:var(--bg-card);
 }
 .startday-session-card.is-live{
@@ -2621,7 +2569,7 @@ tr:hover td{
   align-items:flex-start;
   justify-content:space-between;
   gap:10px;
-  margin-bottom:4px;
+  margin-bottom:2px;
 }
 .startday-session-title{
   font-size:1rem;
@@ -2688,8 +2636,8 @@ tr:hover td{
   align-items:center;
   justify-content:space-between;
   gap:10px;
-  min-height:40px;
-  padding:5px 0;
+  min-height:36px;
+  padding:4px 0;
   border:none;
   border-bottom:1px solid var(--border);
   border-radius:0;
@@ -2699,8 +2647,8 @@ tr:hover td{
   text-align:left;
 }
 .startday-op-row--compact{
-  min-height:34px;
-  padding:3px 0;
+  min-height:32px;
+  padding:2px 0;
 }
 .startday-row-list > :last-child{
   border-bottom:none;
@@ -2770,7 +2718,7 @@ tr:hover td{
 .startday-summary-item{
   display:grid;
   gap:2px;
-  padding:6px 8px;
+  padding:5px 8px;
   border:1px solid var(--border);
   border-radius:var(--r);
   background:var(--bg);
@@ -3672,10 +3620,9 @@ html,body{
   background:var(--bg-low);
 }
 .app-sidebar__inner{
+  display:grid;
+  grid-template-rows:auto minmax(0,1fr) auto;
   height:100%;
-  min-height:100%;
-  display:flex;
-  flex-direction:column;
   min-width:0;
 }
 .app-sidebar__top{
@@ -3715,7 +3662,6 @@ html,body{
 }
 .app-sidebar__middle{
   padding:8px 0;
-  flex:1 1 auto;
   min-height:0;
   overflow-y:auto;
   overflow-x:hidden;
@@ -3723,6 +3669,39 @@ html,body{
 .app-sidebar__nav,
 .app-sidebar__admin{
   padding:0 8px;
+}
+.app-sidebar__nav{
+  display:flex;
+  flex-direction:column;
+  gap:6px;
+  min-width:0;
+}
+.app-sidebar__link{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  width:100%;
+  min-height:40px;
+  padding:0 12px;
+  min-width:0;
+  text-decoration:none;
+  box-sizing:border-box;
+  white-space:nowrap;
+}
+.app-sidebar__link-icon{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  width:16px;
+  height:16px;
+  flex:0 0 16px;
+}
+.app-sidebar__link-label{
+  min-width:0;
+  flex:1 1 auto;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
 }
 .app-sidebar__bottom{
   flex:0 0 auto;
@@ -3757,6 +3736,7 @@ html,body{
 }
 .topbar-icon-btn svg,
 .topbar__icon,
+.topbar-menu svg,
 .topbar-theme svg,
 .topbar-bell svg{
   display:block;
@@ -3766,8 +3746,8 @@ html,body{
   flex:0 0 16px;
 }
 .topbar-menu.topbar__icon-button{
-  line-height:1;
-  font-size:16px;
+  line-height:0;
+  font-size:0;
 }
 
 @media (max-width:900px){
@@ -3784,6 +3764,12 @@ html,body{
     transform:translateX(-102%);
     transition:transform .2s ease;
     z-index:920;
+  }
+  .app-sidebar__nav{
+    gap:6px;
+  }
+  .app-sidebar__link{
+    width:100%;
   }
   .sidebar-overlay{
     position:fixed;

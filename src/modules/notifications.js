@@ -36,9 +36,13 @@ export function renderPainelNotificacoes() {
   if (!panel) return;
   const itens = filtrarNotificacoesPainel(NOTIFS || []);
   const lista = itens.map(n => {
-    const dataFmt = new Date(String(n.criado_em || '').replace(' ', 'T') + 'Z').toLocaleString('pt-BR', {
-      day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit',
-    });
+    const rawDate = String(n.criado_em || '').trim();
+    const parsedDate = rawDate ? new Date(rawDate.replace(' ', 'T') + 'Z') : null;
+    const dataFmt = parsedDate && !Number.isNaN(parsedDate.getTime())
+      ? parsedDate.toLocaleString('pt-BR', {
+        day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit',
+      })
+      : 'Data indisponível';
     const onOpen = n.escopo === 'projeto' && n.entidade_id
       ? `marcarNotifLida('${n.id}', () => { fecharPainelNotificacoes(); abrirProjeto('${n.entidade_id}'); })`
       : `marcarNotifLida('${n.id}')`;
