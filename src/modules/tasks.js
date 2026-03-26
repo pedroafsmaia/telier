@@ -16,7 +16,7 @@ import {
   filtrarColecaoTarefas, normalizarColaboradoresTarefas,
   normalizarStatusProjeto, ST, PT, DT, PO, DO, csvEsc,
 } from './utils.js';
-import { expandirSessoes } from './timer.js';
+import { expandirSessoes, renderTimerActions } from './timer.js';
 
 const FASES = ['Estudo preliminar','Anteprojeto','Projeto básico','Projeto executivo','Em obra'];
 const STATUS_PROJ = ['A fazer','Em andamento','Em revisão','Pausado','Concluído','Arquivado'];
@@ -174,7 +174,6 @@ export function renderTaskOpsList(tarefas = [], opts = {}) {
     const minha = t.dono_id === EU?.id;
     const podeCron = minha || (t.colaboradores_ids || []).includes(EU?.id) || isAdmin();
     const sessaoAtiva = timerAtivoPorTarefa[t.id] || t.sessao_ativa_id || null;
-    const acaoLabel = t.status === 'Em andamento' || t.foco ? 'Continuar' : 'Iniciar';
     const prazoHoje = t.data ? prazoFmt(t.data, true) : '—';
     return `
       <article class="ops-row">
@@ -188,12 +187,17 @@ export function renderTaskOpsList(tarefas = [], opts = {}) {
           ${t.prioridade ? metaPair('Prioridade', t.prioridade, t.prioridade === 'Alta' ? 'is-warn' : 'is-muted') : ''}
         </div>
         <div class="ops-row-actions">
-          ${sessaoAtiva
-            ? `<button class="btn btn-danger btn-sm" onclick="pararCronometro('${sessaoAtiva}')"><svg class="btn-icon-svg" width="11" height="11" viewBox="0 0 11 11" fill="none"><rect x="2" y="2" width="7" height="7" rx="1" fill="currentColor"/></svg>Parar</button>`
-            : (podeCron
-              ? `<button class="btn btn-primary btn-sm" onclick="iniciarCronometro('${t.id}','${esc(t.nome || t.tarefa_nome || 'Tarefa')}')"><svg class="btn-icon-svg" width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M4 2.5l5 3.5-5 3.5v-7z" fill="currentColor"/></svg>${acaoLabel}</button>`
-              : '')}
-          <button class="btn btn-sm" onclick="abrirTarefaContexto('${t.id || t.tarefa_id}','${t.projeto_id}')">Abrir tarefa</button>
+          ${renderTimerActions({
+            tarefaId: t.id || t.tarefa_id,
+            tarefaNome: t.nome || t.tarefa_nome || 'Tarefa',
+            projetoId: t.projeto_id,
+            size: 'sm',
+            compact: true,
+            showOpenTask: true,
+            showHistory: false,
+            showInterval: false,
+            allowStart: podeCron,
+          })}
         </div>
       </article>`;
   }).join('');
@@ -444,7 +448,7 @@ export async function renderTarefasHome(opts = {}) {
       title: 'Tarefas',
       description: 'Priorize, retome e execute o trabalho em uma única superfície operacional.',
       actionsHtml: `
-        <button class="btn" onclick="continuarUltimaTarefa()">Continuar última tarefa</button>
+        <button class="btn" onclick="continuarUltimaTarefa()">Abrir última tarefa</button>
         <button class="btn btn-primary" onclick="modalNovaTarefa()">Nova tarefa</button>`,
       overviewHtml: `
         <div class="today-layout">
@@ -459,12 +463,12 @@ export async function renderTarefasHome(opts = {}) {
                   <div class="meta-pair"><span class="meta-pair-label">Prazo</span><span class="meta-pair-value mono">${esc(prioridade.prazo || 'Sem prazo')}</span></div>
                   <div class="meta-pair"><span class="meta-pair-label">Sessão</span><span class="meta-pair-value">${ativo ? 'Cronômetro em andamento' : 'Sem sessão ativa'}</span></div>
                 </div>
-                <div class="today-priority__actions">
-                  ${ativo
-                    ? `<button class="btn btn-primary" onclick="abrirTarefaContexto('${prioridade.tarefaId}','${prioridade.projetoId}')">Continuar</button>`
+              <div class="today-priority__actions">
+                ${ativo
+                    ? `<button class="btn btn-primary" onclick="abrirTarefaContexto('${prioridade.tarefaId}','${prioridade.projetoId}')">Abrir tarefa</button>`
                     : `<button class="btn btn-primary" onclick="iniciarCronometro('${prioridade.tarefaId}','${esc(prioridade.titulo)}')">Iniciar cronômetro</button>`}
-                  <button class="btn" onclick="abrirTarefaContexto('${prioridade.tarefaId}','${prioridade.projetoId}')">Abrir tarefa</button>
-                </div>`
+                ${ativo ? '' : `<button class="btn" onclick="abrirTarefaContexto('${prioridade.tarefaId}','${prioridade.projetoId}')">Abrir tarefa</button>`}
+              </div>`
                 : `<div class="today-empty">Nenhuma tarefa em foco. Escolha uma para começar o dia.</div>`}
             </section>
 
@@ -758,27 +762,21 @@ export function renderKanbanInterno(el, tarefas) {
     const minha = t.dono_id === EU?.id;
     const canEdit = !projetoArquivado && (minha || podeEditar(PROJETO) || isAdmin());
     const podeCron = !projetoArquivado && (minha || (t.colaboradores_ids || []).includes(EU?.id) || isAdmin());
-    const sessaoAtiva = timerAtivoPorTarefa[t.id];
     const diasT = diasRestantes(t.data || null);
     const urgt = diasT !== null && diasT <= 2 && t.status !== 'Concluída';
 
-    const cronHtml = sessaoAtiva
-      ? `<button class="btn btn-danger btn-sm kanban-cron-btn"
-                 onclick="pararCronometro('${sessaoAtiva}');event.stopPropagation()"
-                 title="Parar cronômetro">
-           <svg class="btn-icon-svg" width="10" height="10" viewBox="0 0 10 10" fill="none">
-             <rect x="1.5" y="1.5" width="7" height="7" rx="1" fill="currentColor"/>
-           </svg>${TIMERS[sessaoAtiva] ? fmtDuracao(Math.floor((Date.now()-new Date((TIMERS[sessaoAtiva].inicio||'').replace(' ','T')+'Z').getTime())/1000)) : ''}
-         </button>`
-      : podeCron
-        ? `<button class="btn btn-secondary btn-sm kanban-cron-btn"
-                   onclick="iniciarCronometro('${t.id}','${esc(t.nome)}');event.stopPropagation()"
-                   title="Iniciar cronômetro">
-             <svg class="btn-icon-svg" width="10" height="10" viewBox="0 0 10 10" fill="none">
-               <path d="M3 1.5l5 3.5-5 3.5v-7z" fill="currentColor"/>
-             </svg>Iniciar
-           </button>`
-        : '';
+    const cronHtml = renderTimerActions({
+      tarefaId: t.id,
+      tarefaNome: t.nome,
+      projetoId: PROJETO?.id,
+      size: 'sm',
+      compact: true,
+      allowStart: podeCron,
+      showOpenTask: false,
+      showHistory: false,
+      showInterval: false,
+      stopPropagation: true,
+    });
 
     const colabIds = t.colaboradores_ids || [];
     const colabNomes = t.colaboradores_nomes || [];
@@ -944,13 +942,17 @@ export function renderListaInterna(el, tarefas) {
       : `<span class="foco-placeholder">${t.foco ? FOCUS_ICON_FILLED : ''}</span>`;
 
     const podeCron = !projetoArquivado && (minha || (t.colaboradores_ids || []).includes(EU?.id) || isAdmin());
-    const sessaoAtiva = timerAtivoPorTarefa[t.id];
-
-    const horas = sessaoAtiva
-      ? `<button class="btn btn-sm btn-danger" onclick="pararCronometro('${sessaoAtiva}')" title="Parar cronômetro"><svg class="btn-icon-svg" width="11" height="11" viewBox="0 0 11 11" fill="none"><rect x="2" y="2" width="7" height="7" rx="1" fill="currentColor"/></svg>Parar</button>`
-      : podeCron
-        ? `<button class="btn btn-secondary btn-sm" onclick="iniciarCronometro('${t.id}','${esc(t.nome)}')" title="Iniciar cronômetro"><svg class="btn-icon-svg" width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M4 2.5l5 3.5-5 3.5v-7z" fill="currentColor"/></svg>Iniciar</button>`
-        : '';
+    const timerAcoes = renderTimerActions({
+      tarefaId: t.id,
+      tarefaNome: t.nome,
+      projetoId: PROJETO?.id,
+      size: 'sm',
+      compact: true,
+      allowStart: podeCron,
+      showOpenTask: false,
+      showHistory: false,
+      showInterval: false,
+    });
 
     const dataStr = t.data || null;
     const diasTarefa = diasRestantes(dataStr);
@@ -975,8 +977,7 @@ export function renderListaInterna(el, tarefas) {
         ${metaPair('Prazo', data, urgenteTar ? 'is-alert' : 'is-muted')}
       </div>
       <div class="ops-row-actions">
-        ${horas}
-        <button class="btn btn-ghost btn-icon btn-sm" onclick="expandirSessoes('${t.id}')" title="Abrir detalhes e registro de tempo"><svg width="14" height="14" viewBox="0 0 14 14" fill="none"><rect x="2" y="2" width="10" height="10" rx="2" stroke="currentColor" stroke-width="1.3"/><path d="M4.5 5.2h5M4.5 7h5M4.5 8.8h3" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg></button>
+        ${timerAcoes}
         ${podeCron ? `<button class="btn btn-ghost btn-icon btn-sm" onclick="modalColabsTarefa('${t.id}')" title="Colaboradores da tarefa"><svg width="14" height="14" viewBox="0 0 14 14" fill="none"><circle cx="5" cy="4.5" r="2" stroke="currentColor" stroke-width="1.3"/><path d="M1.5 11.5c0-1.93 1.57-3.5 3.5-3.5s3.5 1.57 3.5 3.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/><path d="M9 7a2 2 0 1 0 0-4M12 11.5c0-1.65-1.12-3.04-2.66-3.43" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg></button>` : ''}
         ${canEdit ? `<button class="btn btn-ghost btn-icon btn-sm" onclick="modalEditarTarefa('${t.id}')" title="Editar tarefa"><svg width="13" height="13" viewBox="0 0 13 13" fill="none"><path d="M2 9.5V11h1.5l5.5-5.5-1.5-1.5L2 9.5zM10.85 2.65a1 1 0 0 0-1.42 0l-.79.79 1.42 1.42.79-.79a1 1 0 0 0 0-1.42z" fill="currentColor"/></svg></button>` : ''}
       </div>
@@ -1033,9 +1034,6 @@ export function renderListaInterna(el, tarefas) {
         const minha = t.dono_id === EU?.id;
         const canEdit = !projetoArquivado && (minha || podeEditar(PROJETO) || isAdmin());
         const podeCron = !projetoArquivado && (minha || (t.colaboradores_ids || []).includes(EU?.id) || isAdmin());
-        const timerAtivoPorTarefa2 = {};
-        Object.entries(TIMERS).forEach(([sid, timer]) => { timerAtivoPorTarefa2[timer.tarefaId] = sid; });
-        const sessaoAtiva = timerAtivoPorTarefa2[t.id];
         const data = t.data ? prazoFmt(t.data, true) : '—';
         const statusBtn = canEdit
           ? `<select class="status-sel status-select" style="height:28px;padding:2px 4px;font-size:var(--fs-xs)" onchange="mudarStatus('${t.id}',this.value,this)">
@@ -1064,7 +1062,17 @@ export function renderListaInterna(el, tarefas) {
               ${canEdit ? `<button class="btn btn-ghost btn-icon btn-sm" onclick="duplicarTarefa('${t.id}')" title="Duplicar"><svg width="13" height="13" viewBox="0 0 13 13" fill="none"><rect x="2" y="3" width="6" height="6" rx="1" stroke="currentColor" stroke-width="1.2"/><rect x="5" y="6" width="6" height="6" rx="1" stroke="currentColor" stroke-width="1.2"/></svg></button>` : ''}
               ${canEdit ? `<button class="btn btn-ghost btn-icon btn-sm" onclick="modalEditarTarefa('${t.id}')" title="Editar"><svg width="13" height="13" viewBox="0 0 13 13" fill="none"><path d="M2 9.5V11h1.5l5.5-5.5-1.5-1.5L2 9.5zM10.85 2.65a1 1 0 0 0-1.42 0l-.79.79 1.42 1.42.79-.79a1 1 0 0 0 0-1.42z" fill="currentColor"/></svg></button>` : ''}
               ${canEdit ? `<button class="btn btn-danger btn-icon btn-sm" onclick="deletarTarefa('${t.id}')" title="Excluir"><svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M1.5 1.5l9 9M10.5 1.5l-9 9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></button>` : ''}
-              ${sessaoAtiva ? `<button class="btn btn-danger btn-sm" onclick="pararCronometro('${sessaoAtiva}')" title="Parar"><svg class="btn-icon-svg" width="11" height="11" viewBox="0 0 11 11" fill="none"><rect x="2" y="2" width="7" height="7" rx="1" fill="currentColor"/></svg>Parar</button>` : (podeCron ? `<button class="btn btn-secondary btn-sm" onclick="iniciarCronometro('${t.id}','${esc(t.nome)}')" title="Iniciar"><svg class="btn-icon-svg" width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M4 2.5l5 3.5-5 3.5v-7z" fill="currentColor"/></svg>Cronômetro</button>` : '')}
+              ${renderTimerActions({
+                tarefaId: t.id,
+                tarefaNome: t.nome,
+                projetoId: PROJETO?.id,
+                size: 'sm',
+                compact: true,
+                allowStart: podeCron,
+                showOpenTask: false,
+                showHistory: true,
+                showInterval: false,
+              })}
             </div>
           </div>
         </div>`;
@@ -1125,27 +1133,21 @@ export function renderMapa(el, tarefas) {
         ${pendentes.map((t, i) => {
           const minha = t.dono_id === EU?.id;
           const podeCron = minha || (t.colaboradores_ids||[]).includes(EU?.id) || isAdmin();
-          const sessaoAtiva = Object.entries(TIMERS).find(([,timer]) => timer.tarefaId === t.id)?.[0];
           const diasT = diasRestantes(t.data || null);
           const urgt = diasT !== null && diasT <= 2;
 
-          const cronHtml = sessaoAtiva
-            ? `<button class="btn btn-danger btn-sm"
-                       onclick="pararCronometro('${sessaoAtiva}');event.stopPropagation()"
-                       style="flex-shrink:0">
-                 <svg width="10" height="10" viewBox="0 0 10 10" fill="none" style="margin-right:3px">
-                   <rect x="1.5" y="1.5" width="7" height="7" rx="1" fill="currentColor"/>
-                 </svg>Parar
-               </button>`
-            : podeCron
-              ? `<button class="btn btn-ghost btn-sm"
-                         onclick="iniciarCronometro('${t.id}','${esc(t.nome)}');event.stopPropagation()"
-                         style="color:var(--green);flex-shrink:0">
-                   <svg width="10" height="10" viewBox="0 0 10 10" fill="none" style="margin-right:3px">
-                     <path d="M3 1.5l5 3.5-5 3.5v-7z" fill="currentColor"/>
-                   </svg>Iniciar
-                 </button>`
-              : '';
+          const cronHtml = renderTimerActions({
+            tarefaId: t.id,
+            tarefaNome: t.nome,
+            projetoId: PROJETO?.id,
+            size: 'sm',
+            compact: true,
+            allowStart: podeCron,
+            showOpenTask: false,
+            showHistory: false,
+            showInterval: false,
+            stopPropagation: true,
+          });
 
           return `
           <div class="mapa-item ${t.foco&&minha?'is-foco':''}">

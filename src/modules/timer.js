@@ -8,6 +8,100 @@ import { req, invalidarCacheProjetos } from './api.js';
 import { toast, abrirModal, fecharModal, confirmar, btnLoading } from './ui.js';
 import { esc, gv, fmtDuracao, fmtHoras, fmtDatetime, fmtDatetimeInput, agora, isAdmin, listarDetalhesTarefa, salvarDetalhesTarefa } from './utils.js';
 
+let _timerMutationLocked = false;
+
+function jsArg(value = '') {
+  return String(value).replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+}
+
+function getTimerEntries() {
+  return Object.entries(TIMERS || {});
+}
+
+export function getSessaoAtivaTarefa(tarefaId) {
+  if (!tarefaId) return null;
+  return getTimerEntries().find(([, timer]) => String(timer.tarefaId) === String(tarefaId)) || null;
+}
+
+export function getPrimeiraSessaoAtiva() {
+  return getTimerEntries()[0] || null;
+}
+
+export function timerMutationEmAndamento() {
+  return _timerMutationLocked;
+}
+
+async function withTimerMutationLock(run) {
+  if (_timerMutationLocked) return false;
+  _timerMutationLocked = true;
+  try {
+    await run();
+  } finally {
+    _timerMutationLocked = false;
+  }
+  return true;
+}
+
+function iconCronometro(tipo) {
+  if (tipo === 'start') return '<svg class="btn-icon-svg" width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true"><path d="M4 2.5l5 3.5-5 3.5v-7z" fill="currentColor"/></svg>';
+  if (tipo === 'stop') return '<svg class="btn-icon-svg" width="11" height="11" viewBox="0 0 11 11" fill="none" aria-hidden="true"><rect x="2" y="2" width="7" height="7" rx="1" fill="currentColor"/></svg>';
+  if (tipo === 'interval') return '<svg class="btn-icon-svg" width="11" height="11" viewBox="0 0 11 11" fill="none" aria-hidden="true"><path d="M5.5 2v7M2 5.5h7" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>';
+  if (tipo === 'history') return '<svg class="btn-icon-svg" width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true"><rect x="2" y="2" width="10" height="10" rx="2" stroke="currentColor" stroke-width="1.3"/><path d="M4.5 5.2h5M4.5 7h5M4.5 8.8h3" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>';
+  return '<svg class="btn-icon-svg" width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true"><path d="M4.5 2l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+}
+
+export function renderTimerActions(opts = {}) {
+  const {
+    tarefaId,
+    tarefaNome = 'Tarefa',
+    projetoId = '',
+    size = 'sm',
+    compact = false,
+    allowStart = true,
+    showOpenTask = true,
+    showHistory = false,
+    showInterval = false,
+    stopPropagation = false,
+  } = opts;
+  const sessaoTarefa = getSessaoAtivaTarefa(tarefaId);
+  const sessaoGlobal = getPrimeiraSessaoAtiva();
+  const existeOutraSessaoAtiva = !!(sessaoGlobal && (!sessaoTarefa || sessaoGlobal[0] !== sessaoTarefa[0]));
+  const busy = timerMutationEmAndamento();
+  const clickSuffix = stopPropagation ? ';event.stopPropagation()' : '';
+  const btnSizeClass = size === 'sm' ? ' btn-sm' : '';
+  const estadoClass = compact ? ' timer-actions-group timer-actions-group--compact' : ' timer-actions-group';
+
+  const botoes = [];
+  if (sessaoTarefa) {
+    botoes.push(`<button class="btn btn-danger${btnSizeClass}" ${busy ? 'disabled' : ''} onclick="pararCronometro('${sessaoTarefa[0]}')${clickSuffix}" title="Encerrar sessão">${iconCronometro('stop')}Encerrar sessão</button>`);
+  } else if (allowStart) {
+    const disabled = busy || existeOutraSessaoAtiva;
+    const title = existeOutraSessaoAtiva ? 'Encerre a sessão ativa atual antes de iniciar um novo cronômetro' : 'Iniciar cronômetro';
+    botoes.push(`<button class="btn btn-primary${btnSizeClass}" ${disabled ? 'disabled' : ''} onclick="iniciarCronometro('${jsArg(tarefaId)}','${jsArg(tarefaNome)}')${clickSuffix}" title="${title}">${iconCronometro('start')}Iniciar cronômetro</button>`);
+  }
+  if (showInterval && sessaoTarefa) {
+    botoes.push(`<button class="btn btn-secondary${btnSizeClass}" ${busy ? 'disabled' : ''} onclick="modalAdicionarIntervalo('${sessaoTarefa[0]}')${clickSuffix}" title="Adicionar intervalo">${iconCronometro('interval')}Adicionar intervalo</button>`);
+  }
+  if (showHistory && tarefaId) {
+    botoes.push(`<button class="btn btn-ghost${btnSizeClass}" onclick="expandirSessoes('${jsArg(tarefaId)}')${clickSuffix}" title="Ver registros">${iconCronometro('history')}Ver registros</button>`);
+  }
+  if (showOpenTask && tarefaId && projetoId) {
+    botoes.push(`<button class="btn btn-ghost${btnSizeClass}" onclick="abrirTarefaContexto('${jsArg(tarefaId)}','${jsArg(projetoId)}')${clickSuffix}" title="Abrir tarefa">${iconCronometro('open')}Abrir tarefa</button>`);
+  } else if (showOpenTask && existeOutraSessaoAtiva) {
+    const tarefaAtiva = sessaoGlobal?.[1] || null;
+    if (tarefaAtiva?.tarefaId && tarefaAtiva?.projeto_id) {
+      botoes.push(`<button class="btn btn-ghost${btnSizeClass}" onclick="abrirTarefaContexto('${jsArg(tarefaAtiva.tarefaId)}','${jsArg(tarefaAtiva.projeto_id)}')${clickSuffix}" title="Abrir tarefa ativa">${iconCronometro('open')}Abrir tarefa ativa</button>`);
+    }
+  }
+  return `<div class="${estadoClass.trim()}">${botoes.join('')}</div>`;
+}
+
+async function refreshCronometroUI() {
+  await carregarTimersAtivos();
+  setRelatorioCache(null);
+  if (window.refreshCurrentRoute) await window.refreshCurrentRoute({ invalidateProjects: true });
+}
+
 export function limparTicksSessao(tarefaId) {
   const ids = SESSAO_TICKS.get(tarefaId) || [];
   ids.forEach(clearInterval);
@@ -17,17 +111,17 @@ export function limparTicksSessao(tarefaId) {
 export async function carregarTimersAtivos() {
   try {
     const ativas = await req('GET', '/tempo/ativas');
+    const timersAtualizados = {};
     for (const s of ativas) {
-      if (!TIMERS[s.id]) {
-        TIMERS[s.id] = {
-          tarefaId: s.tarefa_id,
-          tarefa_nome: s.tarefa_nome,
-          projeto_nome: s.projeto_nome,
-          projeto_id: s.projeto_id,
-          inicio: s.inicio,
-        };
-      }
+      timersAtualizados[s.id] = {
+        tarefaId: s.tarefa_id,
+        tarefa_nome: s.tarefa_nome,
+        projeto_nome: s.projeto_nome,
+        projeto_id: s.projeto_id,
+        inicio: s.inicio,
+      };
     }
+    setTimers(timersAtualizados);
     renderTimerDock();
     atualizarTempoListaVisivel();
   } catch {}
@@ -46,43 +140,34 @@ export function atualizarTempoListaVisivel() {
 
 export async function iniciarCronometro(tarefaId, tarefaNome) {
   const { carregarColegasAtivos } = await import('./notifications.js');
-  try {
-    const { id, inicio } = await req('POST', `/tarefas/${tarefaId}/tempo`, { inicio: agora() }).catch(e => {
-      if (e.message.includes('permissão')) throw new Error('Você precisa ser colaborador desta tarefa para cronometrar');
-      throw e;
-    });
-    TIMERS[id] = {
-      tarefaId,
-      tarefa_nome: tarefaNome,
-      projeto_nome: PROJETO?.nome || '',
-      projeto_id: PROJETO?.id || '',
-      inicio,
-    };
-    invalidarCacheProjetos();
-    renderTimerDock();
-    atualizarTempoListaVisivel();
-    toast('Cronômetro iniciado');
-    carregarColegasAtivos();
-  } catch (e) { toast(e.message, 'err'); }
+  const started = await withTimerMutationLock(async () => {
+    try {
+      await req('POST', `/tarefas/${tarefaId}/tempo`, { inicio: agora() }).catch(e => {
+        if (e.message.includes('permissão')) throw new Error('Você precisa ser colaborador desta tarefa para iniciar o cronômetro');
+        if (e.message.includes('sessão ativa')) throw new Error('Já existe uma sessão ativa. Encerre a sessão atual para iniciar outra.');
+        throw e;
+      });
+      invalidarCacheProjetos();
+      await refreshCronometroUI();
+      toast('Cronômetro iniciado');
+      carregarColegasAtivos();
+    } catch (e) { toast(e.message, 'err'); }
+  });
+  if (!started) toast('Aguarde a ação atual do cronômetro terminar.');
 }
 
 export async function pararCronometro(sessaoId) {
   const { carregarColegasAtivos } = await import('./notifications.js');
-  try {
-    await req('PUT', `/tempo/${sessaoId}/parar`, { fim: agora() });
-    delete TIMERS[sessaoId];
-    invalidarCacheProjetos();
-    renderTimerDock();
-    atualizarTempoListaVisivel();
-    toast('Cronômetro parado');
-    setRelatorioCache(null);
-    carregarColegasAtivos();
-    // Recarregar se estiver na página do projeto certo
-    if (PROJETO) {
-      const { recarregarProjeto } = await import('./project.js');
-      await recarregarProjeto();
-    }
-  } catch (e) { toast(e.message, 'err'); }
+  const stopped = await withTimerMutationLock(async () => {
+    try {
+      await req('PUT', `/tempo/${sessaoId}/parar`, { fim: agora() });
+      invalidarCacheProjetos();
+      await refreshCronometroUI();
+      toast('Sessão encerrada');
+      carregarColegasAtivos();
+    } catch (e) { toast(e.message, 'err'); }
+  });
+  if (!stopped) toast('Aguarde a ação atual do cronômetro terminar.');
 }
 
 export function renderTimerDock() {
@@ -113,10 +198,16 @@ export function renderTimerDock() {
         </div>
         <div class="timer-display${longo ? ' timer-alerta' : ''}" id="tdisp-${sessaoId}">${fmtDuracao(segundos)}</div>
         ${longo ? `<div class="timer-aviso"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" style="vertical-align:-2px;margin-right:4px"><path d="M12 3.5l9 15.5H3l9-15.5z" stroke="currentColor" stroke-width="1.9"/><path d="M12 9v5" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/><circle cx="12" cy="16.7" r="1" fill="currentColor"/></svg>Timer rodando há mais de ${Math.floor(horas)}h</div>` : ''}
-        <div class="timer-actions">
-          <button class="btn btn-sm" onclick="modalAdicionarIntervalo('${sessaoId}')"><svg width="11" height="11" viewBox="0 0 11 11" fill="none" style="margin-right:4px"><path d="M5.5 2v7M2 5.5h7" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>Intervalo</button>
-          <button class="btn btn-sm btn-danger" onclick="pararCronometro('${sessaoId}')"><svg width="11" height="11" viewBox="0 0 11 11" fill="none" style="margin-right:4px"><rect x="2" y="2" width="7" height="7" rx="1" fill="currentColor"/></svg>Parar</button>
-        </div>
+        ${renderTimerActions({
+          tarefaId: t.tarefaId,
+          tarefaNome: t.tarefa_nome,
+          projetoId: t.projeto_id,
+          size: 'sm',
+          compact: true,
+          showOpenTask: true,
+          showHistory: true,
+          showInterval: true,
+        })}
       </div>`;
   }).join('');
 
@@ -156,17 +247,18 @@ export function modalAdicionarIntervalo(sessaoId) {
 export async function criarIntervalo(sessaoId) {
   const tipo = gv('m-tipo').trim();
   if (!tipo) { toast('Tipo obrigatório', 'err'); return; }
+  const iniRaw = gv('m-ini');
+  const fimRaw = gv('m-fim');
+  if (!iniRaw) { toast('Informe o início do intervalo.', 'err'); return; }
+  if (fimRaw && fimRaw < iniRaw) { toast('O fim do intervalo deve ser após o início.', 'err'); return; }
   btnLoading('btn-add-int', true);
   try {
-    const ini = gv('m-ini').replace('T', ' ');
-    const fim = gv('m-fim') ? gv('m-fim').replace('T', ' ') : null;
+    const ini = iniRaw.replace('T', ' ');
+    const fim = fimRaw ? fimRaw.replace('T', ' ') : null;
     await req('POST', `/tempo/${sessaoId}/intervalos`, { tipo, inicio: ini, fim });
     invalidarCacheProjetos();
     fecharModal(); toast('Intervalo adicionado');
-    if (PROJETO) {
-      const { recarregarProjeto } = await import('./project.js');
-      await recarregarProjeto();
-    }
+    await refreshCronometroUI();
   } catch (e) { toast(e.message, 'err'); btnLoading('btn-add-int', false); }
 }
 
@@ -260,6 +352,7 @@ export async function editarSessao(sessaoId, inicio, fim) {
 
 export async function salvarSessao(sessaoId) {
   const ini = gv('m-ini');
+  if (!ini) { toast('Informe o início da sessão.', 'err'); return; }
   const fimVal = gv('m-fim');
   if (fimVal && fimVal < ini) { toast('O horário de fim deve ser após o início', 'err'); return; }
   btnLoading('btn-ed-sess', true);
@@ -268,11 +361,7 @@ export async function salvarSessao(sessaoId) {
     await req('PUT', `/tempo/${sessaoId}`, { inicio: ini.replace('T',' '), fim });
     invalidarCacheProjetos();
     fecharModal(); toast('Sessão atualizada');
-    setRelatorioCache(null);
-    if (PROJETO) {
-      const { recarregarProjeto } = await import('./project.js');
-      await recarregarProjeto();
-    }
+    await refreshCronometroUI();
   } catch (e) { toast(e.message,'err'); btnLoading('btn-ed-sess', false); }
 }
 
@@ -282,21 +371,20 @@ export async function deletarSessao(sessaoId, tarefaId) {
       await req('DELETE', `/tempo/${sessaoId}`);
       invalidarCacheProjetos();
       toast('Sessão excluída');
-      if (PROJETO) {
-        const { recarregarProjeto } = await import('./project.js');
-        await recarregarProjeto();
-      }
+      await refreshCronometroUI();
     } catch (e) { toast(e.message,'err'); }
   }, { titulo: 'Excluir sessão', btnTexto: 'Excluir', danger: true });
 }
 
 export async function editarIntervalo(intervaloId) {
+  let intervalo = null;
+  try { intervalo = await req('GET', `/intervalos/${intervaloId}`); } catch (e) { toast(e.message, 'err'); }
   abrirModal(`
     <h2>Editar intervalo</h2>
-    <div class="form-row"><label>Tipo</label><input id="m-tipo" placeholder="Lanche, Reunião..."></div>
+    <div class="form-row"><label>Tipo</label><input id="m-tipo" placeholder="Lanche, Reunião..." value="${esc(intervalo?.tipo || '')}"></div>
     <div class="form-grid">
-      <div class="form-row"><label>Início</label><input type="datetime-local" id="m-ini"></div>
-      <div class="form-row"><label>Fim</label><input type="datetime-local" id="m-fim"></div>
+      <div class="form-row"><label>Início</label><input type="datetime-local" id="m-ini" value="${fmtDatetimeInput(intervalo?.inicio || '')}"></div>
+      <div class="form-row"><label>Fim</label><input type="datetime-local" id="m-fim" value="${fmtDatetimeInput(intervalo?.fim || '')}"></div>
     </div>
     <div class="modal-footer">
       <button class="btn" onclick="fecharModal()">Cancelar</button>
@@ -305,15 +393,18 @@ export async function editarIntervalo(intervaloId) {
 }
 
 export async function salvarIntervalo(id) {
+  const tipo = gv('m-tipo').trim();
+  const ini = gv('m-ini');
+  const fimRaw = gv('m-fim');
+  if (!tipo) { toast('Tipo obrigatório.', 'err'); return; }
+  if (!ini) { toast('Informe o início do intervalo.', 'err'); return; }
+  if (fimRaw && fimRaw < ini) { toast('O fim do intervalo deve ser após o início.', 'err'); return; }
   btnLoading('btn-ed-int', true);
   try {
-    await req('PUT', `/intervalos/${id}`, { tipo: gv('m-tipo'), inicio: gv('m-ini').replace('T',' '), fim: gv('m-fim') ? gv('m-fim').replace('T',' ') : null });
+    await req('PUT', `/intervalos/${id}`, { tipo, inicio: ini.replace('T',' '), fim: fimRaw ? fimRaw.replace('T',' ') : null });
     invalidarCacheProjetos();
     fecharModal(); toast('Intervalo atualizado');
-    if (PROJETO) {
-      const { recarregarProjeto } = await import('./project.js');
-      await recarregarProjeto();
-    }
+    await refreshCronometroUI();
   } catch (e) { toast(e.message,'err'); btnLoading('btn-ed-int', false); }
 }
 
@@ -323,10 +414,7 @@ export async function deletarIntervalo(id, tarefaId) {
       await req('DELETE', `/intervalos/${id}`);
       invalidarCacheProjetos();
       toast('Intervalo excluído');
-      if (PROJETO) {
-        const { recarregarProjeto } = await import('./project.js');
-        await recarregarProjeto();
-      }
+      await refreshCronometroUI();
     } catch (e) { toast(e.message,'err'); }
   }, { titulo: 'Excluir intervalo', btnTexto: 'Excluir', danger: true });
 }

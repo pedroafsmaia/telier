@@ -16,6 +16,7 @@ import {
   renderAbaTarefas, renderMapa, renderRelatorio, renderDecisoes,
   renderAoVivoStream, restaurarEstadoTarefasProjeto,
 } from './tasks.js';
+import { renderTimerActions } from './timer.js';
 
 const FASES = ['Estudo preliminar','Anteprojeto','Projeto básico','Projeto executivo','Em obra'];
 const STATUS_PROJ = ['A fazer','Em andamento','Em revisão','Pausado','Concluído','Arquivado'];
@@ -82,15 +83,18 @@ export function renderProjeto(proj, tarefas, decisoes, abaAtiva, resumoHoras = [
   const total = tarefas.length;
   const conc = tarefas.filter(t => t.status === 'Concluída').length;
   const focoMinha = tarefas.find(t => t.foco && t.dono_id === EU?.id);
-  const focoSessaoAtiva = focoMinha
-    ? Object.entries(TIMERS).find(([, t]) => t.tarefaId === focoMinha.id)
-    : null;
   const focoBtnHtml = focoMinha && !isArquivado
-    ? (focoSessaoAtiva
-        ? `<button class="btn btn-sm btn-danger"
-             onclick="pararCronometro('${focoSessaoAtiva[0]}')">Parar</button>`
-        : `<button class="btn btn-sm btn-primary"
-             onclick="iniciarCronometro('${focoMinha.id}','${esc(focoMinha.nome)}')">Iniciar</button>`)
+    ? renderTimerActions({
+        tarefaId: focoMinha.id,
+        tarefaNome: focoMinha.nome,
+        projetoId: proj.id,
+        size: 'sm',
+        compact: true,
+        allowStart: true,
+        showOpenTask: true,
+        showHistory: true,
+        showInterval: false,
+      })
     : '';
   const dias = diasRestantes(proj.prazo);
   const urgente = dias !== null && dias <= 7 && !projetoConcluido(statusProjeto);
@@ -143,7 +147,7 @@ export function renderProjeto(proj, tarefas, decisoes, abaAtiva, resumoHoras = [
           <div class="project-ops-buttons">
             <button class="btn btn-sm btn-primary" onclick="mudarAba('tarefas')">Ir para tarefas</button>
             ${canOperateTasks ? `<button class="btn btn-sm" onclick="modalNovaTarefa('${proj.id}')">Nova tarefa</button>` : ''}
-            ${tempoProjetoAtivo ? `<button class="btn btn-sm" onclick="expandirSessoes('${tempoProjetoAtivo.tarefaId}')">Ver tempo</button>` : ''}
+            ${tempoProjetoAtivo ? `<button class="btn btn-sm" onclick="expandirSessoes('${tempoProjetoAtivo.tarefaId}')">Ver registros</button>` : ''}
           </div>
         </div>
         <div class="project-ops-card">

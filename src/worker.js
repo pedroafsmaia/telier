@@ -511,6 +511,7 @@ async function ensureIndexes(env) {
     env.DB.prepare('CREATE INDEX IF NOT EXISTS idx_tarefas_projeto   ON tarefas(projeto_id)'),
     env.DB.prepare('CREATE INDEX IF NOT EXISTS idx_sessoes_tarefa    ON sessoes_tempo(tarefa_id)'),
     env.DB.prepare('CREATE INDEX IF NOT EXISTS idx_sessoes_fim       ON sessoes_tempo(fim)'),
+    env.DB.prepare('CREATE UNIQUE INDEX IF NOT EXISTS idx_sessoes_tempo_usuario_ativa ON sessoes_tempo(usuario_id) WHERE fim IS NULL'),
     env.DB.prepare('CREATE INDEX IF NOT EXISTS idx_intervalos_sessao ON intervalos(sessao_id)'),
     env.DB.prepare('CREATE INDEX IF NOT EXISTS idx_colab_tarefa      ON colaboradores_tarefa(tarefa_id)'),
   ]);
@@ -2387,6 +2388,16 @@ export default {
         if (!await podeCronometrar(env, tarefaId, u.uid, u.papel)) {
           return fail('Sem permissão — você precisa ser dono ou colaborador desta tarefa', 403);
         }
+        const ativaExistente = await env.DB.prepare(`
+          SELECT st.id, st.tarefa_id, t.nome as tarefa_nome
+          FROM sessoes_tempo st
+          JOIN tarefas t ON t.id = st.tarefa_id
+          WHERE st.usuario_id = ? AND st.fim IS NULL
+          LIMIT 1
+        `).bind(u.uid).first();
+        if (ativaExistente) {
+          return fail(`Já existe uma sessão ativa (${ativaExistente.tarefa_nome || 'tarefa em andamento'}). Encerre a sessão atual para iniciar outra.`, 409);
+        }
         const _body = await readJsonBody(request);
         const inicio = _body.inicio;
         const id = 'ste_' + uid();
@@ -2412,6 +2423,8 @@ export default {
         const _body = await readJsonBody(request);
         const inicio = _body.inicio;
         const fim = _body.fim;
+        if (!inicio) return fail('Início obrigatório');
+        if (fim && fim < inicio) return fail('Fim deve ser após o início');
         await env.DB.prepare('UPDATE sessoes_tempo SET inicio=?, fim=? WHERE id=?')
           .bind(inicio, fim || null, sessaoId).run();
         return ok({ ok: true });
@@ -2745,6 +2758,7 @@ export default {
       if (!tipo?.trim()) return fail('Tipo obrigatório');
       const id = 'int_' + uid();
       const inicioStr = inicio || new Date().toISOString().slice(0, 19).replace('T', ' ');
+      if (fim && fim < inicioStr) return fail('Fim deve ser após o início');
       await env.DB.prepare(
         'INSERT INTO intervalos (id, sessao_id, tipo, inicio, fim) VALUES (?, ?, ?, ?, ?)'
       ).bind(id, sessaoId, tipo.trim(), inicioStr, fim || null).run();
@@ -2763,13 +2777,20 @@ export default {
       if (!iv) return fail('Intervalo não encontrado', 404);
       if (iv.usuario_id !== u.uid && !isAdmin(u)) return fail('Sem permissão', 403);
 
+      if (method === 'GET') {
+        return ok(iv);
+      }
+
       if (method === 'PUT') {
         const _body = await readJsonBody(request);
         const tipo = clampStr(_body.tipo, 100, 'tipo');
         const inicio = _body.inicio;
         const fim = _body.fim;
+        if (!tipo?.trim()) return fail('Tipo obrigatório');
+        if (!inicio) return fail('Início obrigatório');
+        if (fim && fim < inicio) return fail('Fim deve ser após o início');
         await env.DB.prepare('UPDATE intervalos SET tipo=?, inicio=?, fim=? WHERE id=?')
-          .bind(tipo, inicio, fim || null, intervaloId).run();
+          .bind(tipo.trim(), inicio, fim || null, intervaloId).run();
         return ok({ ok: true });
       }
 
