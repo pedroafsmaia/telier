@@ -56,6 +56,80 @@ export function normalizarStatusProjeto(status) {
   if (status === 'Aguardando aprovação') return 'Em revisão'; // backward compat
   return status;
 }
+
+function normalizarTokenProjeto(v) {
+  return String(v || '')
+    .trim()
+    .replace(/^tag-/, '')
+    .replace(/[_-]+/g, ' ')
+    .replace(/\s+/g, ' ')
+    .toLowerCase();
+}
+
+function capitalizarFrase(v) {
+  const small = new Set(['de', 'da', 'do', 'das', 'dos', 'e', 'em']);
+  return v.split(' ').filter(Boolean).map((word, idx) => {
+    if (idx > 0 && small.has(word)) return word;
+    return word.charAt(0).toUpperCase() + word.slice(1);
+  }).join(' ');
+}
+
+export function formatarFaseProjeto(fase) {
+  const key = normalizarTokenProjeto(fase);
+  const mapa = {
+    'estudo preliminar': 'Estudo preliminar',
+    'anteprojeto': 'Anteprojeto',
+    'projeto basico': 'Projeto básico',
+    'projeto básico': 'Projeto básico',
+    'projeto executivo': 'Projeto executivo',
+    'em obra': 'Em obra',
+  };
+  return mapa[key] || (key ? capitalizarFrase(key) : 'Não definida');
+}
+
+export function formatarStatusProjeto(status) {
+  const key = normalizarTokenProjeto(normalizarStatusProjeto(status));
+  const mapa = {
+    'a fazer': 'A fazer',
+    'em andamento': 'Em andamento',
+    'em revisao': 'Em revisão',
+    'em revisão': 'Em revisão',
+    'pausado': 'Pausado',
+    'concluido': 'Concluído',
+    'concluído': 'Concluído',
+    'arquivado': 'Arquivado',
+  };
+  return mapa[key] || (key ? capitalizarFrase(key) : 'Não definido');
+}
+
+export function formatarPrioridadeProjeto(prioridade) {
+  const key = normalizarTokenProjeto(prioridade);
+  const mapa = {
+    'alta': 'Alta',
+    'media': 'Média',
+    'média': 'Média',
+    'baixa': 'Baixa',
+  };
+  return mapa[key] || (key ? capitalizarFrase(key) : 'Não definida');
+}
+
+export function formatarPrazoProjeto(prazo) {
+  return prazo ? (prazoFmt(prazo, true) || 'Sem prazo') : 'Sem prazo';
+}
+
+export function formatarAreaProjeto(areaM2) {
+  const area = Number(areaM2);
+  if (!Number.isFinite(area) || area <= 0) return '—';
+  return `${area.toLocaleString('pt-BR')} m²`;
+}
+
+export function formatarProgressoProjeto(totalTarefas, tarefasConcluidas) {
+  const total = Number(totalTarefas) || 0;
+  const concluidas = Number(tarefasConcluidas) || 0;
+  if (!total) return 'Sem tarefas';
+  const pct = Math.round((concluidas / total) * 100);
+  return `${concluidas}/${total} · ${pct}%`;
+}
 export function projetoConcluido(status) {
   const s = normalizarStatusProjeto(status);
   return s === 'Concluído';

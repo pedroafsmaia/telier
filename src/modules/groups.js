@@ -6,7 +6,11 @@ import {
 } from './state.js';
 import { req, invalidarCacheProjetos } from './api.js';
 import { toast, toastUndo, abrirModal, fecharModal, confirmar, btnLoading, setBreadcrumb, setShellView, slideContent } from './ui.js';
-import { esc, gv, sel, avatar, tag, fmtHoras, prazoFmt, diasRestantes, souDono, isAdmin, normalizarStatusProjeto, PT, PO, DT, DO, normalizarColaboradoresTarefas, tarefaCompartilhadaComigo } from './utils.js';
+import {
+  esc, gv, sel, avatar, tag, fmtHoras, prazoFmt, diasRestantes, souDono, isAdmin, normalizarStatusProjeto,
+  formatarFaseProjeto, formatarStatusProjeto, formatarProgressoProjeto,
+  PT, PO, DT, DO, normalizarColaboradoresTarefas, tarefaCompartilhadaComigo,
+} from './utils.js';
 import { renderAoVivoStream } from './tasks.js';
 
 export async function renderGroupsHome(opts = {}) {
@@ -559,11 +563,13 @@ export function renderGrupoAbaRelatorio(el, projetos) {
     </div>
     <div class="rel-stack">
       ${projetos.map(p => {
-        const status  = normalizarStatusProjeto(p.status);
+        const status  = formatarStatusProjeto(p.status);
         const isArqP  = status === 'Arquivado';
         const t  = Number(p.total_tarefas      || 0);
         const c  = Number(p.tarefas_concluidas || 0);
         const pct = t ? Math.round(c / t * 100) : 0;
+        const faseProjeto = formatarFaseProjeto(p.fase);
+        const progressoProjeto = formatarProgressoProjeto(t, c);
         const vencido = p.prazo && p.prazo < hoje && !['Concluído','Arquivado'].includes(status);
         const diasP   = p.prazo ? diasRestantes(p.prazo) : null;
         const barColor = isArqP ? 'var(--text-muted)' : pct === 100 ? 'var(--green)' : vencido ? 'var(--red)' : 'var(--accent)';
@@ -575,7 +581,7 @@ export function renderGrupoAbaRelatorio(el, projetos) {
                 ${esc(p.nome)}
               </div>
               <div class="mapa-sub">
-                ${esc(p.fase||'')} · ${c}/${t} tarefas · ${pct}%
+                ${esc(faseProjeto)} · ${esc(progressoProjeto)}
                 ${vencido && diasP !== null ? `<span class="alert">· ${diasP < 0 ? Math.abs(diasP) + 'd atraso' : 'vence hoje'}</span>` : ''}
               </div>
               <div class="mini-progress">

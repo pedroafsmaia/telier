@@ -80,6 +80,20 @@ Backend principal:
 - Se um componente herdado denunciar visualmente a UI antiga, ajuste-o para herdar a nova linguagem.
 - Evite criar features novas que desviem do objetivo principal.
 
+### Regra obrigatória para tarefas de UI (Codex)
+
+Ao alterar UI, layout, CSS, componentes visuais ou responsividade:
+
+1. Ler `docs/redesign/visual-grammar.md`
+2. Ler `docs/redesign/ui-review-checklist.md`
+3. Ler `docs/redesign/component-anatomy.md` ao trabalhar com componentes
+4. Ler `docs/redesign/interaction-states.md` ao trabalhar com comportamento de UI
+5. Seguir as regras desses documentos
+6. Não introduzir pills, badges ou chips decorativos como base de metadados
+7. Não criar variações de componente fora da anatomia definida
+8. Garantir consistência de estados e nunca deixar ação sem feedback visual
+9. Ao corrigir inconsistências recorrentes, atualizar também `docs/redesign/visual-grammar.md`
+
 ## Ordem preferida de execução
 
 1. Shell global

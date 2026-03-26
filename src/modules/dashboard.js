@@ -13,7 +13,8 @@ import {
   esc, gv, sel, avatar, tag, prazoFmt, diasRestantes, fmtHoras, fmtDuracao,
   isAdmin, isAdminRole, souDono, projetoConcluido, normalizarStatusProjeto,
   grupoProgressToneClass, grupoStatusToneClass, projetoArquivadoNoDash,
-  ST, PT, FT,
+  formatarFaseProjeto, formatarStatusProjeto, formatarPrioridadeProjeto,
+  formatarPrazoProjeto, formatarAreaProjeto, formatarProgressoProjeto,
 } from './utils.js';
 
 export function carregarFiltrosDash() {
@@ -578,7 +579,7 @@ export function renderProjetosDash(projetos, grupos) {
 
 export function renderCardsDash(projetos) {
   return projetos.map(p => {
-    const statusProjeto = normalizarStatusProjeto(p.status);
+    const statusProjeto = formatarStatusProjeto(p.status);
     const total = parseInt(p.total_tarefas) || 0;
     const conc = parseInt(p.tarefas_concluidas) || 0;
     const pct = total ? Math.round(conc / total * 100) : 0;
@@ -588,10 +589,12 @@ export function renderCardsDash(projetos) {
     const compartilhado = Number(p.compartilhado_comigo) === 1;
     const origem = p.origem_compartilhamento === 'grupo' ? 'via grupo' : p.origem_compartilhamento === 'manual' ? 'direto' : '';
     const podeCompartilhar = souDono(p.dono_id);
-    const faseTxt = FT[p.fase] || p.fase || 'Não definida';
-    const prioridadeTxt = PT[p.prioridade] || p.prioridade || 'Normal';
-    const prazoTxt = p.prazo ? prazoFmt(p.prazo, true) : 'Sem prazo';
-    const areaTxt = p.area_m2 ? `${p.area_m2.toLocaleString('pt-BR')} m²` : '—';
+    const faseTxt = formatarFaseProjeto(p.fase);
+    const prioridadeTxt = formatarPrioridadeProjeto(p.prioridade);
+    const prazoTxt = formatarPrazoProjeto(p.prazo);
+    const areaTxt = formatarAreaProjeto(p.area_m2);
+    const tarefasResumoTxt = total ? `${conc}/${total}` : 'Sem tarefas';
+    const progressoResumoTxt = formatarProgressoProjeto(total, conc);
     const statusTone = statusProjeto === 'Concluído'
       ? 'ok'
       : statusProjeto === 'Em andamento'
@@ -600,10 +603,10 @@ export function renderCardsDash(projetos) {
           ? 'muted'
           : 'warn';
     const prazoTone = urgente ? 'warn' : (p.prazo ? 'base' : 'muted');
-    const progressoTxt = total ? `${conc}/${total} tarefas · ${pct}%` : 'Sem tarefas registradas';
+    const contextoBase = p.grupo_nome ? `Grupo · ${p.grupo_nome}` : 'Sem grupo';
     const compartilhamentoTxt = compartilhado
-      ? `Compartilhado${origem ? ` · ${origem}` : ''}`
-      : 'Projeto interno';
+      ? `${contextoBase} · Compartilhado${origem ? ` ${origem}` : ''}`
+      : contextoBase;
     return `
       <div class="proj-card ${compartilhado ? 'shared' : ''}" data-status="${esc(statusProjeto)}"
         draggable="true"
@@ -639,8 +642,8 @@ export function renderCardsDash(projetos) {
             <span class="project-meta-value mono">${esc(areaTxt)}</span>
           </div>
           <div class="project-meta-field">
-            <span class="project-meta-label card-meta-label">Progresso</span>
-            <span class="project-meta-value mono">${esc(progressoTxt)}</span>
+            <span class="project-meta-label card-meta-label">Tarefas</span>
+            <span class="project-meta-value mono">${esc(tarefasResumoTxt)}</span>
           </div>
           ${timerAtivo ? `<div class="project-meta-field project-meta-field-live">
             <span class="project-meta-label card-meta-label">Atividade</span>
@@ -649,7 +652,7 @@ export function renderCardsDash(projetos) {
         </div>
         ${total ? `
         <div class="proj-card-progress">
-          <div class="proj-progress-nums">${conc}/${total} tarefas concluídas · ${pct}%</div>
+          <div class="proj-progress-nums">${esc(progressoResumoTxt)} concluídas</div>
           <div class="proj-progress-bar"><div class="proj-progress-fill ${pct===100?'done':'partial'}" style="width:${pct}%"></div></div>
         </div>` : ''}
         <div class="proj-card-footer">
