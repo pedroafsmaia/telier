@@ -134,14 +134,20 @@ export async function refreshCurrentRoute(opts = {}) {
   await renderCurrentRoute(opts);
 }
 
-export function goToday() { return navigateToRoute('today'); }
-export function goTasks() { return navigateToRoute('tasks'); }
-export function goProjects() { return navigateToRoute('projects'); }
-export function goGroups() { return navigateToRoute('groups'); }
-export function goAdmin(tab = 'agora') { return navigateToRoute('admin', { tab }); }
-export function goTask(id, projectId) { return navigateToRoute('task', { id, projectId }); }
-export function goProjeto(id) { return navigateToRoute('project', { id }); }
-export function goGrupo(id) { return navigateToRoute('group', { id }); }
+export function goToday() { closeSidebarDrawer(); return navigateToRoute('today'); }
+export function goTasks() { closeSidebarDrawer(); return navigateToRoute('tasks'); }
+export function goProjects() { closeSidebarDrawer(); return navigateToRoute('projects'); }
+export function goGroups() { closeSidebarDrawer(); return navigateToRoute('groups'); }
+export function goAdmin(tab = 'agora') { closeSidebarDrawer(); return navigateToRoute('admin', { tab }); }
+export function goTask(id, projectId) { closeSidebarDrawer(); return navigateToRoute('task', { id, projectId }); }
+export function goProjeto(id) { closeSidebarDrawer(); return navigateToRoute('project', { id }); }
+export function goGrupo(id) { closeSidebarDrawer(); return navigateToRoute('group', { id }); }
+export function closeSidebarDrawer() {
+  document.body.classList.remove('sidebar-drawer-open');
+}
+export function toggleSidebarDrawer() {
+  document.body.classList.toggle('sidebar-drawer-open');
+}
 
 // ── INIT ──
 async function init() {
@@ -205,17 +211,14 @@ export function goHome() {
 export function syncAdminModeUI() {
   const btn = document.getElementById('btn-admin-toggle');
   const adminLink = document.getElementById('sidebar-link-admin');
-  const adminLabel = document.getElementById('sidebar-label-admin');
   if (!btn) return;
   if (!isAdminRole()) {
     btn.style.display = 'none';
     if (adminLink) adminLink.style.display = 'none';
-    if (adminLabel) adminLabel.style.display = 'none';
     return;
   }
   btn.style.display = 'inline-flex';
   if (adminLink) adminLink.style.display = 'flex';
-  if (adminLabel) adminLabel.style.display = 'block';
   btn.innerHTML = `<svg width="12" height="12" viewBox="0 0 12 12" fill="none" style="flex-shrink:0"><path d="M1 4l3-3M1 4h4M11 8l-3 3M11 8H7" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>${ADMIN_MODE === 'admin' ? 'Visão admin' : 'Visão membro'}`;
   btn.title = ADMIN_MODE === 'admin'
     ? 'Clique para usar o sistema como usuário normal'
@@ -284,6 +287,8 @@ Object.assign(window, {
   goTask,
   goProjeto,
   goGrupo,
+  closeSidebarDrawer,
+  toggleSidebarDrawer,
   navigateToRoute,
   refreshCurrentRoute,
   getCurrentAppRoute,

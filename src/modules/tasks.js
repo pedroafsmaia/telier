@@ -174,7 +174,7 @@ export async function renderMinhasTarefas(opts = {}) {
         projeto_status: projeto.status,
       }));
     }));
-    const tarefas = tarefasPorProjeto.flat().filter(t => t.status !== 'ConcluÃ­da' || tarefaCompartilhadaComigo(t) || t.dono_id === EU?.id);
+    const tarefas = tarefasPorProjeto.flat().filter(t => t.status !== 'Concluída' || tarefaCompartilhadaComigo(t) || t.dono_id === EU?.id);
     const operacaoHoje = await req('GET', '/tarefas/operacao-hoje').catch(() => []);
     const resumoHoje = await req('GET', '/tempo/resumo-hoje').catch(() => null);
     const recentes = await req('GET', '/tempo/sessoes-recentes?limit=6').catch(() => []);
@@ -185,7 +185,7 @@ export async function renderMinhasTarefas(opts = {}) {
     const emAndamento = tarefas.filter(t => t.status === 'Em andamento').length;
     const comFoco = tarefas.filter(t => t.foco && t.dono_id === EU?.id).length;
 
-    const statusTabs = ['todos', 'A fazer', 'Em andamento', 'Bloqueada', 'ConcluÃ­da'];
+    const statusTabs = ['todos', 'A fazer', 'Em andamento', 'Bloqueada', 'Concluída'];
     const statusCountMap = Object.fromEntries(statusTabs.map(status => [
       status,
       status === 'todos' ? tarefas.length : tarefas.filter(t => t.status === status).length,
@@ -194,17 +194,17 @@ export async function renderMinhasTarefas(opts = {}) {
     c.innerHTML = `
       <div class="dash-header dash-header-spaced dash-head-grid">
         <div class="dash-head-main">
-          <div class="section-kicker">OperaÃ§Ã£o transversal</div>
+          <div class="section-kicker">Operação transversal</div>
           <div class="dash-title">Minhas tarefas</div>
-          <div class="dash-sub dash-sub-tight">A unidade de trabalho do Telier passa a ser a tarefa. Projeto e grupo entram como contexto estrutural, nÃ£o como ponto inicial de uso.</div>
+          <div class="dash-sub dash-sub-tight">A unidade de trabalho do Telier passa a ser a tarefa. Projeto e grupo entram como contexto estrutural, não como ponto inicial de uso.</div>
         </div>
         <div class="dash-actions">
-          <button class="btn" onclick="continuarUltimaTarefa()">Continuar Ãºltima tarefa</button>
+          <button class="btn" onclick="continuarUltimaTarefa()">Continuar última tarefa</button>
           <button class="btn btn-primary" onclick="modalNovaTarefa()">Nova tarefa</button>
         </div>
       </div>
       <div class="dash-metrics-strip">
-        <div class="dash-metric"><span class="dash-metric-label">Tarefas visÃ­veis</span><span class="dash-metric-value">${tarefasFiltradas.length}</span></div>
+        <div class="dash-metric"><span class="dash-metric-label">Tarefas visíveis</span><span class="dash-metric-value">${tarefasFiltradas.length}</span></div>
         <div class="dash-metric"><span class="dash-metric-label">Em andamento</span><span class="dash-metric-value">${emAndamento}</span></div>
         <div class="dash-metric"><span class="dash-metric-label">Meu foco</span><span class="dash-metric-value">${comFoco}</span></div>
         <div class="dash-metric"><span class="dash-metric-label">Horas hoje</span><span class="dash-metric-value">${parseFloat(resumoHoje?.horas_hoje || 0).toFixed(1)}h</span></div>
@@ -249,7 +249,7 @@ export async function renderMinhasTarefas(opts = {}) {
           <div>
             <div class="task-view-eyebrow">Fila operacional</div>
             <div class="task-view-title">${operacaoHoje.length} ponto${operacaoHoje.length === 1 ? '' : 's'} de reentrada hoje</div>
-            <div class="task-view-copy">As tarefas abaixo priorizam retomada, foco e continuidade de execuÃ§Ã£o.</div>
+            <div class="task-view-copy">As tarefas abaixo priorizam retomada, foco e continuidade de execução.</div>
           </div>
           <div class="task-view-kpi">${recentes.length} recente${recentes.length === 1 ? '' : 's'}</div>
         </div>
@@ -259,7 +259,7 @@ export async function renderMinhasTarefas(opts = {}) {
               <div class="mapa-rank">${String(index + 1).padStart(2, '0')}</div>
               <div class="mapa-body">
                 <div class="mapa-nome">${esc(t.nome || t.tarefa_nome)}</div>
-                <div class="mapa-sub">${esc(t.projeto_nome || 'Projeto')} ${t.grupo_nome ? `Â· ${esc(t.grupo_nome)}` : ''}</div>
+                <div class="mapa-sub">${esc(t.projeto_nome || 'Projeto')} ${t.grupo_nome ? `· ${esc(t.grupo_nome)}` : ''}</div>
               </div>
               <div class="mapa-tags">
                 ${t.prioridade ? tag(t.prioridade, PT[t.prioridade]) : ''}
@@ -273,7 +273,7 @@ export async function renderMinhasTarefas(opts = {}) {
       <div class="task-view-surface task-list-surface">
         <div class="task-list-head">
           <div>
-            <div class="task-view-eyebrow">VisÃ£o transversal</div>
+            <div class="task-view-eyebrow">Visão transversal</div>
             <div class="task-view-title">Todas as tarefas no seu contexto de trabalho</div>
             <div class="task-view-copy">Abra a tarefa diretamente. Use o projeto apenas quando precisar do contexto maior.</div>
           </div>
@@ -286,25 +286,25 @@ export async function renderMinhasTarefas(opts = {}) {
                 <th>Tarefa</th>
                 <th>Projeto</th>
                 <th>Grupo</th>
-                <th>ResponsÃ¡vel</th>
+                <th>Responsável</th>
                 <th>Prioridade</th>
                 <th>Status</th>
                 <th>Prazo</th>
-                <th>AÃ§Ãµes</th>
+                <th>Ações</th>
               </tr>
             </thead>
             <tbody>
               ${tarefasFiltradas.map(t => `
                 <tr>
-                  <td class="${t.status === 'ConcluÃ­da' ? 'concluida' : ''}">${esc(t.nome)}</td>
-                  <td><span class="tag tag-gray">${esc(t.projeto_nome || 'â€”')}</span></td>
-                  <td>${t.grupo_nome ? `<span class="tag tag-gray">${esc(t.grupo_nome)}</span>` : 'â€”'}</td>
-                  <td><div class="resp-chip">${avatar(t.dono_nome,'avatar-sm')} <span>${esc(t.dono_nome || 'â€”')}</span></div></td>
+                  <td class="${t.status === 'Concluída' ? 'concluida' : ''}">${esc(t.nome)}</td>
+                  <td><span class="tag tag-gray">${esc(t.projeto_nome || '—')}</span></td>
+                  <td>${t.grupo_nome ? `<span class="tag tag-gray">${esc(t.grupo_nome)}</span>` : '—'}</td>
+                  <td><div class="resp-chip">${avatar(t.dono_nome,'avatar-sm')} <span>${esc(t.dono_nome || '—')}</span></div></td>
                   <td>${tag(t.prioridade, PT[t.prioridade])}</td>
                   <td>${tag(t.status)}</td>
-                  <td><span class="mono mono-cell-muted">${t.data ? prazoFmt(t.data, true) : 'â€”'}</span></td>
+                  <td><span class="mono mono-cell-muted">${t.data ? prazoFmt(t.data, true) : '—'}</span></td>
                   <td>
-                    <div class="td-aÃ§Ãµes">
+                    <div class="td-acoes">
                       <button class="btn btn-primary btn-sm" onclick="abrirTarefaContexto('${t.id}','${t.projeto_id}')">Abrir tarefa</button>
                       <button class="btn btn-ghost btn-sm" onclick="abrirProjeto('${t.projeto_id}')">Projeto</button>
                     </div>
