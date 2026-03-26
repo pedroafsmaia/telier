@@ -23,6 +23,8 @@ const STATUS_PROJ = ['A fazer','Em andamento','Em revisão','Pausado','Concluíd
 const STATUS_TAR = ['A fazer','Em andamento','Bloqueada','Concluída'];
 const PRIORS = ['Alta','Média','Baixa'];
 const DIFS = ['Simples','Moderada','Complexa'];
+const FOCUS_ICON_FILLED = '<svg class="btn-icon-svg" width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 3.3l2.7 5.46 6.03.88-4.36 4.25 1.03 6.01L12 17.1l-5.4 2.84 1.03-6.01L3.27 9.64l6.03-.88L12 3.3z"/></svg>';
+const FOCUS_ICON_OUTLINE = '<svg class="btn-icon-svg" width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 3.3l2.7 5.46 6.03.88-4.36 4.25 1.03 6.01L12 17.1l-5.4 2.84 1.03-6.01L3.27 9.64l6.03-.88L12 3.3z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg>';
 
 let _quickAddNome = '';
 let _quickAddStep = 0;
@@ -187,9 +189,9 @@ export function renderTaskOpsList(tarefas = [], opts = {}) {
         </div>
         <div class="ops-row-actions">
           ${sessaoAtiva
-            ? `<button class="btn btn-danger btn-sm" onclick="pararCronometro('${sessaoAtiva}')"><svg width="11" height="11" viewBox="0 0 11 11" fill="none" style="margin-right:4px"><rect x="2" y="2" width="7" height="7" rx="1" fill="currentColor"/></svg>Parar</button>`
+            ? `<button class="btn btn-danger btn-sm" onclick="pararCronometro('${sessaoAtiva}')"><svg class="btn-icon-svg" width="11" height="11" viewBox="0 0 11 11" fill="none"><rect x="2" y="2" width="7" height="7" rx="1" fill="currentColor"/></svg>Parar</button>`
             : (podeCron
-              ? `<button class="btn btn-primary btn-sm" onclick="iniciarCronometro('${t.id}','${esc(t.nome || t.tarefa_nome || 'Tarefa')}')"><svg width="12" height="12" viewBox="0 0 12 12" fill="none" style="margin-right:4px"><path d="M4 2.5l5 3.5-5 3.5v-7z" fill="currentColor"/></svg>${acaoLabel}</button>`
+              ? `<button class="btn btn-primary btn-sm" onclick="iniciarCronometro('${t.id}','${esc(t.nome || t.tarefa_nome || 'Tarefa')}')"><svg class="btn-icon-svg" width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M4 2.5l5 3.5-5 3.5v-7z" fill="currentColor"/></svg>${acaoLabel}</button>`
               : '')}
           <button class="btn btn-sm" onclick="abrirTarefaContexto('${t.id || t.tarefa_id}','${t.projeto_id}')">Abrir tarefa</button>
         </div>
@@ -764,15 +766,15 @@ export function renderKanbanInterno(el, tarefas) {
       ? `<button class="btn btn-danger btn-sm kanban-cron-btn"
                  onclick="pararCronometro('${sessaoAtiva}');event.stopPropagation()"
                  title="Parar cronômetro">
-           <svg width="10" height="10" viewBox="0 0 10 10" fill="none" style="margin-right:3px">
+           <svg class="btn-icon-svg" width="10" height="10" viewBox="0 0 10 10" fill="none">
              <rect x="1.5" y="1.5" width="7" height="7" rx="1" fill="currentColor"/>
            </svg>${TIMERS[sessaoAtiva] ? fmtDuracao(Math.floor((Date.now()-new Date((TIMERS[sessaoAtiva].inicio||'').replace(' ','T')+'Z').getTime())/1000)) : ''}
          </button>`
       : podeCron
-        ? `<button class="btn btn-ghost btn-sm kanban-cron-btn"
+        ? `<button class="btn btn-secondary btn-sm kanban-cron-btn"
                    onclick="iniciarCronometro('${t.id}','${esc(t.nome)}');event.stopPropagation()"
-                   title="Iniciar cronômetro" style="color:var(--green)">
-             <svg width="10" height="10" viewBox="0 0 10 10" fill="none" style="margin-right:3px">
+                   title="Iniciar cronômetro">
+             <svg class="btn-icon-svg" width="10" height="10" viewBox="0 0 10 10" fill="none">
                <path d="M3 1.5l5 3.5-5 3.5v-7z" fill="currentColor"/>
              </svg>Iniciar
            </button>`
@@ -818,9 +820,9 @@ export function renderKanbanInterno(el, tarefas) {
                     ${isConcluida?'text-decoration:line-through;':''}line-height:1.35;flex:1">
           ${esc(t.nome)}
         </div>
-        ${minha ? `<button class="foco-pin ${t.foco?'ativo':''}" style="font-size:14px;flex-shrink:0"
+        ${minha ? `<button class="foco-pin foco-pin-compact ${t.foco?'ativo':''}"
                             onclick="toggleFoco('${t.id}',${!!t.foco});event.stopPropagation()"
-                            title="${t.foco?'Remover foco':'Marcar como foco'}">${t.foco?'★':'☆'}</button>` : ''}
+                            title="${t.foco?'Remover foco':'Marcar como foco'}">${t.foco ? FOCUS_ICON_FILLED : FOCUS_ICON_OUTLINE}</button>` : ''}
       </div>
       <div style="display:flex;gap:5px;flex-wrap:wrap;align-items:center;margin-bottom:8px">
         ${tag(t.prioridade, PT[t.prioridade])}
@@ -938,16 +940,16 @@ export function renderListaInterna(el, tarefas) {
     const minha = t.dono_id === EU?.id;
     const canEdit = !projetoArquivado && (minha || podeEditar(PROJETO) || isAdmin());
     const pin = minha
-      ? `<button class="foco-pin ${t.foco?'ativo':''}" onclick="toggleFoco('${t.id}',${!!t.foco})" title="${t.foco?'Remover foco':'Marcar como foco'}">${t.foco?'★':'☆'}</button>`
-      : `<span class="foco-placeholder">${t.foco?'★':''}</span>`;
+      ? `<button class="foco-pin ${t.foco?'ativo':''}" onclick="toggleFoco('${t.id}',${!!t.foco})" title="${t.foco?'Remover foco':'Marcar como foco'}">${t.foco ? FOCUS_ICON_FILLED : FOCUS_ICON_OUTLINE}</button>`
+      : `<span class="foco-placeholder">${t.foco ? FOCUS_ICON_FILLED : ''}</span>`;
 
     const podeCron = !projetoArquivado && (minha || (t.colaboradores_ids || []).includes(EU?.id) || isAdmin());
     const sessaoAtiva = timerAtivoPorTarefa[t.id];
 
     const horas = sessaoAtiva
-      ? `<button class="btn btn-sm btn-danger" onclick="pararCronometro('${sessaoAtiva}')" title="Parar cronômetro"><svg width="11" height="11" viewBox="0 0 11 11" fill="none" style="margin-right:4px"><rect x="2" y="2" width="7" height="7" rx="1" fill="currentColor"/></svg>Parar</button>`
+      ? `<button class="btn btn-sm btn-danger" onclick="pararCronometro('${sessaoAtiva}')" title="Parar cronômetro"><svg class="btn-icon-svg" width="11" height="11" viewBox="0 0 11 11" fill="none"><rect x="2" y="2" width="7" height="7" rx="1" fill="currentColor"/></svg>Parar</button>`
       : podeCron
-        ? `<button class="btn btn-ghost btn-sm" onclick="iniciarCronometro('${t.id}','${esc(t.nome)}')" title="Iniciar cronômetro" style="color:var(--green)"><svg width="12" height="12" viewBox="0 0 12 12" fill="none" style="margin-right:4px"><path d="M4 2.5l5 3.5-5 3.5v-7z" fill="currentColor"/></svg>Iniciar</button>`
+        ? `<button class="btn btn-secondary btn-sm" onclick="iniciarCronometro('${t.id}','${esc(t.nome)}')" title="Iniciar cronômetro"><svg class="btn-icon-svg" width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M4 2.5l5 3.5-5 3.5v-7z" fill="currentColor"/></svg>Iniciar</button>`
         : '';
 
     const dataStr = t.data || null;
@@ -1015,15 +1017,15 @@ export function renderListaInterna(el, tarefas) {
           <option selected>Moderada</option>
           <option>Complexa</option>
         </select>
-        <button type="button" class="btn btn-primary btn-sm" onclick="quickAddConfirmar('${PROJETO?.id}')">✓ Criar</button>
-        <button type="button" class="btn btn-ghost btn-sm" onclick="quickAddCancelar()">✕</button>
+        <button type="button" class="btn btn-primary btn-sm" onclick="quickAddConfirmar('${PROJETO?.id}')">Criar</button>
+        <button type="button" class="btn btn-ghost btn-sm" onclick="quickAddCancelar()">Cancelar</button>
       </div>
     </form>` : ''}
     <div class="task-table-shell">
       <div class="ops-row-stack">
-        ${rowsPend || `<div style="text-align:center;color:var(--text-muted);padding:24px"><div style="font-style:italic">Nenhuma tarefa ainda.</div><div style="font-size:var(--fs-080);margin-top:8px;color:var(--text-secondary)">Comece por uma tarefa principal, com prioridade e prazo.</div>${!projetoArquivado ? `<button class="btn btn-sm btn-primary" style="margin-top:10px" onclick="modalNovaTarefa('${PROJETO?.id}')">+ Criar primeira tarefa</button>` : ''}</div>`}
+        ${rowsPend || `<div style="text-align:center;color:var(--text-muted);padding:24px"><div style="font-style:italic">Nenhuma tarefa ainda.</div><div style="font-size:var(--fs-080);margin-top:8px;color:var(--text-secondary)">Comece por uma tarefa principal, com prioridade e prazo.</div>${!projetoArquivado ? `<button class="btn btn-sm btn-primary empty-state-create-btn" onclick="modalNovaTarefa('${PROJETO?.id}')">Criar primeira tarefa</button>` : ''}</div>`}
       </div>
-      ${concOrdenadas.length ? `<div class="task-view-copy" style="margin-top:10px;cursor:pointer" onclick="alternarListaConcluidasProjeto()">${LISTA_CONCLUIDAS_EXPANDIDA ? '▼' : '▶'} ${concOrdenadas.length} concluída${concOrdenadas.length!==1?'s':''}</div>` : ''}
+      ${concOrdenadas.length ? `<button class="btn btn-ghost btn-sm task-list-toggle-btn" onclick="alternarListaConcluidasProjeto()">${LISTA_CONCLUIDAS_EXPANDIDA ? 'Ocultar' : 'Mostrar'} ${concOrdenadas.length} concluída${concOrdenadas.length!==1?'s':''}</button>` : ''}
       ${LISTA_CONCLUIDAS_EXPANDIDA ? `<div class="ops-row-stack" style="margin-top:8px">${rowsConc}</div>` : ''}
     </div>
     <div class="tasks-cards task-cards-refined">
@@ -1045,7 +1047,7 @@ export function renderListaInterna(el, tarefas) {
         return `<div class="task-card ${t.status==='Concluída'?'concluida':''}" data-status="${esc(t.status)}">
           <div class="task-card-header">
             <div class="task-card-title ${t.foco&&minha?'em-foco':''} ${t.status==='Concluída'?'concluida':''}">${esc(t.nome)}</div>
-            ${minha ? `<button class="task-card-foco ${t.foco?'ativo':''} " onclick="toggleFoco('${t.id}',${!!t.foco}); event.stopPropagation()" title="${t.foco?'Remover foco':'Marcar como foco'}">${t.foco?'★':'☆'}</button>` : ''}
+            ${minha ? `<button class="task-card-foco ${t.foco?'ativo':''} " onclick="toggleFoco('${t.id}',${!!t.foco}); event.stopPropagation()" title="${t.foco?'Remover foco':'Marcar como foco'}">${t.foco ? FOCUS_ICON_FILLED : FOCUS_ICON_OUTLINE}</button>` : ''}
           </div>
           <div class="task-card-meta">
             <div class="task-card-chip">${avatar(t.dono_nome,'avatar-sm')} <span>${esc(t.dono_nome||'—')}</span></div>
@@ -1057,16 +1059,16 @@ export function renderListaInterna(el, tarefas) {
           <div class="task-card-footer">
             <div style="flex:1">${statusBtn}</div>
             <div class="task-card-actions">
-              <button class="btn btn-ghost btn-icon btn-sm" onclick="expandirSessoes('${t.id}')"; title="Detalhes"><svg width="14" height="14" viewBox="0 0 14 14" fill="none"><rect x="2" y="2" width="10" height="10" rx="2" stroke="currentColor" stroke-width="1.3"/><path d="M4.5 5.2h5M4.5 7h5M4.5 8.8h3" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg></button>
-              ${podeCron ? `<button class="btn btn-ghost btn-icon btn-sm" onclick="modalColabsTarefa('${t.id}'); event.stopPropagation()" title="Colaboradores" style="font-size:16px">👥</button>` : ''}
+              <button class="btn btn-ghost btn-icon btn-sm" onclick="expandirSessoes('${t.id}')" title="Detalhes"><svg width="14" height="14" viewBox="0 0 14 14" fill="none"><rect x="2" y="2" width="10" height="10" rx="2" stroke="currentColor" stroke-width="1.3"/><path d="M4.5 5.2h5M4.5 7h5M4.5 8.8h3" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg></button>
+              ${podeCron ? `<button class="btn btn-ghost btn-icon btn-sm" onclick="modalColabsTarefa('${t.id}'); event.stopPropagation()" title="Colaboradores"><svg width="14" height="14" viewBox="0 0 14 14" fill="none"><circle cx="5" cy="4.5" r="2" stroke="currentColor" stroke-width="1.3"/><path d="M1.5 11.5c0-1.93 1.57-3.5 3.5-3.5s3.5 1.57 3.5 3.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/><path d="M9 7a2 2 0 1 0 0-4M12 11.5c0-1.65-1.12-3.04-2.66-3.43" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg></button>` : ''}
               ${canEdit ? `<button class="btn btn-ghost btn-icon btn-sm" onclick="duplicarTarefa('${t.id}')" title="Duplicar"><svg width="13" height="13" viewBox="0 0 13 13" fill="none"><rect x="2" y="3" width="6" height="6" rx="1" stroke="currentColor" stroke-width="1.2"/><rect x="5" y="6" width="6" height="6" rx="1" stroke="currentColor" stroke-width="1.2"/></svg></button>` : ''}
               ${canEdit ? `<button class="btn btn-ghost btn-icon btn-sm" onclick="modalEditarTarefa('${t.id}')" title="Editar"><svg width="13" height="13" viewBox="0 0 13 13" fill="none"><path d="M2 9.5V11h1.5l5.5-5.5-1.5-1.5L2 9.5zM10.85 2.65a1 1 0 0 0-1.42 0l-.79.79 1.42 1.42.79-.79a1 1 0 0 0 0-1.42z" fill="currentColor"/></svg></button>` : ''}
               ${canEdit ? `<button class="btn btn-danger btn-icon btn-sm" onclick="deletarTarefa('${t.id}')" title="Excluir"><svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M1.5 1.5l9 9M10.5 1.5l-9 9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></button>` : ''}
-              ${sessaoAtiva ? `<button class="btn btn-danger btn-sm " onclick="pararCronometro('${sessaoAtiva}')" style="font-size:var(--fs-xs)" title="Parar"><svg width="11" height="11" viewBox="0 0 11 11" fill="none" style="margin-right:4px"><rect x="2" y="2" width="7" height="7" rx="1" fill="currentColor"/></svg>Parar</button>` : (podeCron ? `<button class="btn btn-ghost btn-sm" onclick="iniciarCronometro('${t.id}','${esc(t.nome)}')" style="color:var(--green)" title="Iniciar"><svg width="12" height="12" viewBox="0 0 12 12" fill="none" style="margin-right:4px"><path d="M4 2.5l5 3.5-5 3.5v-7z" fill="currentColor"/></svg>Cronômetro</button>` : '')}
+              ${sessaoAtiva ? `<button class="btn btn-danger btn-sm" onclick="pararCronometro('${sessaoAtiva}')" title="Parar"><svg class="btn-icon-svg" width="11" height="11" viewBox="0 0 11 11" fill="none"><rect x="2" y="2" width="7" height="7" rx="1" fill="currentColor"/></svg>Parar</button>` : (podeCron ? `<button class="btn btn-secondary btn-sm" onclick="iniciarCronometro('${t.id}','${esc(t.nome)}')" title="Iniciar"><svg class="btn-icon-svg" width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M4 2.5l5 3.5-5 3.5v-7z" fill="currentColor"/></svg>Cronômetro</button>` : '')}
             </div>
           </div>
         </div>`;
-      }).join('') || `<div style="text-align:center;color:var(--text-muted);padding:24px;background:var(--bg-card);border:1px solid var(--border);border-radius:var(--r2)"><div style="font-style:italic">Nenhuma tarefa ainda.</div><div style="font-size:var(--fs-080);margin-top:8px;color:var(--text-secondary)">Comece por uma tarefa principal, com prioridade e prazo.</div>${!projetoArquivado ? `<button class="btn btn-sm btn-primary" style="margin-top:10px" onclick="modalNovaTarefa('${PROJETO?.id}')">+ Criar primeira tarefa</button>` : ''}</div>`}
+      }).join('') || `<div style="text-align:center;color:var(--text-muted);padding:24px;background:var(--bg-card);border:1px solid var(--border);border-radius:var(--r2)"><div style="font-style:italic">Nenhuma tarefa ainda.</div><div style="font-size:var(--fs-080);margin-top:8px;color:var(--text-secondary)">Comece por uma tarefa principal, com prioridade e prazo.</div>${!projetoArquivado ? `<button class="btn btn-sm btn-primary empty-state-create-btn" onclick="modalNovaTarefa('${PROJETO?.id}')">Criar primeira tarefa</button>` : ''}</div>`}
     </div>
     </div>`;
 }
@@ -1228,7 +1230,7 @@ export async function renderRelatorio(el, tarefas) {
 
   const exportBtn = PROJETO?.id && Object.values(resumoMap).some(r => r.length > 0)
     ? `<button class="btn btn-sm" onclick="exportarTempoProjetoCSV('${PROJETO.id}')">
-         ↓ Exportar CSV
+         Exportar CSV
        </button>`
     : '';
   const totalHorasProjeto = Object.values(resumoMap).reduce((sum, lista) =>
@@ -1269,7 +1271,7 @@ export function renderDecisoes(projetoId, decisoes, canEdit) {
           <div class="decisao-texto">${esc(d.descricao)}</div>
           <div class="decisao-autor">${avatar(d.dono_nome,'avatar-sm')} ${esc(d.dono_nome||'—')}</div>
         </div>
-        ${(souDono(d.dono_id)||canEdit) ? `<div style="display:flex;gap:4px;flex-shrink:0"><button class="decisao-del" onclick="modalEditarDecisao('${d.id}','${projetoId}',\`${d.descricao.replace(/`/g,'&#96;')}\`,'${d.data||''}')" title="Editar" style="color:var(--text-secondary)"><svg width="13" height="13" viewBox="0 0 13 13" fill="none"><path d="M2 9.5V11h1.5l5.5-5.5-1.5-1.5L2 9.5zM10.85 2.65a1 1 0 0 0-1.42 0l-.79.79 1.42 1.42.79-.79a1 1 0 0 0 0-1.42z" fill="currentColor"/></svg></button><button class="decisao-del" onclick="deletarDecisao('${d.id}','${projetoId}')" title="Excluir"><svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M1.5 1.5l9 9M10.5 1.5l-9 9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></button></div>` : ''}
+        ${(souDono(d.dono_id)||canEdit) ? `<div style="display:flex;gap:4px;flex-shrink:0"><button class="decisao-del decisao-edit" onclick="modalEditarDecisao('${d.id}','${projetoId}',\`${d.descricao.replace(/`/g,'&#96;')}\`,'${d.data||''}')" title="Editar"><svg width="13" height="13" viewBox="0 0 13 13" fill="none"><path d="M2 9.5V11h1.5l5.5-5.5-1.5-1.5L2 9.5zM10.85 2.65a1 1 0 0 0-1.42 0l-.79.79 1.42 1.42.79-.79a1 1 0 0 0 0-1.42z" fill="currentColor"/></svg></button><button class="decisao-del" onclick="deletarDecisao('${d.id}','${projetoId}')" title="Excluir"><svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M1.5 1.5l9 9M10.5 1.5l-9 9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></button></div>` : ''}
       </div>`).join('')
     : `<div class="decisoes-empty">Nenhuma decisão registrada ainda.</div>`}
     </div>`;

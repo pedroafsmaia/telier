@@ -13,7 +13,7 @@ export function atualizarBadgeNotificacoes(total) {
   const btn = document.getElementById('btn-notifs');
   const badge = document.getElementById('notif-badge');
   if (!btn || !badge) return;
-  btn.style.display = TOKEN ? 'inline-flex' : 'none';
+  btn.classList.toggle('hidden', !TOKEN);
   const n = Number(total || 0);
   const txt = n > 99 ? '99+' : String(n);
   badge.textContent = txt;
