@@ -9,6 +9,7 @@ import { toast, abrirModal, fecharModal, confirmar, btnLoading, setBreadcrumb, s
 import {
   esc, gv, sel, avatar, tag, prazoFmt, diasRestantes, fmtHoras,
   isAdmin, podeEditar, souDono, projetoConcluido, normalizarStatusProjeto,
+  formatarFaseProjeto, formatarStatusProjeto, formatarPrioridadeProjeto, formatarAreaProjeto,
   normalizarColaboradoresTarefas, PT, FT,
 } from './utils.js';
 import {
@@ -71,7 +72,9 @@ export function voltarDash() {
 }
 
 export function renderProjeto(proj, tarefas, decisoes, abaAtiva, resumoHoras = []) {
-  const statusProjeto = normalizarStatusProjeto(proj.status);
+  const statusProjeto = formatarStatusProjeto(proj.status);
+  const faseProjeto = formatarFaseProjeto(proj.fase);
+  const prioridadeProjeto = formatarPrioridadeProjeto(proj.prioridade);
   const isArquivado = !isAdmin() && (
     normalizarStatusProjeto(proj.status) === 'Arquivado' ||
     (proj.grupo_status || null) === 'Arquivado'
@@ -160,9 +163,9 @@ export function renderProjeto(proj, tarefas, decisoes, abaAtiva, resumoHoras = [
         <div class="proj-hero-details">
           <div class="proj-meta">
             ${compartilhado ? `<div class="proj-meta-item"><span class="proj-meta-label">Acesso</span><span class="tag tag-cyan">Compartilhado ${proj.origem_compartilhamento==='grupo'?'via grupo':'direto'}</span></div>` : ''}
-            <div class="proj-meta-item"><span class="proj-meta-label">Fase</span>${tag(proj.fase, FT[proj.fase])}</div>
-            <div class="proj-meta-item"><span class="proj-meta-label">Prioridade</span>${tag(proj.prioridade, PT[proj.prioridade])}</div>
-            ${proj.area_m2 ? `<div class="proj-meta-item"><span class="proj-meta-label">Área</span><span class="tag tag-gray mono">${proj.area_m2.toLocaleString('pt-BR')} m²</span></div>` : ''}
+            <div class="proj-meta-item"><span class="proj-meta-label">Fase</span>${tag(faseProjeto, FT[faseProjeto])}</div>
+            <div class="proj-meta-item"><span class="proj-meta-label">Prioridade</span>${tag(prioridadeProjeto, PT[prioridadeProjeto])}</div>
+            ${proj.area_m2 ? `<div class="proj-meta-item"><span class="proj-meta-label">Área</span><span class="tag tag-gray mono">${formatarAreaProjeto(proj.area_m2)}</span></div>` : ''}
           </div>
           ${resumoHoras?.length > 1 ? `
             <div class="proj-horas-dist">

@@ -192,23 +192,25 @@ export async function renderMinhasTarefas(opts = {}) {
     ]));
 
     c.innerHTML = `
-      <div class="dash-header dash-header-spaced dash-head-grid">
-        <div class="dash-head-main">
+      <section class="task-home-topbar">
+        <div class="task-home-topbar-head">
+          <div class="task-home-topbar-main">
           <div class="section-kicker">Operação transversal</div>
           <div class="dash-title">Minhas tarefas</div>
           <div class="dash-sub dash-sub-tight">A unidade de trabalho do Telier passa a ser a tarefa. Projeto e grupo entram como contexto estrutural, não como ponto inicial de uso.</div>
+          </div>
+          <div class="task-home-topbar-actions">
+            <button class="btn" onclick="continuarUltimaTarefa()">Continuar última tarefa</button>
+            <button class="btn btn-primary" onclick="modalNovaTarefa()">Nova tarefa</button>
+          </div>
         </div>
-        <div class="dash-actions">
-          <button class="btn" onclick="continuarUltimaTarefa()">Continuar última tarefa</button>
-          <button class="btn btn-primary" onclick="modalNovaTarefa()">Nova tarefa</button>
+        <div class="task-home-metric-strip" aria-label="Métricas de operação">
+          <div class="task-home-metric"><span class="task-home-metric-label">Tarefas visíveis</span><span class="task-home-metric-value">${tarefasFiltradas.length}</span></div>
+          <div class="task-home-metric"><span class="task-home-metric-label">Em andamento</span><span class="task-home-metric-value">${emAndamento}</span></div>
+          <div class="task-home-metric"><span class="task-home-metric-label">Meu foco</span><span class="task-home-metric-value">${comFoco}</span></div>
+          <div class="task-home-metric"><span class="task-home-metric-label">Horas hoje</span><span class="task-home-metric-value">${parseFloat(resumoHoje?.horas_hoje || 0).toFixed(1)}h</span></div>
         </div>
-      </div>
-      <div class="dash-metrics-strip">
-        <div class="dash-metric"><span class="dash-metric-label">Tarefas visíveis</span><span class="dash-metric-value">${tarefasFiltradas.length}</span></div>
-        <div class="dash-metric"><span class="dash-metric-label">Em andamento</span><span class="dash-metric-value">${emAndamento}</span></div>
-        <div class="dash-metric"><span class="dash-metric-label">Meu foco</span><span class="dash-metric-value">${comFoco}</span></div>
-        <div class="dash-metric"><span class="dash-metric-label">Horas hoje</span><span class="dash-metric-value">${parseFloat(resumoHoje?.horas_hoje || 0).toFixed(1)}h</span></div>
-      </div>
+      </section>
       <div class="dash-toolbar task-view-toolbar task-toolbar-studio">
         <div class="dash-toolbar-row dash-toolbar-primary">
           <div class="task-toolbar-main dash-toolbar-searchblock">
