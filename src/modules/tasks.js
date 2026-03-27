@@ -342,12 +342,11 @@ export async function renderTarefasHome(opts = {}) {
     </div>
   </div>`;
   try {
-    const [dadosTarefas, resumoHoje, recentes, ativas, focoGlobal, tarefasOperacao] = await Promise.all([
+    const [dadosTarefas, resumoHoje, recentes, ativas, tarefasOperacao] = await Promise.all([
       carregarTarefasUsuarioAtivas(),
       req('GET', '/tempo/resumo-hoje').catch((e) => { console.error(e); return null; }),
       req('GET', '/tempo/sessoes-recentes?limit=6').catch((e) => { console.error(e); return []; }),
       req('GET', '/tempo/ativas').catch((e) => { console.error(e); return []; }),
-      req('GET', '/auth/foco-global').catch((e) => { console.error(e); return null; }),
       req('GET', '/tarefas/operacao-hoje').catch((e) => {
         console.error(e);
         throw new Error('Não foi possível carregar as tarefas da operação. Recarregue a página.');

@@ -107,10 +107,10 @@ export async function carregarNotificacoes(silencioso = true) {
 export function iniciarPollNotificacoes() {
   if (!TOKEN) return;
   if (_notifTick) clearInterval(_notifTick);
-  req('POST', '/notificacoes/gerar-automaticas').catch((e) => { console.error(e); });
+  // req('POST', '/notificacoes/gerar-automaticas').catch((e) => { console.error(e); });
   carregarNotificacoes(true);
   setNotifTick(setInterval(() => {
-    req('POST', '/notificacoes/gerar-automaticas').catch((e) => { console.error(e); });
+    // req('POST', '/notificacoes/gerar-automaticas').catch((e) => { console.error(e); });
     carregarNotificacoes(false);
   }, 30000));
 }

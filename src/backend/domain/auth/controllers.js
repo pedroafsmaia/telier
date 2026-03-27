@@ -5,6 +5,15 @@ import { clampStr } from '../../utils/validation.js';
 import { hashSenha, verificarSenha, MAX_PASSWORD, MIN_PASSWORD } from './crypto.js';
 import { checkRateLimit, requireAuth, _rateBuckets } from './session.js';
 
+export async function handleAuthNeedsSetup(request, env, cors) {
+  try {
+    const existUser = await env.DB.prepare('SELECT 1 FROM usuarios LIMIT 1').first();
+    return ok({ needs_setup: !existUser });
+  } catch (err) {
+    return ok({ needs_setup: false });
+  }
+}
+
 export async function handleAuthRegister(request, env, cors, responseHeaders) {
   if (!checkRateLimit(request, 'register', 3, 3600000)) {
     return fail('Muitas tentativas de registro. Tente novamente mais tarde.', 429);

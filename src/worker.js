@@ -2,7 +2,7 @@ import { getCors, json, err } from './backend/http/responses.js';
 import { ensureAllSchemas } from './backend/schema/migrations.js';
 
 // Auth & Users
-import { handleAuthRegister, handleAuthLogin, handleAuthLogout, handleAuthMe, handleAuthTrocarSenha } from './backend/domain/auth/controllers.js';
+import { handleAuthNeedsSetup, handleAuthRegister, handleAuthLogin, handleAuthLogout, handleAuthMe, handleAuthTrocarSenha } from './backend/domain/auth/controllers.js';
 import { handleGetUsuarios, handlePostUsuarios, handlePutUsuarioPapel, handlePutUsuarioSenha } from './backend/domain/users/controllers.js';
 
 // Projects & Groups
@@ -46,6 +46,7 @@ export default {
     const t0 = performance.now();
     try {
       /* ── AUTH ── */
+      if (path === '/api/auth/needs-setup' && method === 'GET') return await handleAuthNeedsSetup(request, env, cors);
       if (path === '/api/auth/register' && method === 'POST') return await handleAuthRegister(request, env, cors);
       if (path === '/api/auth/login' && method === 'POST') return await handleAuthLogin(request, env, cors);
       if (path === '/api/auth/logout' && method === 'POST') return await handleAuthLogout(request, env, cors);
