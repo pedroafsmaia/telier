@@ -2378,13 +2378,13 @@ tr:hover td{
 }
 .dash-status-grid{
   display:flex;
-  flex-wrap:nowrap;
+  flex-wrap:wrap;
   gap:6px;
   align-items:center;
-  overflow-x:auto;
 }
 .dash-toolbar-statusfield{
-  width:100%;
+  flex:1;
+  min-width:0;
 }
 .dash-toolbar-row + .dash-toolbar-row{
   padding-top:0;
@@ -2829,10 +2829,11 @@ tr:hover td{
 .task-toolbar-studio{margin-bottom:10px;}
 .task-surface-actions{display:flex;align-items:center;gap:10px;flex-wrap:wrap;justify-content:flex-end}
 .task-toolbar-summary-grid{
-  display:grid;
-  grid-template-columns:minmax(220px,280px) minmax(0,1fr);
+  display:flex;
+  flex-wrap:wrap;
   gap:14px;
   width:100%;
+  align-items:flex-start;
 }
 .td-ações{opacity:.72}
 .td-ações .btn{justify-content:center}
