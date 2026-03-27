@@ -9,7 +9,7 @@ import {
   setTarefasView, setListaSort, setListaConcluidasExpandida, setTaskMobileFiltersOpen,
 } from './state.js';
 import { req, fetchProjetos, invalidarCacheProjetos } from './api.js';
-import { toast, abrirModal, fecharModal, confirmar, btnLoading, setBreadcrumb } from './ui.js';
+import { toast, toastUndo, abrirModal, fecharModal, confirmar, setBreadcrumb, setShellViewFromRoute, btnLoading, slideContent, errorBlock } from './ui.js';
 import {
   esc, gv, sel, avatar, iniciais, tag, metaPair, prazoFmt, diasRestantes,
   fmtDuracao, fmtHoras, isAdmin, podeEditar, souDono, tarefaCompartilhadaComigo,
@@ -146,11 +146,14 @@ function filtrarTarefasTransversais(tarefas) {
 }
 
 export async function carregarTarefasUsuarioAtivas() {
-  const rawTarefas = await req('GET', '/tarefas/minhas').catch(() => []);
+  const rawTarefas = await req('GET', '/tarefas/minhas').catch((e) => {
+    console.error(e);
+    throw new Error('Não foi possível carregar as tarefas. Recarregue a página.');
+  });
   const tarefas = normalizarColaboradoresTarefas(rawTarefas);
   return {
     tarefas,
-    projetosFiltro: [...new Map(tarefas.map(t => [t.projeto_id, { id: t.projeto_id, nome: t.projeto_nome }])).values()],
+    projetosFiltro: [...new Map((tarefas || []).map(t => [t.projeto_id, { id: t.projeto_id, nome: t.projeto_nome }])).values()],
   };
 }
 
@@ -297,11 +300,14 @@ export async function renderTarefasHome(opts = {}) {
   try {
     const [dadosTarefas, resumoHoje, recentes, ativas, focoGlobal, tarefasOperacao] = await Promise.all([
       carregarTarefasUsuarioAtivas(),
-      req('GET', '/tempo/resumo-hoje').catch(() => null),
-      req('GET', '/tempo/sessoes-recentes?limit=6').catch(() => []),
-      req('GET', '/tempo/ativas').catch(() => []),
-      req('GET', '/auth/foco-global').catch(() => null),
-      req('GET', '/tarefas/operacao-hoje').catch(() => []),
+      req('GET', '/tempo/resumo-hoje').catch((e) => { console.error(e); return null; }),
+      req('GET', '/tempo/sessoes-recentes?limit=6').catch((e) => { console.error(e); return []; }),
+      req('GET', '/tempo/ativas').catch((e) => { console.error(e); return []; }),
+      req('GET', '/auth/foco-global').catch((e) => { console.error(e); return null; }),
+      req('GET', '/tarefas/operacao-hoje').catch((e) => {
+        console.error(e);
+        throw new Error('Não foi possível carregar as tarefas da operação. Recarregue a página.');
+      }),
     ]);
     const { tarefas, projetosFiltro } = dadosTarefas;
     const mapaTarefas = new Map();
@@ -498,7 +504,7 @@ export async function renderTarefasHome(opts = {}) {
     });
 
   } catch (e) {
-    c.innerHTML = `<div class="error-block">${esc(e.message)}</div>`;
+    c.innerHTML = errorBlock(e.message || 'Erro ao carregar tarefas.');
   }
 }
 

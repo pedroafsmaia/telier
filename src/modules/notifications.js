@@ -107,10 +107,10 @@ export async function carregarNotificacoes(silencioso = true) {
 export function iniciarPollNotificacoes() {
   if (!TOKEN) return;
   if (_notifTick) clearInterval(_notifTick);
-  req('POST', '/notificacoes/gerar-automaticas').catch(() => {});
+  req('POST', '/notificacoes/gerar-automaticas').catch((e) => { console.error(e); });
   carregarNotificacoes(true);
   setNotifTick(setInterval(() => {
-    req('POST', '/notificacoes/gerar-automaticas').catch(() => {});
+    req('POST', '/notificacoes/gerar-automaticas').catch((e) => { console.error(e); });
     carregarNotificacoes(false);
   }, 30000));
 }
@@ -121,7 +121,7 @@ export async function carregarStatus() {
     setColegasAtivos(Array.isArray(data.colegas_ativos) ? data.colegas_ativos : []);
     renderPresenceDock();
     atualizarBadgeNotificacoes(data.notifs_nao_lidas);
-  } catch {}
+  } catch (e) { console.error(e); }
 }
 
 export function iniciarStatusPoll() {
@@ -191,7 +191,8 @@ export async function carregarColegasAtivos() {
     }
     if (COLEGAS_ATIVOS.length) setPresenceHintShown(false);
     renderPresenceDock();
-  } catch {
+  } catch (e) {
+    console.error(e);
     setColegasAtivos([]);
     renderPresenceDock();
   }

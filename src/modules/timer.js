@@ -124,7 +124,7 @@ export async function carregarTimersAtivos() {
     setTimers(timersAtualizados);
     renderTimerDock();
     atualizarTempoListaVisivel();
-  } catch {}
+  } catch (e) { console.error(e); }
 }
 
 export function atualizarTempoListaVisivel() {

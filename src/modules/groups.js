@@ -5,7 +5,7 @@ import {
   setGrupoAtual, setVistaAtual, setUsuarios, setGrupoTaskMobileFiltersOpen, setGruposDash, setProjsDash,
 } from './state.js';
 import { req, invalidarCacheProjetos } from './api.js';
-import { toast, toastUndo, abrirModal, fecharModal, confirmar, btnLoading, setBreadcrumb, slideContent } from './ui.js';
+import { toast, toastUndo, abrirModal, fecharModal, confirmar, btnLoading, setBreadcrumb, slideContent, errorBlock } from './ui.js';
 import {
   esc, gv, sel, avatar, tag, metaPair, fmtHoras, prazoFmt, diasRestantes, souDono, isAdmin, normalizarStatusProjeto,
   formatarFaseProjeto, formatarStatusProjeto, formatarProgressoProjeto,
@@ -28,9 +28,9 @@ export async function renderGroupsHome(opts = {}) {
   </div>`;
   try {
     const [grupos, projetos, ativas] = await Promise.all([
-      req('GET', '/grupos').catch(() => []),
-      req('GET', '/projetos').catch(() => []),
-      req('GET', '/tempo/ativas').catch(() => []),
+      req('GET', '/grupos').catch(e => { console.error(e); throw new Error('Não foi possível carregar os grupos. Recarregue a página.'); }),
+      req('GET', '/projetos').catch(e => { console.error(e); throw new Error('Não foi possível carregar os projetos. Recarregue a página.'); }),
+      req('GET', '/tempo/ativas').catch(e => { console.error(e); return []; }),
     ]);
     setGruposDash(grupos);
     setProjsDash(projetos);
@@ -155,7 +155,7 @@ export async function renderGroupsHome(opts = {}) {
         </aside>
       </div>`;
   } catch (e) {
-    c.innerHTML = `<div class="error-block">${esc(e.message)}<div class="muted-detail"><button class="btn btn-sm" onclick="renderGroupsHome()">Tentar novamente</button></div></div>`;
+    c.innerHTML = errorBlock(e.message || 'Erro ao carregar grupos.') + `<div class="muted-detail" style="margin-top:8px"><button class="btn btn-sm" onclick="renderGroupsHome()">Tentar novamente</button></div>`;
   }
 }
 
@@ -182,7 +182,7 @@ export async function abrirGrupo(id, opts = {}) {
   } catch (e) {
     c.style.opacity = '';
     c.style.pointerEvents = '';
-    c.innerHTML = `<div class="error-block">${esc(e.message)}</div>`;
+    c.innerHTML = errorBlock(e.message || 'Erro ao abrir grupo.') + `<div class="muted-detail" style="margin-top:8px"><button class="btn btn-sm" onclick="abrirGrupo('${id}')">Tentar novamente</button></div>`;
   }
 }
 
@@ -281,7 +281,10 @@ export async function carregarTarefasGrupo(grupo = GRUPO_ATUAL) {
   if (!grupo) return [];
   const projetos = grupo._projetos || [];
   const listas = await Promise.all(projetos.map(p =>
-    req('GET', `/projetos/${p.id}/tarefas`).catch(() => []).then(tarefas =>
+    req('GET', `/projetos/${p.id}/tarefas`).catch(e => {
+      console.error(e);
+      throw new Error(`Não foi possível carregar as tarefas do projeto ${p.nome}.`);
+    }).then(tarefas =>
       normalizarColaboradoresTarefas(tarefas).map(t => ({
         ...t,
         projeto_id: t.projeto_id || p.id,
@@ -299,13 +302,13 @@ export async function carregarAoVivoGrupo(grupo = GRUPO_ATUAL) {
   if (!grupo) return [];
   const projetos = grupo._projetos || [];
   const ids = new Set(projetos.map(p => String(p.id)));
-  const ativas = await req('GET', '/tempo/ativas').catch(() => []);
+  const ativas = await req('GET', '/tempo/ativas').catch(e => { console.error(e); return []; });
   return (ativas || []).filter(s => ids.has(String(s.projeto_id)));
 }
 
 export async function carregarAoVivoProjeto(projetoId) {
   if (!projetoId) return [];
-  const ativas = await req('GET', '/tempo/ativas').catch(() => []);
+  const ativas = await req('GET', '/tempo/ativas').catch(e => { console.error(e); return []; });
   return (ativas || []).filter(s => String(s.projeto_id) === String(projetoId));
 }
 
@@ -432,7 +435,7 @@ export async function renderGrupoAbaTarefas(el) {
     window._gtBusca = '';
     window._gtFiltersOpen = false;
     aplicar();
-  } catch (e) { el.innerHTML = `<div class="error-block">${esc(e.message)}</div>`; }
+  } catch (e) { el.innerHTML = errorBlock(e.message || 'Erro ao carregar tarefas do grupo.'); }
 }
 
 export async function renderGrupoAbaMapa(el) {
@@ -502,7 +505,7 @@ export async function renderGrupoAbaMapa(el) {
           }).join('')}
         </div>
       </div>`;
-  } catch (e) { el.innerHTML = `<div class="error-block">${esc(e.message)}</div>`; }
+  } catch (e) { el.innerHTML = errorBlock(e.message || 'Erro ao carregar mapa do grupo.'); }
 }
 
 export async function renderGrupoAbaAoVivo(el) {
@@ -524,7 +527,7 @@ export async function renderGrupoAbaAoVivo(el) {
       mostrarProjeto: true,
       abrir: s => `abrirProjeto('${s.projeto_id}')`,
     });
-  } catch (e) { el.innerHTML = `<div class="error-block">${esc(e.message)}</div>`; }
+  } catch (e) { el.innerHTML = errorBlock(e.message || 'Erro ao carregar atividade do grupo.'); }
 }
 
 export function renderGrupoAbaRelatorio(el, projetos) {
