@@ -2378,10 +2378,10 @@ tr:hover td{
 }
 .dash-status-grid{
   display:flex;
-  flex-wrap:wrap;
+  flex-wrap:nowrap;
   gap:6px;
-  align-content:flex-start;
-  align-items:flex-start;
+  align-items:center;
+  overflow-x:auto;
 }
 .dash-toolbar-statusfield{
   width:100%;
