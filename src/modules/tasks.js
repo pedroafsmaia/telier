@@ -146,20 +146,8 @@ function filtrarTarefasTransversais(tarefas) {
 }
 
 export async function carregarTarefasUsuarioAtivas() {
-  const projetos = await fetchProjetos(new URLSearchParams());
-  const projetosAtivos = (projetos || []).filter(p => normalizarStatusProjeto(p.status) !== 'Arquivado');
-  const tarefasPorProjeto = await Promise.all(projetosAtivos.map(async projeto => {
-    const tarefas = await req('GET', `/projetos/${projeto.id}/tarefas`).catch(() => []);
-    return normalizarColaboradoresTarefas(tarefas).map(t => ({
-      ...t,
-      projeto_id: t.projeto_id || projeto.id,
-      projeto_nome: t.projeto_nome || projeto.nome,
-      grupo_id: projeto.grupo_id || null,
-      grupo_nome: projeto.grupo_nome || '',
-      projeto_status: projeto.status,
-    }));
-  }));
-  const tarefas = tarefasPorProjeto.flat().filter(t => t.status !== 'Concluída' || tarefaCompartilhadaComigo(t) || t.dono_id === EU?.id);
+  const rawTarefas = await req('GET', '/tarefas/minhas').catch(() => []);
+  const tarefas = normalizarColaboradoresTarefas(rawTarefas);
   return {
     tarefas,
     projetosFiltro: [...new Map(tarefas.map(t => [t.projeto_id, { id: t.projeto_id, nome: t.projeto_nome }])).values()],
