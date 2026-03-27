@@ -8,8 +8,8 @@ import {
   setFiltroGrupoDash, setFiltroOrigemDash, setVistaAtual,
 } from './state.js';
 import { req, fetchProjetos, invalidarCacheProjetos } from './api.js';
-import { toast, toastUndo, setBreadcrumb, slideContent } from './ui.js';
-import { carregarTarefasUsuarioAtivas, renderTaskOperationalSurface } from './tasks.js';
+import { toast, toastUndo, setBreadcrumb, slideContent, errorBlock } from './ui.js';
+import { carregarTarefasUsuarioAtivas, renderTaskOperationalSurface, renderAoVivoStream } from './tasks.js';
 import {
   esc, gv, sel, avatar, tag, prazoFmt, diasRestantes, fmtHoras, fmtDuracao,
   isAdmin, isAdminRole, souDono, projetoConcluido, normalizarStatusProjeto,
@@ -185,6 +185,7 @@ export function renderPainelHoje(projetos, ativas, sessoesRecentes = [], tarefas
   });
 }
 
+/* 
 export function toggleStartday() {
   const el = document.getElementById('startday-wrap');
   if (!el) return;
@@ -194,18 +195,10 @@ export function toggleStartday() {
   const btn = el.querySelector('.startday-toggle');
   if (btn) btn.textContent = collapsed ? 'Expandir' : 'Recolher';
 }
+*/
 
 export function renderDashLoadingState() {
   return `
-    <div class="startday-wrap dash-header-spaced">
-      <div class="startday-head">
-        <div class="startday-title">Seu dia</div>
-        <span class="skeleton-pill"></span>
-      </div>
-      <div class="startday-grid">
-        ${'<div class="startday-card skeleton-card"></div>'.repeat(4)}
-      </div>
-    </div>
     <div class="dash-header dash-header-loading">
       <div class="dash-skeleton-line"></div>
     </div>
@@ -224,14 +217,14 @@ async function carregarDadosDashboard() {
   if (isAdminRole() && ADMIN_MODE === 'normal') params.set('as_member', '1');
   const [projetos, ativas, grupos, ultimaSessao, resumoHoje, focoGlobal, sessoesRecentes, tarefasOperacao, tarefasTransversais] = await Promise.all([
     fetchProjetos(params),
-    req('GET', `/tempo/ativas${isAdminRole() && ADMIN_MODE === 'normal' ? '?as_member=1' : ''}`).catch(() => []),
-    req('GET', `/grupos${isAdminRole() && ADMIN_MODE === 'normal' ? '?as_member=1' : ''}`).catch(() => []),
-    req('GET', '/tempo/ultima-sessao').catch(() => null),
-    req('GET', '/tempo/resumo-hoje').catch(() => null),
-    req('GET', '/auth/foco-global').catch(() => null),
-    req('GET', '/tempo/sessoes-recentes?limit=6').catch(() => []),
-    req('GET', '/tarefas/operacao-hoje').catch(() => []),
-    carregarTarefasUsuarioAtivas().catch(() => ({ tarefas: [] })),
+    req('GET', `/tempo/ativas${isAdminRole() && ADMIN_MODE === 'normal' ? '?as_member=1' : ''}`).catch(e => { console.error(e); return []; }),
+    req('GET', `/grupos${isAdminRole() && ADMIN_MODE === 'normal' ? '?as_member=1' : ''}`).catch(e => { console.error(e); throw new Error('Não foi possível carregar os grupos. Recarregue a página.'); }),
+    req('GET', '/tempo/ultima-sessao').catch(e => { console.error(e); return null; }),
+    req('GET', '/tempo/resumo-hoje').catch(e => { console.error(e); return null; }),
+    req('GET', '/auth/foco-global').catch(e => { console.error(e); return null; }),
+    req('GET', '/tempo/sessoes-recentes?limit=6').catch(e => { console.error(e); return []; }),
+    req('GET', '/tarefas/operacao-hoje').catch(e => { console.error(e); throw new Error('Não foi possível carregar as tarefas operacionais. Recarregue a página.'); }),
+    carregarTarefasUsuarioAtivas(),
   ]);
   const mapaTarefas = new Map();
   (tarefasOperacao || []).forEach(t => mapaTarefas.set(String(t.id || t.tarefa_id), t));
@@ -286,10 +279,22 @@ function renderTodayHome(dados) {
 }
 
 
-function renderProjectsHome(resumo) {
+function renderProjectsHome(resumo, ativas) {
   const {
     projetosVisiveisBase, gruposVisiveisBase, compartilhados, emAndamento, meus, filtros, statusCountMap,
   } = resumo;
+  
+  const aoVivoHtml = ativas && ativas.length ? `
+    <div style="margin-bottom:24px">
+      ${renderAoVivoStream(ativas, { 
+        titulo: 'Ao Vivo no Escritório', 
+        copy: 'Quem está fazendo o que neste exato momento.',
+        mostrarProjeto: true, 
+        abrir: s => "abrirProjeto('" + s.projeto_id + "')"
+      })}
+    </div>
+  ` : '';
+
   return `
     <div class="dash-header dash-header-spaced dash-head-grid">
       <div class="dash-head-main">
@@ -341,6 +346,7 @@ function renderProjectsHome(resumo) {
         </div>
       </div>
     </div>
+    ${aoVivoHtml}
     <div id="cards-grid-dash" class="dash-results">${renderProjetosDash(projetosVisiveisBase, gruposVisiveisBase)}</div>`;
 }
 
@@ -367,13 +373,13 @@ export async function renderDash(opts = {}) {
       if (slideHoje) slideContent('left');
       return;
     }
-    const html = renderProjectsHome(getResumoProjetos(projetos, grupos));
+    const html = renderProjectsHome(getResumoProjetos(projetos, grupos), ativas);
     const slide = VISTA_ATUAL === 'projeto';
     setVistaAtual('dash');
     c.innerHTML = html;
     if (slide) slideContent('left');
   } catch (e) {
-    c.innerHTML = `<div class="error-block">${esc(e.message)}<div class="muted-detail"><button class="btn btn-sm" onclick="renderDash()">Tentar novamente</button></div></div>`;
+    c.innerHTML = errorBlock(e.message || 'Erro ao carregar dashboard.') + `<div class="muted-detail" style="margin-top:8px"><button class="btn btn-sm" onclick="renderDash()">Tentar novamente</button></div>`;
   }
 }
 
