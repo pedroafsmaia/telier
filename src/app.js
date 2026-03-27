@@ -10,7 +10,7 @@ import {
 import { req, invalidarCacheProjetos } from './modules/api.js';
 import { toast, aplicarTema, alternarTema, fecharModal, setShellViewFromRoute } from './modules/ui.js';
 import { isAdminRole } from './modules/utils.js';
-import { renderDash, carregarFiltrosDash, salvarFiltrosDash, toggleStartday, renderDashLoadingState, renderDashEmptyState, renderProjetosDash, renderCardsDash, filtrarProjetosBusca, filtrarGrupoDash, filtrarOrigemDash, setFiltro, getDragJustEnded, dragProjeto, dragProjetoEnd, dragGrupo, dragGrupoEnd, dragOver, dragLeave, dropProjeto, toggleGrupo } from './modules/dashboard.js';
+import { renderDash, carregarFiltrosDash, salvarFiltrosDash, renderDashLoadingState, renderDashEmptyState, renderProjetosDash, renderCardsDash, filtrarProjetosBusca, filtrarGrupoDash, filtrarOrigemDash, setFiltro, getDragJustEnded, dragProjeto, dragProjetoEnd, dragGrupo, dragGrupoEnd, dragOver, dragLeave, dropProjeto, toggleGrupo } from './modules/dashboard.js';
 import { abrirProjeto, voltarDash, renderProjeto, mudarAba, renderAba, renderProjetoAoVivo, recarregarProjeto, modalNovoProjeto, criarProjeto, modalEditarProjeto, salvarProjeto, deletarProjeto } from './modules/project.js';
 import { renderGroupsHome, abrirGrupo, renderGrupo, mudarAbaGrupo, renderAbaGrupo, renderGrupoAbaProjetos, renderGrupoAbaTarefas, renderGrupoAbaMapa, renderGrupoAbaAoVivo, renderGrupoAbaRelatorio, carregarTarefasGrupo, carregarAoVivoGrupo, carregarAoVivoProjeto, modalNovoGrupo, criarGrupo, modalEditarGrupo, compartilharGrupo, modalCompartilharGrupo, salvarGrupo, adicionarPermGrupo, removerPermGrupo, sairGrupoCompartilhado, sairProjetoCompartilhado, acaoGrupo, modalMoverTodosGrupo, deletarGrupo } from './modules/groups.js';
 import { atualizarBadgeNotificacoes, filtrarNotificacoesPainel, renderPainelNotificacoes, carregarNotificacoes, iniciarPollNotificacoes, carregarStatus, iniciarStatusPoll, marcarNotifLida, marcarTodasNotifLidas, abrirNotificacoes, fecharPainelNotificacoes, carregarColegasAtivos, iniciarPollPresenca, renderPresenceDock, togglePresencePanel, fecharPresencePanelFora } from './modules/notifications.js';
@@ -319,7 +319,6 @@ Object.assign(window, {
   renderDash,
   carregarFiltrosDash,
   salvarFiltrosDash,
-  toggleStartday,
   renderDashLoadingState,
   renderDashEmptyState,
   renderProjetosDash,
