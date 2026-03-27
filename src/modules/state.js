@@ -1,15 +1,21 @@
 // ── STATE ──
 function resolveApiBase() {
-  const fallback = 'https://telier-api.pedroafsmaia.workers.dev';
+  const fallback = 'https://telier-api.pedroafsmaia.workers.dev/api';
   if (typeof window === 'undefined') return fallback;
   try {
     const url = new URL(window.location.href);
     const apiParam = url.searchParams.get('api');
+    let base = fallback;
     if (apiParam) {
       localStorage.setItem('ea_api', apiParam);
-      return apiParam;
+      base = apiParam;
+    } else {
+      base = localStorage.getItem('ea_api') || fallback;
     }
-    return localStorage.getItem('ea_api') || fallback;
+    if (base && !base.endsWith('/api') && !base.includes('/api/')) {
+      base = base.replace(/\/$/, '') + '/api';
+    }
+    return base;
   } catch {
     return fallback;
   }
