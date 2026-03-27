@@ -3,7 +3,7 @@ import { readJsonBody } from '../../http/request.js';
 import { uid } from '../../utils/format.js';
 import { clampStr, validateDate } from '../../utils/validation.js';
 import { requireAuth, isAdmin } from '../auth/session.js';
-import { podeEditarProjeto } from '../projects/permissions.js';
+import { podeEditarProjeto, podeVerProjeto } from '../projects/permissions.js';
 import { podeEditarTarefa, podeVerTarefa, podeCronometrar } from './permissions.js';
 
 function criarNotificacaoCompartilhamento(env, { usuarioId, tipo, escopo, entidadeId, titulo, mensagem, atorId }) {
@@ -16,7 +16,7 @@ function criarNotificacaoCompartilhamento(env, { usuarioId, tipo, escopo, entida
 export async function handleGetTarefasProjeto(request, env, projetoId) {
   const [u, e] = await requireAuth(request, env);
   if (e) return fail('Não autorizado', 401);
-  if (!await podeEditarProjeto(env, projetoId, u.uid, u.papel)) return fail('Sem permissão', 403);
+  if (!await podeVerProjeto(env, projetoId, u.uid, u.papel)) return fail('Sem permissão', 403);
   const tarefas = await env.DB.prepare(`
     SELECT t.*, t.dificuldade AS complexidade, tu.nome as dono_nome, CASE WHEN t.dono_id = ? THEN 1 ELSE 0 END as minha_tarefa
     FROM tarefas t LEFT JOIN usuarios tu ON tu.id = t.dono_id

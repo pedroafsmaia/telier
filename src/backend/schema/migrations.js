@@ -1,3 +1,7 @@
+// FONTE DE VERDADE EM RUNTIME: este arquivo controla toda a evolução do schema.
+// Novo banco: cada versão de V1 em diante é aplicada sequencialmente.
+// Banco existente: apenas versões não aplicadas são executadas.
+// db/schema.sql é o snapshot canônico de desenvolvimento (para consulta e init manual via D1 Console).
 export async function ensureAllSchemas(env) {
   if (env._schemaChecked) return;
   // Fallsafe para garantir que a tabela de controle exista
@@ -34,12 +38,11 @@ export async function ensureAllSchemas(env) {
     }
   };
 
-  // V1: Tabelas de segurança núcleo que existiam sem migration explicitas (retroativo caso um DB legado rode)
-  // Como `db/schema.sql` já detém a real-truth atual, essa V1 garante que os DBs não quebrem
-  // e apenas ignora se a coluna já existe.
+  // V1: Tabelas núcleo de auth.
+  // sessoes.criado_em é NOT NULL — o worker sempre fornece o valor explicitamente (D1 não avalia DEFAULT em INSERT).
   await runMigration(1, [
     `CREATE TABLE IF NOT EXISTS usuarios (id TEXT PRIMARY KEY, nome TEXT NOT NULL, login TEXT UNIQUE NOT NULL, senha_hash TEXT NOT NULL, deve_trocar_senha INTEGER NOT NULL DEFAULT 0, papel TEXT NOT NULL DEFAULT 'membro', criado_em TEXT DEFAULT (datetime('now')))`,
-    `CREATE TABLE IF NOT EXISTS sessoes (id TEXT PRIMARY KEY, usuario_id TEXT NOT NULL REFERENCES usuarios(id), criado_em TEXT, expira_em TEXT NOT NULL)`,
+    `CREATE TABLE IF NOT EXISTS sessoes (id TEXT PRIMARY KEY, usuario_id TEXT NOT NULL REFERENCES usuarios(id), criado_em TEXT NOT NULL, expira_em TEXT NOT NULL)`,
   ]);
 
   // V2: Tabelas de Domínio Primárias
@@ -118,6 +121,12 @@ export async function ensureAllSchemas(env) {
     `CREATE INDEX IF NOT EXISTS idx_sessoes_tempo_inicio_fim ON sessoes_tempo(inicio, fim)`
   ]);
   
+  // V8: Índices de notificacoes ausentes do snapshot V5 original
+  await runMigration(8, [
+    `CREATE INDEX IF NOT EXISTS idx_notif_usuario_data ON notificacoes(usuario_id, criado_em DESC)`,
+    `CREATE INDEX IF NOT EXISTS idx_notif_usuario_lida ON notificacoes(usuario_id, lida_em)`
+  ]);
+
   // Limpeza Oportunista (Não Conta como Migration)
   env.DB.prepare("DELETE FROM sessoes WHERE expira_em < datetime('now', '-1 day')").run().catch(() => {});
   env._schemaChecked = true;

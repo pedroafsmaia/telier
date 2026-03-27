@@ -3,11 +3,12 @@ import { readJsonBody } from '../../http/request.js';
 import { uid } from '../../utils/format.js';
 import { clampStr, validateDate } from '../../utils/validation.js';
 import { requireAuth } from '../auth/session.js';
-import { podeEditarProjeto } from './permissions.js';
+import { podeEditarProjeto, podeVerProjeto } from './permissions.js';
 
 export async function handleGetDecisoesProjeto(request, env, projetoId) {
   const [u, e] = await requireAuth(request, env);
   if (e) return fail('Não autorizado', 401);
+  if (!await podeVerProjeto(env, projetoId, u.uid, u.papel)) return fail('Sem permissão', 403);
   const decisoes = await env.DB.prepare(
     'SELECT d.*, du.nome as dono_nome FROM decisoes d LEFT JOIN usuarios du ON du.id = d.dono_id WHERE d.projeto_id = ? ORDER BY d.data DESC, d.criado_em DESC'
   ).bind(projetoId).all();

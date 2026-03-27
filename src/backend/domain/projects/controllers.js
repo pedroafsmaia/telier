@@ -7,6 +7,7 @@ import {
   STATUS_PROJ_VALIDOS_SET,
   normalizarStatusProjeto,
   podeEditarProjeto,
+  podeVerProjeto,
   validarVinculoGrupo,
   syncProjetoPermissoesGrupo
 } from './permissions.js';
@@ -146,7 +147,7 @@ export async function handlePostProjetos(request, env) {
 export async function handleGetProjeto(request, env, projetoId) {
   const [u, e] = await requireAuth(request, env);
   if (e) return fail('Não autorizado', 401);
-  if (!await podeEditarProjeto(env, projetoId, u.uid, u.papel)) return fail('Sem permissão', 403);
+  if (!await podeVerProjeto(env, projetoId, u.uid, u.papel)) return fail('Sem permissão', 403);
   const [projetoRes, permsRes, horasRes] = await env.DB.batch([
     env.DB.prepare(
       `SELECT p.*, pu.nome as dono_nome,
@@ -247,7 +248,7 @@ export async function handlePostPermissoesProjeto(request, env, projetoId) {
   if (usuario_id === proj.dono_id) return fail('Usuário já é dono do projeto');
   
   await env.DB.prepare('DELETE FROM recusas_projeto WHERE projeto_id = ? AND usuario_id = ?').bind(projetoId, usuario_id).run();
-  await env.DB.prepare('INSERT OR REPLACE INTO permissoes_projeto (projeto_id, usuario_id, origem) VALUES (?, ?, "manual")').bind(projetoId, usuario_id).run();
+  await env.DB.prepare('INSERT OR REPLACE INTO permissoes_projeto (projeto_id, usuario_id, nivel, origem) VALUES (?, ?, \'editor\', \'manual\')').bind(projetoId, usuario_id).run();
   await criarNotificacaoCompartilhamento(env, {
     usuarioId: usuario_id, tipo: 'compartilhamento_recebido', escopo: 'projeto',
     entidadeId: projetoId, titulo: 'Projeto compartilhado com você',

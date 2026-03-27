@@ -62,7 +62,7 @@ export async function handleAuthLogin(request, env, cors, responseHeaders) {
   const senhaValida = await verificarSenha(senha, usuario.senha_hash);
   if (!senhaValida.ok) return fail('Credenciais inválidas', 401);
 
-  const needsRehash = !String(usuario.senha_hash || '').startsWith('sha256v1$');
+  const needsRehash = !String(usuario.senha_hash || '').startsWith('pbkdf2$');
   if (needsRehash) {
     try {
       const hashNovo = await hashSenha(senha);

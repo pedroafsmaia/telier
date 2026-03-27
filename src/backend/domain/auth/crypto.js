@@ -45,10 +45,8 @@ export async function pbkdf2Hash(senha, saltBytes, iter = PBKDF2_ITER) {
 
 export async function hashSenha(senha) {
   const saltBytes = crypto.getRandomValues(new Uint8Array(16));
-  const salt = Array.from(saltBytes).map(b => b.toString(16).padStart(2, '0')).join('');
-  const enc = new TextEncoder();
-  const hash = await sha256Hex(enc.encode(salt + ':' + String(senha)));
-  return `sha256v1$${salt}$${hash}`;
+  const calc = await pbkdf2Hash(senha, saltBytes, PBKDF2_ITER);
+  return `pbkdf2$${PBKDF2_ITER}$${toBase64(saltBytes)}$${toBase64(calc)}`;
 }
 
 export function parseHash(stored) {

@@ -2941,7 +2941,8 @@ tr:hover td{
 }
 
 /* FASE 1 REDESIGN: AJUSTES PRESCRITIVOS */
-.sidebar-overlay{display:none}
+/* sidebar-overlay is a <button> for accessibility; reset native button appearance */
+.sidebar-overlay{display:none;border:none;padding:0;cursor:default;appearance:none;-webkit-appearance:none}
 .sidebar-block-cta{display:grid;gap:8px;margin-bottom:18px}
 .sidebar-nav-footer{margin-top:18px;padding-top:14px;border-top:1px solid var(--border)}
 .topbar-menu{display:none;width:30px;height:30px;border:1px solid var(--border);border-radius:var(--r);background:var(--bg);color:var(--text-secondary);cursor:pointer}

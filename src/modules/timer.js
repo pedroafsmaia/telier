@@ -292,8 +292,8 @@ export async function renderSessoesTarefa(tarefaId, containerEl) {
               <div class="intervalo-tipo">${esc(iv.tipo)}</div>
               <div class="intervalo-tempo">${fmtDatetime(iv.inicio)} → ${iv.fim ? fmtDatetime(iv.fim) : 'aberto'}</div>
               ${dur !== null ? `<div class="intervalo-duracao">${dur}min</div>` : ''}
-              <button class="btn btn-danger btn-icon btn-sm" onclick="editarIntervalo('${iv.id}')" title="Editar"><svg width="13" height="13" viewBox="0 0 13 13" fill="none"><path d="M2 9.5V11h1.5l5.5-5.5-1.5-1.5L2 9.5zM10.85 2.65a1 1 0 0 0-1.42 0l-.79.79 1.42 1.42.79-.79a1 1 0 0 0 0-1.42z" fill="currentColor"/></svg></button>
-              <button class="btn btn-danger btn-icon btn-sm" onclick="deletarIntervalo('${iv.id}','${tarefaId}')" title="Excluir"><svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M1.5 1.5l9 9M10.5 1.5l-9 9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></button>
+              <button class="btn btn-ghost btn-icon btn-sm" onclick="editarIntervalo('${iv.id}')" title="Editar intervalo" aria-label="Editar intervalo"><svg width="13" height="13" viewBox="0 0 13 13" fill="none"><path d="M2 9.5V11h1.5l5.5-5.5-1.5-1.5L2 9.5zM10.85 2.65a1 1 0 0 0-1.42 0l-.79.79 1.42 1.42.79-.79a1 1 0 0 0 0-1.42z" fill="currentColor"/></svg></button>
+              <button class="btn btn-danger btn-icon btn-sm" onclick="deletarIntervalo('${iv.id}','${tarefaId}')" title="Excluir intervalo" aria-label="Excluir intervalo"><svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M1.5 1.5l9 9M10.5 1.5l-9 9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></button>
             </div>`;
           }).join('')}
         </div>` : '';

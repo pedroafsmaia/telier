@@ -14,13 +14,15 @@ export async function podeEditarProjeto(env, projetoId, usuarioId, papel) {
   const [proj, recusado, perm] = await env.DB.batch([
     env.DB.prepare('SELECT dono_id, grupo_id FROM projetos WHERE id = ?').bind(projetoId),
     env.DB.prepare('SELECT 1 as ok FROM recusas_projeto WHERE projeto_id = ? AND usuario_id = ?').bind(projetoId, usuarioId),
-    env.DB.prepare('SELECT 1 as ok FROM permissoes_projeto WHERE projeto_id = ? AND usuario_id = ?').bind(projetoId, usuarioId),
+    env.DB.prepare('SELECT nivel FROM permissoes_projeto WHERE projeto_id = ? AND usuario_id = ?').bind(projetoId, usuarioId),
   ]);
   const projRow = proj.results[0];
   if (!projRow) return false;
   if (projRow.dono_id === usuarioId) return true;
   if (recusado.results[0]) return false;
-  if (perm.results[0]) return true;
+  
+  const pRow = perm.results[0];
+  if (pRow && pRow.nivel === 'editor') return true;
 
   if (projRow.grupo_id) {
     const gperm = await env.DB.prepare('SELECT 1 FROM permissoes_grupo WHERE grupo_id = ? AND usuario_id = ?').bind(projRow.grupo_id, usuarioId).first();
@@ -30,7 +32,25 @@ export async function podeEditarProjeto(env, projetoId, usuarioId, papel) {
 }
 
 export async function podeVerProjeto(env, projetoId, usuarioId, papel) {
-  return await podeEditarProjeto(env, projetoId, usuarioId, papel);
+  if (papel === 'admin') return true;
+  const [proj, recusado, perm] = await env.DB.batch([
+    env.DB.prepare('SELECT dono_id, grupo_id FROM projetos WHERE id = ?').bind(projetoId),
+    env.DB.prepare('SELECT 1 as ok FROM recusas_projeto WHERE projeto_id = ? AND usuario_id = ?').bind(projetoId, usuarioId),
+    env.DB.prepare('SELECT nivel FROM permissoes_projeto WHERE projeto_id = ? AND usuario_id = ?').bind(projetoId, usuarioId),
+  ]);
+  const projRow = proj.results[0];
+  if (!projRow) return false;
+  if (projRow.dono_id === usuarioId) return true;
+  if (recusado.results[0]) return false;
+  
+  const pRow = perm.results[0];
+  if (pRow && (pRow.nivel === 'leitor' || pRow.nivel === 'editor')) return true;
+
+  if (projRow.grupo_id) {
+    const gperm = await env.DB.prepare('SELECT 1 FROM permissoes_grupo WHERE grupo_id = ? AND usuario_id = ?').bind(projRow.grupo_id, usuarioId).first();
+    if (gperm) return true;
+  }
+  return false;
 }
 
 export async function validarVinculoGrupo(env, grupoId, usuarioId, papel) {
