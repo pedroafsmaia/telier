@@ -221,3 +221,30 @@ export async function handleGetOperacaoHoje(request, env) {
   `).bind(u.uid, u.uid, u.uid).all();
   return ok(rows.results || []);
 }
+
+export async function handleGetMinhasTarefas(request, env) {
+  const [u, e] = await requireAuth(request, env);
+  if (e) return fail('Não autorizado', 401);
+  
+  const query = `
+    SELECT 
+      t.id, t.nome, t.status, t.prioridade, t.dificuldade, t.data, t.foco, t.dono_id,
+      t.projeto_id, p.nome AS projeto_nome, p.status AS projeto_status,
+      g.id AS grupo_id, g.nome AS grupo_nome,
+      (SELECT GROUP_CONCAT(usuario_id) FROM colaboradores_tarefa WHERE tarefa_id = t.id) AS colaboradores_ids_raw
+    FROM tarefas t
+    JOIN projetos p ON p.id = t.projeto_id
+    LEFT JOIN grupos_projetos g ON g.id = p.grupo_id
+    WHERE (
+      t.dono_id = ? 
+      OR EXISTS (SELECT 1 FROM colaboradores_tarefa ct WHERE ct.tarefa_id = t.id AND ct.usuario_id = ?)
+      OR EXISTS (SELECT 1 FROM permissoes_projeto pp WHERE pp.projeto_id = p.id AND pp.usuario_id = ?)
+      OR EXISTS (SELECT 1 FROM permissoes_grupo pg WHERE pg.grupo_id = p.grupo_id AND pg.usuario_id = ?)
+    )
+    AND (p.status != 'Arquivado' OR (t.status = 'Concluída' AND t.dono_id = ?))
+    ORDER BY t.foco DESC, CASE t.status WHEN 'Em andamento' THEN 0 WHEN 'A fazer' THEN 1 WHEN 'Bloqueada' THEN 2 ELSE 3 END, t.criado_em ASC
+  `;
+  
+  const rows = await env.DB.prepare(query).bind(u.uid, u.uid, u.uid, u.uid, u.uid).all();
+  return ok(rows.results || []);
+}

@@ -12,7 +12,7 @@ import { handleGetProjetoRelatorio, handleGetProjetoHorasPorUsuario } from './ba
 import { handleGetGrupos, handlePostGrupos, handleGetGrupo, handlePutGrupo, handlePatchGrupo, handleDeleteGrupo, handlePostPermissoesGrupo, handleDeleteSairGrupo, handleDeletePermissaoGrupoUsuario } from './backend/domain/groups/controllers.js';
 
 // Tasks
-import { handleGetTarefasProjeto, handlePostTarefasProjeto, handlePutTarefa, handlePatchTarefaStatus, handleDeleteTarefa, handlePostDuplicarTarefa, handlePutTarefaFoco, handleDeleteTarefaFoco, handleGetColaboradoresTarefa, handlePostColaboradoresTarefa, handleDeleteSairTarefa, handleDeleteColaboradorTarefa, handleGetOperacaoHoje } from './backend/domain/tasks/controllers.js';
+import { handleGetTarefasProjeto, handlePostTarefasProjeto, handlePutTarefa, handlePatchTarefaStatus, handleDeleteTarefa, handlePostDuplicarTarefa, handlePutTarefaFoco, handleDeleteTarefaFoco, handleGetColaboradoresTarefa, handlePostColaboradoresTarefa, handleDeleteSairTarefa, handleDeleteColaboradorTarefa, handleGetOperacaoHoje, handleGetMinhasTarefas } from './backend/domain/tasks/controllers.js';
 import { handleGetTemplatesTarefa, handlePostTemplatesTarefa, handlePutTemplateTarefa, handleDeleteTemplateTarefa } from './backend/domain/tasks/templates.js';
 
 // Time
@@ -63,6 +63,7 @@ export default {
       /* ── STATUS GERAL GLOBAIS ── */
       if (path === '/api/status' && method === 'GET') return await handleGetStatus(request, env, url);
       if (path === '/api/tarefas/operacao-hoje' && method === 'GET') return await handleGetOperacaoHoje(request, env, url);
+      if (path === '/api/tarefas/minhas' && method === 'GET') return await handleGetMinhasTarefas(request, env, url);
       if (path === '/api/tempo/ativas' && method === 'GET') return await handleGetTempoAtivas(request, env, url);
       if (path === '/api/tempo/colegas-ativos' && method === 'GET') return await handleGetTempoColegasAtivos(request, env, url);
       if (path === '/api/tempo/ultima-sessao' && method === 'GET') return await handleGetTempoUltimaSessao(request, env, url);
