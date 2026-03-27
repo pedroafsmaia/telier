@@ -185,6 +185,7 @@ export function renderTaskOpsList(tarefas = [], opts = {}) {
           ${metaPair('Status', t.status || '—', t.status === 'Bloqueada' ? 'is-alert' : 'is-muted')}
           ${metaPair('Prazo', prazoHoje, t.data && diasRestantes(t.data) <= 0 ? 'is-alert' : 'is-muted')}
           ${t.prioridade ? metaPair('Prioridade', t.prioridade, t.prioridade === 'Alta' ? 'is-warn' : 'is-muted') : ''}
+          ${t.complexidade ? metaPair('Complexidade', t.complexidade, 'is-muted') : ''}
         </div>
         <div class="ops-row-actions">
           ${renderTimerActions({

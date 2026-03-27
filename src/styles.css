@@ -3518,6 +3518,8 @@ html,body{
 }
 .app-sidebar__brand{
   cursor:pointer;
+  text-decoration:none;
+  display:block;
 }
 .app-sidebar__logo{
   letter-spacing:.16em;
