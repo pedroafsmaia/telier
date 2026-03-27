@@ -24,7 +24,20 @@ export async function req(method, path, body) {
   }
 
   let d = null;
-  try { d = await r.json(); } catch { d = null; }
+  try {
+    const text = await r.text();
+    try {
+      d = text ? JSON.parse(text) : null;
+    } catch (parseErr) {
+      console.error('[API] Parse Erro na resposta:', text);
+      throw new Error('Resposta inválida do servidor (não é JSON).');
+    }
+  } catch (err) {
+    if (err.message.includes('JSON')) throw err;
+    console.error('[API] Erro ao ler corpo da requisição:', err);
+    throw new Error('Falha ao ler dados do servidor.');
+  }
+
   if (!r.ok) throw new Error(d?.error || `Erro na requisição (${r.status})`);
   return d;
 }
