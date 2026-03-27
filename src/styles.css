@@ -3931,3 +3931,14 @@ input:focus-visible, select:focus-visible {
   color: var(--red);
   flex-shrink: 0;
 }
+
+/* -- AÇÃO IMEDIATA (HOME TAREFAS) -- */
+.action-block--active { border-left: 3px solid var(--accent) !important; padding-left: 17px; }
+@keyframes pulse-dot { 0% { opacity: 1; } 50% { opacity: 0.3; } 100% { opacity: 1; } }
+.pulse-dot-anim { animation: pulse-dot 1.5s infinite ease-in-out; }
+.timer-display-home { font-family: var(--ff-mono); font-size: 2rem; font-weight: 500; color: var(--accent); letter-spacing: .02em; line-height: 1; margin-top: 4px; }
+.action-block-info { flex: 1; min-width: 0; }
+.action-block-title { font-size: var(--fs-lg); color: var(--text); font-weight: 500; line-height: 1.3; }
+.action-block-project { font-size: var(--fs-sm); color: var(--text-muted); margin-top: 2px; }
+.action-block-timer { display: flex; align-items: center; gap: 12px; margin: 16px 0; }
+.action-block-timer .pulse-dot { width: 12px; height: 12px; border-radius: 50%; background: var(--accent); flex-shrink: 0; }
