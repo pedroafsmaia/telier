@@ -122,8 +122,9 @@ export async function ensureAllSchemas(env) {
   ]);
   
   // V8: Índices de notificacoes ausentes do snapshot V5 original
+  // Nota: D1/SQLite não suporta DESC em colunas de índice composto via CREATE INDEX
   await runMigration(8, [
-    `CREATE INDEX IF NOT EXISTS idx_notif_usuario_data ON notificacoes(usuario_id, criado_em DESC)`,
+    `CREATE INDEX IF NOT EXISTS idx_notif_usuario_data ON notificacoes(usuario_id, criado_em)`,
     `CREATE INDEX IF NOT EXISTS idx_notif_usuario_lida ON notificacoes(usuario_id, lida_em)`
   ]);
 
