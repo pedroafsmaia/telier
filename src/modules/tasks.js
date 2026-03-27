@@ -145,12 +145,15 @@ function filtrarTarefasTransversais(tarefas) {
   return lista;
 }
 
+let _tarefasHomeCache = [];
+
 export async function carregarTarefasUsuarioAtivas() {
   const rawTarefas = await req('GET', '/tarefas/minhas').catch((e) => {
     console.error(e);
     throw new Error('Não foi possível carregar as tarefas. Recarregue a página.');
   });
   const tarefas = normalizarColaboradoresTarefas(rawTarefas);
+  _tarefasHomeCache = tarefas;
   return {
     tarefas,
     projetosFiltro: [...new Map((tarefas || []).map(t => [t.projeto_id, { id: t.projeto_id, nome: t.projeto_nome }])).values()],
@@ -248,12 +251,53 @@ export async function abrirTarefaContexto(taskId, projectId, opts = {}) {
   if (!opts.fromRoute) {
     return window.goTask ? window.goTask(taskId, projectId) : null;
   }
+  
+  const cachedTask = _tarefasHomeCache.find(t => String(t.id || t.tarefa_id) === String(taskId));
+  const tNome = cachedTask ? (cachedTask.nome || cachedTask.tarefa_nome || 'Tarefa') : 'Tarefa';
+
+  abrirModal(`
+    <h2>Carregando tarefa...</h2>
+    <div class="modal-hint">Acessando informações de "${esc(tNome)}"</div>
+    <div class="skeleton-block" style="margin-top:20px; min-height: 300px">
+      <div class="skeleton-line" style="width:60%; margin-bottom:16px;"></div>
+      <div class="skeleton-line" style="width:100%; margin-bottom:8px;"></div>
+      <div class="skeleton-line" style="width:100%; margin-bottom:8px;"></div>
+      <div class="skeleton-line" style="width:80%; margin-bottom:24px;"></div>
+      <div style="display:flex; gap:12px">
+        <div class="skeleton-line w-100" style="flex:1"></div>
+        <div class="skeleton-line w-100" style="flex:1"></div>
+      </div>
+    </div>
+  `, {
+    onClose: () => { _taskContextOrigin = null; }
+  });
+
   _taskContextOrigin = { taskId: String(taskId), projectId: String(projectId) };
   const { abrirProjeto } = await import('./project.js');
   const projetoJaAberto = String(PROJETO?.id || '') === String(projectId);
-  if (!projetoJaAberto) {
-    await abrirProjeto(projectId, { fromRoute: true });
+  
+  try {
+    if (!projetoJaAberto) {
+      await abrirProjeto(projectId, { fromRoute: true });
+    }
+  } catch (e) {
+    const overlay = document.getElementById('modal-overlay');
+    if (overlay && overlay.classList.contains('aberto')) {
+      const modalBox = overlay.querySelector('.modal-box');
+      if (modalBox) {
+        modalBox.innerHTML = `
+          <h2>Erro</h2>
+          <div class="error-block-inline" style="margin:20px 0">${esc(e.message || 'Erro ao carregar o projeto.')}</div>
+          <div class="modal-footer"><button class="btn" onclick="fecharModal()">Fechar</button></div>
+        `;
+      }
+    }
+    return;
   }
+
+  const overlay = document.getElementById('modal-overlay');
+  if (!overlay || !overlay.classList.contains('aberto')) return;
+
   if (opts.expandTime) expandirSessoes(taskId);
   else modalEditarTarefa(taskId);
 }
