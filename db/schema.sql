@@ -34,6 +34,7 @@ CREATE TABLE IF NOT EXISTS grupos_projetos (
   id TEXT PRIMARY KEY,
   nome TEXT NOT NULL,
   descricao TEXT,
+  observacao_espera TEXT,
   status TEXT NOT NULL DEFAULT 'Ativo',
   dono_id TEXT NOT NULL,
   ordem INTEGER DEFAULT 0,
@@ -167,6 +168,7 @@ CREATE TABLE IF NOT EXISTS sessoes_tempo (
   usuario_id TEXT NOT NULL,
   inicio TEXT NOT NULL,             -- ISO datetime UTC
   fim TEXT,                         -- NULL = cronômetro ainda rodando
+  observacao TEXT,
   criado_em TEXT DEFAULT (datetime('now')),
   FOREIGN KEY (tarefa_id) REFERENCES tarefas(id) ON DELETE CASCADE,
   FOREIGN KEY (usuario_id) REFERENCES usuarios(id)

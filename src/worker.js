@@ -21,7 +21,7 @@ import { handleGetTempoResumo, handleGetTempoColegasAtivos, handleGetTempoUltima
 import { handlePostIntervalos, handleGetIntervalos, handlePutIntervalos, handleDeleteIntervalos } from './backend/domain/time/intervals.js';
 
 // Admin & Status
-import { handleGetStatus, handleGetAdminAgora, handleGetAdminTimelineHoje, handleGetAdminUsuarios, handleGetAdminUsuario, handleGetAdminProjetos, handleGetAdminTempo, handleGetAdminHorasPorGrupo } from './backend/domain/admin/controllers.js';
+import { handleGetStatus, handleGetAdminAgora, handleGetAdminTimelineHoje, handleGetAdminUsuarios, handleGetAdminUsuario, handleGetAdminProjetos, handleGetAdminGrupos, handleGetAdminTarefas, handleGetAdminTempo, handleGetAdminHorasPorGrupo } from './backend/domain/admin/controllers.js';
 
 export default {
   async fetch(request, env, ctx) {
@@ -166,6 +166,8 @@ export default {
       const matchAdminUsuario = path.match(/^\/api\/admin\/usuarios\/(usr_[a-zA-Z0-9]+)$/);
       if (matchAdminUsuario && method === 'GET') return await handleGetAdminUsuario(request, env, matchAdminUsuario[1]);
       if (path === '/api/admin/projetos' && method === 'GET') return await handleGetAdminProjetos(request, env, url);
+      if (path === '/api/admin/grupos' && method === 'GET') return await handleGetAdminGrupos(request, env, url);
+      if (path === '/api/admin/tarefas' && method === 'GET') return await handleGetAdminTarefas(request, env, url);
       if (path === '/api/admin/tempo' && method === 'GET') return await handleGetAdminTempo(request, env, url);
       if (path === '/api/admin/horas-por-grupo' && method === 'GET') return await handleGetAdminHorasPorGrupo(request, env, url);
 

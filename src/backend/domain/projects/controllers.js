@@ -24,13 +24,14 @@ export async function handleGetProjetos(request, env, url) {
   if (e) return fail('Não autorizado', 401);
   const statusFiltroRaw = url.searchParams.get('status') || null;
   const statusFiltro = statusFiltroRaw ? normalizarStatusProjeto(statusFiltroRaw) : null;
+  const grupoFiltro = (url.searchParams.get('grupo_id') || '').trim();
   if (statusFiltro && !STATUS_PROJ_VALIDOS_SET.has(statusFiltro)) return fail('Status de projeto inválido', 400);
   const asMember = url.searchParams.get('as_member') === '1';
   const adminScope = (isAdmin(u) && !asMember) ? 1 : 0;
   const { pageSize, offset } = getPagination(url, 200, 500);
 
-  const filterSql = `(? = 1 OR p.dono_id = ? OR (NOT EXISTS (SELECT 1 FROM recusas_projeto rp WHERE rp.projeto_id = p.id AND rp.usuario_id = ?) AND (EXISTS (SELECT 1 FROM permissoes_projeto pp WHERE pp.projeto_id = p.id AND pp.usuario_id = ?) OR EXISTS (SELECT 1 FROM permissoes_grupo pg WHERE pg.grupo_id = p.grupo_id AND pg.usuario_id = ?)))) AND (? IS NULL OR p.status = ?)`;
-  const binds = [adminScope, u.uid, u.uid, u.uid, u.uid, statusFiltro, statusFiltro];
+  const filterSql = `(? = 1 OR p.dono_id = ? OR (NOT EXISTS (SELECT 1 FROM recusas_projeto rp WHERE rp.projeto_id = p.id AND rp.usuario_id = ?) AND (EXISTS (SELECT 1 FROM permissoes_projeto pp WHERE pp.projeto_id = p.id AND pp.usuario_id = ?) OR EXISTS (SELECT 1 FROM permissoes_grupo pg WHERE pg.grupo_id = p.grupo_id AND pg.usuario_id = ?)))) AND (? IS NULL OR p.status = ?) AND (? = '' OR p.grupo_id = ?)`;
+  const binds = [adminScope, u.uid, u.uid, u.uid, u.uid, statusFiltro, statusFiltro, grupoFiltro, grupoFiltro];
 
   const totalQ = await env.DB.prepare(`SELECT COUNT(*) as total FROM projetos p WHERE ${filterSql}`).bind(...binds).first();
   const totalRows = totalQ?.total || 0;

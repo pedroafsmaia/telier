@@ -87,15 +87,58 @@ export async function handleGetAdminProjetos(request, env, url) {
   if (e) return fail('Não autorizado', 401);
   if (!isAdmin(u)) return fail('Sem permissão', 403);
   const { pageSize, offset } = getPagination(url, 150, 500);
+  const usuarioId = (url.searchParams.get('usuario_id') || '').trim() || null;
+
+  const totalQ = await env.DB.prepare(`
+    SELECT COUNT(*) as total
+    FROM projetos p
+    WHERE (
+      ? IS NULL
+      OR p.dono_id = ?
+      OR EXISTS (
+        SELECT 1
+        FROM tarefas t
+        WHERE t.projeto_id = p.id
+          AND (
+            t.dono_id = ?
+            OR EXISTS (
+              SELECT 1
+              FROM colaboradores_tarefa ct
+              WHERE ct.tarefa_id = t.id AND ct.usuario_id = ?
+            )
+          )
+      )
+    )
+  `).bind(usuarioId, usuarioId, usuarioId, usuarioId).first();
+  const totalRows = totalQ?.total || 0;
 
   const baseP = await env.DB.prepare(`
-    SELECT p.id, p.nome, p.fase, p.status, p.prioridade, p.prazo, pu.nome as dono_nome
-    FROM projetos p LEFT JOIN usuarios pu ON pu.id = p.dono_id 
+    SELECT p.id, p.nome, p.fase, p.status, p.prioridade, p.prazo, p.grupo_id, g.nome as grupo_nome, pu.nome as dono_nome
+    FROM projetos p
+    LEFT JOIN usuarios pu ON pu.id = p.dono_id
+    LEFT JOIN grupos_projetos g ON g.id = p.grupo_id
+    WHERE (
+      ? IS NULL
+      OR p.dono_id = ?
+      OR EXISTS (
+        SELECT 1
+        FROM tarefas t
+        WHERE t.projeto_id = p.id
+          AND (
+            t.dono_id = ?
+            OR EXISTS (
+              SELECT 1
+              FROM colaboradores_tarefa ct
+              WHERE ct.tarefa_id = t.id AND ct.usuario_id = ?
+            )
+          )
+      )
+    )
     ORDER BY p.atualizado_em DESC LIMIT ? OFFSET ?
-  `).bind(pageSize, offset).all();
+  `).bind(usuarioId, usuarioId, usuarioId, usuarioId, pageSize, offset).all();
 
   const results = baseP.results || [];
-  if (results.length === 0) return ok([]);
+  if (results.length === 0) return ok([], 200, { 'X-Total-Count': String(totalRows) });
 
   const pIds = results.map(r => r.id);
   const ph = pIds.map(() => '?').join(',');
@@ -115,7 +158,179 @@ export async function handleGetAdminProjetos(request, env, url) {
     horas_totais: mapH[p.id] || 0
   }));
 
-  return ok(finalRows);
+  return ok(finalRows, 200, { 'X-Total-Count': String(totalRows) });
+}
+
+export async function handleGetAdminGrupos(request, env, url) {
+  const [u, e] = await requireAuth(request, env);
+  if (e) return fail('Não autorizado', 401);
+  if (!isAdmin(u)) return fail('Sem permissão', 403);
+  const { pageSize, offset } = getPagination(url, 200, 500);
+  const usuarioId = (url.searchParams.get('usuario_id') || '').trim() || null;
+
+  const totalQ = await env.DB.prepare(`
+    SELECT COUNT(*) as total
+    FROM grupos_projetos g
+    WHERE (
+      ? IS NULL
+      OR g.dono_id = ?
+      OR EXISTS (
+        SELECT 1
+        FROM projetos p
+        WHERE p.grupo_id = g.id
+          AND (
+            p.dono_id = ?
+            OR EXISTS (
+              SELECT 1
+              FROM tarefas t
+              WHERE t.projeto_id = p.id
+                AND (
+                  t.dono_id = ?
+                  OR EXISTS (
+                    SELECT 1
+                    FROM colaboradores_tarefa ct
+                    WHERE ct.tarefa_id = t.id AND ct.usuario_id = ?
+                  )
+                )
+            )
+          )
+      )
+    )
+  `).bind(usuarioId, usuarioId, usuarioId, usuarioId, usuarioId).first();
+  const totalRows = totalQ?.total || 0;
+
+  const base = await env.DB.prepare(`
+    SELECT g.id, g.nome, g.descricao, g.status, g.ordem, g.dono_id, pu.nome as dono_nome, pu.login as dono_email
+    FROM grupos_projetos g
+    LEFT JOIN usuarios pu ON pu.id = g.dono_id
+    WHERE (
+      ? IS NULL
+      OR g.dono_id = ?
+      OR EXISTS (
+        SELECT 1
+        FROM projetos p
+        WHERE p.grupo_id = g.id
+          AND (
+            p.dono_id = ?
+            OR EXISTS (
+              SELECT 1
+              FROM tarefas t
+              WHERE t.projeto_id = p.id
+                AND (
+                  t.dono_id = ?
+                  OR EXISTS (
+                    SELECT 1
+                    FROM colaboradores_tarefa ct
+                    WHERE ct.tarefa_id = t.id AND ct.usuario_id = ?
+                  )
+                )
+            )
+          )
+      )
+    )
+    ORDER BY g.ordem ASC, g.nome ASC
+    LIMIT ? OFFSET ?
+  `).bind(usuarioId, usuarioId, usuarioId, usuarioId, usuarioId, pageSize, offset).all();
+
+  const results = base.results || [];
+  if (results.length === 0) return ok([], 200, { 'X-Total-Count': String(totalRows) });
+
+  const groupIds = results.map((group) => group.id);
+  const ph = groupIds.map(() => '?').join(',');
+
+  const [projectsAgg, hoursAgg] = await env.DB.batch([
+    env.DB.prepare(`
+      SELECT p.grupo_id,
+        COUNT(DISTINCT p.id) as total_projetos,
+        SUM(CASE WHEN p.prazo IS NOT NULL AND date(p.prazo) < date('now') AND p.status NOT IN ('Concluído', 'Arquivado') THEN 1 ELSE 0 END) as projetos_atrasados,
+        ROUND(COALESCE(SUM(COALESCE(p.area_m2, 0)), 0), 2) as area_total_m2
+      FROM projetos p
+      WHERE p.grupo_id IN (${ph})
+      GROUP BY p.grupo_id
+    `).bind(...groupIds),
+    env.DB.prepare(`
+      SELECT p.grupo_id,
+        ROUND(COALESCE(SUM((CASE WHEN st.fim IS NULL THEN (julianday('now') - julianday(st.inicio)) * 24 ELSE (julianday(st.fim) - julianday(st.inicio)) * 24 END) - COALESCE((SELECT SUM(CASE WHEN i.fim IS NULL THEN 0 ELSE (julianday(i.fim) - julianday(i.inicio)) * 24 END) FROM intervalos i WHERE i.sessao_id = st.id), 0)), 0), 2) as total_horas
+      FROM sessoes_tempo st
+      JOIN tarefas t ON t.id = st.tarefa_id
+      JOIN projetos p ON p.id = t.projeto_id
+      WHERE p.grupo_id IN (${ph})
+      GROUP BY p.grupo_id
+    `).bind(...groupIds),
+  ]);
+
+  const projectsMap = {};
+  for (const row of projectsAgg.results || []) projectsMap[row.grupo_id] = row;
+
+  const hoursMap = {};
+  for (const row of hoursAgg.results || []) hoursMap[row.grupo_id] = row.total_horas;
+
+  const finalRows = results.map((group) => ({
+    ...group,
+    total_projetos: projectsMap[group.id]?.total_projetos || 0,
+    projetos_atrasados: projectsMap[group.id]?.projetos_atrasados || 0,
+    area_total_m2: projectsMap[group.id]?.area_total_m2 || 0,
+    total_horas: hoursMap[group.id] || 0,
+  }));
+
+  return ok(finalRows, 200, { 'X-Total-Count': String(totalRows) });
+}
+
+export async function handleGetAdminTarefas(request, env, url) {
+  const [u, e] = await requireAuth(request, env);
+  if (e) return fail('Não autorizado', 401);
+  if (!isAdmin(u)) return fail('Sem permissão', 403);
+  const { pageSize, offset } = getPagination(url, 400, 1000);
+  const usuarioId = (url.searchParams.get('usuario_id') || '').trim() || null;
+
+  const totalQ = await env.DB.prepare(`
+    SELECT COUNT(*) as total
+    FROM tarefas t
+    WHERE (
+      ? IS NULL
+      OR t.dono_id = ?
+      OR EXISTS (
+        SELECT 1
+        FROM colaboradores_tarefa ct
+        WHERE ct.tarefa_id = t.id AND ct.usuario_id = ?
+      )
+    )
+  `).bind(usuarioId, usuarioId, usuarioId).first();
+  const totalRows = totalQ?.total || 0;
+
+  const rows = await env.DB.prepare(`
+    SELECT
+      t.id, t.nome, t.descricao, t.observacao_espera, t.status, t.prioridade, t.dificuldade AS complexidade, t.data, t.foco,
+      t.projeto_id, p.nome AS projeto_nome, p.status AS projeto_status,
+      g.id AS grupo_id, g.nome AS grupo_nome,
+      t.dono_id, u.nome AS dono_nome, u.login AS dono_login,
+      t.criado_em, t.atualizado_em,
+      (SELECT GROUP_CONCAT(ct.usuario_id) FROM colaboradores_tarefa ct WHERE ct.tarefa_id = t.id) AS colaboradores_ids,
+      (SELECT GROUP_CONCAT(uc.nome) FROM colaboradores_tarefa ct JOIN usuarios uc ON uc.id = ct.usuario_id WHERE ct.tarefa_id = t.id) AS colaboradores_nomes,
+      (SELECT st.id FROM sessoes_tempo st WHERE st.tarefa_id = t.id AND st.fim IS NULL ORDER BY st.inicio ASC LIMIT 1) AS sessao_ativa_id,
+      (
+        SELECT ROUND(COALESCE(SUM((CASE WHEN st.fim IS NULL THEN (julianday('now') - julianday(st.inicio)) * 24 ELSE (julianday(st.fim) - julianday(st.inicio)) * 24 END) - COALESCE((SELECT SUM(CASE WHEN i.fim IS NULL THEN 0 ELSE (julianday(i.fim) - julianday(i.inicio)) * 24 END) FROM intervalos i WHERE i.sessao_id = st.id), 0)), 0), 2)
+        FROM sessoes_tempo st
+        WHERE st.tarefa_id = t.id
+      ) AS total_horas
+    FROM tarefas t
+    JOIN projetos p ON p.id = t.projeto_id
+    LEFT JOIN grupos_projetos g ON g.id = p.grupo_id
+    LEFT JOIN usuarios u ON u.id = t.dono_id
+    WHERE (
+      ? IS NULL
+      OR t.dono_id = ?
+      OR EXISTS (
+        SELECT 1
+        FROM colaboradores_tarefa ct
+        WHERE ct.tarefa_id = t.id AND ct.usuario_id = ?
+      )
+    )
+    ORDER BY t.foco DESC, CASE t.status WHEN 'Em andamento' THEN 0 WHEN 'Bloqueada' THEN 1 WHEN 'A fazer' THEN 2 ELSE 3 END, t.atualizado_em DESC
+    LIMIT ? OFFSET ?
+  `).bind(usuarioId, usuarioId, usuarioId, pageSize, offset).all();
+
+  return ok(rows.results || [], 200, { 'X-Total-Count': String(totalRows) });
 }
 
 export async function handleGetAdminTempo(request, env, url) {

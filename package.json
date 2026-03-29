@@ -3,8 +3,12 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
+    "build:rebuild": "npm run build --prefix frontend-v2",
+    "lint:rebuild": "npm run lint --prefix frontend-v2",
     "screenshots": "node capture.js",
-    "smoke": "node smoke.js"
+    "smoke": "node smoke.js",
+    "smoke:legacy": "node smoke.js",
+    "smoke:rebuild": "node smoke-rebuild.js"
   },
   "dependencies": {
     "playwright": "^1.52.0"

@@ -1,0 +1,24 @@
+/* Import tokens do Telier */
+@import './design/tokens.css';
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Base styles Telier */
+@layer base {
+  html {
+    font-family: var(--font-family-sans);
+    color-scheme: light dark;
+  }
+
+  body {
+    @apply bg-gray-50 text-gray-900 antialiased;
+    font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
+  }
+
+  /* Reset para layout do Telier */
+  #root {
+    @apply min-h-screen;
+  }
+}

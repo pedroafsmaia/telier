@@ -10,7 +10,6 @@ export async function handleGetTempoTarefa(request, env, tarefaId) {
   if (e) return fail('Não autorizado', 401);
   if (!await podeVerTempoTarefa(env, tarefaId, u.uid, u.papel)) return fail('Sem permissão', 403);
   
-  const filtroUsuario = isAdmin(u) ? null : u.uid;
   const sessoes = await env.DB.prepare(`
     SELECT st.*, tu.nome as usuario_nome,
       ROUND((CASE WHEN st.fim IS NULL THEN (julianday('now') - julianday(st.inicio)) * 24 ELSE (julianday(st.fim) - julianday(st.inicio)) * 24 END -
@@ -18,18 +17,18 @@ export async function handleGetTempoTarefa(request, env, tarefaId) {
       ), 4) as horas_liquidas
     FROM sessoes_tempo st
     LEFT JOIN usuarios tu ON tu.id = st.usuario_id
-    WHERE st.tarefa_id = ? AND (? IS NULL OR st.usuario_id = ?)
+    WHERE st.tarefa_id = ?
     ORDER BY st.usuario_id, st.inicio DESC
-  `).bind(tarefaId, filtroUsuario, filtroUsuario).all();
+  `).bind(tarefaId).all();
 
   if (!(sessoes.results || []).length) return ok([]);
   
   const intervalosQ = await env.DB.prepare(`
     SELECT i.* FROM intervalos i
     JOIN sessoes_tempo st ON st.id = i.sessao_id
-    WHERE st.tarefa_id = ? AND (? IS NULL OR st.usuario_id = ?)
+    WHERE st.tarefa_id = ?
     ORDER BY i.sessao_id, i.inicio ASC
-  `).bind(tarefaId, filtroUsuario, filtroUsuario).all();
+  `).bind(tarefaId).all();
   
   const intervalosPorSessao = new Map();
   for (const it of (intervalosQ.results || [])) {
@@ -98,9 +97,10 @@ export async function handlePutTempoParar(request, env, sessaoId) {
   
   const _body = await readJsonBody(request);
   const fimStr = parseDatetimeStr(_body.fim, 'fim') || new Date().toISOString().slice(0, 19).replace('T', ' ');
+  const observacao = clampStr(_body.observacao, 4000, 'observacao');
   validarJanela(s.inicio, fimStr, 'encerramento da sessão');
 
-  await env.DB.prepare('UPDATE sessoes_tempo SET fim=? WHERE id=?').bind(fimStr, sessaoId).run();
+  await env.DB.prepare('UPDATE sessoes_tempo SET fim=?, observacao=? WHERE id=?').bind(fimStr, observacao?.trim() || null, sessaoId).run();
   return ok({ ok: true, fim: fimStr });
 }
 

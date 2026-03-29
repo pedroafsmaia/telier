@@ -1,0 +1,178 @@
+/* Telier Design Tokens */
+/* Baseado na identidade visual existente do Telier */
+
+:root {
+  /* Cores primárias institucionais */
+  --color-telier-50: #f8f9fa;
+  --color-telier-100: #f1f3f4;
+  --color-telier-200: #e8eaed;
+  --color-telier-300: #dadce0;
+  --color-telier-400: #bdc1c6;
+  --color-telier-500: #9aa0a6;
+  --color-telier-600: #80868b;
+  --color-telier-700: #5f6368;
+  --color-telier-800: #3c4043;
+  --color-telier-900: #202124;
+
+  /* Cores funcionais */
+  --color-success-50: #e6f4ea;
+  --color-success-100: #ceead6;
+  --color-success-500: #34a853;
+  --color-success-600: #2d8e47;
+
+  --color-warning-50: #fef7e0;
+  --color-warning-100: #feefc3;
+  --color-warning-500: #fbbc04;
+  --color-warning-600: #e9a503;
+
+  --color-error-50: #fce8e6;
+  --color-error-100: #fad2cf;
+  --color-error-500: #ea4335;
+  --color-error-600: #d23321;
+
+  --color-info-50: #e8f0fe;
+  --color-info-100: #d2e3fc;
+  --color-info-500: #4285f4;
+  --color-info-600: #1a73e8;
+
+  /* Cores de status (funcionais) */
+  --color-status-todo: var(--color-telier-600);
+  --color-status-progress: var(--color-info-500);
+  --color-status-waiting: var(--color-warning-500);
+  --color-status-done: var(--color-success-500);
+
+  /* Cores de prioridade */
+  --color-priority-low: var(--color-success-500);
+  --color-priority-medium: var(--color-warning-500);
+  --color-priority-high: var(--color-error-500);
+  --color-priority-urgent: #b3261e;
+
+  /* Cores primárias para ações e botões */
+  --color-primary: var(--color-info-500);
+  --color-primary-hover: var(--color-info-600);
+
+  /* Cores de facilidade */
+  --color-ease-very-easy: var(--color-success-500);
+  --color-ease-easy: var(--color-info-500);
+  --color-ease-medium: var(--color-warning-500);
+  --color-ease-hard: var(--color-error-500);
+  --color-ease-very-hard: #b3261e;
+
+  /* Superfícies */
+  --color-surface-primary: #ffffff;
+  --color-surface-secondary: var(--color-telier-50);
+  --color-surface-tertiary: var(--color-telier-100);
+  --color-surface-elevated: #ffffff;
+  --color-surface-overlay: rgba(255, 255, 255, 0.95);
+
+  /* Texto */
+  --color-text-primary: var(--color-telier-900);
+  --color-text-secondary: var(--color-telier-700);
+  --color-text-tertiary: var(--color-telier-600);
+  --color-text-disabled: var(--color-telier-400);
+  --color-text-inverse: #ffffff;
+
+  /* Bordas */
+  --color-border-primary: var(--color-telier-300);
+  --color-border-secondary: var(--color-telier-200);
+  --color-border-focus: var(--color-info-500);
+  --color-border-error: var(--color-error-500);
+
+  /* Fundos */
+  --color-background-primary: #ffffff;
+  --color-background-secondary: var(--color-telier-50);
+  --color-background-overlay: rgba(0, 0, 0, 0.5);
+
+  /* Tipografia */
+  --font-family-sans: 'Inter', system-ui, sans-serif;
+  --font-family-mono: 'DM Mono', 'Consolas', monospace;
+
+  /* Tamanhos de fonte */
+  --font-size-xs: 0.75rem;    /* 12px */
+  --font-size-sm: 0.875rem;   /* 14px */
+  --font-size-base: 1rem;     /* 16px */
+  --font-size-lg: 1.125rem;   /* 18px */
+  --font-size-xl: 1.25rem;    /* 20px */
+  --font-size-2xl: 1.5rem;    /* 24px */
+  --font-size-3xl: 1.875rem;  /* 30px */
+
+  /* Pesos de fonte */
+  --font-weight-normal: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+  --font-weight-bold: 700;
+
+  /* Espaçamento */
+  --spacing-1: 0.25rem;   /* 4px */
+  --spacing-2: 0.5rem;    /* 8px */
+  --spacing-3: 0.75rem;   /* 12px */
+  --spacing-4: 1rem;      /* 16px */
+  --spacing-5: 1.25rem;   /* 20px */
+  --spacing-6: 1.5rem;    /* 24px */
+  --spacing-8: 2rem;      /* 32px */
+  --spacing-10: 2.5rem;   /* 40px */
+  --spacing-12: 3rem;     /* 48px */
+  --spacing-16: 4rem;     /* 64px */
+  --spacing-20: 5rem;     /* 80px */
+
+  /* Border radius */
+  --radius-sm: 0.125rem;  /* 2px */
+  --radius-base: 0.25rem; /* 4px */
+  --radius-md: 0.375rem;  /* 6px */
+  --radius-lg: 0.5rem;    /* 8px */
+  --radius-xl: 0.75rem;   /* 12px */
+  --radius-2xl: 1rem;     /* 16px */
+  --radius-full: 9999px;
+
+  /* Sombras */
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  --shadow-base: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+
+  /* Z-index */
+  --z-dropdown: 1000;
+  --z-sticky: 1020;
+  --z-fixed: 1030;
+  --z-modal-backdrop: 1040;
+  --z-modal: 1050;
+  --z-popover: 1060;
+  --z-tooltip: 1070;
+
+  /* Transições */
+  --transition-fast: 150ms ease-in-out;
+  --transition-base: 200ms ease-in-out;
+  --transition-slow: 300ms ease-in-out;
+
+  /* Timer específico */
+  --color-timer-active: var(--color-warning-500);
+  --color-timer-long: var(--color-error-500);
+  --timer-warning-hours: 2;
+}
+
+/* Tema escuro (preservando identidade) */
+@media (prefers-color-scheme: dark) {
+  :root {
+    /* Superfícies escuras mantendo neutralidade */
+    --color-surface-primary: var(--color-telier-900);
+    --color-surface-secondary: var(--color-telier-800);
+    --color-surface-tertiary: var(--color-telier-700);
+    --color-surface-elevated: var(--color-telier-800);
+    --color-surface-overlay: rgba(32, 33, 36, 0.95);
+
+    /* Texto em tema escuro */
+    --color-text-primary: #ffffff;
+    --color-text-secondary: var(--color-telier-200);
+    --color-text-tertiary: var(--color-telier-300);
+    --color-text-disabled: var(--color-telier-500);
+
+    /* Fundos */
+    --color-background-primary: var(--color-telier-900);
+    --color-background-secondary: var(--color-telier-800);
+
+    /* Bordas adaptadas */
+    --color-border-primary: var(--color-telier-600);
+    --color-border-secondary: var(--color-telier-700);
+  }
+}

@@ -61,10 +61,10 @@ export async function ensureAllSchemas(env) {
 
   // V4: Tarefas, Sessoes_tempo, Intervalos, Templates, Decisões
   await runMigration(4, [
-    `CREATE TABLE IF NOT EXISTS tarefas (id TEXT PRIMARY KEY, projeto_id TEXT NOT NULL REFERENCES projetos(id) ON DELETE CASCADE, nome TEXT NOT NULL, status TEXT NOT NULL DEFAULT 'A fazer', prioridade TEXT NOT NULL DEFAULT 'Média', dificuldade TEXT NOT NULL DEFAULT 'Moderada', descricao TEXT, data TEXT, foco INTEGER NOT NULL DEFAULT 0, dono_id TEXT NOT NULL REFERENCES usuarios(id), criado_em TEXT DEFAULT (datetime('now')), atualizado_em TEXT DEFAULT (datetime('now')))`,
+    `CREATE TABLE IF NOT EXISTS tarefas (id TEXT PRIMARY KEY, projeto_id TEXT NOT NULL REFERENCES projetos(id) ON DELETE CASCADE, nome TEXT NOT NULL, status TEXT NOT NULL DEFAULT 'A fazer', prioridade TEXT NOT NULL DEFAULT 'Média', dificuldade TEXT NOT NULL DEFAULT 'Moderada', descricao TEXT, observacao_espera TEXT, data TEXT, foco INTEGER NOT NULL DEFAULT 0, dono_id TEXT NOT NULL REFERENCES usuarios(id), criado_em TEXT DEFAULT (datetime('now')), atualizado_em TEXT DEFAULT (datetime('now')))`,
     `CREATE TABLE IF NOT EXISTS templates_tarefa (id TEXT PRIMARY KEY, nome TEXT NOT NULL, status TEXT NOT NULL DEFAULT 'A fazer', prioridade TEXT NOT NULL DEFAULT 'Média', dificuldade TEXT NOT NULL DEFAULT 'Moderada', descricao TEXT, criado_por TEXT NOT NULL REFERENCES usuarios(id), ativo INTEGER NOT NULL DEFAULT 1, criado_em TEXT DEFAULT (datetime('now')), atualizado_em TEXT DEFAULT (datetime('now')))`,
     `CREATE TABLE IF NOT EXISTS colaboradores_tarefa (tarefa_id TEXT NOT NULL REFERENCES tarefas(id) ON DELETE CASCADE, usuario_id TEXT NOT NULL REFERENCES usuarios(id) ON DELETE CASCADE, adicionado_em TEXT DEFAULT (datetime('now')), PRIMARY KEY (tarefa_id, usuario_id))`,
-    `CREATE TABLE IF NOT EXISTS sessoes_tempo (id TEXT PRIMARY KEY, tarefa_id TEXT NOT NULL REFERENCES tarefas(id) ON DELETE CASCADE, usuario_id TEXT NOT NULL REFERENCES usuarios(id), inicio TEXT NOT NULL, fim TEXT, criado_em TEXT DEFAULT (datetime('now')))`,
+    `CREATE TABLE IF NOT EXISTS sessoes_tempo (id TEXT PRIMARY KEY, tarefa_id TEXT NOT NULL REFERENCES tarefas(id) ON DELETE CASCADE, usuario_id TEXT NOT NULL REFERENCES usuarios(id), inicio TEXT NOT NULL, fim TEXT, observacao TEXT, criado_em TEXT DEFAULT (datetime('now')))`,
     `CREATE TABLE IF NOT EXISTS intervalos (id TEXT PRIMARY KEY, sessao_id TEXT NOT NULL REFERENCES sessoes_tempo(id) ON DELETE CASCADE, tipo TEXT NOT NULL, inicio TEXT NOT NULL, fim TEXT, criado_em TEXT DEFAULT (datetime('now')))`,
     `CREATE TABLE IF NOT EXISTS decisoes (id TEXT PRIMARY KEY, projeto_id TEXT NOT NULL REFERENCES projetos(id) ON DELETE CASCADE, descricao TEXT NOT NULL, data TEXT DEFAULT (date('now')), dono_id TEXT NOT NULL REFERENCES usuarios(id), criado_em TEXT DEFAULT (datetime('now')))`
   ]);
@@ -127,6 +127,23 @@ export async function ensureAllSchemas(env) {
     `CREATE INDEX IF NOT EXISTS idx_notif_usuario_data ON notificacoes(usuario_id, criado_em)`,
     `CREATE INDEX IF NOT EXISTS idx_notif_usuario_lida ON notificacoes(usuario_id, lida_em)`
   ]);
+
+  const runSoftAltersV9 = async () => {
+    const alters = [
+      'ALTER TABLE tarefas ADD COLUMN observacao_espera TEXT',
+      'ALTER TABLE sessoes_tempo ADD COLUMN observacao TEXT'
+    ];
+    for (const alt of alters) {
+      try { await env.DB.prepare(alt).run(); } catch {}
+    }
+  };
+
+  if (currentStep < 9) {
+    console.log(`[schema] rodando migração soft alters v9...`);
+    await runSoftAltersV9();
+    await env.DB.prepare('INSERT INTO schema_migrations (version) VALUES (9)').run();
+    currentStep = 9;
+  }
 
   // Limpeza Oportunista (Não Conta como Migration)
   env.DB.prepare("DELETE FROM sessoes WHERE expira_em < datetime('now', '-1 day')").run().catch(() => {});

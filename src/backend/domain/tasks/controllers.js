@@ -18,7 +18,10 @@ export async function handleGetTarefasProjeto(request, env, projetoId) {
   if (e) return fail('Não autorizado', 401);
   if (!await podeVerProjeto(env, projetoId, u.uid, u.papel)) return fail('Sem permissão', 403);
   const tarefas = await env.DB.prepare(`
-    SELECT t.*, t.dificuldade AS complexidade, tu.nome as dono_nome, CASE WHEN t.dono_id = ? THEN 1 ELSE 0 END as minha_tarefa
+    SELECT t.*, t.dificuldade AS complexidade, tu.nome as dono_nome, tu.login as dono_login,
+      (SELECT GROUP_CONCAT(ct.usuario_id) FROM colaboradores_tarefa ct WHERE ct.tarefa_id = t.id) as colaboradores_ids,
+      (SELECT GROUP_CONCAT(u.nome) FROM colaboradores_tarefa ct JOIN usuarios u ON u.id = ct.usuario_id WHERE ct.tarefa_id = t.id) as colaboradores_nomes,
+      CASE WHEN t.dono_id = ? THEN 1 ELSE 0 END as minha_tarefa
     FROM tarefas t LEFT JOIN usuarios tu ON tu.id = t.dono_id
     WHERE t.projeto_id = ?
     ORDER BY t.foco DESC, CASE t.status WHEN 'Em andamento' THEN 0 WHEN 'A fazer' THEN 1 WHEN 'Bloqueada' THEN 2 ELSE 3 END, t.criado_em ASC
@@ -39,6 +42,7 @@ export async function handlePostTarefasProjeto(request, env, projetoId) {
   const dificuldade = clampStr(_body.dificuldade, 80, 'dificuldade');
   const data = validateDate(_body.data, 'prazo');
   const descricao = clampStr(_body.descricao, 4000, 'descricao');
+  const observacaoEspera = clampStr(_body.observacao_espera, 4000, 'observacao_espera');
   const template_id = _body.template_id;
   
   let template = null;
@@ -53,10 +57,10 @@ export async function handlePostTarefasProjeto(request, env, projetoId) {
   const id = 'tsk_' + uid();
   
   await env.DB.prepare(
-    'INSERT INTO tarefas (id, projeto_id, nome, status, prioridade, dificuldade, data, dono_id, descricao) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)'
+    'INSERT INTO tarefas (id, projeto_id, nome, status, prioridade, dificuldade, data, dono_id, descricao, observacao_espera) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
   ).bind(
     id, projetoId, nomeFinal, status || template?.status || 'A fazer', prioridade || template?.prioridade || 'Média',
-    complexidadeVal, data || null, u.uid, descricao?.trim() || template?.descricao || null
+    complexidadeVal, data || null, u.uid, descricao?.trim() || template?.descricao || null, observacaoEspera?.trim() || null
   ).run();
   return ok({ id });
 }
@@ -73,11 +77,16 @@ export async function handlePutTarefa(request, env, tarefaId) {
   const complexidadeVal = clampStr(_body.complexidade || _body.dificuldade, 80, 'dificuldade') || 'Moderada';
   const data = validateDate(_body.data, 'prazo');
   const descricao = clampStr(_body.descricao, 4000, 'descricao');
+  const observacaoEspera = clampStr(_body.observacao_espera, 4000, 'observacao_espera');
+  const projetoId = clampStr(_body.projeto_id, 80, 'projeto_id');
   
   if (!nome?.trim()) return fail('Nome obrigatório');
+  if (projetoId && !await podeEditarProjeto(env, projetoId, u.uid, u.papel)) {
+    return fail('Sem permissão no projeto de destino', 403);
+  }
   await env.DB.prepare(
-    'UPDATE tarefas SET nome=?, status=?, prioridade=?, dificuldade=?, data=?, descricao=?, atualizado_em=datetime("now") WHERE id=?'
-  ).bind(nome.trim(), status, prioridade, complexidadeVal, data || null, descricao?.trim() || null, tarefaId).run();
+    'UPDATE tarefas SET projeto_id=COALESCE(?, projeto_id), nome=?, status=?, prioridade=?, dificuldade=?, data=?, descricao=?, observacao_espera=?, atualizado_em=datetime("now") WHERE id=?'
+  ).bind(projetoId || null, nome.trim(), status, prioridade, complexidadeVal, data || null, descricao?.trim() || null, observacaoEspera?.trim() || null, tarefaId).run();
   
   return ok({ ok: true });
 }
@@ -228,13 +237,16 @@ export async function handleGetMinhasTarefas(request, env) {
   
   const query = `
     SELECT 
-      t.id, t.nome, t.status, t.prioridade, t.dificuldade, t.data, t.foco, t.dono_id,
+      t.id, t.nome, t.status, t.prioridade, t.dificuldade AS complexidade, t.data, t.foco, t.dono_id, t.descricao, t.observacao_espera, t.criado_em, t.atualizado_em,
       t.projeto_id, p.nome AS projeto_nome, p.status AS projeto_status,
       g.id AS grupo_id, g.nome AS grupo_nome,
-      (SELECT GROUP_CONCAT(usuario_id) FROM colaboradores_tarefa WHERE tarefa_id = t.id) AS colaboradores_ids_raw
+      u.nome AS dono_nome, u.login AS dono_login,
+      (SELECT GROUP_CONCAT(ct.usuario_id) FROM colaboradores_tarefa ct WHERE ct.tarefa_id = t.id) AS colaboradores_ids,
+      (SELECT GROUP_CONCAT(uc.nome) FROM colaboradores_tarefa ct JOIN usuarios uc ON uc.id = ct.usuario_id WHERE ct.tarefa_id = t.id) AS colaboradores_nomes
     FROM tarefas t
     JOIN projetos p ON p.id = t.projeto_id
     LEFT JOIN grupos_projetos g ON g.id = p.grupo_id
+    LEFT JOIN usuarios u ON u.id = t.dono_id
     WHERE (
       t.dono_id = ? 
       OR EXISTS (SELECT 1 FROM colaboradores_tarefa ct WHERE ct.tarefa_id = t.id AND ct.usuario_id = ?)

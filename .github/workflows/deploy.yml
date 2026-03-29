@@ -1,18 +1,58 @@
-name: Deploy Worker
+﻿name: Deploy Worker
 
 on:
   push:
     branches:
       - main
     paths:
+      - '.github/workflows/deploy.yml'
+      - 'frontend-v2/**'
+      - 'package.json'
+      - 'smoke-rebuild.js'
       - 'src/worker.js'
       - 'wrangler.toml'
       - 'db/schema.sql'
 
 jobs:
+  validate-rebuild:
+    runs-on: ubuntu-latest
+    name: Validate frontend-v2 migration gate
+    permissions:
+      contents: read
+    env:
+      VITE_TELIER_UI_MIGRATION_MODE: legacy
+      VITE_TELIER_LEGACY_URL: http://127.0.0.1:4173
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install root dependencies
+        run: npm ci
+
+      - name: Install frontend-v2 dependencies
+        run: npm ci
+        working-directory: frontend-v2
+
+      - name: Lint frontend-v2
+        run: npm run lint
+        working-directory: frontend-v2
+
+      - name: Build frontend-v2 with migration gate closed by default
+        run: npm run build
+        working-directory: frontend-v2
+
+      - name: Upload frontend-v2 artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-v2-dist
+          path: frontend-v2/dist
+
+      - name: Smoke frontend-v2 migration flow locally
+        run: npm run smoke:rebuild
+
   deploy:
     runs-on: ubuntu-latest
     name: Deploy to Cloudflare Workers
+    needs: validate-rebuild
     permissions:
       contents: read
     steps:
