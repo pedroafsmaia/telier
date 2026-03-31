@@ -2,17 +2,17 @@ import { useEffect, useMemo, useState } from 'react';
 import { Grid3x3, List } from 'lucide-react';
 import { useSearchParams } from 'react-router-dom';
 import { AppShell } from '../app/layout/AppShell';
-import { SectionHeader, EmptyState, Button, Panel } from '../design/primitives';
-import { TaskList } from '../features/tasks/components/TaskList';
-import { TaskFilters } from '../features/tasks/components/TaskFilters';
-import { QuickTaskCreate } from '../features/tasks/components/QuickTaskCreate';
-import { TaskFormDrawer } from '../features/tasks/components/TaskFormDrawer';
+import { Button, EmptyState, Panel, SectionHeader } from '../design/primitives';
 import { TaskDrawer } from '../features/tasks/components/TaskDrawer';
+import { TaskFilters } from '../features/tasks/components/TaskFilters';
+import { TaskFormDrawer } from '../features/tasks/components/TaskFormDrawer';
+import { TaskList } from '../features/tasks/components/TaskList';
+import { QuickTaskCreate } from '../features/tasks/components/QuickTaskCreate';
 import { TaskTimerFlowDrawer } from '../features/tasks/components/TaskTimerFlowDrawer';
-import { useAuth } from '../lib/auth';
-import { useProjects } from '../features/projects/queries';
-import { useVisibleTasks, useActiveSessions, useTodayOperationTasks } from '../features/tasks/queries';
 import { useTaskActionState } from '../features/tasks/hooks/useTaskActionState';
+import { useActiveSessions, useTodayOperationTasks, useVisibleTasks } from '../features/tasks/queries';
+import { useProjects } from '../features/projects/queries';
+import { useAuth } from '../lib/auth';
 
 export function TasksPage() {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -50,6 +50,7 @@ export function TasksPage() {
 
   const searchKey = searchParams.toString();
   const isTaskFormOpen = isTaskFormExpanded || searchParams.get('nova') === '1';
+  const hasActiveFilters = Boolean(selectedProject || selectedPriority || selectedEase);
 
   const filteredTasks = useMemo(() => {
     return tasks.filter((task) => {
@@ -97,14 +98,12 @@ export function TasksPage() {
 
     if (!taskIdToOpen) return;
 
-    if (taskIdToOpen) {
-      const taskToOpen = tasks.find((task) => task.id === taskIdToOpen);
-      if (taskToOpen) {
-        taskActions.openTaskDrawer(taskToOpen);
-      }
-      params.delete('abrir');
+    const taskToOpen = tasks.find((task) => task.id === taskIdToOpen);
+    if (taskToOpen) {
+      taskActions.openTaskDrawer(taskToOpen);
     }
 
+    params.delete('abrir');
     setSearchParams(params, { replace: true });
   }, [authLoading, projectsLoading, tasks, tasksLoading, searchKey, setSearchParams, taskActions]);
 
@@ -140,79 +139,94 @@ export function TasksPage() {
   return (
     <AppShell currentUserId={currentUserId}>
       <div className="mx-auto max-w-7xl px-6 py-8">
-        <div className="mb-5 flex flex-wrap items-center justify-between gap-4">
-          <SectionHeader title="Tarefas" subtitle={tasksScopeLabel} />
-
-          <div className="flex items-center gap-1 rounded-md border border-border-primary bg-surface-primary p-1">
-            <Button
-              variant={viewMode === 'blocks' ? 'secondary' : 'ghost'}
-              size="sm"
-              icon={Grid3x3}
-              onClick={() => setViewMode('blocks')}
-            >
-              Por status
-            </Button>
-            <Button
-              variant={viewMode === 'project' ? 'secondary' : 'ghost'}
-              size="sm"
-              icon={List}
-              onClick={() => setViewMode('project')}
-            >
-              Por projeto
-            </Button>
-          </div>
-        </div>
+        <SectionHeader
+          title="Tarefas"
+          subtitle={tasksScopeLabel}
+          actions={
+            <div className="flex items-center gap-1 rounded-md border border-border-primary bg-surface-primary p-1">
+              <Button
+                variant={viewMode === 'blocks' ? 'secondary' : 'ghost'}
+                size="sm"
+                icon={Grid3x3}
+                onClick={() => setViewMode('blocks')}
+              >
+                Por status
+              </Button>
+              <Button
+                variant={viewMode === 'project' ? 'secondary' : 'ghost'}
+                size="sm"
+                icon={List}
+                onClick={() => setViewMode('project')}
+              >
+                Por projeto
+              </Button>
+            </div>
+          }
+        />
 
         {taskActions.actionError ? (
-          <div className="mb-6">
+          <div className="mt-6">
             <Panel className="border-alert-subtle bg-alert-subtle/20">
               <p className="text-sm text-alert">{taskActions.actionError}</p>
             </Panel>
           </div>
         ) : null}
 
-        <div className="mb-3 flex flex-wrap items-center gap-2">
-          <QuickTaskCreate
-            projects={projects.map((project) => ({ id: project.id, nome: project.nome }))}
-            onCreateTask={taskActions.handleCreateTask}
-            disabled={projects.length === 0}
-            triggerLabel="Nova tarefa rápida"
-          />
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={openStructuredTaskForm}
-            disabled={projects.length === 0}
-          >
-            Abrir formulário
-          </Button>
+        <div className="mt-5 border-b border-border-secondary pb-4">
+          <div className="flex flex-wrap items-start justify-between gap-4">
+            <div className="flex flex-wrap items-center gap-2">
+              <QuickTaskCreate
+                projects={projects.map((project) => ({ id: project.id, nome: project.nome }))}
+                onCreateTask={taskActions.handleCreateTask}
+                disabled={projects.length === 0}
+                triggerLabel="Nova tarefa rápida"
+              />
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={openStructuredTaskForm}
+                disabled={projects.length === 0}
+              >
+                Abrir formulário
+              </Button>
+            </div>
+
+            <TaskFilters
+              projects={projects.map((project) => ({ id: project.id, nome: project.nome }))}
+              selectedProject={selectedProject}
+              selectedPriority={selectedPriority}
+              selectedEase={selectedEase}
+              onProjectChange={setSelectedProject}
+              onPriorityChange={setSelectedPriority}
+              onEaseChange={setSelectedEase}
+              onClearFilters={handleClearFilters}
+              className="justify-end"
+            />
+          </div>
+
+          <div className="mt-3 flex flex-wrap items-center justify-between gap-3 text-sm text-text-secondary">
+            <p>
+              Mostrando {filteredTasks.length} de {tasks.length} tarefa{tasks.length === 1 ? '' : 's'}.
+              {!hasActiveFilters ? ' A lista mantém a leitura operacional por status e prioridade do dia.' : ''}
+            </p>
+            {hasActiveFilters ? (
+              <span className="text-xs uppercase tracking-[0.12em] text-text-tertiary">Filtros ativos</span>
+            ) : null}
+          </div>
         </div>
 
-        <div className="mb-5 rounded-md border border-border-secondary bg-surface-secondary/35 px-4 py-3">
-          <p className="text-xs font-medium uppercase tracking-[0.12em] text-text-tertiary">Filtros</p>
-          <TaskFilters
-            projects={projects.map((project) => ({ id: project.id, nome: project.nome }))}
-            selectedProject={selectedProject}
-            selectedPriority={selectedPriority}
-            selectedEase={selectedEase}
-            onProjectChange={setSelectedProject}
-            onPriorityChange={setSelectedPriority}
-            onEaseChange={setSelectedEase}
-            onClearFilters={handleClearFilters}
-            className="mt-3"
+        <div className="mt-5">
+          <TaskList
+            tasks={filteredTasks}
+            activeSessions={activeSessions}
+            currentUserId={currentUserId}
+            viewMode={viewMode}
+            onTaskClick={taskActions.openTaskDrawer}
+            onStartTimer={taskActions.handleStartTimer}
+            onStopTimer={taskActions.handleStopTimer}
+            onComplete={taskActions.handleCompleteTask}
           />
         </div>
-
-        <TaskList
-          tasks={filteredTasks}
-          activeSessions={activeSessions}
-          currentUserId={currentUserId}
-          viewMode={viewMode}
-          onTaskClick={taskActions.openTaskDrawer}
-          onStartTimer={taskActions.handleStartTimer}
-          onStopTimer={taskActions.handleStopTimer}
-          onComplete={taskActions.handleCompleteTask}
-        />
 
         <TaskDrawer
           isOpen={taskActions.isTaskDrawerOpen}
