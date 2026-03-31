@@ -65,7 +65,7 @@ export function TaskTimerFlowDrawer({
     if (mode === 'switch' && nextTask) {
       return `Seu timer em "${currentSession.tarefaNome}" será encerrado antes de iniciar "${nextTask.nome}".`;
     }
-    return `Você esta encerrando o timer ativo em "${currentSession.tarefaNome}".`;
+    return `Você está encerrando o timer ativo em "${currentSession.tarefaNome}".`;
   }, [currentSession, mode, nextTask]);
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {

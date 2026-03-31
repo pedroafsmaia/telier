@@ -1,10 +1,5 @@
-﻿import { useMemo, useState } from 'react';
-import {
-  useCompleteTask,
-  useCreateTask,
-  useStartTimer,
-  useStopTimer,
-} from '../queries';
+import { useMemo, useState } from 'react';
+import { useCompleteTask, useCreateTask, useStartTimer, useStopTimer } from '../queries';
 import type { ActiveTimeSession, CreateTaskPayload, TaskListItem } from '../types';
 
 interface TimerFlowState {
@@ -101,7 +96,7 @@ export function useTaskActionState({
         },
       });
     } catch (error) {
-      setActionError(toUserErrorMessage(error, 'Nao foi possivel criar a tarefa. Tente novamente.'));
+      setActionError(toUserErrorMessage(error, 'Não foi possível criar a tarefa. Tente novamente.'));
       throw error;
     }
   };
@@ -123,7 +118,7 @@ export function useTaskActionState({
 
       await startTimerMutation.mutateAsync({ taskId: task.id, projectId: task.projetoId });
     } catch (error) {
-      setActionError(toUserErrorMessage(error, 'Nao foi possivel iniciar o timer. Tente novamente.'));
+      setActionError(toUserErrorMessage(error, 'Não foi possível iniciar o timer. Tente novamente.'));
     }
   };
 
@@ -163,7 +158,7 @@ export function useTaskActionState({
 
       closeTimerFlow();
     } catch (error) {
-      const message = toUserErrorMessage(error, 'Nao foi possivel concluir o fluxo de timer. Tente novamente.');
+      const message = toUserErrorMessage(error, 'Não foi possível concluir o fluxo de timer. Tente novamente.');
       setActionError(message);
       setTimerFlowError(message);
     }
@@ -174,7 +169,7 @@ export function useTaskActionState({
     try {
       await completeTaskMutation.mutateAsync({ taskId: task.id, projectId: task.projetoId });
     } catch (error) {
-      setActionError(toUserErrorMessage(error, 'Nao foi possivel concluir a tarefa. Tente novamente.'));
+      setActionError(toUserErrorMessage(error, 'Não foi possível concluir a tarefa. Tente novamente.'));
     }
   };
 

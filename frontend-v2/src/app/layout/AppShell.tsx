@@ -25,7 +25,7 @@ function getMobileContextLabel(pathname: string, search: string): string {
   return 'Telier';
 }
 
-export const AppShell: React.FC<AppShellProps> = ({ children }) => {
+export const AppShell: React.FC<AppShellProps> = ({ children, currentUserId }) => {
   const location = useLocation();
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
 
@@ -57,7 +57,7 @@ export const AppShell: React.FC<AppShellProps> = ({ children }) => {
   return (
     <div className="min-h-screen bg-surface-secondary lg:flex">
       <div className="hidden lg:flex lg:shrink-0">
-        <Sidebar mode="desktop" />
+        <Sidebar mode="desktop" currentUserId={currentUserId} />
       </div>
 
       {isMobileSidebarOpen ? (
@@ -72,6 +72,7 @@ export const AppShell: React.FC<AppShellProps> = ({ children }) => {
           <div className="relative h-full">
             <Sidebar
               mode="mobile"
+              currentUserId={currentUserId}
               onDismiss={() => setIsMobileSidebarOpen(false)}
               onNavigate={() => setIsMobileSidebarOpen(false)}
             />

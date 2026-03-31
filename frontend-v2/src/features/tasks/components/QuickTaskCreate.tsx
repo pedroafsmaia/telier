@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
-import { Input, Select, Button } from '../../../design/primitives';
 import { Plus, X } from 'lucide-react';
+import { Button, Input, Select } from '../../../design/primitives';
+import { Ease, Priority, TaskStatus } from '../../../lib/enums';
 import type { CreateTaskPayload } from '../types';
-import { TaskStatus, Priority, Ease } from '../../../lib/enums';
 
 interface Project {
   id: string;
@@ -37,8 +37,8 @@ export const QuickTaskCreate: React.FC<QuickTaskCreateProps> = ({
     ...projects.map((project) => ({ value: project.id, label: project.nome })),
   ];
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = async (event: React.FormEvent) => {
+    event.preventDefault();
 
     if (!title.trim() || !selectedProjectId || isCreating) {
       return;
@@ -72,8 +72,8 @@ export const QuickTaskCreate: React.FC<QuickTaskCreateProps> = ({
     setIsExpanded(false);
   };
 
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Escape') {
+  const handleKeyDown = (event: React.KeyboardEvent) => {
+    if (event.key === 'Escape') {
       handleCancel();
     }
   };
@@ -115,7 +115,7 @@ export const QuickTaskCreate: React.FC<QuickTaskCreateProps> = ({
             <Input
               placeholder="Título da tarefa"
               value={title}
-              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setTitle(e.target.value)}
+              onChange={(event: React.ChangeEvent<HTMLInputElement>) => setTitle(event.target.value)}
               disabled={isCreating}
               autoFocus
               maxLength={200}
@@ -130,7 +130,7 @@ export const QuickTaskCreate: React.FC<QuickTaskCreateProps> = ({
               <Select
                 options={projectOptions}
                 value={selectedProjectId}
-                onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setSelectedProjectId(e.target.value)}
+                onChange={(event: React.ChangeEvent<HTMLSelectElement>) => setSelectedProjectId(event.target.value)}
                 disabled={isCreating}
                 required
               />
@@ -149,7 +149,7 @@ export const QuickTaskCreate: React.FC<QuickTaskCreateProps> = ({
           </div>
 
           {selectedProject ? (
-            <p className="text-xs text-text-tertiary">A tarefa sera criada em: {selectedProject.nome}</p>
+            <p className="text-xs text-text-tertiary">A tarefa será criada em: {selectedProject.nome}</p>
           ) : null}
         </div>
       </form>
