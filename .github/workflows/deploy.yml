@@ -13,10 +13,15 @@ on:
       - 'wrangler.toml'
       - 'db/schema.sql'
 
+concurrency:
+  group: deploy-worker-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   validate-rebuild:
     runs-on: ubuntu-latest
     name: Validate frontend-v2
+    timeout-minutes: 15
     permissions:
       contents: read
     steps:
@@ -50,6 +55,7 @@ jobs:
     runs-on: ubuntu-latest
     name: Deploy to Cloudflare Workers
     needs: validate-rebuild
+    timeout-minutes: 10
     permissions:
       contents: read
     steps:

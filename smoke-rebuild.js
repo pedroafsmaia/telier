@@ -44,6 +44,7 @@ function spawnProcess(command, args, options = {}) {
   const spawnOptions = {
     stdio: ['ignore', 'pipe', 'pipe'],
     shell: false,
+    ...(process.platform === 'win32' ? {} : { detached: true }),
     ...options,
   };
 
@@ -75,10 +76,18 @@ async function killProcessTree(child) {
     return;
   }
 
-  child.kill('SIGTERM');
+  try {
+    process.kill(-child.pid, 'SIGTERM');
+  } catch {
+    child.kill('SIGTERM');
+  }
   await sleep(750);
   if (child.exitCode === null) {
-    child.kill('SIGKILL');
+    try {
+      process.kill(-child.pid, 'SIGKILL');
+    } catch {
+      child.kill('SIGKILL');
+    }
   }
 }
 
