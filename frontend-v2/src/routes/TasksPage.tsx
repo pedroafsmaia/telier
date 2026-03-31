@@ -1,5 +1,6 @@
-﻿import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Grid3x3, List } from 'lucide-react';
+import { useSearchParams } from 'react-router-dom';
 import { AppShell } from '../app/layout/AppShell';
 import { SectionHeader, EmptyState, Button, Panel } from '../design/primitives';
 import { TaskList } from '../features/tasks/components/TaskList';
@@ -10,31 +11,45 @@ import { TaskDrawer } from '../features/tasks/components/TaskDrawer';
 import { TaskTimerFlowDrawer } from '../features/tasks/components/TaskTimerFlowDrawer';
 import { useAuth } from '../lib/auth';
 import { useProjects } from '../features/projects/queries';
-import { useVisibleTasks, useActiveSessions } from '../features/tasks/queries';
+import { useVisibleTasks, useActiveSessions, useTodayOperationTasks } from '../features/tasks/queries';
 import { useTaskActionState } from '../features/tasks/hooks/useTaskActionState';
 
 export function TasksPage() {
+  const [searchParams, setSearchParams] = useSearchParams();
   const { isLoading: authLoading, currentUserId, isAdmin } = useAuth();
   const { data: projects = [], isLoading: projectsLoading, error: projectsError } = useProjects();
-  const { data: tasks = [], isLoading: tasksLoading, error: tasksError } = useVisibleTasks({
+  const taskScope = searchParams.get('escopo') === 'minhas' ? 'mine' : 'today';
+  const visibleTasksQuery = useVisibleTasks({
     currentUserId,
     isAdmin,
     projectIds: projects.map((project) => project.id),
-    enabled: !authLoading && (!!currentUserId || isAdmin),
+    enabled: !authLoading && (!!currentUserId || isAdmin) && taskScope === 'mine',
   });
+  const todayTasksQuery = useTodayOperationTasks(currentUserId, !authLoading && taskScope === 'today');
   const { data: activeSessions = [] } = useActiveSessions();
+
+  const tasks = useMemo(
+    () => (taskScope === 'today' ? (todayTasksQuery.data ?? []) : (visibleTasksQuery.data ?? [])),
+    [taskScope, todayTasksQuery.data, visibleTasksQuery.data],
+  );
+  const tasksLoading = taskScope === 'today' ? todayTasksQuery.isLoading : visibleTasksQuery.isLoading;
+  const tasksError = taskScope === 'today' ? todayTasksQuery.error : visibleTasksQuery.error;
+  const tasksScopeLabel = taskScope === 'today' ? 'Operação do dia' : 'Todas as tarefas vinculadas';
 
   const [selectedProject, setSelectedProject] = useState('');
   const [selectedPriority, setSelectedPriority] = useState('');
   const [selectedEase, setSelectedEase] = useState('');
   const [viewMode, setViewMode] = useState<'blocks' | 'project'>('blocks');
-  const [isTaskFormOpen, setIsTaskFormOpen] = useState(false);
+  const [isTaskFormExpanded, setIsTaskFormExpanded] = useState(false);
 
   const taskActions = useTaskActionState({
     tasks,
     activeSessions,
     currentUserId,
   });
+
+  const searchKey = searchParams.toString();
+  const isTaskFormOpen = isTaskFormExpanded || searchParams.get('nova') === '1';
 
   const filteredTasks = useMemo(() => {
     return tasks.filter((task) => {
@@ -60,13 +75,46 @@ export function TasksPage() {
     setSelectedEase('');
   };
 
+  const openStructuredTaskForm = () => {
+    setIsTaskFormExpanded(true);
+  };
+
+  const closeStructuredTaskForm = () => {
+    setIsTaskFormExpanded(false);
+
+    if (searchParams.get('nova') === '1') {
+      const params = new URLSearchParams(searchParams);
+      params.delete('nova');
+      setSearchParams(params, { replace: true });
+    }
+  };
+
+  useEffect(() => {
+    if (authLoading || projectsLoading || tasksLoading) return;
+
+    const params = new URLSearchParams(searchKey);
+    const taskIdToOpen = params.get('abrir');
+
+    if (!taskIdToOpen) return;
+
+    if (taskIdToOpen) {
+      const taskToOpen = tasks.find((task) => task.id === taskIdToOpen);
+      if (taskToOpen) {
+        taskActions.openTaskDrawer(taskToOpen);
+      }
+      params.delete('abrir');
+    }
+
+    setSearchParams(params, { replace: true });
+  }, [authLoading, projectsLoading, tasks, tasksLoading, searchKey, setSearchParams, taskActions]);
+
   if (authLoading || projectsLoading || tasksLoading) {
     return (
       <AppShell currentUserId={currentUserId}>
-        <div className="max-w-7xl mx-auto px-6 py-8">
+        <div className="mx-auto max-w-7xl px-6 py-8">
           <SectionHeader title="Tarefas" subtitle="Carregando..." />
           <div className="mt-8">
-            <EmptyState title="Carregando tarefas..." description="Buscando suas tarefas..." />
+            <EmptyState title="Carregando tarefas..." description={`Buscando ${tasksScopeLabel.toLowerCase()}...`} />
           </div>
         </div>
       </AppShell>
@@ -76,7 +124,7 @@ export function TasksPage() {
   if (tasksError || projectsError) {
     return (
       <AppShell currentUserId={currentUserId}>
-        <div className="max-w-7xl mx-auto px-6 py-8">
+        <div className="mx-auto max-w-7xl px-6 py-8">
           <SectionHeader title="Tarefas" subtitle="Erro ao carregar" />
           <div className="mt-8">
             <EmptyState
@@ -91,9 +139,9 @@ export function TasksPage() {
 
   return (
     <AppShell currentUserId={currentUserId}>
-      <div className="max-w-7xl mx-auto px-6 py-8">
+      <div className="mx-auto max-w-7xl px-6 py-8">
         <div className="mb-5 flex flex-wrap items-center justify-between gap-4">
-          <SectionHeader title="Tarefas" subtitle="Centro operacional do trabalho diário" />
+          <SectionHeader title="Tarefas" subtitle={tasksScopeLabel} />
 
           <div className="flex items-center gap-1 rounded-md border border-border-primary bg-surface-primary p-1">
             <Button
@@ -133,7 +181,7 @@ export function TasksPage() {
           <Button
             variant="ghost"
             size="sm"
-            onClick={() => setIsTaskFormOpen(true)}
+            onClick={openStructuredTaskForm}
             disabled={projects.length === 0}
           >
             Abrir formulário
@@ -200,7 +248,7 @@ export function TasksPage() {
             isOpen={isTaskFormOpen}
             projects={projects.map((project) => ({ id: project.id, nome: project.nome }))}
             isSubmitting={taskActions.isCreatingTask}
-            onClose={() => setIsTaskFormOpen(false)}
+            onClose={closeStructuredTaskForm}
             onSubmit={taskActions.handleCreateTask}
           />
         ) : null}
@@ -208,5 +256,3 @@ export function TasksPage() {
     </AppShell>
   );
 }
-
-

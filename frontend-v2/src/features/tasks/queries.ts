@@ -85,13 +85,14 @@ export function useVisibleTasks(params: {
 }
 
 // Hook: Buscar tarefas para operação do dia
-export function useTodayOperationTasks(currentUserId?: string) {
+export function useTodayOperationTasks(currentUserId?: string, enabled: boolean = true) {
   return useQuery<TaskListItem[], Error>({
     queryKey: taskKeys.todayOperation(),
     queryFn: async () => {
       const raw = await api.fetchTodayOperationTasks();
       return adaptTaskList(raw, currentUserId);
     },
+    enabled,
   });
 }
 
