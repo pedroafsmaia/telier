@@ -1,34 +1,37 @@
 import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { AppShell } from '../app/layout/AppShell';
-import { useAuth } from '../lib/auth';
-import { GroupStatus } from '../lib/enums';
-import { useCreateGroup, useGroups, GroupFormDrawer } from '../features/groups';
-import { SectionHeader, EmptyState, Button, SearchField, Select, Panel } from '../design/primitives';
+import { AvatarStack, Button, EmptyState, SearchField, Select } from '../design/primitives';
+import { GroupFormDrawer, useCreateGroup, useGroups } from '../features/groups';
 import type { CreateGroupPayload } from '../features/groups';
+import { GroupStatus } from '../lib/enums';
+import { useAuth } from '../lib/auth';
+import { formatAreaLabel, formatHoursLabel, getGroupStatusLabel, getGroupStatusToneClass } from '../lib/projectUi';
 
-function getStatusLabel(status: string): string {
-  switch (status) {
-    case GroupStatus.ACTIVE:
-      return 'Ativo';
-    case GroupStatus.PAUSED:
-      return 'Pausado';
-    case GroupStatus.ARCHIVED:
-      return 'Arquivado';
-    default:
-      return status;
-  }
+function MetricItem({ label, value }: { label: string; value: string | number }) {
+  return (
+    <div>
+      <p className="text-[11px] uppercase tracking-[0.12em] text-text-tertiary">{label}</p>
+      <p className="mt-1 text-lg font-semibold text-text-primary">{value}</p>
+    </div>
+  );
 }
 
-function getStatusToneClass(status: string): string {
-  switch (status) {
-    case GroupStatus.PAUSED:
-      return 'text-warning-700';
-    case GroupStatus.ARCHIVED:
-      return 'text-text-tertiary';
-    default:
-      return 'text-text-primary';
-  }
+function DetailField({
+  label,
+  value,
+  toneClassName = 'text-text-primary',
+}: {
+  label: string;
+  value: string;
+  toneClassName?: string;
+}) {
+  return (
+    <div>
+      <p className="text-[11px] uppercase tracking-[0.12em] text-text-tertiary">{label}</p>
+      <p className={`mt-1 text-sm font-medium ${toneClassName}`}>{value}</p>
+    </div>
+  );
 }
 
 export function GroupsPage() {
@@ -44,9 +47,9 @@ export function GroupsPage() {
   const statusOptions = useMemo(
     () => [
       { value: '', label: 'Todos os status' },
-      { value: GroupStatus.ACTIVE, label: getStatusLabel(GroupStatus.ACTIVE) },
-      { value: GroupStatus.PAUSED, label: getStatusLabel(GroupStatus.PAUSED) },
-      { value: GroupStatus.ARCHIVED, label: getStatusLabel(GroupStatus.ARCHIVED) },
+      { value: GroupStatus.ACTIVE, label: getGroupStatusLabel(GroupStatus.ACTIVE) },
+      { value: GroupStatus.PAUSED, label: getGroupStatusLabel(GroupStatus.PAUSED) },
+      { value: GroupStatus.ARCHIVED, label: getGroupStatusLabel(GroupStatus.ARCHIVED) },
     ],
     [],
   );
@@ -71,6 +74,15 @@ export function GroupsPage() {
     });
   }, [groups, searchQuery, selectedStatus]);
 
+  const summary = useMemo(() => {
+    return {
+      total: groups.length,
+      active: groups.filter((group) => group.status === GroupStatus.ACTIVE).length,
+      paused: groups.filter((group) => group.status === GroupStatus.PAUSED).length,
+      archived: groups.filter((group) => group.status === GroupStatus.ARCHIVED).length,
+    };
+  }, [groups]);
+
   const handleCreateGroup = async (payload: CreateGroupPayload) => {
     const createdGroup = await createGroupMutation.mutateAsync(payload);
     navigate(`/grupos/${createdGroup.id}`);
@@ -80,7 +92,10 @@ export function GroupsPage() {
     return (
       <AppShell currentUserId={currentUserId}>
         <div className="mx-auto max-w-7xl px-6 py-8">
-          <SectionHeader title="Grupos" subtitle="Carregando..." />
+          <header className="border-b border-border-secondary pb-4">
+            <h1 className="text-xl font-semibold tracking-tight text-text-primary">Grupos</h1>
+            <p className="mt-1 text-sm text-text-secondary">Carregando...</p>
+          </header>
           <div className="mt-8">
             <EmptyState title="Carregando grupos..." description="Buscando lista de grupos." />
           </div>
@@ -93,7 +108,10 @@ export function GroupsPage() {
     return (
       <AppShell currentUserId={currentUserId}>
         <div className="mx-auto max-w-7xl px-6 py-8">
-          <SectionHeader title="Grupos" subtitle="Erro ao carregar" />
+          <header className="border-b border-border-secondary pb-4">
+            <h1 className="text-xl font-semibold tracking-tight text-text-primary">Grupos</h1>
+            <p className="mt-1 text-sm text-text-secondary">Erro ao carregar</p>
+          </header>
           <div className="mt-8">
             <EmptyState
               title="Erro ao carregar grupos"
@@ -108,86 +126,106 @@ export function GroupsPage() {
   return (
     <AppShell currentUserId={currentUserId}>
       <div className="mx-auto max-w-7xl px-6 py-8">
-        <SectionHeader
-          title="Grupos"
-          subtitle="Organização dos projetos por grupo"
-          actions={
+        <header className="border-b border-border-secondary pb-4">
+          <div className="flex flex-wrap items-end justify-between gap-3">
+            <div>
+              <h1 className="text-xl font-semibold tracking-tight text-text-primary">Grupos</h1>
+              <p className="mt-1 text-sm text-text-secondary">
+                Estrutura dos projetos por grupo, com leitura de volume e atraso.
+              </p>
+            </div>
             <Button variant="primary" onClick={() => setIsGroupFormOpen(true)}>
               Novo grupo
             </Button>
-          }
-        />
+          </div>
 
-        <div className="mt-6">
-          <Panel>
-            <div className="space-y-4">
-              <SearchField
-                placeholder="Buscar grupo por nome ou descrição"
-                value={searchQuery}
-                onChange={(event) => setSearchQuery(event.target.value)}
-                onClear={() => setSearchQuery('')}
-                className="w-full py-3 text-base"
-              />
+          <div className="mt-4 grid gap-4 border-t border-border-secondary pt-4 sm:grid-cols-2 xl:grid-cols-4">
+            <MetricItem label="Grupos" value={summary.total} />
+            <MetricItem label="Ativos" value={summary.active} />
+            <MetricItem label="Pausados" value={summary.paused} />
+            <MetricItem label="Arquivados" value={summary.archived} />
+          </div>
+        </header>
 
-              <div>
-                <Select
-                  options={statusOptions}
-                  value={selectedStatus}
-                  onChange={(event) => setSelectedStatus(event.target.value)}
-                  aria-label="Filtro por status"
-                />
-              </div>
-            </div>
-          </Panel>
+        <div className="mt-5 border-b border-border-secondary pb-4">
+          <div className="grid gap-3 lg:grid-cols-[minmax(0,1.5fr)_minmax(0,0.7fr)]">
+            <SearchField
+              placeholder="Buscar grupo por nome ou descrição"
+              value={searchQuery}
+              onChange={(event) => setSearchQuery(event.target.value)}
+              onClear={() => setSearchQuery('')}
+              className="w-full py-3 text-base"
+            />
+            <Select
+              label="Status"
+              options={statusOptions}
+              value={selectedStatus}
+              onChange={(event) => setSelectedStatus(event.target.value)}
+              aria-label="Filtro por status"
+            />
+          </div>
+
+          <div className="mt-3 text-sm text-text-secondary">
+            Mostrando {filteredGroups.length} de {groups.length} grupo{groups.length === 1 ? '' : 's'}.
+          </div>
         </div>
 
-        <div className="mt-6 space-y-3">
+        <div className="mt-5 space-y-6">
           {filteredGroups.length === 0 ? (
             <EmptyState
               title="Nenhum grupo encontrado"
               description="Ajuste a busca ou o filtro para localizar outro grupo."
             />
           ) : (
-            filteredGroups.map((group) => (
-              <button
+            filteredGroups.map((group, index) => (
+              <article
                 key={group.id}
-                type="button"
-                onClick={() => navigate(`/grupos/${group.id}`)}
-                className="w-full rounded-md border border-border-primary bg-surface-primary px-4 py-4 text-left transition-colors hover:bg-surface-secondary focus:outline-none focus-visible:ring-2 focus-visible:ring-info-200"
+                className={`${index > 0 ? 'border-t border-border-secondary pt-6' : ''} space-y-4`}
               >
-                <div className="flex items-start justify-between gap-4">
+                <div className="flex flex-wrap items-start justify-between gap-4">
                   <div className="min-w-0">
-                    <h2 className="truncate text-base font-medium text-text-primary">{group.nome}</h2>
-                    <p className="mt-1 line-clamp-2 text-sm text-text-secondary">{group.descricao || 'Sem descrição'}</p>
+                    <h2 className="truncate text-base font-semibold text-text-primary">{group.nome}</h2>
+                    <p className="mt-1 text-sm text-text-secondary">{group.descricao || 'Sem descrição registrada.'}</p>
                   </div>
-                  <span className="shrink-0 text-sm text-text-secondary">Abrir</span>
+                  <Button variant="secondary" size="sm" onClick={() => navigate(`/grupos/${group.id}`)}>
+                    Abrir
+                  </Button>
                 </div>
 
-                <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-                  <div>
-                    <p className="text-[11px] uppercase tracking-[0.12em] text-text-tertiary">Status</p>
-                    <p className={`mt-1 text-sm font-medium ${getStatusToneClass(group.status)}`}>
-                      {getStatusLabel(group.status)}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-[11px] uppercase tracking-[0.12em] text-text-tertiary">Projetos</p>
-                    <p className="mt-1 text-sm font-medium text-text-primary">
-                      {group.totalProjetos} projeto{group.totalProjetos === 1 ? '' : 's'}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-[11px] uppercase tracking-[0.12em] text-text-tertiary">Atrasados</p>
-                    <p className="mt-1 text-sm font-medium text-text-primary">{group.projetosAtrasados}</p>
-                  </div>
-                  {group.totalHoras !== undefined ? (
-                    <div>
-                      <p className="text-[11px] uppercase tracking-[0.12em] text-text-tertiary">Horas</p>
-                      <p className="mt-1 text-sm font-medium text-text-primary">{group.totalHoras}</p>
-                    </div>
-                  ) : null}
+                <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+                  <DetailField
+                    label="Status"
+                    value={getGroupStatusLabel(group.status)}
+                    toneClassName={getGroupStatusToneClass(group.status)}
+                  />
+                  <DetailField
+                    label="Projetos"
+                    value={`${group.totalProjetos} projeto${group.totalProjetos === 1 ? '' : 's'}`}
+                  />
+                  <DetailField label="Atrasados" value={String(group.projetosAtrasados)} />
+                  <DetailField label="Área total" value={formatAreaLabel(group.areaTotalM2)} />
+                  <DetailField label="Horas" value={formatHoursLabel(group.totalHoras)} />
                 </div>
-              </button>
+
+                <div className="flex flex-wrap items-center justify-between gap-4 border-t border-border-secondary pt-4">
+                  <div className="flex items-center gap-3">
+                    <AvatarStack
+                      avatars={[
+                        {
+                          id: group.dono.id || `owner-${group.id}`,
+                          name: group.dono.nome,
+                        },
+                      ]}
+                      max={1}
+                      size="sm"
+                    />
+                    <div>
+                      <p className="text-[11px] uppercase tracking-[0.12em] text-text-tertiary">Responsável</p>
+                      <p className="text-sm font-medium text-text-primary">{group.dono.nome}</p>
+                    </div>
+                  </div>
+                </div>
+              </article>
             ))
           )}
         </div>

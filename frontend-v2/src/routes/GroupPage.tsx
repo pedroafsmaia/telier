@@ -1,34 +1,58 @@
 import { useMemo, useState } from 'react';
-import { AlertTriangle, ChevronRight, FolderKanban, Pencil } from 'lucide-react';
-import { Link, useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { AppShell } from '../app/layout/AppShell';
-import { Button, EmptyState, Panel, SectionHeader } from '../design/primitives';
-import { useCreateProject, ProjectFormDrawer } from '../features/projects';
-import { useGroupPageData, useUpdateGroup, GroupFormDrawer } from '../features/groups';
-import { GroupRecordsSection, RecordFormDrawer, useCreateRecord } from '../features/records';
-import { useAuth } from '../lib/auth';
-import { formatFullDate, isOverdue } from '../lib/dates';
-import { GroupStatus, ProjectStatus } from '../lib/enums';
+import { AvatarStack, Button, EmptyState, Panel } from '../design/primitives';
+import { GroupFormDrawer, useGroupPageData, useUpdateGroup } from '../features/groups';
+import { ProjectFormDrawer, useCreateProject } from '../features/projects';
 import type { CreateProjectPayload } from '../features/projects';
+import { GroupRecordsSection, RecordFormDrawer, useCreateRecord } from '../features/records';
 import type { CreateRecordPayload } from '../features/records';
+import { formatFullDate, isOverdue } from '../lib/dates';
+import { ProjectStatus, getPriorityLabel } from '../lib/enums';
+import { useAuth } from '../lib/auth';
 import type { UpdateGroupPayload } from '../features/groups';
 import {
+  formatAreaLabel,
+  formatProjectProgressLabel,
+  getGroupStatusLabel,
+  getGroupStatusToneClass,
   getProjectPhaseLabel,
   getProjectStatusLabel,
   getProjectStatusToneClass,
 } from '../lib/projectUi';
 
-function getGroupStatusLabel(status: string): string {
-  switch (status) {
-    case GroupStatus.ACTIVE:
-      return 'Ativo';
-    case GroupStatus.PAUSED:
-      return 'Pausado';
-    case GroupStatus.ARCHIVED:
-      return 'Arquivado';
-    default:
-      return status;
-  }
+function MetricItem({
+  label,
+  value,
+  toneClassName = 'text-text-primary',
+}: {
+  label: string;
+  value: string;
+  toneClassName?: string;
+}) {
+  return (
+    <div>
+      <p className="text-[11px] uppercase tracking-[0.12em] text-text-tertiary">{label}</p>
+      <p className={`mt-1 text-lg font-semibold ${toneClassName}`}>{value}</p>
+    </div>
+  );
+}
+
+function DetailField({
+  label,
+  value,
+  toneClassName = 'text-text-primary',
+}: {
+  label: string;
+  value: string;
+  toneClassName?: string;
+}) {
+  return (
+    <div>
+      <p className="text-[11px] uppercase tracking-[0.12em] text-text-tertiary">{label}</p>
+      <p className={`mt-1 text-sm font-medium ${toneClassName}`}>{value}</p>
+    </div>
+  );
 }
 
 function toUserErrorMessage(error: unknown, fallback: string): string {
@@ -83,7 +107,7 @@ export function GroupPage() {
           project.status !== ProjectStatus.DONE &&
           project.status !== ProjectStatus.ARCHIVED,
       )
-      .sort((a, b) => new Date(a.prazo || '').getTime() - new Date(b.prazo || '').getTime());
+      .sort((left, right) => new Date(left.prazo || '').getTime() - new Date(right.prazo || '').getTime());
 
     return activeProjectsWithDeadline[0] ?? null;
   }, [projects]);
@@ -128,7 +152,10 @@ export function GroupPage() {
     return (
       <AppShell currentUserId={currentUserId}>
         <div className="mx-auto max-w-6xl px-6 py-8">
-          <SectionHeader title="Grupo" subtitle="Carregando..." />
+          <header className="border-b border-border-secondary pb-4">
+            <h1 className="text-xl font-semibold tracking-tight text-text-primary">Grupo</h1>
+            <p className="mt-1 text-sm text-text-secondary">Carregando...</p>
+          </header>
           <div className="mt-8">
             <EmptyState title="Carregando grupo..." description="Buscando resumo, projetos e registros do grupo." />
           </div>
@@ -141,7 +168,10 @@ export function GroupPage() {
     return (
       <AppShell currentUserId={currentUserId}>
         <div className="mx-auto max-w-6xl px-6 py-8">
-          <SectionHeader title="Grupo" subtitle="Erro ao carregar" />
+          <header className="border-b border-border-secondary pb-4">
+            <h1 className="text-xl font-semibold tracking-tight text-text-primary">Grupo</h1>
+            <p className="mt-1 text-sm text-text-secondary">Erro ao carregar</p>
+          </header>
           <div className="mt-8">
             <EmptyState
               title="Erro ao carregar grupo"
@@ -156,20 +186,43 @@ export function GroupPage() {
   return (
     <AppShell currentUserId={currentUserId}>
       <div className="mx-auto max-w-6xl px-6 py-8">
-        <SectionHeader
-          title={group.nome}
-          subtitle="Grupo: projetos, registros e leitura agregada"
-          actions={
-            <div className="flex items-center gap-2">
-              <Button variant="secondary" size="sm" icon={Pencil} onClick={() => setIsGroupFormOpen(true)}>
+        <header className="border-b border-border-secondary pb-4">
+          <div className="flex flex-wrap items-end justify-between gap-3">
+            <div>
+              <h1 className="text-xl font-semibold tracking-tight text-text-primary">{group.nome}</h1>
+              <p className="mt-1 text-sm text-text-secondary">
+                Escala de grupo: projetos, registros e leitura agregada.
+              </p>
+            </div>
+            <div className="flex flex-wrap items-center gap-2">
+              <Button variant="secondary" size="sm" onClick={() => setIsGroupFormOpen(true)}>
                 Editar grupo
               </Button>
               <Button variant="primary" size="sm" onClick={() => setIsProjectFormOpen(true)}>
                 Novo projeto
               </Button>
             </div>
-          }
-        />
+          </div>
+
+          <div className="mt-4 grid gap-4 border-t border-border-secondary pt-4 sm:grid-cols-2 xl:grid-cols-4">
+            <MetricItem
+              label="Status"
+              value={getGroupStatusLabel(group.status)}
+              toneClassName={getGroupStatusToneClass(group.status)}
+            />
+            <MetricItem label="Projetos" value={String(projects.length)} />
+            <MetricItem label="Andamento agregado" value={aggregateProgressLabel} />
+            <MetricItem
+              label="Prazo crítico"
+              value={criticalDeadlineProject ? `${criticalDeadlineProject.nome} · ${formatFullDate(criticalDeadlineProject.prazo || '')}` : 'Sem prazo crítico'}
+              toneClassName={
+                criticalDeadlineProject?.prazo && isOverdue(criticalDeadlineProject.prazo)
+                  ? 'text-error-600'
+                  : 'text-text-primary'
+              }
+            />
+          </div>
+        </header>
 
         {actionError ? (
           <div className="mt-6">
@@ -178,44 +231,6 @@ export function GroupPage() {
             </Panel>
           </div>
         ) : null}
-
-        <div className="mt-6">
-          <Panel>
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              <div>
-                <p className="text-xs uppercase tracking-wide text-text-tertiary">Nome do grupo</p>
-                <p className="mt-1 text-sm font-medium text-text-primary">{group.nome}</p>
-              </div>
-              <div>
-                <p className="text-xs uppercase tracking-wide text-text-tertiary">Status</p>
-                <p className="mt-1 text-sm font-medium text-text-primary">{getGroupStatusLabel(group.status)}</p>
-              </div>
-              <div>
-                <p className="text-xs uppercase tracking-wide text-text-tertiary">Projetos</p>
-                <p className="mt-1 text-sm font-medium text-text-primary">{projects.length}</p>
-              </div>
-              <div>
-                <p className="text-xs uppercase tracking-wide text-text-tertiary">Andamento agregado</p>
-                <p className="mt-1 text-sm font-medium text-text-primary">{aggregateProgressLabel}</p>
-              </div>
-              {criticalDeadlineProject ? (
-                <div>
-                  <p className="text-xs uppercase tracking-wide text-text-tertiary">Prazo crítico</p>
-                  <p
-                    className={`mt-1 flex items-center gap-2 text-sm font-medium ${
-                      criticalDeadlineProject.prazo && isOverdue(criticalDeadlineProject.prazo)
-                        ? 'text-alert'
-                        : 'text-warning'
-                    }`}
-                  >
-                    <AlertTriangle className="h-4 w-4" />
-                    {criticalDeadlineProject.nome} · {formatFullDate(criticalDeadlineProject.prazo || '')}
-                  </p>
-                </div>
-              ) : null}
-            </div>
-          </Panel>
-        </div>
 
         <div className="mt-6">
           <GroupRecordsSection
@@ -236,81 +251,119 @@ export function GroupPage() {
           />
         </div>
 
-        <div className="mt-6">
-          <Panel>
-            <div className="mb-4 flex items-center justify-between">
-              <div>
-                <h2 className="text-base font-medium text-text-primary">Projetos do grupo</h2>
-                <p className="text-sm text-text-secondary">Lista operacional compacta</p>
-              </div>
-              <div className="flex items-center gap-2 text-xs text-text-tertiary">
-                <FolderKanban className="h-4 w-4" />
-                <span>{projects.length} projeto{projects.length === 1 ? '' : 's'}</span>
-              </div>
+        <section className="mt-6 border-t border-border-secondary pt-6">
+          <div className="flex flex-wrap items-end justify-between gap-3">
+            <div>
+              <h2 className="text-base font-medium text-text-primary">Projetos do grupo</h2>
+              <p className="mt-1 text-sm text-text-secondary">
+                Lista compacta de projetos com responsável, prazo e progresso.
+              </p>
             </div>
+            <p className="text-sm text-text-secondary">
+              {projects.length} projeto{projects.length === 1 ? '' : 's'}
+            </p>
+          </div>
 
-            {projects.length === 0 ? (
-              <EmptyState
-                title="Sem projetos neste grupo"
-                description="Crie o primeiro projeto do grupo usando a ação principal acima."
-                className="py-10"
-              />
-            ) : (
-              <ul className="space-y-3">
-                {projects.map((project) => (
-                  <li key={project.id}>
-                    <Link
-                      to={`/projetos/${project.id}`}
-                      className="block rounded-md border border-border-primary bg-surface-primary px-4 py-4 transition-colors hover:bg-surface-secondary focus:outline-none focus-visible:ring-2 focus-visible:ring-info-200"
-                    >
-                      <div className="flex items-start justify-between gap-4">
-                        <div className="min-w-0">
-                          <p className="truncate text-base font-medium text-text-primary">{project.nome}</p>
-                          <p className="mt-1 text-sm text-text-secondary">{group.nome}</p>
-                        </div>
-                        <ChevronRight className="mt-0.5 h-4 w-4 shrink-0 text-text-tertiary" />
+          {projects.length === 0 ? (
+            <EmptyState
+              title="Sem projetos neste grupo"
+              description="Crie o primeiro projeto do grupo usando a ação principal acima."
+              className="mt-6 py-10"
+            />
+          ) : (
+            <div className="mt-6 space-y-6">
+              {projects.map((project, index) => {
+                const completionPercent =
+                  project.totalTarefas > 0
+                    ? Math.round((project.tarefasConcluidas / project.totalTarefas) * 100)
+                    : 0;
+                const projectIsOverdue =
+                  Boolean(project.prazo) &&
+                  isOverdue(project.prazo as string) &&
+                  project.status !== ProjectStatus.DONE &&
+                  project.status !== ProjectStatus.ARCHIVED;
+
+                return (
+                  <article
+                    key={project.id}
+                    className={`${index > 0 ? 'border-t border-border-secondary pt-6' : ''} space-y-4`}
+                  >
+                    <div className="flex flex-wrap items-start justify-between gap-4">
+                      <div className="min-w-0">
+                        <h3 className="truncate text-base font-semibold text-text-primary">{project.nome}</h3>
+                        <p className="mt-1 text-sm text-text-secondary">Projeto vinculado a este grupo.</p>
                       </div>
 
-                      <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+                      <Button
+                        variant="secondary"
+                        size="sm"
+                        onClick={() => navigate(`/projetos/${project.id}`)}
+                      >
+                        Abrir
+                      </Button>
+                    </div>
+
+                    <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+                      <DetailField label="Fase" value={getProjectPhaseLabel(project.fase)} />
+                      <DetailField
+                        label="Status"
+                        value={getProjectStatusLabel(project.status)}
+                        toneClassName={getProjectStatusToneClass(project.status)}
+                      />
+                      <DetailField
+                        label="Prazo"
+                        value={project.prazo ? formatFullDate(project.prazo) : 'Sem prazo'}
+                        toneClassName={projectIsOverdue ? 'text-error-600' : 'text-text-primary'}
+                      />
+                      <DetailField label="Área" value={formatAreaLabel(project.areaM2)} />
+                      <DetailField
+                        label="Progresso"
+                        value={formatProjectProgressLabel(project.tarefasConcluidas, project.totalTarefas)}
+                      />
+                      <DetailField label="Prioridade" value={getPriorityLabel(project.prioridade)} />
+                    </div>
+
+                    <div>
+                      <div className="flex items-center justify-between gap-3">
+                        <p className="text-[11px] uppercase tracking-[0.12em] text-text-tertiary">Avanço</p>
+                        <p className="text-sm font-medium text-text-primary">{completionPercent}% concluído</p>
+                      </div>
+                      <progress
+                        className="mt-2 h-1.5 w-full overflow-hidden rounded-full [&::-moz-progress-bar]:bg-info-500 [&::-webkit-progress-bar]:bg-surface-secondary [&::-webkit-progress-value]:bg-info-500"
+                        value={completionPercent}
+                        max={100}
+                        aria-label={`Progresso do projeto ${project.nome}`}
+                      />
+                    </div>
+
+                    <div className="flex flex-wrap items-center justify-between gap-4 border-t border-border-secondary pt-4">
+                      <div className="flex items-center gap-3">
+                        <AvatarStack
+                          avatars={[
+                            {
+                              id: project.dono.id || `owner-${project.id}`,
+                              name: project.dono.nome,
+                            },
+                          ]}
+                          max={1}
+                          size="sm"
+                        />
                         <div>
-                          <p className="text-[11px] uppercase tracking-[0.12em] text-text-tertiary">Status</p>
-                          <p className={`mt-1 text-sm font-medium ${getProjectStatusToneClass(project.status)}`}>
-                            {getProjectStatusLabel(project.status)}
-                          </p>
-                        </div>
-                        <div>
-                          <p className="text-[11px] uppercase tracking-[0.12em] text-text-tertiary">Fase</p>
-                          <p className="mt-1 text-sm font-medium text-text-primary">{getProjectPhaseLabel(project.fase)}</p>
-                        </div>
-                        <div>
-                          <p className="text-[11px] uppercase tracking-[0.12em] text-text-tertiary">Prazo</p>
-                          <p
-                            className={`mt-1 text-sm font-medium ${
-                              project.prazo &&
-                              isOverdue(project.prazo) &&
-                              project.status !== ProjectStatus.DONE &&
-                              project.status !== ProjectStatus.ARCHIVED
-                                ? 'text-alert'
-                                : 'text-text-primary'
-                            }`}
-                          >
-                            {project.prazo ? formatFullDate(project.prazo) : 'Sem prazo'}
-                          </p>
-                        </div>
-                        <div>
-                          <p className="text-[11px] uppercase tracking-[0.12em] text-text-tertiary">Tarefas</p>
-                          <p className="mt-1 text-sm font-medium text-text-primary">
-                            {project.tarefasConcluidas}/{project.totalTarefas} concluídas
-                          </p>
+                          <p className="text-[11px] uppercase tracking-[0.12em] text-text-tertiary">Responsável</p>
+                          <p className="text-sm font-medium text-text-primary">{project.dono.nome}</p>
                         </div>
                       </div>
-                    </Link>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </Panel>
-        </div>
+
+                      <div className="text-sm text-text-secondary">
+                        {project.compartilhadoComigo ? 'Compartilhado comigo' : 'Uso interno do grupo'}
+                      </div>
+                    </div>
+                  </article>
+                );
+              })}
+            </div>
+          )}
+        </section>
       </div>
 
       {isProjectFormOpen ? (
@@ -348,5 +401,3 @@ export function GroupPage() {
     </AppShell>
   );
 }
-
-

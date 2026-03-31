@@ -92,6 +92,11 @@ export function adaptGroupListItem(raw: RawGroup): GroupListItem {
     descricao: raw.descricao,
     status: mapStatus(raw.status),
     ordem: raw.ordem,
+    dono: {
+      id: String(raw.dono_id || ''),
+      nome: raw.dono_nome || 'Desconhecido',
+      email: raw.dono_email,
+    },
     totalProjetos: raw.total_projetos || 0,
     projetosAtrasados: raw.projetos_atrasados || 0,
     areaTotalM2: raw.area_total_m2,

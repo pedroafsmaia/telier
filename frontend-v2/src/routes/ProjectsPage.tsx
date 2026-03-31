@@ -1,18 +1,47 @@
 import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { AppShell } from '../app/layout/AppShell';
-import { useAuth } from '../lib/auth';
-import { getPriorityLabel, ProjectPhase, ProjectStatus } from '../lib/enums';
-import { useProjects, useCreateProject, ProjectFormDrawer } from '../features/projects';
+import { AvatarStack, Button, EmptyState, Panel, SearchField, Select } from '../design/primitives';
 import { useGroups } from '../features/groups';
-import { EmptyState, Button, SearchField, Select, Panel } from '../design/primitives';
+import { ProjectFormDrawer, useCreateProject, useProjects } from '../features/projects';
 import type { CreateProjectPayload } from '../features/projects';
 import { formatFullDate, isOverdue } from '../lib/dates';
+import { ProjectPhase, ProjectStatus, getPriorityLabel } from '../lib/enums';
+import { useAuth } from '../lib/auth';
 import {
+  formatAreaLabel,
+  formatHoursLabel,
+  formatProjectProgressLabel,
   getProjectPhaseLabel,
   getProjectStatusLabel,
   getProjectStatusToneClass,
 } from '../lib/projectUi';
+
+function MetricItem({ label, value }: { label: string; value: string | number }) {
+  return (
+    <div>
+      <p className="text-[11px] uppercase tracking-[0.12em] text-text-tertiary">{label}</p>
+      <p className="mt-1 text-lg font-semibold text-text-primary">{value}</p>
+    </div>
+  );
+}
+
+function DetailField({
+  label,
+  value,
+  toneClassName = 'text-text-primary',
+}: {
+  label: string;
+  value: string;
+  toneClassName?: string;
+}) {
+  return (
+    <div>
+      <p className="text-[11px] uppercase tracking-[0.12em] text-text-tertiary">{label}</p>
+      <p className={`mt-1 text-sm font-medium ${toneClassName}`}>{value}</p>
+    </div>
+  );
+}
 
 export function ProjectsPage() {
   const navigate = useNavigate();
@@ -200,38 +229,26 @@ export function ProjectsPage() {
   return (
     <AppShell currentUserId={currentUserId}>
       <div className="mx-auto max-w-6xl px-6 py-8">
-        <header className="flex flex-wrap items-end justify-between gap-3 border-b border-border-secondary pb-4">
-          <div>
-            <h1 className="text-xl font-semibold tracking-tight text-text-primary">Projetos</h1>
-            <p className="mt-1 text-sm text-text-secondary">
-              Visão operacional dos projetos ativos e do acervo recente.
-            </p>
+        <header className="border-b border-border-secondary pb-4">
+          <div className="flex flex-wrap items-end justify-between gap-3">
+            <div>
+              <h1 className="text-xl font-semibold tracking-tight text-text-primary">Projetos</h1>
+              <p className="mt-1 text-sm text-text-secondary">
+                Operação dos projetos ativos, atrasos críticos e acervo recente.
+              </p>
+            </div>
+            <Button variant="primary" onClick={() => setIsProjectFormOpen(true)}>
+              Novo projeto
+            </Button>
           </div>
-          <Button variant="primary" onClick={() => setIsProjectFormOpen(true)}>
-            Novo projeto
-          </Button>
-        </header>
 
-        <div className="mt-5 rounded-md border border-border-secondary bg-surface-secondary/35 px-4 py-3">
-          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-            <div>
-              <p className="text-xs uppercase tracking-[0.12em] text-text-tertiary">Projetos</p>
-              <p className="mt-1 text-lg font-semibold text-text-primary">{summary.total}</p>
-            </div>
-            <div>
-              <p className="text-xs uppercase tracking-[0.12em] text-text-tertiary">Em andamento</p>
-              <p className="mt-1 text-lg font-semibold text-text-primary">{summary.active}</p>
-            </div>
-            <div>
-              <p className="text-xs uppercase tracking-[0.12em] text-text-tertiary">Atrasados</p>
-              <p className="mt-1 text-lg font-semibold text-text-primary">{summary.overdue}</p>
-            </div>
-            <div>
-              <p className="text-xs uppercase tracking-[0.12em] text-text-tertiary">Concluídos</p>
-              <p className="mt-1 text-lg font-semibold text-text-primary">{summary.completed}</p>
-            </div>
+          <div className="mt-4 grid gap-4 border-t border-border-secondary pt-4 sm:grid-cols-2 xl:grid-cols-4">
+            <MetricItem label="Projetos" value={summary.total} />
+            <MetricItem label="Em andamento" value={summary.active} />
+            <MetricItem label="Atrasados" value={summary.overdue} />
+            <MetricItem label="Concluídos" value={summary.completed} />
           </div>
-        </div>
+        </header>
 
         {groupsError ? (
           <div className="mt-4">
@@ -243,71 +260,59 @@ export function ProjectsPage() {
           </div>
         ) : null}
 
-        <div className="mt-4 rounded-md border border-border-secondary bg-surface-primary px-4 py-4">
-          <div className="space-y-4">
-            <div>
-              <p className="text-xs font-medium uppercase tracking-[0.12em] text-text-tertiary">Busca e filtros</p>
-              <p className="mt-1 text-sm text-text-secondary">
-                A lista abaixo já mostra os projetos. Use a busca e os filtros para refinar a leitura.
-              </p>
-            </div>
+        <div className="mt-5 border-b border-border-secondary pb-4">
+          <div className="grid gap-3 lg:grid-cols-[minmax(0,1.5fr)_repeat(3,minmax(0,1fr))]">
+            <SearchField
+              placeholder="Buscar por nome do projeto ou grupo"
+              value={searchQuery}
+              onChange={(event) => setSearchQuery(event.target.value)}
+              onClear={() => setSearchQuery('')}
+              className="w-full py-3 text-base"
+            />
+            <Select
+              label="Grupo"
+              options={groupOptions}
+              value={selectedGroup}
+              onChange={(event) => setSelectedGroup(event.target.value)}
+              aria-label="Filtro por grupo"
+            />
+            <Select
+              label="Status"
+              options={statusOptions}
+              value={selectedStatus}
+              onChange={(event) => setSelectedStatus(event.target.value)}
+              aria-label="Filtro por status"
+            />
+            <Select
+              label="Fase"
+              options={phaseOptions}
+              value={selectedPhase}
+              onChange={(event) => setSelectedPhase(event.target.value)}
+              aria-label="Filtro por fase"
+            />
+          </div>
 
-            <div>
-              <SearchField
-                placeholder="Buscar por nome do projeto ou grupo"
-                value={searchQuery}
-                onChange={(event) => setSearchQuery(event.target.value)}
-                onClear={() => setSearchQuery('')}
-                className="w-full py-3 text-base"
-              />
-            </div>
-
-            <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
-              <Select
-                label="Grupo"
-                options={groupOptions}
-                value={selectedGroup}
-                onChange={(event) => setSelectedGroup(event.target.value)}
-                aria-label="Filtro por grupo"
-              />
-              <Select
-                label="Status"
-                options={statusOptions}
-                value={selectedStatus}
-                onChange={(event) => setSelectedStatus(event.target.value)}
-                aria-label="Filtro por status"
-              />
-              <Select
-                label="Fase"
-                options={phaseOptions}
-                value={selectedPhase}
-                onChange={(event) => setSelectedPhase(event.target.value)}
-                aria-label="Filtro por fase"
-              />
-            </div>
+          <div className="mt-3 flex flex-wrap items-center justify-between gap-3 text-sm text-text-secondary">
+            <p>
+              Mostrando {visibleProjects.length} de {projects.length} projeto{projects.length === 1 ? '' : 's'}.
+              {!hasActiveFilters ? ' Projetos em andamento e prazos críticos aparecem primeiro.' : ''}
+            </p>
+            {hasActiveFilters ? (
+              <Button variant="ghost" size="sm" onClick={clearFilters}>
+                Limpar busca e filtros
+              </Button>
+            ) : null}
           </div>
         </div>
 
-        <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
-          <p className="text-sm text-text-secondary">
-            Mostrando {visibleProjects.length} de {projects.length} projeto{projects.length === 1 ? '' : 's'}.
-            {!hasActiveFilters ? ' Projetos em andamento e prazos críticos aparecem primeiro.' : ''}
-          </p>
-          {hasActiveFilters ? (
-            <Button variant="ghost" size="sm" onClick={clearFilters}>
-              Limpar busca e filtros
-            </Button>
-          ) : null}
-        </div>
-
-        <div className="mt-3 space-y-2">
+        <div className="mt-5 space-y-6">
           {visibleProjects.length === 0 ? (
             <EmptyState
               title="Nenhum projeto encontrado"
               description="Ajuste a busca ou os filtros para localizar outro projeto."
             />
           ) : (
-            visibleProjects.map((project) => {
+            visibleProjects.map((project, index) => {
               const completionPercent =
                 project.totalTarefas > 0
                   ? Math.round((project.tarefasConcluidas / project.totalTarefas) * 100)
@@ -319,49 +324,62 @@ export function ProjectsPage() {
                 project.status !== ProjectStatus.ARCHIVED;
 
               return (
-                <button
+                <article
                   key={project.id}
-                  type="button"
-                  onClick={() => navigate(`/projetos/${project.id}`)}
-                  className="w-full rounded-md border border-border-primary bg-surface-primary px-4 py-4 text-left transition-colors hover:bg-surface-secondary focus:outline-none focus-visible:ring-2 focus-visible:ring-info-200"
+                  className={`${index > 0 ? 'border-t border-border-secondary pt-6' : ''} space-y-4`}
                 >
-                  <div className="flex items-start justify-between gap-4">
+                  <div className="flex flex-wrap items-start justify-between gap-4">
                     <div className="min-w-0">
                       <h2 className="truncate text-base font-semibold text-text-primary">{project.nome}</h2>
-                      <p className="mt-1 truncate text-sm text-text-secondary">{project.grupoNome || 'Sem grupo'}</p>
+                      <p className="mt-1 text-sm text-text-secondary">
+                        {project.grupoNome || 'Sem grupo vinculado'}
+                      </p>
                     </div>
-                    <span className="shrink-0 text-sm text-text-secondary">Abrir</span>
-                  </div>
 
-                  <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-                    <div>
-                      <p className="text-[11px] uppercase tracking-[0.12em] text-text-tertiary">Status</p>
-                      <p className={`mt-1 text-sm font-medium ${getProjectStatusToneClass(project.status)}`}>
-                        {getProjectStatusLabel(project.status)}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-[11px] uppercase tracking-[0.12em] text-text-tertiary">Fase</p>
-                      <p className="mt-1 text-sm font-medium text-text-primary">{getProjectPhaseLabel(project.fase)}</p>
-                    </div>
-                    <div>
-                      <p className="text-[11px] uppercase tracking-[0.12em] text-text-tertiary">Prioridade</p>
-                      <p className="mt-1 text-sm font-medium text-text-primary">{getPriorityLabel(project.prioridade)}</p>
-                    </div>
-                    <div>
-                      <p className="text-[11px] uppercase tracking-[0.12em] text-text-tertiary">Prazo</p>
-                      <p className={`mt-1 text-sm font-medium ${projectIsOverdue ? 'text-error-600' : 'text-text-primary'}`}>
-                        {project.prazo ? formatFullDate(project.prazo) : 'Sem prazo'}
-                      </p>
+                    <div className="flex flex-wrap items-center gap-2">
+                      {project.grupoId ? (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => navigate(`/grupos/${project.grupoId}`)}
+                        >
+                          Ver grupo
+                        </Button>
+                      ) : null}
+                      <Button
+                        variant="secondary"
+                        size="sm"
+                        onClick={() => navigate(`/projetos/${project.id}`)}
+                      >
+                        Abrir
+                      </Button>
                     </div>
                   </div>
 
-                  <div className="mt-4">
+                  <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+                    <DetailField label="Fase" value={getProjectPhaseLabel(project.fase)} />
+                    <DetailField
+                      label="Status"
+                      value={getProjectStatusLabel(project.status)}
+                      toneClassName={getProjectStatusToneClass(project.status)}
+                    />
+                    <DetailField label="Prioridade" value={getPriorityLabel(project.prioridade)} />
+                    <DetailField
+                      label="Prazo"
+                      value={project.prazo ? formatFullDate(project.prazo) : 'Sem prazo'}
+                      toneClassName={projectIsOverdue ? 'text-error-600' : 'text-text-primary'}
+                    />
+                    <DetailField label="Área" value={formatAreaLabel(project.areaM2)} />
+                    <DetailField
+                      label="Progresso"
+                      value={formatProjectProgressLabel(project.tarefasConcluidas, project.totalTarefas)}
+                    />
+                  </div>
+
+                  <div>
                     <div className="flex items-center justify-between gap-3">
-                      <p className="text-[11px] uppercase tracking-[0.12em] text-text-tertiary">Progresso</p>
-                      <p className="text-sm font-medium text-text-primary">
-                        {completionPercent}% · {project.tarefasConcluidas}/{project.totalTarefas} tarefas
-                      </p>
+                      <p className="text-[11px] uppercase tracking-[0.12em] text-text-tertiary">Avanço</p>
+                      <p className="text-sm font-medium text-text-primary">{completionPercent}% concluído</p>
                     </div>
                     <progress
                       className="mt-2 h-1.5 w-full overflow-hidden rounded-full [&::-moz-progress-bar]:bg-info-500 [&::-webkit-progress-bar]:bg-surface-secondary [&::-webkit-progress-value]:bg-info-500"
@@ -370,7 +388,31 @@ export function ProjectsPage() {
                       aria-label={`Progresso do projeto ${project.nome}`}
                     />
                   </div>
-                </button>
+
+                  <div className="flex flex-wrap items-center justify-between gap-4 border-t border-border-secondary pt-4">
+                    <div className="flex items-center gap-3">
+                      <AvatarStack
+                        avatars={[
+                          {
+                            id: project.dono.id || `owner-${project.id}`,
+                            name: project.dono.nome,
+                          },
+                        ]}
+                        max={1}
+                        size="sm"
+                      />
+                      <div>
+                        <p className="text-[11px] uppercase tracking-[0.12em] text-text-tertiary">Responsável</p>
+                        <p className="text-sm font-medium text-text-primary">{project.dono.nome}</p>
+                      </div>
+                    </div>
+
+                    <div className="flex flex-wrap items-center gap-4 text-sm text-text-secondary">
+                      {project.compartilhadoComigo ? <span>Compartilhado comigo</span> : null}
+                      <span>Horas: {formatHoursLabel(project.totalHoras)}</span>
+                    </div>
+                  </div>
+                </article>
               );
             })
           )}

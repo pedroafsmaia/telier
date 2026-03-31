@@ -51,10 +51,13 @@ export interface ProjectListItem {
   fase: ProjectPhase;
   prioridade: Priority;
   prazo?: string;
+  areaM2?: number;
   grupoId?: string;
   grupoNome?: string;
+  dono: ProjectPerson;
   totalTarefas: number;
   tarefasConcluidas: number;
+  totalHoras?: number;
   compartilhadoComigo: boolean;
 }
 

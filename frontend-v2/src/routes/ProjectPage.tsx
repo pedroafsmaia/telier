@@ -1,25 +1,43 @@
 import { useMemo, useState } from 'react';
 import { useParams } from 'react-router-dom';
-import { AlertTriangle, ClipboardList, Pencil } from 'lucide-react';
 import { AppShell } from '../app/layout/AppShell';
-import { Button, EmptyState, Panel, SectionHeader } from '../design/primitives';
-import { formatFullDate, isOverdue } from '../lib/dates';
-import { ProjectStatus } from '../lib/enums';
-import { useAuth } from '../lib/auth';
-import { useProjectPageData, ProjectFormDrawer, useUpdateProject } from '../features/projects';
+import { Button, EmptyState, Panel } from '../design/primitives';
+import { ProjectFormDrawer, useProjectPageData, useUpdateProject } from '../features/projects';
 import { useGroups } from '../features/groups';
+import { ProjectRecordsSection, RecordFormDrawer, useCreateRecord } from '../features/records';
+import type { CreateRecordPayload } from '../features/records';
 import { TaskDrawer, TaskFormDrawer, TaskList } from '../features/tasks/components';
 import { TaskTimerFlowDrawer } from '../features/tasks/components/TaskTimerFlowDrawer';
 import { useProjectTaskActions } from '../features/tasks/hooks/useProjectTaskActions';
-import { ProjectRecordsSection, RecordFormDrawer, useCreateRecord } from '../features/records';
-import type { CreateRecordPayload } from '../features/records';
-import type { UpdateProjectPayload } from '../features/projects';
 import type { CreateTaskPayload } from '../features/tasks';
+import { formatFullDate, isOverdue } from '../lib/dates';
+import { ProjectStatus } from '../lib/enums';
+import { useAuth } from '../lib/auth';
+import type { UpdateProjectPayload } from '../features/projects';
 import {
+  formatAreaLabel,
+  formatProjectProgressLabel,
   getProjectPhaseLabel,
   getProjectStatusLabel,
   getProjectStatusToneClass,
 } from '../lib/projectUi';
+
+function MetricItem({
+  label,
+  value,
+  toneClassName = 'text-text-primary',
+}: {
+  label: string;
+  value: string;
+  toneClassName?: string;
+}) {
+  return (
+    <div>
+      <p className="text-[11px] uppercase tracking-[0.12em] text-text-tertiary">{label}</p>
+      <p className={`mt-1 text-lg font-semibold ${toneClassName}`}>{value}</p>
+    </div>
+  );
+}
 
 function toUserErrorMessage(error: unknown, fallback: string): string {
   if (error instanceof Error && error.message.trim()) {
@@ -59,6 +77,7 @@ export function ProjectPage() {
     if (!project || project.totalTarefas === 0) return 0;
     return Math.round((project.tarefasConcluidas / project.totalTarefas) * 100);
   }, [project]);
+
   const projectIsOverdue = Boolean(
     project?.prazo &&
     isOverdue(project.prazo) &&
@@ -104,7 +123,10 @@ export function ProjectPage() {
     return (
       <AppShell currentUserId={currentUserId}>
         <div className="mx-auto max-w-6xl px-6 py-8">
-          <SectionHeader title="Projeto" subtitle="Carregando..." />
+          <header className="border-b border-border-secondary pb-4">
+            <h1 className="text-xl font-semibold tracking-tight text-text-primary">Projeto</h1>
+            <p className="mt-1 text-sm text-text-secondary">Carregando...</p>
+          </header>
           <div className="mt-8">
             <EmptyState title="Carregando projeto..." description="Buscando tarefas e registros do projeto." />
           </div>
@@ -117,7 +139,10 @@ export function ProjectPage() {
     return (
       <AppShell currentUserId={currentUserId}>
         <div className="mx-auto max-w-6xl px-6 py-8">
-          <SectionHeader title="Projeto" subtitle="Erro ao carregar" />
+          <header className="border-b border-border-secondary pb-4">
+            <h1 className="text-xl font-semibold tracking-tight text-text-primary">Projeto</h1>
+            <p className="mt-1 text-sm text-text-secondary">Erro ao carregar</p>
+          </header>
           <div className="mt-8">
             <EmptyState
               title="Erro ao carregar projeto"
@@ -132,15 +157,44 @@ export function ProjectPage() {
   return (
     <AppShell currentUserId={currentUserId}>
       <div className="mx-auto max-w-6xl px-6 py-8">
-        <SectionHeader
-          title={project.nome}
-          subtitle="Tarefas e registros operacionais do projeto"
-          actions={
-            <Button variant="secondary" size="sm" icon={Pencil} onClick={() => setIsProjectFormOpen(true)}>
-              Editar projeto
-            </Button>
-          }
-        />
+        <header className="border-b border-border-secondary pb-4">
+          <div className="flex flex-wrap items-end justify-between gap-3">
+            <div>
+              <h1 className="text-xl font-semibold tracking-tight text-text-primary">{project.nome}</h1>
+              <p className="mt-1 text-sm text-text-secondary">
+                Tarefas e registros operacionais do projeto.
+              </p>
+            </div>
+            <div className="flex flex-wrap items-center gap-2">
+              <Button variant="secondary" size="sm" onClick={() => setIsProjectFormOpen(true)}>
+                Editar projeto
+              </Button>
+              <Button variant="primary" size="sm" onClick={() => setIsTaskFormOpen(true)}>
+                Nova tarefa
+              </Button>
+            </div>
+          </div>
+
+          <div className="mt-4 grid gap-4 border-t border-border-secondary pt-4 sm:grid-cols-2 xl:grid-cols-3">
+            <MetricItem label="Grupo" value={project.grupoNome || 'Sem grupo'} />
+            <MetricItem label="Fase" value={getProjectPhaseLabel(project.fase)} />
+            <MetricItem
+              label="Status"
+              value={getProjectStatusLabel(project.status)}
+              toneClassName={getProjectStatusToneClass(project.status)}
+            />
+            <MetricItem
+              label="Prazo"
+              value={project.prazo ? formatFullDate(project.prazo) : 'Sem prazo'}
+              toneClassName={projectIsOverdue ? 'text-error-600' : 'text-text-primary'}
+            />
+            <MetricItem
+              label="Progresso"
+              value={formatProjectProgressLabel(project.tarefasConcluidas, project.totalTarefas)}
+            />
+            <MetricItem label="Área" value={formatAreaLabel(project.areaM2)} />
+          </div>
+        </header>
 
         {taskActions.actionError ? (
           <div className="mt-6">
@@ -149,47 +203,6 @@ export function ProjectPage() {
             </Panel>
           </div>
         ) : null}
-
-        <div className="mt-6">
-          <Panel>
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              <div>
-                <p className="text-xs uppercase tracking-wide text-text-tertiary">Grupo</p>
-                <p className="mt-1 text-sm font-medium text-text-primary">{project.grupoNome || 'Sem grupo'}</p>
-              </div>
-              <div>
-                <p className="text-xs uppercase tracking-wide text-text-tertiary">Fase</p>
-                <p className="mt-1 text-sm font-medium text-text-primary">{getProjectPhaseLabel(project.fase)}</p>
-              </div>
-              <div>
-                <p className="text-xs uppercase tracking-wide text-text-tertiary">Status</p>
-                <p className={`mt-1 text-sm font-medium ${getProjectStatusToneClass(project.status)}`}>
-                  {getProjectStatusLabel(project.status)}
-                </p>
-              </div>
-              <div>
-                <p className="text-xs uppercase tracking-wide text-text-tertiary">Prazo</p>
-                <p className={`mt-1 inline-flex items-center gap-1 text-sm font-medium ${projectIsOverdue ? 'text-error-600' : 'text-text-primary'}`}>
-                  {projectIsOverdue ? <AlertTriangle className="h-4 w-4" aria-hidden="true" /> : null}
-                  {project.prazo ? formatFullDate(project.prazo) : 'Sem prazo'}
-                  {projectIsOverdue ? ' (atrasado)' : ''}
-                </p>
-              </div>
-              <div>
-                <p className="text-xs uppercase tracking-wide text-text-tertiary">Progresso</p>
-                <p className="mt-1 text-sm font-medium text-text-primary">
-                  {completionPercent}% ({project.tarefasConcluidas}/{project.totalTarefas})
-                </p>
-              </div>
-            </div>
-          </Panel>
-        </div>
-
-        <div className="mt-4">
-          <Button variant="primary" size="sm" onClick={() => setIsTaskFormOpen(true)}>
-            Nova tarefa
-          </Button>
-        </div>
 
         <div className="mt-6">
           <ProjectRecordsSection
@@ -205,19 +218,20 @@ export function ProjectPage() {
           />
         </div>
 
-        <div className="mt-6">
-          <Panel>
-            <div className="mb-4 flex items-center justify-between">
-              <div>
-                <h2 className="text-base font-medium text-text-primary">Tarefas do projeto</h2>
-                <p className="text-sm text-text-secondary">Lista operacional compacta</p>
-              </div>
-              <div className="flex items-center gap-2 text-xs text-text-tertiary">
-                <ClipboardList className="h-4 w-4" />
-                <span>{tasks.length} tarefa{tasks.length === 1 ? '' : 's'}</span>
-              </div>
+        <section className="mt-6 border-t border-border-secondary pt-6">
+          <div className="flex flex-wrap items-end justify-between gap-3">
+            <div>
+              <h2 className="text-base font-medium text-text-primary">Tarefas do projeto</h2>
+              <p className="mt-1 text-sm text-text-secondary">
+                Lista operacional compacta com progresso atual de {completionPercent}%.
+              </p>
             </div>
+            <p className="text-sm text-text-secondary">
+              {tasks.length} tarefa{tasks.length === 1 ? '' : 's'}
+            </p>
+          </div>
 
+          <div className="mt-4">
             <TaskList
               tasks={tasks}
               activeSessions={activeSessions}
@@ -229,8 +243,8 @@ export function ProjectPage() {
               onStopTimer={taskActions.handleStopTimer}
               onComplete={taskActions.handleCompleteTask}
             />
-          </Panel>
-        </div>
+          </div>
+        </section>
 
         <TaskDrawer
           isOpen={taskActions.isTaskDrawerOpen}
@@ -298,5 +312,3 @@ export function ProjectPage() {
     </AppShell>
   );
 }
-
-

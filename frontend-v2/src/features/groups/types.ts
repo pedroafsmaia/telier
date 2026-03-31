@@ -42,6 +42,7 @@ export interface GroupListItem {
   descricao?: string;
   status: GroupStatus;
   ordem?: number;
+  dono: GroupPerson;
   totalProjetos: number;
   projetosAtrasados: number;
   areaTotalM2?: number;

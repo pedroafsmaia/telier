@@ -1,4 +1,4 @@
-import { ProjectPhase, ProjectStatus } from './enums';
+import { GroupStatus, ProjectPhase, ProjectStatus } from './enums';
 
 export function getProjectStatusLabel(status: string): string {
   switch (status) {
@@ -50,4 +50,42 @@ export function getProjectStatusToneClass(status: string): string {
     default:
       return 'text-text-primary';
   }
+}
+
+export function getGroupStatusLabel(status: string): string {
+  switch (status) {
+    case GroupStatus.ACTIVE:
+      return 'Ativo';
+    case GroupStatus.PAUSED:
+      return 'Pausado';
+    case GroupStatus.ARCHIVED:
+      return 'Arquivado';
+    default:
+      return status;
+  }
+}
+
+export function getGroupStatusToneClass(status: string): string {
+  switch (status) {
+    case GroupStatus.PAUSED:
+      return 'text-warning-700';
+    case GroupStatus.ARCHIVED:
+      return 'text-text-tertiary';
+    default:
+      return 'text-text-primary';
+  }
+}
+
+export function formatProjectProgressLabel(completed: number, total: number): string {
+  return `${completed}/${total} tarefas concluídas`;
+}
+
+export function formatAreaLabel(areaM2?: number): string {
+  if (!areaM2) return 'Não informado';
+  return `${areaM2} m²`;
+}
+
+export function formatHoursLabel(totalHours?: number): string {
+  if (totalHours === undefined) return 'Não informado';
+  return `${totalHours} h`;
 }

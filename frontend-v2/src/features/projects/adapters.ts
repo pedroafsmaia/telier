@@ -174,10 +174,17 @@ export function adaptProjectListItem(raw: RawProject): ProjectListItem {
     fase: mapPhase(raw.fase),
     prioridade: mapPriority(raw.prioridade),
     prazo: raw.prazo,
+    areaM2: raw.area_m2,
     grupoId: raw.grupo_id ? String(raw.grupo_id) : undefined,
     grupoNome: raw.grupo_nome,
+    dono: {
+      id: String(raw.dono_id || ''),
+      nome: raw.dono_nome || 'Desconhecido',
+      email: raw.dono_email,
+    },
     totalTarefas: raw.total_tarefas || 0,
     tarefasConcluidas: raw.tarefas_concluidas || 0,
+    totalHoras: raw.total_horas,
     compartilhadoComigo: Boolean(raw.compartilhado_comigo),
   };
 }
