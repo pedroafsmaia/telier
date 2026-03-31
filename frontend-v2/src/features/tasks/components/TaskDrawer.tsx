@@ -1,6 +1,8 @@
-﻿import React, { useState } from 'react';
-import { AlertTriangle, Calendar, Check, Clock, Pencil, Save, Users, X } from 'lucide-react';
-import { AvatarStack, Button, Drawer, EaseTag, Input, Panel, PriorityTag, Select, StatusTag, TextArea } from '../../../design/primitives';
+import React, { useState } from 'react';
+import { AlertTriangle, Check, Clock, Pencil, Save, Users, X } from 'lucide-react';
+import { AvatarStack, Button, Drawer, Input, Panel, Select, TextArea } from '../../../design/primitives';
+import { formatDateTime, formatElapsedDuration, formatFullDate, isOverdue } from '../../../lib/dates';
+import { Ease, getEaseLabel, getPriorityLabel, getTaskStatusLabel, Priority, TaskStatus } from '../../../lib/enums';
 import type { ActiveTimeSession, TaskListItem } from '../types';
 import {
   useAssignableUsers,
@@ -10,8 +12,6 @@ import {
   useTaskTimeSummary,
   useUpdateTask,
 } from '../queries';
-import { Ease, getEaseLabel, getPriorityLabel, getTaskStatusLabel, Priority, TaskStatus } from '../../../lib/enums';
-import { formatDateTime, formatElapsedDuration, formatFullDate } from '../../../lib/dates';
 
 interface TaskDrawerProps {
   isOpen: boolean;
@@ -65,6 +65,48 @@ function formatHours(value: number): string {
   return `${value.toFixed(2)} h`;
 }
 
+function MetaField({
+  label,
+  value,
+  toneClassName = 'text-text-primary',
+}: {
+  label: string;
+  value: string;
+  toneClassName?: string;
+}) {
+  return (
+    <div>
+      <p className="text-xs uppercase tracking-wide text-text-tertiary">{label}</p>
+      <p className={`mt-1 text-sm font-medium ${toneClassName}`}>{value}</p>
+    </div>
+  );
+}
+
+function getResponsiblePeople(task: TaskListItem, collaboratorNames: Array<{ id: string; nome: string }>) {
+  const peopleMap = new Map<string, { id: string; nome: string }>();
+
+  if (task.criadoPor?.id) {
+    peopleMap.set(task.criadoPor.id, {
+      id: task.criadoPor.id,
+      nome: task.criadoPor.nome,
+    });
+  }
+
+  task.responsaveis.forEach((person) => {
+    if (person.id) {
+      peopleMap.set(person.id, { id: person.id, nome: person.nome });
+    }
+  });
+
+  collaboratorNames.forEach((person) => {
+    if (person.id) {
+      peopleMap.set(person.id, { id: person.id, nome: person.nome });
+    }
+  });
+
+  return Array.from(peopleMap.values());
+}
+
 export const TaskDrawer: React.FC<TaskDrawerProps> = ({
   isOpen,
   onClose,
@@ -97,22 +139,24 @@ export const TaskDrawer: React.FC<TaskDrawerProps> = ({
   const form = isEditing ? editState.form : buildFormState(task);
   const isSaving = updateTaskMutation.isPending || syncCollaboratorsMutation.isPending;
   const isCompleted = task.status === TaskStatus.DONE;
+  const isWaiting = (isEditing ? form.status : task.status) === TaskStatus.WAITING;
   const canManageCollaborators = Boolean(isAdmin || task.criadoPor?.id === currentUserId);
   const hasTimeError = Boolean(timeEntriesError || timeSummaryError);
+  const hasOverdue = Boolean(task.prazo && isOverdue(task.prazo) && !isCompleted);
 
   const baseCollaboratorIds = (() => {
     if (collaborators.length > 0) {
       return collaborators.map((person) => person.id);
     }
+
     const ownerId = task.criadoPor?.id;
     return task.responsaveis
       .map((person) => person.id)
       .filter((id) => id && id !== ownerId);
   })();
 
-  const selectedCollaboratorIds = isEditing && editState.collaboratorIdsOverride
-    ? editState.collaboratorIdsOverride
-    : baseCollaboratorIds;
+  const selectedCollaboratorIds =
+    isEditing && editState.collaboratorIdsOverride ? editState.collaboratorIdsOverride : baseCollaboratorIds;
 
   const activeEntries = timeEntries
     .filter((entry) => !entry.fim)
@@ -127,20 +171,18 @@ export const TaskDrawer: React.FC<TaskDrawerProps> = ({
     if (timeSummary.length > 0) {
       return timeSummary.reduce((sum, item) => sum + item.horasLiquidas, 0);
     }
+
     return timeEntries
       .filter((entry) => Boolean(entry.fim))
       .reduce((sum, entry) => sum + entry.horasLiquidas, 0);
   })();
 
-  const responsibleAvatars = (() => {
-    const owner = task.criadoPor ? [{ id: task.criadoPor.id, name: task.criadoPor.nome }] : [];
-    const extra = collaborators.length > 0
-      ? collaborators.map((person) => ({ id: person.id, name: person.nome }))
-      : task.responsaveis
-          .filter((person) => person.id !== task.criadoPor?.id)
-          .map((person) => ({ id: person.id, name: person.nome }));
-    return [...owner, ...extra];
-  })();
+  const responsiblePeople = getResponsiblePeople(
+    task,
+    collaborators.map((person) => ({ id: person.id, nome: person.nome })),
+  );
+
+  const responsibleNames = responsiblePeople.map((person) => person.nome).join(', ') || 'Nenhuma pessoa vinculada';
 
   const allResponsibleUsers = (() => {
     const owner = task.criadoPor ? [{ id: task.criadoPor.id, nome: task.criadoPor.nome, fixed: true }] : [];
@@ -150,14 +192,32 @@ export const TaskDrawer: React.FC<TaskDrawerProps> = ({
     return [...owner, ...extras];
   })();
 
+  const statusToneClassName = isCompleted
+    ? 'text-success-600'
+    : isWaiting
+      ? task.observacaoEspera?.trim()
+        ? 'text-warning-700'
+        : 'text-error-600'
+      : 'text-text-primary';
+
+  const timerSummaryLabel = currentUserSession
+    ? `Em andamento desde ${formatDateTime(currentUserSession.inicio)}`
+    : activeEntries.length > 0
+      ? `${activeEntries.length} timer${activeEntries.length === 1 ? '' : 's'} ativo${activeEntries.length === 1 ? '' : 's'}`
+      : task.foco
+        ? 'Tarefa em foco'
+        : 'Sem timer ativo';
+
   const showWaitingSection = isEditing
-    ? (form.status === TaskStatus.WAITING || Boolean(form.observacaoEspera.trim()))
-    : (task.status === TaskStatus.WAITING || Boolean(task.observacaoEspera?.trim()));
+    ? isWaiting || Boolean(form.observacaoEspera.trim())
+    : task.status === TaskStatus.WAITING || Boolean(task.observacaoEspera?.trim());
 
   const updateEditingForm = <K extends keyof TaskFormState>(field: K, value: TaskFormState[K]) => {
     if (!isEditing) return;
+
     setEditState((current) => {
       if (!current || current.taskId !== task.id) return current;
+
       return {
         ...current,
         form: {
@@ -184,12 +244,15 @@ export const TaskDrawer: React.FC<TaskDrawerProps> = ({
 
   const toggleCollaborator = (userId: string) => {
     if (!isEditing) return;
+
     setEditState((current) => {
       if (!current || current.taskId !== task.id) return current;
+
       const currentIds = current.collaboratorIdsOverride || [];
       const nextIds = currentIds.includes(userId)
         ? currentIds.filter((id) => id !== userId)
         : [...currentIds, userId];
+
       return { ...current, collaboratorIdsOverride: nextIds };
     });
   };
@@ -203,6 +266,7 @@ export const TaskDrawer: React.FC<TaskDrawerProps> = ({
     }
 
     setSaveError(null);
+
     try {
       await updateTaskMutation.mutateAsync({
         taskId: task.id,
@@ -222,7 +286,7 @@ export const TaskDrawer: React.FC<TaskDrawerProps> = ({
       if (canManageCollaborators) {
         await syncCollaboratorsMutation.mutateAsync({
           taskId: task.id,
-          currentIds: collaborators.map((person) => person.id),
+          currentIds: baseCollaboratorIds,
           nextIds: selectedCollaboratorIds,
           ownerId: task.criadoPor?.id,
           projectId: form.projetoId,
@@ -247,15 +311,6 @@ export const TaskDrawer: React.FC<TaskDrawerProps> = ({
       title={task.nome}
     >
       <div className="flex h-full flex-col">
-        <div className="border-b border-border-subtle px-6 py-4">
-          <div className="flex items-center gap-2">
-            <StatusTag status={isEditing ? form.status : task.status} />
-            <span className="text-sm text-text-secondary">
-              {getTaskStatusLabel(isEditing ? form.status : task.status)}
-            </span>
-          </div>
-        </div>
-
         <div className="flex-1 space-y-6 overflow-y-auto p-6">
           <Panel padding="md">
             <div className="space-y-4">
@@ -329,27 +384,19 @@ export const TaskDrawer: React.FC<TaskDrawerProps> = ({
                 </>
               ) : (
                 <>
-                  <div className="flex flex-wrap items-center gap-2">
-                    <PriorityTag priority={task.prioridade} />
-                    <EaseTag ease={task.facilidade} />
-                  </div>
-                  <div className="grid grid-cols-1 gap-4 text-sm text-text-secondary sm:grid-cols-2">
-                    <div>
-                      <p className="text-xs uppercase tracking-wide text-text-tertiary">Projeto</p>
-                      <p className="mt-1 font-medium text-text-primary">{task.projetoNome}</p>
-                    </div>
-                    <div>
-                      <p className="text-xs uppercase tracking-wide text-text-tertiary">Prazo</p>
-                      <p className="mt-1 font-medium text-text-primary">{task.prazo ? formatFullDate(task.prazo) : 'Sem prazo'}</p>
-                    </div>
-                    <div>
-                      <p className="text-xs uppercase tracking-wide text-text-tertiary">Prioridade</p>
-                      <p className="mt-1 font-medium text-text-primary">{getPriorityLabel(task.prioridade)}</p>
-                    </div>
-                    <div>
-                      <p className="text-xs uppercase tracking-wide text-text-tertiary">Facilidade</p>
-                      <p className="mt-1 font-medium text-text-primary">{getEaseLabel(task.facilidade)}</p>
-                    </div>
+                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                    <MetaField label="Projeto" value={task.projetoNome} />
+                    <MetaField label="Status" value={getTaskStatusLabel(task.status)} toneClassName={statusToneClassName} />
+                    <MetaField
+                      label="Prazo"
+                      value={task.prazo ? formatFullDate(task.prazo) : 'Sem prazo'}
+                      toneClassName={hasOverdue ? 'text-error-600' : 'text-text-primary'}
+                    />
+                    <MetaField label="Prioridade" value={getPriorityLabel(task.prioridade)} />
+                    <MetaField label="Facilidade" value={getEaseLabel(task.facilidade)} />
+                    <MetaField label="Timer" value={timerSummaryLabel} />
+                    <MetaField label="Compartilhamento" value={task.compartilhada ? 'Compartilhada' : 'Interna'} />
+                    <MetaField label="Foco" value={task.foco ? 'Em foco' : 'Sem foco ativo'} />
                   </div>
 
                   <div className="space-y-2">
@@ -371,18 +418,24 @@ export const TaskDrawer: React.FC<TaskDrawerProps> = ({
               </div>
 
               <div className="space-y-3">
-                <div>
-                  <p className="text-xs uppercase tracking-wide text-text-tertiary">Criado por</p>
-                  <p className="mt-1 text-sm font-medium text-text-primary">{task.criadoPor?.nome || 'Não informado'}</p>
-                </div>
+                <MetaField label="Criado por" value={task.criadoPor?.nome || 'Não informado'} />
 
                 <div>
                   <p className="text-xs uppercase tracking-wide text-text-tertiary">Responsáveis</p>
                   <div className="mt-2 flex items-center gap-3">
-                    <AvatarStack avatars={responsibleAvatars} max={8} />
-                    <span className="text-sm text-text-secondary">
-                      {responsibleAvatars.length} pessoa{responsibleAvatars.length === 1 ? '' : 's'} vinculada{responsibleAvatars.length === 1 ? '' : 's'}
-                    </span>
+                    <AvatarStack
+                      avatars={responsiblePeople.map((person) => ({
+                        id: person.id,
+                        name: person.nome,
+                      }))}
+                      max={8}
+                    />
+                    <div className="min-w-0">
+                      <p className="truncate text-sm font-medium text-text-primary">{responsibleNames}</p>
+                      <p className="text-sm text-text-secondary">
+                        {responsiblePeople.length} pessoa{responsiblePeople.length === 1 ? '' : 's'} vinculada{responsiblePeople.length === 1 ? '' : 's'}
+                      </p>
+                    </div>
                   </div>
                 </div>
 
@@ -390,7 +443,9 @@ export const TaskDrawer: React.FC<TaskDrawerProps> = ({
                   <div className="space-y-2 rounded-lg border border-border-subtle p-3">
                     <p className="text-xs uppercase tracking-wide text-text-tertiary">Editar responsáveis</p>
                     {!canManageCollaborators ? (
-                      <p className="text-sm text-text-secondary">Só quem criou a tarefa ou administrador pode alterar os responsáveis vinculados.</p>
+                      <p className="text-sm text-text-secondary">
+                        Só quem criou a tarefa ou administrador pode alterar os responsáveis vinculados.
+                      </p>
                     ) : (
                       <div className="space-y-2">
                         {allResponsibleUsers.map((user) => {
@@ -478,9 +533,7 @@ export const TaskDrawer: React.FC<TaskDrawerProps> = ({
                                 <p className="text-xs text-text-secondary">
                                   {formatDateTime(entry.inicio)} até {entry.fim ? formatDateTime(entry.fim) : 'em aberto'}
                                 </p>
-                                {entry.observacao ? (
-                                  <p className="mt-2 text-sm text-text-secondary">{entry.observacao}</p>
-                                ) : null}
+                                {entry.observacao ? <p className="mt-2 text-sm text-text-secondary">{entry.observacao}</p> : null}
                               </div>
                               <span className="text-sm font-medium text-text-primary">{formatHours(entry.horasLiquidas)}</span>
                             </div>
@@ -516,7 +569,7 @@ export const TaskDrawer: React.FC<TaskDrawerProps> = ({
               <div className="space-y-4">
                 <div className="flex items-center gap-2">
                   <AlertTriangle className="h-4 w-4 text-warning" />
-                  <h3 className="text-sm font-medium text-text-primary">Motivo da espera</h3>
+                  <h3 className="text-sm font-medium text-text-primary">Contexto de espera</h3>
                 </div>
 
                 {isEditing ? (
@@ -534,7 +587,7 @@ export const TaskDrawer: React.FC<TaskDrawerProps> = ({
                         : 'border-border-subtle bg-surface-secondary text-text-secondary'
                     }`}
                   >
-                    {task.observacaoEspera?.trim() || 'Sem motivo de espera registrado.'}
+                    {task.observacaoEspera?.trim() || 'Sem contexto de espera registrado.'}
                   </div>
                 )}
               </div>
@@ -583,12 +636,6 @@ export const TaskDrawer: React.FC<TaskDrawerProps> = ({
               )}
 
               <div className="flex flex-wrap items-center gap-4 text-sm text-text-secondary">
-                {task.prazo ? (
-                  <div className="flex items-center gap-2">
-                    <Calendar className="h-4 w-4" />
-                    <span>Prazo em {formatFullDate(task.prazo)}</span>
-                  </div>
-                ) : null}
                 <span>Criada em {formatDateTime(task.criadoEm)}</span>
                 {task.atualizadoEm ? <span>Atualizada em {formatDateTime(task.atualizadoEm)}</span> : null}
               </div>
@@ -599,9 +646,3 @@ export const TaskDrawer: React.FC<TaskDrawerProps> = ({
     </Drawer>
   );
 };
-
-
-
-
-
-
