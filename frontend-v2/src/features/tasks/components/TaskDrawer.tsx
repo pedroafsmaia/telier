@@ -197,6 +197,11 @@ export const TaskDrawer: React.FC<TaskDrawerProps> = ({
   const handleSave = async () => {
     if (!isEditing) return;
 
+    if (form.status === TaskStatus.WAITING && !form.observacaoEspera.trim()) {
+      setSaveError('Ao colocar em espera, registre o contexto.');
+      return;
+    }
+
     setSaveError(null);
     try {
       await updateTaskMutation.mutateAsync({
@@ -226,7 +231,7 @@ export const TaskDrawer: React.FC<TaskDrawerProps> = ({
 
       setEditState(null);
     } catch (error) {
-      const message = error instanceof Error ? error.message : 'NÃ£o foi possÃ­vel salvar a tarefa. Tente novamente.';
+      const message = error instanceof Error ? error.message : 'Não foi possível salvar a tarefa. Tente novamente.';
       setSaveError(message);
     }
   };
@@ -234,6 +239,7 @@ export const TaskDrawer: React.FC<TaskDrawerProps> = ({
   return (
     <Drawer
       isOpen={isOpen}
+      mode="contextual"
       onClose={isSaving ? () => undefined : () => {
         cancelEditing();
         onClose();
@@ -256,7 +262,7 @@ export const TaskDrawer: React.FC<TaskDrawerProps> = ({
               {isEditing ? (
                 <>
                   <Input
-                    label="Titulo"
+                    label="Título"
                     value={form.nome}
                     onChange={(event) => updateEditingForm('nome', event.target.value)}
                     maxLength={200}
@@ -278,7 +284,7 @@ export const TaskDrawer: React.FC<TaskDrawerProps> = ({
                         { value: TaskStatus.TODO, label: 'A fazer' },
                         { value: TaskStatus.IN_PROGRESS, label: 'Em andamento' },
                         { value: TaskStatus.WAITING, label: 'Em espera' },
-                        { value: TaskStatus.DONE, label: 'ConcluÃ­da' },
+                        { value: TaskStatus.DONE, label: 'Concluída' },
                       ]}
                     />
                     <Select
@@ -287,7 +293,7 @@ export const TaskDrawer: React.FC<TaskDrawerProps> = ({
                       onChange={(event) => updateEditingForm('prioridade', event.target.value as Priority)}
                       options={[
                         { value: Priority.LOW, label: 'Baixa' },
-                        { value: Priority.MEDIUM, label: 'MÃ©dia' },
+                        { value: Priority.MEDIUM, label: 'Média' },
                         { value: Priority.HIGH, label: 'Alta' },
                         { value: Priority.URGENT, label: 'Urgente' },
                       ]}
@@ -297,11 +303,11 @@ export const TaskDrawer: React.FC<TaskDrawerProps> = ({
                       value={form.facilidade}
                       onChange={(event) => updateEditingForm('facilidade', event.target.value as Ease)}
                       options={[
-                        { value: Ease.VERY_EASY, label: 'Muito fÃ¡cil' },
-                        { value: Ease.EASY, label: 'FÃ¡cil' },
-                        { value: Ease.MEDIUM, label: 'MÃ©dio' },
-                        { value: Ease.HARD, label: 'DifÃ­cil' },
-                        { value: Ease.VERY_HARD, label: 'Muito difÃ­cil' },
+                        { value: Ease.VERY_EASY, label: 'Muito fácil' },
+                        { value: Ease.EASY, label: 'Fácil' },
+                        { value: Ease.MEDIUM, label: 'Médio' },
+                        { value: Ease.HARD, label: 'Difícil' },
+                        { value: Ease.VERY_HARD, label: 'Muito difícil' },
                       ]}
                     />
                   </div>
@@ -314,10 +320,10 @@ export const TaskDrawer: React.FC<TaskDrawerProps> = ({
                   />
 
                   <TextArea
-                    label="Informacoes principais"
+                    label="Descrição"
                     value={form.descricao}
                     onChange={(event) => updateEditingForm('descricao', event.target.value)}
-                    placeholder="Notas principais, contexto operacional e proximos passos."
+                    placeholder="Explique objetivo, contexto e próximo passo."
                     rows={6}
                   />
                 </>
@@ -347,9 +353,9 @@ export const TaskDrawer: React.FC<TaskDrawerProps> = ({
                   </div>
 
                   <div className="space-y-2">
-                    <p className="text-xs uppercase tracking-wide text-text-tertiary">InformaÃ§Ãµes principais</p>
+                    <p className="text-xs uppercase tracking-wide text-text-tertiary">Descrição</p>
                     <div className="rounded-lg border border-border-subtle bg-surface-secondary px-4 py-3 text-sm leading-6 text-text-secondary">
-                      {task.descricao?.trim() || 'Sem informaÃ§Ãµes principais registradas.'}
+                      {task.descricao?.trim() || 'Sem descrição registrada.'}
                     </div>
                   </div>
                 </>
@@ -367,11 +373,11 @@ export const TaskDrawer: React.FC<TaskDrawerProps> = ({
               <div className="space-y-3">
                 <div>
                   <p className="text-xs uppercase tracking-wide text-text-tertiary">Criado por</p>
-                  <p className="mt-1 text-sm font-medium text-text-primary">{task.criadoPor?.nome || 'NÃ£o informado'}</p>
+                  <p className="mt-1 text-sm font-medium text-text-primary">{task.criadoPor?.nome || 'Não informado'}</p>
                 </div>
 
                 <div>
-                  <p className="text-xs uppercase tracking-wide text-text-tertiary">ResponsÃ¡veis</p>
+                  <p className="text-xs uppercase tracking-wide text-text-tertiary">Responsáveis</p>
                   <div className="mt-2 flex items-center gap-3">
                     <AvatarStack avatars={responsibleAvatars} max={8} />
                     <span className="text-sm text-text-secondary">
@@ -382,9 +388,9 @@ export const TaskDrawer: React.FC<TaskDrawerProps> = ({
 
                 {isEditing ? (
                   <div className="space-y-2 rounded-lg border border-border-subtle p-3">
-                    <p className="text-xs uppercase tracking-wide text-text-tertiary">Editar responsÃ¡veis</p>
+                    <p className="text-xs uppercase tracking-wide text-text-tertiary">Editar responsáveis</p>
                     {!canManageCollaborators ? (
-                      <p className="text-sm text-text-secondary">SÃ³ quem criou a tarefa ou administrador pode alterar os responsÃ¡veis vinculados.</p>
+                      <p className="text-sm text-text-secondary">Só quem criou a tarefa ou administrador pode alterar os responsáveis vinculados.</p>
                     ) : (
                       <div className="space-y-2">
                         {allResponsibleUsers.map((user) => {
@@ -421,18 +427,18 @@ export const TaskDrawer: React.FC<TaskDrawerProps> = ({
           <Panel padding="md">
             <div className="space-y-4">
               <div className="flex items-center gap-2">
-                <Clock className="h-4 w-4 text-primary-DEFAULT" />
+                <Clock className="h-4 w-4 text-primary" />
                 <h3 className="text-sm font-medium text-text-primary">Tempo</h3>
               </div>
 
               {hasTimeError ? (
-                <div className="rounded-lg border border-alert-subtle bg-alert-subtle/20 px-4 py-3 text-sm text-alert-DEFAULT">
-                  NÃ£o foi possÃ­vel carregar os dados de tempo desta tarefa. Tente novamente.
+                <div className="rounded-lg border border-alert-subtle bg-alert-subtle/20 px-4 py-3 text-sm text-alert">
+                  Não foi possível carregar os dados de tempo desta tarefa. Tente novamente.
                 </div>
               ) : (
                 <div className="space-y-3">
                   <div>
-                    <p className="mb-2 text-xs uppercase tracking-wide text-text-tertiary">Quem estÃ¡ com timer ativo agora</p>
+                    <p className="mb-2 text-xs uppercase tracking-wide text-text-tertiary">Quem está com timer ativo agora</p>
                     {isTimeLoading ? (
                       <div className="rounded-lg border border-border-subtle bg-surface-secondary px-4 py-3 text-sm text-text-secondary">
                         Carregando timers ativos...
@@ -449,7 +455,7 @@ export const TaskDrawer: React.FC<TaskDrawerProps> = ({
                               <p className="text-sm font-medium text-text-primary">{entry.usuarioNome}</p>
                               <p className="text-xs text-text-secondary">Iniciado em {formatDateTime(entry.inicio)}</p>
                             </div>
-                            <span className="text-sm font-medium text-primary-DEFAULT">{formatElapsedDuration(entry.inicio)}</span>
+                            <span className="text-sm font-medium text-primary">{formatElapsedDuration(entry.inicio)}</span>
                           </div>
                         ))}
                       </div>
@@ -457,10 +463,10 @@ export const TaskDrawer: React.FC<TaskDrawerProps> = ({
                   </div>
 
                   <div>
-                    <p className="mb-2 text-xs uppercase tracking-wide text-text-tertiary">SessÃµes recentes</p>
+                    <p className="mb-2 text-xs uppercase tracking-wide text-text-tertiary">Sessões recentes</p>
                     {recentEntries.length === 0 ? (
                       <div className="rounded-lg border border-border-subtle bg-surface-secondary px-4 py-3 text-sm text-text-secondary">
-                        Nenhuma sessÃ£o concluÃ­da ainda nesta tarefa.
+                        Nenhuma sessão concluída ainda nesta tarefa.
                       </div>
                     ) : (
                       <div className="space-y-2">
@@ -470,7 +476,7 @@ export const TaskDrawer: React.FC<TaskDrawerProps> = ({
                               <div>
                                 <p className="text-sm font-medium text-text-primary">{entry.usuarioNome}</p>
                                 <p className="text-xs text-text-secondary">
-                                  {formatDateTime(entry.inicio)} atÃ© {entry.fim ? formatDateTime(entry.fim) : 'em aberto'}
+                                  {formatDateTime(entry.inicio)} até {entry.fim ? formatDateTime(entry.fim) : 'em aberto'}
                                 </p>
                                 {entry.observacao ? (
                                   <p className="mt-2 text-sm text-text-secondary">{entry.observacao}</p>
@@ -509,26 +515,26 @@ export const TaskDrawer: React.FC<TaskDrawerProps> = ({
             <Panel padding="md">
               <div className="space-y-4">
                 <div className="flex items-center gap-2">
-                  <AlertTriangle className="h-4 w-4 text-warning-DEFAULT" />
-                  <h3 className="text-sm font-medium text-text-primary">ObservaÃ§Ã£o de espera</h3>
+                  <AlertTriangle className="h-4 w-4 text-warning" />
+                  <h3 className="text-sm font-medium text-text-primary">Motivo da espera</h3>
                 </div>
 
                 {isEditing ? (
                   <TextArea
-                    label="Contexto de espera"
+                    label="Contexto da espera"
                     value={form.observacaoEspera}
                     onChange={(event) => updateEditingForm('observacaoEspera', event.target.value)}
-                    placeholder="Explique por que a tarefa esta em espera ou o que falta destravar."
+                    placeholder="O que está bloqueando e quem pode destravar."
                   />
                 ) : (
                   <div
                     className={`rounded-lg border px-4 py-3 text-sm ${
                       task.status === TaskStatus.WAITING
-                        ? 'border-warning-subtle bg-warning-subtle/20 text-warning-DEFAULT'
+                        ? 'border-warning-subtle bg-warning-subtle/20 text-warning'
                         : 'border-border-subtle bg-surface-secondary text-text-secondary'
                     }`}
                   >
-                    {task.observacaoEspera?.trim() || 'Sem observaÃ§Ã£o de espera registrada.'}
+                    {task.observacaoEspera?.trim() || 'Sem motivo de espera registrado.'}
                   </div>
                 )}
               </div>
@@ -537,10 +543,10 @@ export const TaskDrawer: React.FC<TaskDrawerProps> = ({
 
           <Panel padding="md">
             <div className="space-y-4">
-              <h3 className="text-sm font-medium text-text-primary">AÃ§Ãµes</h3>
+              <h3 className="text-sm font-medium text-text-primary">Ações</h3>
 
               {saveError ? (
-                <div className="rounded-lg border border-alert-subtle bg-alert-subtle/20 px-4 py-3 text-sm text-alert-DEFAULT">
+                <div className="rounded-lg border border-alert-subtle bg-alert-subtle/20 px-4 py-3 text-sm text-alert">
                   {saveError}
                 </div>
               ) : null}
@@ -593,4 +599,9 @@ export const TaskDrawer: React.FC<TaskDrawerProps> = ({
     </Drawer>
   );
 };
+
+
+
+
+
 

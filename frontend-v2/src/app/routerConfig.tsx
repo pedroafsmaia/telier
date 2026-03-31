@@ -15,6 +15,10 @@ export const routerConfig = [
     element: <LoginPage />,
   },
   {
+    path: '/login/setup',
+    element: <LoginPage technicalEntry />,
+  },
+  {
     element: <RequireAuth />,
     children: [
       {

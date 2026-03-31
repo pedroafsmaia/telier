@@ -1,12 +1,11 @@
-﻿import { useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { AppShell } from '../app/layout/AppShell';
 import { useAuth } from '../lib/auth';
-import { formatShortDate } from '../lib/dates';
 import { ProjectPhase, ProjectStatus } from '../lib/enums';
 import { useProjects, useCreateProject, ProjectFormDrawer } from '../features/projects';
 import { useGroups } from '../features/groups';
-import { SectionHeader, EmptyState, Button, SearchField, Select, Panel, Badge } from '../design/primitives';
+import { EmptyState, Button, SearchField, Select, Panel } from '../design/primitives';
 import type { CreateProjectPayload } from '../features/projects';
 
 function getStatusLabel(status: string): string {
@@ -45,19 +44,6 @@ function getPhaseLabel(phase: string): string {
   }
 }
 
-function getStatusVariant(status: string): 'default' | 'success' | 'warning' | 'error' {
-  switch (status) {
-    case ProjectStatus.DONE:
-      return 'success';
-    case ProjectStatus.PAUSED:
-      return 'warning';
-    case ProjectStatus.ARCHIVED:
-      return 'error';
-    default:
-      return 'default';
-  }
-}
-
 export function ProjectsPage() {
   const navigate = useNavigate();
   const { isLoading: authLoading, currentUserId } = useAuth();
@@ -72,14 +58,17 @@ export function ProjectsPage() {
   const [isProjectFormOpen, setIsProjectFormOpen] = useState(false);
 
   const groupOptions = useMemo(() => {
+    const groupsFromApi = groups.map((group) => ({ value: group.id, label: group.nome }));
     const groupsFromProjects = projects
       .filter((project) => project.grupoId && project.grupoNome)
       .map((project) => ({ value: project.grupoId as string, label: project.grupoNome as string }));
 
-    const uniqueGroups = Array.from(new Map(groupsFromProjects.map((group) => [group.value, group])).values());
+    const uniqueGroups = Array.from(
+      new Map([...groupsFromApi, ...groupsFromProjects].map((group) => [group.value, group])).values(),
+    ).sort((left, right) => left.label.localeCompare(right.label, 'pt-BR'));
 
     return [{ value: '', label: 'Todos os grupos' }, ...uniqueGroups];
-  }, [projects]);
+  }, [groups, projects]);
 
   const statusOptions = useMemo(
     () => [
@@ -106,7 +95,13 @@ export function ProjectsPage() {
     [],
   );
 
+  const hasSearchOrFilters = Boolean(searchQuery.trim() || selectedGroup || selectedStatus || selectedPhase);
+
   const filteredProjects = useMemo(() => {
+    if (!hasSearchOrFilters) {
+      return [];
+    }
+
     return projects.filter((project) => {
       if (
         searchQuery &&
@@ -130,7 +125,9 @@ export function ProjectsPage() {
 
       return true;
     });
-  }, [projects, searchQuery, selectedGroup, selectedStatus, selectedPhase]);
+  }, [projects, searchQuery, selectedGroup, selectedStatus, selectedPhase, hasSearchOrFilters]);
+
+  const hasActiveFilters = Boolean(searchQuery || selectedGroup || selectedStatus || selectedPhase);
 
   const handleCreateProject = async (payload: CreateProjectPayload) => {
     const createdProject = await createProjectMutation.mutateAsync(payload);
@@ -140,8 +137,11 @@ export function ProjectsPage() {
   if (authLoading || projectsLoading) {
     return (
       <AppShell currentUserId={currentUserId}>
-        <div className="mx-auto max-w-7xl px-6 py-8">
-          <SectionHeader title="Projetos" subtitle="Carregando..." />
+        <div className="mx-auto max-w-6xl px-6 py-8">
+          <header className="border-b border-border-secondary pb-4">
+            <h1 className="text-xl font-semibold tracking-tight text-text-primary">Projetos</h1>
+            <p className="mt-1 text-sm text-text-secondary">Carregando...</p>
+          </header>
           <div className="mt-8">
             <EmptyState title="Carregando projetos..." description="Buscando lista de projetos." />
           </div>
@@ -153,8 +153,11 @@ export function ProjectsPage() {
   if (projectsError) {
     return (
       <AppShell currentUserId={currentUserId}>
-        <div className="mx-auto max-w-7xl px-6 py-8">
-          <SectionHeader title="Projetos" subtitle="Erro ao carregar" />
+        <div className="mx-auto max-w-6xl px-6 py-8">
+          <header className="border-b border-border-secondary pb-4">
+            <h1 className="text-xl font-semibold tracking-tight text-text-primary">Projetos</h1>
+            <p className="mt-1 text-sm text-text-secondary">Erro ao carregar</p>
+          </header>
           <div className="mt-8">
             <EmptyState
               title="Erro ao carregar projetos"
@@ -168,64 +171,95 @@ export function ProjectsPage() {
 
   return (
     <AppShell currentUserId={currentUserId}>
-      <div className="mx-auto max-w-7xl px-6 py-8">
-        <SectionHeader
-          title="Projetos"
-          subtitle="Consulta e localizacao rapida"
-          actions={
-            <Button variant="primary" onClick={() => setIsProjectFormOpen(true)}>
-              Novo projeto
-            </Button>
-          }
-        />
+      <div className="mx-auto max-w-6xl px-6 py-8">
+        <header className="flex flex-wrap items-end justify-between gap-3 border-b border-border-secondary pb-4">
+          <div>
+            <h1 className="text-xl font-semibold tracking-tight text-text-primary">Projetos</h1>
+            <p className="mt-1 text-sm text-text-secondary">Tela de localizacao e abertura rapida de projetos.</p>
+          </div>
+          <Button variant="primary" onClick={() => setIsProjectFormOpen(true)}>
+            Novo projeto
+          </Button>
+        </header>
 
         {groupsError ? (
           <div className="mt-4">
             <Panel className="border-warning-subtle bg-warning-subtle/20" padding="sm">
-              <p className="text-sm text-warning-DEFAULT">
+              <p className="text-sm text-warning">
                 Nao foi possivel carregar grupos agora. Voce ainda pode criar projeto sem grupo.
               </p>
             </Panel>
           </div>
         ) : null}
 
-        <div className="mt-6">
-          <Panel>
-            <div className="space-y-4">
+        <div className="mt-5 rounded-lg border-2 border-border-focus/40 bg-surface-primary p-4">
+          <div className="space-y-4">
+            <div>
+              <p className="text-xs font-medium uppercase tracking-wide text-text-tertiary">Busca de projetos</p>
               <SearchField
-                placeholder="Buscar projeto por nome ou grupo"
+                placeholder="Buscar por nome do projeto ou grupo"
                 value={searchQuery}
                 onChange={(event) => setSearchQuery(event.target.value)}
                 onClear={() => setSearchQuery('')}
-                className="w-full py-3 text-base"
+                className="mt-2 w-full py-3 text-base"
               />
-
-              <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
-                <Select
-                  options={groupOptions}
-                  value={selectedGroup}
-                  onChange={(event) => setSelectedGroup(event.target.value)}
-                  aria-label="Filtro por grupo"
-                />
-                <Select
-                  options={statusOptions}
-                  value={selectedStatus}
-                  onChange={(event) => setSelectedStatus(event.target.value)}
-                  aria-label="Filtro por status"
-                />
-                <Select
-                  options={phaseOptions}
-                  value={selectedPhase}
-                  onChange={(event) => setSelectedPhase(event.target.value)}
-                  aria-label="Filtro por fase"
-                />
-              </div>
             </div>
-          </Panel>
+
+            <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
+              <Select
+                label="Grupo"
+                options={groupOptions}
+                value={selectedGroup}
+                onChange={(event) => setSelectedGroup(event.target.value)}
+                aria-label="Filtro por grupo"
+              />
+              <Select
+                label="Status"
+                options={statusOptions}
+                value={selectedStatus}
+                onChange={(event) => setSelectedStatus(event.target.value)}
+                aria-label="Filtro por status"
+              />
+              <Select
+                label="Fase"
+                options={phaseOptions}
+                value={selectedPhase}
+                onChange={(event) => setSelectedPhase(event.target.value)}
+                aria-label="Filtro por fase"
+              />
+            </div>
+          </div>
         </div>
 
-        <div className="mt-6 space-y-3">
-          {filteredProjects.length === 0 ? (
+        <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
+          <p className="text-sm text-text-secondary">
+            {hasSearchOrFilters
+              ? `${filteredProjects.length} projeto${filteredProjects.length === 1 ? '' : 's'} encontrado${filteredProjects.length === 1 ? '' : 's'}`
+              : 'Use a busca para localizar um projeto rapidamente.'}
+          </p>
+          {hasActiveFilters ? (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => {
+                setSearchQuery('');
+                setSelectedGroup('');
+                setSelectedStatus('');
+                setSelectedPhase('');
+              }}
+            >
+              Limpar busca e filtros
+            </Button>
+          ) : null}
+        </div>
+
+        <div className="mt-3 space-y-2">
+          {!hasSearchOrFilters ? (
+            <EmptyState
+              title="Localize um projeto"
+              description="Digite um nome de projeto ou aplique um filtro para encontrar o projeto desejado."
+            />
+          ) : filteredProjects.length === 0 ? (
             <EmptyState
               title="Nenhum projeto encontrado"
               description="Ajuste a busca ou filtros para localizar outro projeto."
@@ -236,29 +270,19 @@ export function ProjectsPage() {
                 key={project.id}
                 type="button"
                 onClick={() => navigate(`/projetos/${project.id}`)}
-                className="w-full text-left"
+                className="w-full rounded-lg border border-border-primary bg-surface-primary px-4 py-3 text-left transition-colors hover:border-border-focus hover:bg-surface-secondary"
               >
-                <Panel className="transition-colors hover:bg-surface-secondary">
-                  <div className="flex items-start justify-between gap-4">
-                    <div className="min-w-0">
-                      <h2 className="truncate text-base font-medium text-text-primary">{project.nome}</h2>
-                      <p className="mt-1 text-sm text-text-secondary">{project.grupoNome || 'Sem grupo'}</p>
-                    </div>
-                    <span className="shrink-0 text-xs text-text-tertiary">Abrir</span>
+                <div className="flex items-start justify-between gap-4">
+                  <div className="min-w-0">
+                    <h2 className="truncate text-sm font-semibold text-text-primary">{project.nome}</h2>
+                    <p className="mt-0.5 truncate text-xs text-text-secondary">{project.grupoNome || 'Sem grupo'}</p>
                   </div>
+                  <span className="shrink-0 text-xs text-text-tertiary">Abrir</span>
+                </div>
 
-                  <div className="mt-3 flex flex-wrap items-center gap-2">
-                    <Badge size="sm" variant={getStatusVariant(project.status)}>
-                      {getStatusLabel(project.status)}
-                    </Badge>
-                    <Badge size="sm" variant="default">
-                      {getPhaseLabel(project.fase)}
-                    </Badge>
-                    <span className="text-xs text-text-tertiary">
-                      Prazo: {project.prazo ? formatShortDate(project.prazo) : 'Sem prazo'}
-                    </span>
-                  </div>
-                </Panel>
+                <div className="mt-2 flex flex-wrap items-center gap-2 text-xs text-text-tertiary">
+                  <span>{getPhaseLabel(project.fase)}</span>
+                </div>
               </button>
             ))
           )}

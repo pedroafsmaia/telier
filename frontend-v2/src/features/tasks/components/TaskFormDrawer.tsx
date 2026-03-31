@@ -1,4 +1,4 @@
-﻿import { useMemo, useState, type FormEvent } from 'react';
+import { useMemo, useState, type FormEvent } from 'react';
 import { Button, Drawer, Input, Select, TextArea } from '../../../design/primitives';
 import { Ease, Priority, TaskStatus } from '../../../lib/enums';
 import type { CreateTaskPayload } from '../types';
@@ -67,7 +67,7 @@ export function TaskFormDrawer({
       { value: TaskStatus.TODO, label: 'A fazer' },
       { value: TaskStatus.IN_PROGRESS, label: 'Em andamento' },
       { value: TaskStatus.WAITING, label: 'Em espera' },
-      { value: TaskStatus.DONE, label: 'Concluida' },
+      { value: TaskStatus.DONE, label: 'Concluída' },
     ],
     [],
   );
@@ -75,7 +75,7 @@ export function TaskFormDrawer({
   const priorityOptions = useMemo(
     () => [
       { value: Priority.LOW, label: 'Baixa' },
-      { value: Priority.MEDIUM, label: 'Media' },
+      { value: Priority.MEDIUM, label: 'Média' },
       { value: Priority.HIGH, label: 'Alta' },
       { value: Priority.URGENT, label: 'Urgente' },
     ],
@@ -84,11 +84,11 @@ export function TaskFormDrawer({
 
   const easeOptions = useMemo(
     () => [
-      { value: Ease.VERY_EASY, label: 'Muito facil' },
-      { value: Ease.EASY, label: 'Facil' },
-      { value: Ease.MEDIUM, label: 'Medio' },
-      { value: Ease.HARD, label: 'Dificil' },
-      { value: Ease.VERY_HARD, label: 'Muito dificil' },
+      { value: Ease.VERY_EASY, label: 'Muito fácil' },
+      { value: Ease.EASY, label: 'Fácil' },
+      { value: Ease.MEDIUM, label: 'Médio' },
+      { value: Ease.HARD, label: 'Difícil' },
+      { value: Ease.VERY_HARD, label: 'Muito difícil' },
     ],
     [],
   );
@@ -98,7 +98,7 @@ export function TaskFormDrawer({
 
     const nome = form.nome.trim();
     if (!nome) {
-      setErrorMessage('Informe o titulo da tarefa.');
+      setErrorMessage('Informe o título da tarefa.');
       return;
     }
 
@@ -108,7 +108,7 @@ export function TaskFormDrawer({
     }
 
     if (form.status === TaskStatus.WAITING && !form.observacaoEspera.trim()) {
-      setErrorMessage('Tarefa em espera exige observacao de contexto.');
+      setErrorMessage('Ao colocar em espera, registre o contexto.');
       return;
     }
 
@@ -130,18 +130,23 @@ export function TaskFormDrawer({
         setErrorMessage(error.message);
         return;
       }
-      setErrorMessage('Nao foi possivel criar a tarefa.');
+      setErrorMessage('Não foi possível criar a tarefa.');
     }
   };
 
   return (
-    <Drawer isOpen={isOpen} onClose={isSubmitting ? () => undefined : onClose} title="Nova tarefa">
+    <Drawer
+      isOpen={isOpen}
+      mode="contextual"
+      onClose={isSubmitting ? () => undefined : onClose}
+      title="Nova tarefa"
+    >
       <form onSubmit={handleSubmit} className="space-y-5 p-6">
         <Input
-          label="Titulo"
+          label="Título"
           value={form.nome}
           onChange={(event) => setForm((previous) => ({ ...previous, nome: event.target.value }))}
-          placeholder="Titulo da tarefa"
+          placeholder="Título da tarefa"
           maxLength={200}
           disabled={isSubmitting}
           autoFocus
@@ -192,29 +197,29 @@ export function TaskFormDrawer({
         />
 
         <TextArea
-          label="Informacoes principais"
+          label="Descrição"
           value={form.descricao}
           onChange={(event) => setForm((previous) => ({ ...previous, descricao: event.target.value }))}
           rows={5}
           maxLength={4000}
-          placeholder="Contexto operacional e detalhes tecnicos"
+          placeholder="Explique objetivo, contexto e próximo passo."
           disabled={isSubmitting}
         />
 
         {form.status === TaskStatus.WAITING ? (
           <TextArea
-            label="Observacao de espera"
+            label="Motivo da espera"
             value={form.observacaoEspera}
             onChange={(event) => setForm((previous) => ({ ...previous, observacaoEspera: event.target.value }))}
             rows={4}
             maxLength={2000}
-            placeholder="Explique o bloqueio ou dependencia"
+            placeholder="O que está bloqueando e quem pode destravar."
             disabled={isSubmitting}
           />
         ) : null}
 
         {errorMessage ? (
-          <div className="rounded-lg border border-alert-subtle bg-alert-subtle/20 px-3 py-2 text-sm text-alert-DEFAULT">
+          <div className="rounded-lg border border-alert-subtle bg-alert-subtle/20 px-3 py-2 text-sm text-alert">
             {errorMessage}
           </div>
         ) : null}
@@ -231,4 +236,5 @@ export function TaskFormDrawer({
     </Drawer>
   );
 }
+
 

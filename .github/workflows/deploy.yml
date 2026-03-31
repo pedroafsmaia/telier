@@ -16,12 +16,9 @@ on:
 jobs:
   validate-rebuild:
     runs-on: ubuntu-latest
-    name: Validate frontend-v2 migration gate
+    name: Validate frontend-v2
     permissions:
       contents: read
-    env:
-      VITE_TELIER_UI_MIGRATION_MODE: legacy
-      VITE_TELIER_LEGACY_URL: http://127.0.0.1:4173
     steps:
       - uses: actions/checkout@v4
 
@@ -36,7 +33,7 @@ jobs:
         run: npm run lint
         working-directory: frontend-v2
 
-      - name: Build frontend-v2 with migration gate closed by default
+      - name: Build frontend-v2
         run: npm run build
         working-directory: frontend-v2
 
@@ -46,7 +43,7 @@ jobs:
           name: frontend-v2-dist
           path: frontend-v2/dist
 
-      - name: Smoke frontend-v2 migration flow locally
+      - name: Smoke frontend-v2 locally
         run: npm run smoke:rebuild
 
   deploy:

@@ -13,11 +13,11 @@ export const TimerPill: React.FC<TimerPillProps> = ({
   user, 
   className = '' 
 }) => {
-  const baseClasses = 'inline-flex items-center px-3 py-1 text-sm font-medium rounded-full transition-colors';
+  const baseClasses = 'inline-flex items-center rounded-full border px-3 py-1 text-sm font-medium transition-colors';
   
   const statusClasses = isActive 
-    ? 'bg-timer-active text-white shadow-sm'
-    : 'bg-surface-secondary text-text-secondary';
+    ? 'border-info-200 bg-info-600 text-white shadow-sm'
+    : 'border-border-secondary bg-surface-secondary text-text-secondary';
 
   return (
     <div className={`${baseClasses} ${statusClasses} ${className}`}>
@@ -42,7 +42,7 @@ export const TimerPill: React.FC<TimerPillProps> = ({
         
         {/* Active indicator */}
         {isActive && (
-          <div className="h-2 w-2 bg-white rounded-full animate-pulse" />
+          <div className="h-2 w-2 rounded-full bg-white/95 ring-2 ring-white/30" />
         )}
       </div>
     </div>

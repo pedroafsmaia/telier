@@ -1,5 +1,5 @@
 import React from 'react';
-import { Select, SearchField, Button } from '../../../design/primitives';
+import { Select, Button } from '../../../design/primitives';
 import { RotateCcw } from 'lucide-react';
 import { Priority, Ease } from '../../../lib/enums';
 
@@ -10,11 +10,9 @@ interface Project {
 
 interface TaskFiltersProps {
   projects: Project[];
-  searchQuery: string;
   selectedProject: string;
   selectedPriority: string;
   selectedEase: string;
-  onSearchChange: (query: string) => void;
   onProjectChange: (projectId: string) => void;
   onPriorityChange: (priority: string) => void;
   onEaseChange: (ease: string) => void;
@@ -24,18 +22,16 @@ interface TaskFiltersProps {
 
 export const TaskFilters: React.FC<TaskFiltersProps> = ({
   projects,
-  searchQuery,
   selectedProject,
   selectedPriority,
   selectedEase,
-  onSearchChange,
   onProjectChange,
   onPriorityChange,
   onEaseChange,
   onClearFilters,
   className = '',
 }) => {
-  const hasActiveFilters = selectedProject || selectedPriority || selectedEase || searchQuery;
+  const hasActiveFilters = selectedProject || selectedPriority || selectedEase;
   const projectOptions = [
     { value: '', label: 'Todos os projetos' },
     ...projects.map((project) => ({ value: project.id, label: project.nome })),
@@ -57,56 +53,41 @@ export const TaskFilters: React.FC<TaskFiltersProps> = ({
   ];
 
   return (
-    <div className={`flex flex-col lg:flex-row gap-4 items-start lg:items-center ${className}`}>
-      {/* Busca */}
-      <div className="flex-1 min-w-[200px]">
-        <SearchField
-          placeholder="Buscar tarefas..."
-          value={searchQuery}
-          onChange={(event: React.ChangeEvent<HTMLInputElement>) => onSearchChange(event.target.value)}
-          onClear={() => onSearchChange('')}
-          className="w-full"
-        />
-      </div>
+    <div className={`flex flex-wrap items-center gap-2 ${className}`}>
+      <Select
+        aria-label="Filtrar por projeto"
+        options={projectOptions}
+        value={selectedProject}
+        onChange={(e: React.ChangeEvent<HTMLSelectElement>) => onProjectChange(e.target.value)}
+        className="min-w-[180px] bg-surface-primary text-sm"
+      />
 
-      {/* Filtros */}
-      <div className="flex flex-wrap gap-3 items-center">
-        {/* Filtro Projeto */}
-        <Select
-          options={projectOptions}
-          value={selectedProject}
-          onChange={(e: React.ChangeEvent<HTMLSelectElement>) => onProjectChange(e.target.value)}
-          className="min-w-[150px]"
-        />
+      <Select
+        aria-label="Filtrar por prioridade"
+        options={priorityOptions}
+        value={selectedPriority}
+        onChange={(e: React.ChangeEvent<HTMLSelectElement>) => onPriorityChange(e.target.value)}
+        className="min-w-[170px] bg-surface-primary text-sm"
+      />
 
-        {/* Filtro Prioridade */}
-        <Select
-          options={priorityOptions}
-          value={selectedPriority}
-          onChange={(e: React.ChangeEvent<HTMLSelectElement>) => onPriorityChange(e.target.value)}
-          className="min-w-[140px]"
-        />
+      <Select
+        aria-label="Filtrar por facilidade"
+        options={easeOptions}
+        value={selectedEase}
+        onChange={(e: React.ChangeEvent<HTMLSelectElement>) => onEaseChange(e.target.value)}
+        className="min-w-[170px] bg-surface-primary text-sm"
+      />
 
-        {/* Filtro Facilidade */}
-        <Select
-          options={easeOptions}
-          value={selectedEase}
-          onChange={(e: React.ChangeEvent<HTMLSelectElement>) => onEaseChange(e.target.value)}
-          className="min-w-[140px]"
-        />
-
-        {/* Limpar filtros */}
-        {hasActiveFilters && (
-          <Button
-            variant="ghost"
-            size="sm"
-            icon={RotateCcw}
-            onClick={onClearFilters}
-          >
-            Limpar
-          </Button>
-        )}
-      </div>
+      {hasActiveFilters ? (
+        <Button
+          variant="ghost"
+          size="sm"
+          icon={RotateCcw}
+          onClick={onClearFilters}
+        >
+          Limpar filtros
+        </Button>
+      ) : null}
     </div>
   );
 };

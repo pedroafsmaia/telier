@@ -81,7 +81,7 @@ export function ProjectFormDrawer({
     () => [
       { value: ProjectPhase.PRELIMINARY_STUDY, label: 'Estudo preliminar' },
       { value: ProjectPhase.PRELIMINARY_PROJECT, label: 'Anteprojeto' },
-      { value: ProjectPhase.BASIC_PROJECT, label: 'Projeto basico' },
+      { value: ProjectPhase.BASIC_PROJECT, label: 'Projeto básico' },
       { value: ProjectPhase.EXECUTIVE_PROJECT, label: 'Projeto executivo' },
       { value: ProjectPhase.IN_CONSTRUCTION, label: 'Em obra' },
     ],
@@ -92,9 +92,9 @@ export function ProjectFormDrawer({
     () => [
       { value: ProjectStatus.TODO, label: 'A fazer' },
       { value: ProjectStatus.IN_PROGRESS, label: 'Em andamento' },
-      { value: ProjectStatus.IN_REVIEW, label: 'Em revisao' },
+      { value: ProjectStatus.IN_REVIEW, label: 'Em revisão' },
       { value: ProjectStatus.PAUSED, label: 'Pausado' },
-      { value: ProjectStatus.DONE, label: 'Concluido' },
+      { value: ProjectStatus.DONE, label: 'Concluído' },
       { value: ProjectStatus.ARCHIVED, label: 'Arquivado' },
     ],
     [],
@@ -103,7 +103,7 @@ export function ProjectFormDrawer({
   const priorityOptions = useMemo(
     () => [
       { value: Priority.LOW, label: 'Baixa' },
-      { value: Priority.MEDIUM, label: 'Media' },
+      { value: Priority.MEDIUM, label: 'Média' },
       { value: Priority.HIGH, label: 'Alta' },
       { value: Priority.URGENT, label: 'Urgente' },
     ],
@@ -121,7 +121,7 @@ export function ProjectFormDrawer({
 
     const parsedArea = form.areaM2.trim() ? Number(form.areaM2) : undefined;
     if (form.areaM2.trim() && Number.isNaN(parsedArea)) {
-      setErrorMessage('Area em m2 deve ser numerica.');
+      setErrorMessage('Área em m² deve ser numérica.');
       return;
     }
 
@@ -142,13 +142,14 @@ export function ProjectFormDrawer({
         setErrorMessage(error.message);
         return;
       }
-      setErrorMessage(mode === 'create' ? 'Nao foi possivel criar o projeto.' : 'Nao foi possivel salvar o projeto.');
+      setErrorMessage(mode === 'create' ? 'Não foi possível criar o projeto.' : 'Não foi possível salvar o projeto.');
     }
   };
 
   return (
     <Drawer
       isOpen={isOpen}
+      mode="contextual"
       onClose={isSubmitting ? () => undefined : onClose}
       title={mode === 'create' ? 'Novo projeto' : 'Editar projeto'}
     >
@@ -209,7 +210,7 @@ export function ProjectFormDrawer({
           />
           <Input
             type="number"
-            label="Area (m2)"
+            label="Área (m²)"
             value={form.areaM2}
             onChange={(event) => setForm((previous) => ({ ...previous, areaM2: event.target.value }))}
             min="0"
@@ -220,7 +221,7 @@ export function ProjectFormDrawer({
         </div>
 
         {errorMessage ? (
-          <div className="rounded-lg border border-alert-subtle bg-alert-subtle/20 px-3 py-2 text-sm text-alert-DEFAULT">
+          <div className="rounded-lg border border-alert-subtle bg-alert-subtle/20 px-3 py-2 text-sm text-alert">
             {errorMessage}
           </div>
         ) : null}
@@ -237,4 +238,7 @@ export function ProjectFormDrawer({
     </Drawer>
   );
 }
+
+
+
 

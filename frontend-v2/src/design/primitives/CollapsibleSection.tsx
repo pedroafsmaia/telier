@@ -5,6 +5,7 @@ interface CollapsibleSectionProps {
   subtitle?: string;
   children: React.ReactNode;
   defaultOpen?: boolean;
+  isOpen?: boolean;
   onToggle?: (isOpen: boolean) => void;
   className?: string;
   actions?: React.ReactNode;
@@ -15,15 +16,20 @@ export const CollapsibleSection: React.FC<CollapsibleSectionProps> = ({
   subtitle,
   children,
   defaultOpen = false,
+  isOpen: controlledIsOpen,
   onToggle,
   className = '',
   actions,
 }) => {
-  const [isOpen, setIsOpen] = useState(defaultOpen);
+  const [internalIsOpen, setInternalIsOpen] = useState(defaultOpen);
+  const isControlled = controlledIsOpen !== undefined;
+  const isOpen = isControlled ? controlledIsOpen : internalIsOpen;
 
   const handleToggle = () => {
     const next = !isOpen;
-    setIsOpen(next);
+    if (!isControlled) {
+      setInternalIsOpen(next);
+    }
     onToggle?.(next);
   };
 

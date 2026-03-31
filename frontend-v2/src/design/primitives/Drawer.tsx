@@ -1,11 +1,14 @@
 import React, { useEffect } from 'react';
 
+type DrawerMode = 'modal' | 'contextual';
+
 interface DrawerProps {
   isOpen: boolean;
   onClose: () => void;
   title?: string;
   children: React.ReactNode;
   className?: string;
+  mode?: DrawerMode;
 }
 
 export const Drawer: React.FC<DrawerProps> = ({ 
@@ -13,10 +16,13 @@ export const Drawer: React.FC<DrawerProps> = ({
   onClose, 
   title, 
   children, 
-  className = '' 
+  className = '',
+  mode = 'contextual',
 }) => {
+  const isContextual = mode === 'contextual';
+
   useEffect(() => {
-    if (isOpen) {
+    if (isOpen && !isContextual) {
       document.body.style.overflow = 'hidden';
     } else {
       document.body.style.overflow = 'unset';
@@ -25,22 +31,23 @@ export const Drawer: React.FC<DrawerProps> = ({
     return () => {
       document.body.style.overflow = 'unset';
     };
-  }, [isOpen]);
+  }, [isContextual, isOpen]);
 
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 overflow-hidden">
-      {/* Backdrop */}
-      <div 
-        className="absolute inset-0 bg-background-overlay transition-opacity"
+    <div className={`fixed inset-0 z-50 overflow-hidden ${isContextual ? 'pointer-events-none' : ''}`}>
+      <div
+        className={`absolute inset-0 bg-background-overlay transition-opacity ${isContextual ? 'md:hidden' : ''}`}
         onClick={onClose}
       />
       
-      {/* Drawer panel */}
-      <div className="absolute inset-y-0 right-0 max-w-md w-full bg-surface-primary shadow-xl">
+      <div
+        className={`absolute inset-y-0 right-0 w-full max-w-md bg-surface-primary shadow-xl ${
+          isContextual ? 'pointer-events-auto border-l border-border-primary md:shadow-lg' : ''
+        }`}
+      >
         <div className="flex flex-col h-full">
-          {/* Header */}
           {title && (
             <div className="flex items-center justify-between px-6 py-4 border-b border-border-primary">
               <h2 className="text-lg font-medium text-text-primary">{title}</h2>
@@ -55,7 +62,6 @@ export const Drawer: React.FC<DrawerProps> = ({
             </div>
           )}
           
-          {/* Content */}
           <div className={`flex-1 overflow-y-auto ${className}`}>
             {children}
           </div>

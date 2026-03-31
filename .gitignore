@@ -5,6 +5,8 @@
 # Node
 node_modules/
 npm-debug.log*
+dist/
+run*.log
 
 # Sistema
 .DS_Store

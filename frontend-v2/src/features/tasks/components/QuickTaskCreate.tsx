@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Input, Select, Button, Panel } from '../../../design/primitives';
+import { Input, Select, Button } from '../../../design/primitives';
 import { Plus, X } from 'lucide-react';
 import type { CreateTaskPayload } from '../types';
 import { TaskStatus, Priority, Ease } from '../../../lib/enums';
@@ -31,7 +31,7 @@ export const QuickTaskCreate: React.FC<QuickTaskCreateProps> = ({
   const [selectedProjectId, setSelectedProjectId] = useState(lockedProject?.id || '');
   const [isCreating, setIsCreating] = useState(false);
 
-  const selectedProject = projects.find(p => p.id === selectedProjectId);
+  const selectedProject = projects.find((project) => project.id === selectedProjectId);
   const projectOptions = [
     { value: '', label: 'Selecione um projeto' },
     ...projects.map((project) => ({ value: project.id, label: project.nome })),
@@ -39,13 +39,13 @@ export const QuickTaskCreate: React.FC<QuickTaskCreateProps> = ({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!title.trim() || !selectedProjectId || isCreating) {
       return;
     }
 
     setIsCreating(true);
-    
+
     try {
       const payload: CreateTaskPayload = {
         nome: title.trim(),
@@ -56,13 +56,10 @@ export const QuickTaskCreate: React.FC<QuickTaskCreateProps> = ({
       };
 
       await onCreateTask(payload);
-      
-      // Reset form
       setTitle('');
       setSelectedProjectId(lockedProject?.id || '');
       setIsExpanded(false);
     } catch (error) {
-      // Error handling é feito pelo componente pai
       console.error('Erro ao criar tarefa:', error);
     } finally {
       setIsCreating(false);
@@ -84,7 +81,7 @@ export const QuickTaskCreate: React.FC<QuickTaskCreateProps> = ({
   if (!isExpanded) {
     return (
       <Button
-        variant="secondary"
+        variant="ghost"
         size="sm"
         icon={Plus}
         onClick={() => setIsExpanded(true)}
@@ -97,14 +94,11 @@ export const QuickTaskCreate: React.FC<QuickTaskCreateProps> = ({
   }
 
   return (
-    <Panel className="mb-6">
+    <div className="w-full rounded-md border border-border-primary bg-surface-primary px-3 py-2">
       <form onSubmit={handleSubmit} onKeyDown={handleKeyDown}>
-        <div className="space-y-4">
-          {/* Cabeçalho */}
+        <div className="space-y-3">
           <div className="flex items-center justify-between">
-            <h3 className="text-sm font-medium text-text-primary">
-              Nova Tarefa
-            </h3>
+            <h3 className="text-sm font-medium text-text-primary">Criação rápida</h3>
             <Button
               variant="ghost"
               size="sm"
@@ -117,9 +111,7 @@ export const QuickTaskCreate: React.FC<QuickTaskCreateProps> = ({
             </Button>
           </div>
 
-          {/* Campos */}
-          <div className="space-y-3">
-            {/* Título */}
+          <div className="grid grid-cols-1 gap-2 md:grid-cols-[1fr_220px_auto]">
             <Input
               placeholder="Título da tarefa"
               value={title}
@@ -130,10 +122,9 @@ export const QuickTaskCreate: React.FC<QuickTaskCreateProps> = ({
               required
             />
 
-            {/* Projeto */}
             {lockedProject ? (
-              <div className="text-xs text-text-tertiary bg-surface-secondary px-3 py-2 rounded">
-                Projeto travado: <strong>{lockedProject.nome}</strong>
+              <div className="rounded-md border border-border-secondary bg-surface-secondary px-3 py-2 text-xs text-text-tertiary">
+                Projeto: <strong>{lockedProject.nome}</strong>
               </div>
             ) : (
               <Select
@@ -145,37 +136,23 @@ export const QuickTaskCreate: React.FC<QuickTaskCreateProps> = ({
               />
             )}
 
-            {/* Info do projeto selecionado */}
-            {selectedProject && (
-              <div className="text-xs text-text-tertiary bg-surface-secondary px-3 py-2 rounded">
-                A tarefa será criada em: <strong>{selectedProject.nome}</strong>
-              </div>
-            )}
-          </div>
-
-          {/* Ações */}
-          <div className="flex items-center gap-2 justify-end">
-            <Button
-              variant="ghost"
-              size="sm"
-              type="button"
-              onClick={handleCancel}
-              disabled={isCreating}
-            >
-              Cancelar
-            </Button>
             <Button
               variant="primary"
               size="sm"
               type="submit"
               disabled={!title.trim() || !selectedProjectId || isCreating}
               loading={isCreating}
+              className="md:self-stretch"
             >
-              Criar Tarefa
+              Criar tarefa
             </Button>
           </div>
+
+          {selectedProject ? (
+            <p className="text-xs text-text-tertiary">A tarefa sera criada em: {selectedProject.nome}</p>
+          ) : null}
         </div>
       </form>
-    </Panel>
+    </div>
   );
 };

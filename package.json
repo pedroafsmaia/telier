@@ -5,10 +5,10 @@
   "scripts": {
     "build:rebuild": "npm run build --prefix frontend-v2",
     "lint:rebuild": "npm run lint --prefix frontend-v2",
-    "screenshots": "node capture.js",
-    "smoke": "node smoke.js",
-    "smoke:legacy": "node smoke.js",
-    "smoke:rebuild": "node smoke-rebuild.js"
+    "screenshots:crawl": "node capture.js",
+    "smoke": "node smoke-rebuild.js",
+    "smoke:rebuild": "node smoke-rebuild.js",
+    "smoke:rebuild:scale": "node smoke-rebuild-scale.js"
   },
   "dependencies": {
     "playwright": "^1.52.0"

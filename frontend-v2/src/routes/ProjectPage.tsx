@@ -1,14 +1,14 @@
-﻿import { useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useParams } from 'react-router-dom';
-import { ClipboardList, Pencil } from 'lucide-react';
+import { AlertTriangle, ClipboardList, Pencil } from 'lucide-react';
 import { AppShell } from '../app/layout/AppShell';
 import { Button, EmptyState, Panel, SectionHeader } from '../design/primitives';
-import { formatFullDate } from '../lib/dates';
+import { formatFullDate, isOverdue } from '../lib/dates';
 import { ProjectPhase, ProjectStatus } from '../lib/enums';
 import { useAuth } from '../lib/auth';
 import { useProjectPageData, ProjectFormDrawer, useUpdateProject } from '../features/projects';
 import { useGroups } from '../features/groups';
-import { QuickTaskCreate, TaskDrawer, TaskFormDrawer, TaskList } from '../features/tasks/components';
+import { TaskDrawer, TaskFormDrawer, TaskList } from '../features/tasks/components';
 import { TaskTimerFlowDrawer } from '../features/tasks/components/TaskTimerFlowDrawer';
 import { useProjectTaskActions } from '../features/tasks/hooks/useProjectTaskActions';
 import { ProjectRecordsSection, RecordFormDrawer, useCreateRecord } from '../features/records';
@@ -90,6 +90,12 @@ export function ProjectPage() {
     if (!project || project.totalTarefas === 0) return 0;
     return Math.round((project.tarefasConcluidas / project.totalTarefas) * 100);
   }, [project]);
+  const projectIsOverdue = Boolean(
+    project?.prazo &&
+    isOverdue(project.prazo) &&
+    project.status !== ProjectStatus.DONE &&
+    project.status !== ProjectStatus.ARCHIVED,
+  );
 
   const handleCreateStructuredTask = async (payload: CreateTaskPayload) => {
     await taskActions.handleCreateTask(payload);
@@ -170,7 +176,7 @@ export function ProjectPage() {
         {taskActions.actionError ? (
           <div className="mt-6">
             <Panel className="border-alert-subtle bg-alert-subtle/20" padding="sm">
-              <p className="text-sm text-alert-DEFAULT">{taskActions.actionError}</p>
+              <p className="text-sm text-alert">{taskActions.actionError}</p>
             </Panel>
           </div>
         ) : null}
@@ -192,8 +198,10 @@ export function ProjectPage() {
               </div>
               <div>
                 <p className="text-xs uppercase tracking-wide text-text-tertiary">Prazo</p>
-                <p className="mt-1 text-sm font-medium text-text-primary">
+                <p className={`mt-1 inline-flex items-center gap-1 text-sm font-medium ${projectIsOverdue ? 'text-error-600' : 'text-text-primary'}`}>
+                  {projectIsOverdue ? <AlertTriangle className="h-4 w-4" aria-hidden="true" /> : null}
                   {project.prazo ? formatFullDate(project.prazo) : 'Sem prazo'}
+                  {projectIsOverdue ? ' (atrasado)' : ''}
                 </p>
               </div>
               <div>
@@ -206,23 +214,17 @@ export function ProjectPage() {
           </Panel>
         </div>
 
-        <div className="mt-4 flex flex-wrap items-center gap-2">
+        <div className="mt-4">
           <Button variant="primary" size="sm" onClick={() => setIsTaskFormOpen(true)}>
             Nova tarefa
           </Button>
-          <QuickTaskCreate
-            projects={[{ id: project.id, nome: project.nome }]}
-            lockedProject={{ id: project.id, nome: project.nome }}
-            triggerLabel="Criacao rapida"
-            disabled={taskActions.isCreatingTask}
-            onCreateTask={taskActions.handleCreateTask}
-          />
         </div>
 
         <div className="mt-6">
           <ProjectRecordsSection
             projectId={projectId}
             records={records}
+            className="border-border-secondary bg-surface-secondary/20"
             onActionError={(message) => taskActions.setActionError(message || null)}
             actions={
               <Button variant="secondary" size="sm" onClick={() => setIsRecordFormOpen(true)}>
@@ -325,4 +327,5 @@ export function ProjectPage() {
     </AppShell>
   );
 }
+
 

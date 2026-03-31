@@ -54,9 +54,9 @@ export function RecordFormDrawer({
 
   const typeOptions = useMemo(
     () => [
-      { value: RecordType.DECISION, label: 'Decisao' },
-      { value: RecordType.PENDING, label: 'Pendencia' },
-      { value: RecordType.NOTE, label: 'Observacao' },
+      { value: RecordType.DECISION, label: 'Decisão' },
+      { value: RecordType.PENDING, label: 'Pendência' },
+      { value: RecordType.NOTE, label: 'Observação' },
     ],
     [],
   );
@@ -71,7 +71,7 @@ export function RecordFormDrawer({
 
     const conteudo = form.conteudo.trim();
     if (!conteudo) {
-      setErrorMessage('Informe o conteudo do registro.');
+      setErrorMessage('Descreva o registro antes de salvar.');
       return;
     }
 
@@ -88,12 +88,17 @@ export function RecordFormDrawer({
         setErrorMessage(error.message);
         return;
       }
-      setErrorMessage('Nao foi possivel criar o registro.');
+      setErrorMessage('Não foi possível criar o registro.');
     }
   };
 
   return (
-    <Drawer isOpen={isOpen} onClose={isSubmitting ? () => undefined : onClose} title="Novo registro">
+    <Drawer
+      isOpen={isOpen}
+      mode="contextual"
+      onClose={isSubmitting ? () => undefined : onClose}
+      title="Novo registro"
+    >
       <form onSubmit={handleSubmit} className="space-y-5 p-6">
         {lockedProject ? (
           <Input label="Projeto" value={lockedProject.nome} disabled />
@@ -116,17 +121,17 @@ export function RecordFormDrawer({
         />
 
         <TextArea
-          label="Conteudo"
+          label="Descrição"
           value={form.conteudo}
           onChange={(event) => setForm((previous) => ({ ...previous, conteudo: event.target.value }))}
           rows={6}
           maxLength={4000}
-          placeholder="Descreva a decisao, pendencia ou observacao"
+          placeholder="Descreva a decisão, pendência ou observação em linguagem direta."
           disabled={isSubmitting}
         />
 
         {errorMessage ? (
-          <div className="rounded-lg border border-alert-subtle bg-alert-subtle/20 px-3 py-2 text-sm text-alert-DEFAULT">
+          <div className="rounded-lg border border-alert-subtle bg-alert-subtle/20 px-3 py-2 text-sm text-alert">
             {errorMessage}
           </div>
         ) : null}
@@ -143,4 +148,7 @@ export function RecordFormDrawer({
     </Drawer>
   );
 }
+
+
+
 

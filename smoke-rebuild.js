@@ -184,8 +184,6 @@ async function prepareLocalEnvironment() {
     cwd: __dirname,
     env: {
       ...process.env,
-      VITE_TELIER_UI_MIGRATION_MODE: 'rebuild',
-      VITE_TELIER_LEGACY_URL: LOCAL_APP_ORIGIN,
       VITE_API_BASE_URL: LOCAL_API_BASE_URL,
     },
   });
@@ -260,14 +258,36 @@ async function run() {
     console.log('REBUILD SMOKE: realizando login...');
     await page.fill('input[autocomplete="username"]', environment.credentials.login);
     await page.fill('input[autocomplete="current-password"]', environment.credentials.password);
-    await page.getByRole('button', { name: 'Entrar na nova UI' }).click();
+    await page.getByRole('button', { name: 'Entrar no Telier' }).click();
 
     await page.waitForURL(/\/(?:$|tarefas)/, { timeout: TIMEOUT });
-    await page.waitForSelector('nav a[href="/tarefas"]', { timeout: TIMEOUT });
-    await page.waitForSelector('nav a[href="/projetos"]', { timeout: TIMEOUT });
-    await page.waitForSelector('nav a[href="/grupos"]', { timeout: TIMEOUT });
-    await page.getByText('Checklist documentado').waitFor({ timeout: TIMEOUT });
-    await page.getByRole('button', { name: 'Abrir legado' }).waitFor({ timeout: TIMEOUT });
+    const sidebarNav = page.locator('aside nav[aria-label="Navegacao estrutural"]').first();
+    await sidebarNav.waitFor({ timeout: TIMEOUT });
+    await sidebarNav.getByRole('link', { name: 'Tarefas' }).waitFor({ timeout: TIMEOUT });
+    await sidebarNav.getByRole('link', { name: 'Projetos' }).waitFor({ timeout: TIMEOUT });
+    await sidebarNav.getByRole('link', { name: 'Grupos' }).waitFor({ timeout: TIMEOUT });
+
+    if (await sidebarNav.getByText('Nova tarefa').count()) {
+      throw new Error('Sidebar estrutural nao deve conter atalho "Nova tarefa".');
+    }
+    if ((await sidebarNav.getByText('Ultima tarefa').count()) || (await sidebarNav.getByText('Última tarefa').count())) {
+      throw new Error('Sidebar estrutural nao deve conter atalho "Ultima tarefa".');
+    }
+
+    await page.getByText(/Timer global/i).first().waitFor({ timeout: TIMEOUT });
+    await page
+      .getByText(
+        /Nenhum timer ativo no momento\.|Seu timer esta ativo em|timer ativo na equipe\.|timers ativos na equipe\.|Nao foi possivel atualizar os timers ativos\./,
+      )
+      .first()
+      .waitFor({ timeout: TIMEOUT });
+
+    if (await existsVisible(page, 'text=Checklist documentado')) {
+      throw new Error('Banner de migracao ainda visivel no shell principal.');
+    }
+    if (await existsVisible(page, 'button:has-text("Abrir legado")')) {
+      throw new Error('Acao de migracao ainda visivel no shell principal.');
+    }
 
     console.log('REBUILD SMOKE: navegando para Projetos e Grupos...');
     await page.getByRole('link', { name: 'Projetos' }).click();

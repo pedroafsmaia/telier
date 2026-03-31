@@ -4,14 +4,16 @@
 
 Este repositório está passando por um rebuild controlado do frontend do Telier.
 
-A meta não é aplicar remendos na interface antiga. A meta é reconstruir o frontend com arquitetura correta, preservando o backend e reaproveitando a identidade visual existente.
+A meta não é aplicar remendos na interface antiga. A meta é reconstruir o frontend com arquitetura correta, preservando o backend quando possível, reaproveitando a identidade visual existente e **eliminando completamente o legado ao final da migração**.
 
 ## Fonte de verdade
 
 Toda implementação deve seguir rigorosamente:
 - o documento operacional de rebuild do frontend;
-- as decisões já fechadas de produto e UX;
-- a arquitetura por fases definida para o rebuild.
+- o masterplan de interface e produto;
+- o guia de implementação de interface;
+- os pacotes operacionais do Windsurf e do Codex;
+- as decisões já fechadas de produto e UX.
 
 Se houver conflito entre conveniência de implementação e o plano operacional, vence o plano operacional.
 
@@ -20,7 +22,8 @@ Se houver conflito entre conveniência de implementação e o plano operacional,
 - manter backend, autenticação e contratos existentes sempre que possível;
 - reconstruir o frontend em base nova, separada da UI legada;
 - migrar por fases;
-- remover o legado apenas quando houver paridade mínima comprovada.
+- remover o legado **apenas** quando houver paridade mínima comprovada;
+- ao final, fazer **abandono completo do legado** e **limpeza geral do código**.
 
 ## Papéis das áreas do produto
 
@@ -193,12 +196,14 @@ Toda feature nova deve:
 - Projeto = agrupamento de tarefas;
 - Grupo = agrupamento de projetos.
 
-### Qualidade mínima
-Não considerar qualquer fase concluída se:
-- algum fluxo principal estiver pela metade;
-- houver comportamento falso;
-- houver componente fora do sistema visual;
-- houver dependência indevida da UI antiga.
+### Regra final de limpeza
+Nenhuma migração será considerada concluída enquanto restarem:
+- componentes legados sem uso;
+- rotas antigas mortas;
+- helpers duplicados;
+- feature flags permanentes sem plano de remoção;
+- estilos antigos sem referência;
+- wiring legado ainda acoplado à nova experiência.
 
 ## Resultado esperado
 
@@ -207,4 +212,5 @@ Ao final do rebuild, o Telier deve funcionar como um sistema coeso, com:
 - Projeto e Grupo como contêineres em escalas diferentes;
 - timer global claro e confiável;
 - menos bugs e menos lag percebido;
-- frontend previsível para evolução futura com IA.
+- frontend previsível para evolução futura com IA;
+- **legado removido de forma completa e código limpo para manutenção futura**.

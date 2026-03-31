@@ -24,7 +24,6 @@ export function TasksPage() {
   });
   const { data: activeSessions = [] } = useActiveSessions();
 
-  const [searchQuery, setSearchQuery] = useState('');
   const [selectedProject, setSelectedProject] = useState('');
   const [selectedPriority, setSelectedPriority] = useState('');
   const [selectedEase, setSelectedEase] = useState('');
@@ -39,10 +38,6 @@ export function TasksPage() {
 
   const filteredTasks = useMemo(() => {
     return tasks.filter((task) => {
-      if (searchQuery && !task.nome.toLowerCase().includes(searchQuery.toLowerCase())) {
-        return false;
-      }
-
       if (selectedProject && task.projetoId !== selectedProject) {
         return false;
       }
@@ -57,10 +52,9 @@ export function TasksPage() {
 
       return true;
     });
-  }, [tasks, searchQuery, selectedProject, selectedPriority, selectedEase]);
+  }, [tasks, selectedProject, selectedPriority, selectedEase]);
 
   const handleClearFilters = () => {
-    setSearchQuery('');
     setSelectedProject('');
     setSelectedPriority('');
     setSelectedEase('');
@@ -87,7 +81,7 @@ export function TasksPage() {
           <div className="mt-8">
             <EmptyState
               title="Erro ao carregar tarefas"
-              description="Nao foi possivel buscar suas tarefas. Tente recarregar a pagina."
+              description="Não foi possível buscar suas tarefas. Tente recarregar a página."
             />
           </div>
         </div>
@@ -98,25 +92,25 @@ export function TasksPage() {
   return (
     <AppShell currentUserId={currentUserId}>
       <div className="max-w-7xl mx-auto px-6 py-8">
-        <div className="mb-6 flex items-center justify-between">
-          <SectionHeader title="Tarefas" subtitle="Centro operacional do Telier" />
+        <div className="mb-5 flex flex-wrap items-center justify-between gap-4">
+          <SectionHeader title="Tarefas" subtitle="Painel operacional do dia" />
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1 rounded-md border border-border-primary bg-surface-primary p-1">
             <Button
-              variant={viewMode === 'blocks' ? 'primary' : 'ghost'}
+              variant={viewMode === 'blocks' ? 'secondary' : 'ghost'}
               size="sm"
               icon={Grid3x3}
               onClick={() => setViewMode('blocks')}
             >
-              Por Status
+              Lista por status
             </Button>
             <Button
-              variant={viewMode === 'project' ? 'primary' : 'ghost'}
+              variant={viewMode === 'project' ? 'secondary' : 'ghost'}
               size="sm"
               icon={List}
               onClick={() => setViewMode('project')}
             >
-              Por Projeto
+              Agrupar por projeto
             </Button>
           </div>
         </div>
@@ -124,38 +118,34 @@ export function TasksPage() {
         {taskActions.actionError ? (
           <div className="mb-6">
             <Panel className="border-alert-subtle bg-alert-subtle/20">
-              <p className="text-sm text-alert-DEFAULT">{taskActions.actionError}</p>
+              <p className="text-sm text-alert">{taskActions.actionError}</p>
             </Panel>
           </div>
         ) : null}
 
-        <div className="mb-6">
-          <div className="flex flex-wrap items-center gap-2">
-            <Button
-              variant="primary"
-              size="sm"
-              onClick={() => setIsTaskFormOpen(true)}
-              disabled={projects.length === 0}
-            >
-              Nova tarefa
-            </Button>
-            <QuickTaskCreate
-              projects={projects.map((project) => ({ id: project.id, nome: project.nome }))}
-              onCreateTask={taskActions.handleCreateTask}
-              disabled={projects.length === 0}
-              triggerLabel="Criacao rapida"
-            />
-          </div>
+        <div className="mb-3 flex flex-wrap items-center gap-2">
+          <QuickTaskCreate
+            projects={projects.map((project) => ({ id: project.id, nome: project.nome }))}
+            onCreateTask={taskActions.handleCreateTask}
+            disabled={projects.length === 0}
+            triggerLabel="Nova tarefa rápida"
+          />
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setIsTaskFormOpen(true)}
+            disabled={projects.length === 0}
+          >
+            Formulário completo
+          </Button>
         </div>
 
-        <div className="mb-6">
+        <div className="mb-5">
           <TaskFilters
             projects={projects.map((project) => ({ id: project.id, nome: project.nome }))}
-            searchQuery={searchQuery}
             selectedProject={selectedProject}
             selectedPriority={selectedPriority}
             selectedEase={selectedEase}
-            onSearchChange={setSearchQuery}
             onProjectChange={setSelectedProject}
             onPriorityChange={setSelectedPriority}
             onEaseChange={setSelectedEase}
@@ -216,3 +206,5 @@ export function TasksPage() {
     </AppShell>
   );
 }
+
+

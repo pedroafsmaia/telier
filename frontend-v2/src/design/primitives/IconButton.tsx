@@ -11,7 +11,7 @@ export const IconButton: React.FC<IconButtonProps> = ({
   className = '',
   ...props
 }) => {
-  const baseClasses = 'inline-flex items-center justify-center transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 rounded-md';
+  const baseClasses = 'inline-flex items-center justify-center rounded-md transition-colors focus:outline-none focus-visible:outline-none focus:ring-2 focus-visible:ring-2 focus:ring-info-200 focus-visible:ring-info-200 focus:ring-offset-2';
   
   const sizeClasses = {
     sm: 'p-1.5',

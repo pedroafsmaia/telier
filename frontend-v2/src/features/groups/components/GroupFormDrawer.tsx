@@ -61,13 +61,14 @@ export function GroupFormDrawer({ isOpen, mode, group, isSubmitting, onClose, on
         setErrorMessage(error.message);
         return;
       }
-      setErrorMessage(mode === 'create' ? 'Nao foi possivel criar o grupo.' : 'Nao foi possivel salvar o grupo.');
+      setErrorMessage(mode === 'create' ? 'Não foi possível criar o grupo.' : 'Não foi possível salvar o grupo.');
     }
   };
 
   return (
     <Drawer
       isOpen={isOpen}
+      mode="contextual"
       onClose={isSubmitting ? () => undefined : onClose}
       title={mode === 'create' ? 'Novo grupo' : 'Editar grupo'}
     >
@@ -83,7 +84,7 @@ export function GroupFormDrawer({ isOpen, mode, group, isSubmitting, onClose, on
         />
 
         <TextArea
-          label="Descricao"
+          label="Descrição"
           value={form.descricao}
           onChange={(event) => setForm((previous) => ({ ...previous, descricao: event.target.value }))}
           placeholder="Resumo operacional do grupo"
@@ -101,7 +102,7 @@ export function GroupFormDrawer({ isOpen, mode, group, isSubmitting, onClose, on
         />
 
         {errorMessage ? (
-          <div className="rounded-lg border border-alert-subtle bg-alert-subtle/20 px-3 py-2 text-sm text-alert-DEFAULT">
+          <div className="rounded-lg border border-alert-subtle bg-alert-subtle/20 px-3 py-2 text-sm text-alert">
             {errorMessage}
           </div>
         ) : null}
@@ -118,4 +119,7 @@ export function GroupFormDrawer({ isOpen, mode, group, isSubmitting, onClose, on
     </Drawer>
   );
 }
+
+
+
 

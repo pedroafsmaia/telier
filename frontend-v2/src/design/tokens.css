@@ -146,8 +146,12 @@
   --transition-slow: 300ms ease-in-out;
 
   /* Timer específico */
-  --color-timer-active: var(--color-warning-500);
+  --color-timer-active: var(--color-info-600);
   --color-timer-long: var(--color-error-500);
+  --color-pending-open: var(--color-warning-600);
+  --color-overdue: var(--color-error-600);
+  --color-selection-bg: var(--color-info-100);
+  --color-selection-text: var(--color-telier-900);
   --timer-warning-hours: 2;
 }
 

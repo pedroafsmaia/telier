@@ -21,14 +21,34 @@ interface TaskListProps {
 interface TaskBlock {
   title: string;
   status: TaskStatus;
-  color: string;
+  sectionClassName: string;
 }
 
 const taskBlocks: TaskBlock[] = [
-  { title: 'Em andamento', status: TaskStatus.IN_PROGRESS, color: 'text-blue-600' },
-  { title: 'Em espera', status: TaskStatus.WAITING, color: 'text-yellow-600' },
-  { title: 'A fazer', status: TaskStatus.TODO, color: 'text-gray-600' },
-  { title: 'Concluídas', status: TaskStatus.DONE, color: 'text-green-600' },
+  {
+    title: 'Em andamento',
+    status: TaskStatus.IN_PROGRESS,
+    sectionClassName:
+      'border-info-200 bg-info-50/35 [&>div:first-child]:border-b [&>div:first-child]:border-info-100 [&>div:first-child]:bg-info-50/75 [&>div:last-child]:border-info-100',
+  },
+  {
+    title: 'Em espera',
+    status: TaskStatus.WAITING,
+    sectionClassName:
+      'border-warning-300 bg-warning-50/45 [&>div:first-child]:border-b [&>div:first-child]:border-warning-200 [&>div:first-child]:bg-warning-50/80 [&>div:last-child]:border-warning-200',
+  },
+  {
+    title: 'A fazer',
+    status: TaskStatus.TODO,
+    sectionClassName:
+      'border-border-primary bg-surface-secondary/35 [&>div:first-child]:border-b [&>div:first-child]:border-border-secondary [&>div:first-child]:bg-surface-secondary/70 [&>div:last-child]:border-border-secondary',
+  },
+  {
+    title: 'Concluídas',
+    status: TaskStatus.DONE,
+    sectionClassName:
+      'border-success-200 bg-success-50/35 [&>div:first-child]:border-b [&>div:first-child]:border-success-100 [&>div:first-child]:bg-success-50/80 [&>div:last-child]:border-success-100',
+  },
 ];
 
 export const TaskList: React.FC<TaskListProps> = ({
@@ -57,14 +77,25 @@ export const TaskList: React.FC<TaskListProps> = ({
   }, [tasks]);
 
   const tasksByProject = useMemo(() => {
-    return tasks.reduce((acc, task) => {
-      const projectKey = task.projetoNome;
-      if (!acc[projectKey]) {
-        acc[projectKey] = [];
+    const grouped = tasks.reduce((acc, task) => {
+      if (!acc[task.projetoId]) {
+        acc[task.projetoId] = {
+          projectId: task.projetoId,
+          projectName: task.projetoNome,
+          tasks: [],
+        };
       }
-      acc[projectKey].push(task);
+      acc[task.projetoId].tasks.push(task);
       return acc;
-    }, {} as Record<string, TaskListItem[]>);
+    }, {} as Record<string, { projectId: string; projectName: string; tasks: TaskListItem[] }>);
+
+    return Object.values(grouped).sort((left, right) => {
+      const nameCompare = left.projectName.localeCompare(right.projectName);
+      if (nameCompare !== 0) {
+        return nameCompare;
+      }
+      return left.projectId.localeCompare(right.projectId);
+    });
   }, [tasks]);
 
   const visibleBlocks = useMemo(
@@ -81,6 +112,13 @@ export const TaskList: React.FC<TaskListProps> = ({
       }))
       .filter((entry) => entry.tasks.length > 0);
   }, [tasksByStatus]);
+
+  const activeSessionsByTaskId = useMemo(() => {
+    return activeSessions.reduce((acc, session) => {
+      acc[session.tarefaId] = (acc[session.tarefaId] || 0) + 1;
+      return acc;
+    }, {} as Record<string, number>);
+  }, [activeSessions]);
 
   const getTaskSessions = (taskId: string): ActiveTimeSession[] => {
     return activeSessions.filter((session) => session.tarefaId === taskId);
@@ -143,6 +181,9 @@ export const TaskList: React.FC<TaskListProps> = ({
 
   const renderStatusBlock = (block: TaskBlock) => {
     const blockTasks = tasksByStatus[block.status] || [];
+    const activeTimersInBlock = blockTasks.reduce((count, task) => {
+      return count + (activeSessionsByTaskId[task.id] || 0);
+    }, 0);
 
     if (blockTasks.length === 0) {
       return null;
@@ -157,7 +198,16 @@ export const TaskList: React.FC<TaskListProps> = ({
         subtitle={`${blockTasks.length} tarefa${blockTasks.length !== 1 ? 's' : ''}`}
         defaultOpen={!isCollapsed}
         onToggle={(isOpen: boolean) => toggleBlockCollapse(block.status, isOpen)}
-        className="mb-6"
+        className={`mb-5 ${block.sectionClassName}`}
+        actions={
+          <div className="flex items-center gap-2">
+            {activeTimersInBlock > 0 ? (
+              <span className="inline-flex items-center rounded-full border border-warning-200 bg-warning-100 px-2 py-1 text-[11px] font-medium text-warning-600">
+                {activeTimersInBlock} timer{activeTimersInBlock === 1 ? '' : 's'} em execucao
+              </span>
+            ) : null}
+          </div>
+        }
       >
         <div className="space-y-2">{blockTasks.map(renderTaskRow)}</div>
       </CollapsibleSection>
@@ -165,9 +215,7 @@ export const TaskList: React.FC<TaskListProps> = ({
   };
 
   const renderProjectGrouping = () => {
-    const projectNames = Object.keys(tasksByProject).sort();
-
-    if (projectNames.length === 0) {
+    if (tasksByProject.length === 0) {
       return (
         <EmptyState
           title="Nenhuma tarefa encontrada"
@@ -178,15 +226,15 @@ export const TaskList: React.FC<TaskListProps> = ({
 
     return (
       <div className="space-y-6">
-        {projectNames.map((projectName) => {
-          const projectTasks = tasksByProject[projectName];
+        {tasksByProject.map((projectGroup) => {
+          const projectTasks = projectGroup.tasks;
           const nonCompletedTasks = projectTasks.filter((task) => task.status !== TaskStatus.DONE);
           const completedTasks = projectTasks.filter((task) => task.status === TaskStatus.DONE);
 
           return (
             <CollapsibleSection
-              key={projectName}
-              title={projectName}
+              key={projectGroup.projectId}
+              title={projectGroup.projectName}
               subtitle={`${projectTasks.length} tarefa${projectTasks.length !== 1 ? 's' : ''}`}
               className="mb-6"
             >
@@ -199,7 +247,7 @@ export const TaskList: React.FC<TaskListProps> = ({
 
                   return (
                     <div key={block.status} className="mb-4">
-                      <h4 className={`text-sm font-medium ${block.color} mb-2`}>
+                      <h4 className="mb-2 text-sm font-medium text-text-secondary">
                         {block.title} ({blockTasks.length})
                       </h4>
                       <div className="space-y-2 ml-2">{blockTasks.map(renderTaskRow)}</div>

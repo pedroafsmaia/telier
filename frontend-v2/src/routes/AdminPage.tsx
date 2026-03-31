@@ -1,5 +1,4 @@
 import { useMemo, useState } from 'react';
-import { Link } from 'react-router-dom';
 import { AppShell } from '../app/layout/AppShell';
 import { useAuth } from '../lib/auth';
 import {
@@ -304,7 +303,7 @@ export function AdminPage() {
 
   if (!authLoading && !isAdmin) {
     return (
-      <AppShell currentUserId={currentUserId}>
+      <AppShell currentUserId={currentUserId} navigationVariant="admin">
         <div className="max-w-7xl mx-auto px-6 py-8">
           <SectionHeader title="Administração" subtitle="Acesso restrito" />
           <div className="mt-8">
@@ -320,7 +319,7 @@ export function AdminPage() {
 
   if (isLoading) {
     return (
-      <AppShell currentUserId={currentUserId}>
+      <AppShell currentUserId={currentUserId} navigationVariant="admin">
         <div className="max-w-7xl mx-auto px-6 py-8 space-y-6">
           <SectionHeader title="Administração" subtitle="Carregando visão global..." />
           <Panel>
@@ -343,7 +342,7 @@ export function AdminPage() {
 
   if (dataError) {
     return (
-      <AppShell currentUserId={currentUserId}>
+      <AppShell currentUserId={currentUserId} navigationVariant="admin">
         <div className="max-w-7xl mx-auto px-6 py-8">
           <SectionHeader title="Administração" subtitle="Erro ao carregar dados" />
           <div className="mt-8">
@@ -355,33 +354,43 @@ export function AdminPage() {
   }
 
   return (
-    <AppShell currentUserId={currentUserId}>
+    <AppShell currentUserId={currentUserId} navigationVariant="admin">
       <div className="max-w-7xl mx-auto px-6 py-8 space-y-6">
         <SectionHeader
           title="Administração"
-          subtitle="Visão global mínima de tarefas, projetos e grupos para operação administrativa."
+          subtitle="Camada administrativa para auditoria e ajustes globais, separada da rotina operacional."
         />
 
         {actionFeedback ? (
-          <Panel padding="sm">
+          <Panel padding="sm" className="border-border-secondary bg-surface-secondary">
             <p className="text-sm text-text-secondary">{actionFeedback}</p>
           </Panel>
         ) : null}
 
-        <Panel>
+        <Panel className="border-border-secondary bg-surface-secondary" padding="sm">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-text-tertiary">Contexto administrativo</p>
+          <p className="mt-1 text-sm text-text-secondary">
+            Leitura orientada a manutenção de dados. Use esta área para ajustes globais e validação transversal.
+          </p>
+        </Panel>
+
+        <Panel className="border-border-secondary">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <SearchField
+              aria-label="Buscar em administração"
               placeholder="Buscar por nome, projeto ou pessoa"
               value={searchQuery}
               onChange={(event) => setSearchQuery(event.target.value)}
               onClear={() => setSearchQuery('')}
             />
             <Select
+              aria-label="Filtro por entidade"
               options={entityOptions}
               value={selectedEntity}
               onChange={(event) => setSelectedEntity(event.target.value as AdminEntityFilter)}
             />
             <Select
+              aria-label="Filtro por pessoa"
               options={personOptions}
               value={selectedPersonId}
               onChange={(event) => {
@@ -398,27 +407,32 @@ export function AdminPage() {
           </p>
         </Panel>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-          <Panel>
-            <p className="text-sm text-text-secondary">Tarefas visíveis</p>
-            <p className="mt-2 text-2xl font-semibold text-text-primary">{filteredTasks.length}</p>
-          </Panel>
-          <Panel>
-            <p className="text-sm text-text-secondary">Projetos visíveis</p>
-            <p className="mt-2 text-2xl font-semibold text-text-primary">{filteredProjects.length}</p>
-          </Panel>
-          <Panel>
-            <p className="text-sm text-text-secondary">Grupos visíveis</p>
-            <p className="mt-2 text-2xl font-semibold text-text-primary">{filteredGroups.length}</p>
-          </Panel>
-        </div>
+        <Panel className="border-border-secondary">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+            <div className="border-l-2 border-border-primary pl-3">
+              <p className="text-xs uppercase tracking-[0.08em] text-text-tertiary">Tarefas visíveis</p>
+              <p className="mt-1 text-2xl font-semibold text-text-primary">{filteredTasks.length}</p>
+            </div>
+            <div className="border-l-2 border-border-primary pl-3">
+              <p className="text-xs uppercase tracking-[0.08em] text-text-tertiary">Projetos visíveis</p>
+              <p className="mt-1 text-2xl font-semibold text-text-primary">{filteredProjects.length}</p>
+            </div>
+            <div className="border-l-2 border-border-primary pl-3">
+              <p className="text-xs uppercase tracking-[0.08em] text-text-tertiary">Grupos visíveis</p>
+              <p className="mt-1 text-2xl font-semibold text-text-primary">{filteredGroups.length}</p>
+            </div>
+          </div>
+        </Panel>
 
         {showTasks && (
           <Panel>
-            <div className="flex items-center justify-between gap-4">
-              <h2 className="text-base font-semibold text-text-primary">Tarefas</h2>
+            <div className="flex flex-wrap items-center justify-between gap-4">
+              <div>
+                <h2 className="text-base font-semibold text-text-primary">Tarefas</h2>
+                <p className="text-xs text-text-secondary">Visão tabular administrativa</p>
+              </div>
               <div className="flex items-center gap-2">
-                <Badge size="sm">{filteredTasks.length}</Badge>
+                <span className="text-xs text-text-secondary">{filteredTasks.length} itens</span>
                 <span className="text-xs text-text-secondary">Página {tasksPage} de {tasksTotalPages}</span>
                 <Button variant="ghost" size="sm" onClick={() => setTasksPage((current) => Math.max(1, current - 1))} disabled={tasksPage === 1}>
                   Anterior
@@ -435,19 +449,30 @@ export function AdminPage() {
                 description="Ajuste os filtros para localizar tarefas no contexto administrativo."
               />
             ) : (
-              <div className="mt-4 divide-y divide-border-primary">
+              <div className="mt-4 overflow-x-auto rounded-md border border-border-secondary">
+                <div className="grid min-w-[980px] grid-cols-[minmax(260px,2fr)_minmax(220px,1.6fr)_minmax(160px,1fr)_minmax(220px,1.4fr)] bg-surface-secondary px-3 py-2 text-[11px] font-semibold uppercase tracking-[0.08em] text-text-tertiary">
+                  <p>Tarefa</p>
+                  <p>Contexto</p>
+                  <p>Status atual</p>
+                  <p>Ações</p>
+                </div>
                 {filteredTasks.map((task) => (
-                  <div key={task.id} className="py-3 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3">
-                    <div className="min-w-0">
+                  <div key={task.id} className="grid min-w-[980px] grid-cols-[minmax(260px,2fr)_minmax(220px,1.6fr)_minmax(160px,1fr)_minmax(220px,1.4fr)] items-center gap-3 border-t border-border-secondary px-3 py-2">
+                    <div className="min-w-0 pr-2">
                       <p className="text-sm font-medium text-text-primary truncate">{task.nome}</p>
-                      <p className="text-xs text-text-secondary mt-1 truncate">
+                    </div>
+                    <div className="min-w-0 pr-2">
+                      <p className="text-xs text-text-secondary truncate">
                         Projeto: {task.projetoNome} · Responsáveis: {task.responsaveis.map((person) => person.nome).join(', ') || '—'}
                       </p>
                     </div>
-                    <div className="flex flex-wrap items-center gap-2">
+                    <div className="min-w-0">
                       <Badge size="sm" variant={getBadgeVariant(task.status)}>{getTaskStatusLabel(task.status)}</Badge>
-                      <Badge size="sm">{getPriorityLabel(task.prioridade)}</Badge>
-                      <Badge size="sm">{getEaseLabel(task.facilidade)}</Badge>
+                      <p className="mt-1 text-xs text-text-tertiary">
+                        {getPriorityLabel(task.prioridade)} · {getEaseLabel(task.facilidade)}
+                      </p>
+                    </div>
+                    <div className="flex flex-wrap items-center gap-2">
                       <Select
                         options={taskStatusOptions}
                         value={taskStatusValue(task.id, task.status)}
@@ -465,9 +490,7 @@ export function AdminPage() {
                       >
                         Salvar
                       </Button>
-                      <Link to={`/projetos/${task.projetoId}`} className="text-xs font-medium text-primary hover:underline">
-                        Abrir projeto
-                      </Link>
+                      <span className="text-xs text-text-tertiary">Projeto #{task.projetoId}</span>
                     </div>
                   </div>
                 ))}
@@ -478,10 +501,13 @@ export function AdminPage() {
 
         {showProjects && (
           <Panel>
-            <div className="flex items-center justify-between gap-4">
-              <h2 className="text-base font-semibold text-text-primary">Projetos</h2>
+            <div className="flex flex-wrap items-center justify-between gap-4">
+              <div>
+                <h2 className="text-base font-semibold text-text-primary">Projetos</h2>
+                <p className="text-xs text-text-secondary">Visão tabular administrativa</p>
+              </div>
               <div className="flex items-center gap-2">
-                <Badge size="sm">{filteredProjects.length}</Badge>
+                <span className="text-xs text-text-secondary">{filteredProjects.length} itens</span>
                 <span className="text-xs text-text-secondary">Página {projectsPage} de {projectsTotalPages}</span>
                 <Button variant="ghost" size="sm" onClick={() => setProjectsPage((current) => Math.max(1, current - 1))} disabled={projectsPage === 1}>
                   Anterior
@@ -498,17 +524,27 @@ export function AdminPage() {
                 description="Ajuste os filtros para localizar projetos no contexto administrativo."
               />
             ) : (
-              <div className="mt-4 divide-y divide-border-primary">
+              <div className="mt-4 overflow-x-auto rounded-md border border-border-secondary">
+                <div className="grid min-w-[940px] grid-cols-[minmax(260px,2fr)_minmax(260px,1.8fr)_minmax(140px,1fr)_minmax(220px,1.4fr)] bg-surface-secondary px-3 py-2 text-[11px] font-semibold uppercase tracking-[0.08em] text-text-tertiary">
+                  <p>Projeto</p>
+                  <p>Contexto</p>
+                  <p>Status atual</p>
+                  <p>Ações</p>
+                </div>
                 {filteredProjects.map((project) => (
-                  <div key={project.id} className="py-3 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3">
-                    <div className="min-w-0">
+                  <div key={project.id} className="grid min-w-[940px] grid-cols-[minmax(260px,2fr)_minmax(260px,1.8fr)_minmax(140px,1fr)_minmax(220px,1.4fr)] items-center gap-3 border-t border-border-secondary px-3 py-2">
+                    <div className="min-w-0 pr-2">
                       <p className="text-sm font-medium text-text-primary truncate">{project.nome}</p>
-                      <p className="text-xs text-text-secondary mt-1 truncate">
+                    </div>
+                    <div className="min-w-0 pr-2">
+                      <p className="text-xs text-text-secondary truncate">
                         Grupo: {project.grupoNome || 'Sem grupo'} · Fase: {getProjectPhaseLabel(project.fase)}
                       </p>
                     </div>
-                    <div className="flex items-center gap-2">
+                    <div>
                       <Badge size="sm" variant={getBadgeVariant(project.status)}>{getProjectStatusLabel(project.status)}</Badge>
+                    </div>
+                    <div className="flex items-center gap-2">
                       <Select
                         options={projectStatusOptions}
                         value={projectStatusValue(project.id, project.status)}
@@ -526,9 +562,7 @@ export function AdminPage() {
                       >
                         Salvar
                       </Button>
-                      <Link to={`/projetos/${project.id}`} className="text-xs font-medium text-primary hover:underline">
-                        Abrir
-                      </Link>
+                      <span className="text-xs text-text-tertiary">Projeto #{project.id}</span>
                     </div>
                   </div>
                 ))}
@@ -539,10 +573,13 @@ export function AdminPage() {
 
         {showGroups && (
           <Panel>
-            <div className="flex items-center justify-between gap-4">
-              <h2 className="text-base font-semibold text-text-primary">Grupos</h2>
+            <div className="flex flex-wrap items-center justify-between gap-4">
+              <div>
+                <h2 className="text-base font-semibold text-text-primary">Grupos</h2>
+                <p className="text-xs text-text-secondary">Visão tabular administrativa</p>
+              </div>
               <div className="flex items-center gap-2">
-                <Badge size="sm">{filteredGroups.length}</Badge>
+                <span className="text-xs text-text-secondary">{filteredGroups.length} itens</span>
                 <span className="text-xs text-text-secondary">Página {groupsPage} de {groupsTotalPages}</span>
                 <Button variant="ghost" size="sm" onClick={() => setGroupsPage((current) => Math.max(1, current - 1))} disabled={groupsPage === 1}>
                   Anterior
@@ -559,17 +596,27 @@ export function AdminPage() {
                 description="Ajuste os filtros para localizar grupos no contexto administrativo."
               />
             ) : (
-              <div className="mt-4 divide-y divide-border-primary">
+              <div className="mt-4 overflow-x-auto rounded-md border border-border-secondary">
+                <div className="grid min-w-[920px] grid-cols-[minmax(260px,2fr)_minmax(260px,1.8fr)_minmax(140px,1fr)_minmax(220px,1.4fr)] bg-surface-secondary px-3 py-2 text-[11px] font-semibold uppercase tracking-[0.08em] text-text-tertiary">
+                  <p>Grupo</p>
+                  <p>Indicadores</p>
+                  <p>Status atual</p>
+                  <p>Ações</p>
+                </div>
                 {filteredGroups.map((group) => (
-                  <div key={group.id} className="py-3 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3">
-                    <div className="min-w-0">
+                  <div key={group.id} className="grid min-w-[920px] grid-cols-[minmax(260px,2fr)_minmax(260px,1.8fr)_minmax(140px,1fr)_minmax(220px,1.4fr)] items-center gap-3 border-t border-border-secondary px-3 py-2">
+                    <div className="min-w-0 pr-2">
                       <p className="text-sm font-medium text-text-primary truncate">{group.nome}</p>
-                      <p className="text-xs text-text-secondary mt-1 truncate">
+                    </div>
+                    <div className="min-w-0 pr-2">
+                      <p className="text-xs text-text-secondary truncate">
                         Projetos: {group.totalProjetos} · Atrasados: {group.projetosAtrasados}
                       </p>
                     </div>
-                    <div className="flex items-center gap-2">
+                    <div>
                       <Badge size="sm" variant={getBadgeVariant(group.status)}>{getGroupStatusLabel(group.status)}</Badge>
+                    </div>
+                    <div className="flex items-center gap-2">
                       <Select
                         options={groupStatusOptions}
                         value={groupStatusValue(group.id, group.status)}
@@ -587,9 +634,7 @@ export function AdminPage() {
                       >
                         Salvar
                       </Button>
-                      <Link to={`/grupos/${group.id}`} className="text-xs font-medium text-primary hover:underline">
-                        Abrir
-                      </Link>
+                      <span className="text-xs text-text-tertiary">Grupo #{group.id}</span>
                     </div>
                   </div>
                 ))}

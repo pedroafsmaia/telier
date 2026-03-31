@@ -10,15 +10,15 @@ export const PriorityTag: React.FC<PriorityTagProps> = ({ priority, className = 
   const getPriorityClasses = (priority: Priority) => {
     switch (priority) {
       case Priority.LOW:
-        return 'bg-success-100 text-success-600 border border-success-200';
+        return 'border border-success-200 bg-success-50 text-success-600';
       case Priority.MEDIUM:
-        return 'bg-warning-100 text-warning-600 border border-warning-200';
+        return 'border border-warning-200 bg-warning-50 text-warning-600';
       case Priority.HIGH:
-        return 'bg-error-100 text-error-600 border border-error-200';
+        return 'border border-error-200 bg-error-50 text-error-600';
       case Priority.URGENT:
-        return 'bg-error-100 text-error-700 border border-error-200';
+        return 'border border-error-300 bg-error-100 text-error-700';
       default:
-        return 'bg-surface-secondary text-text-secondary border border-border-secondary';
+        return 'border border-border-secondary bg-surface-secondary text-text-secondary';
     }
   };
 

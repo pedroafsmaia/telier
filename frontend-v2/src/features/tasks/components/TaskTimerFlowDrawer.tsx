@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+﻿import { useMemo, useState } from 'react';
 import { Drawer, Button, Input, Panel } from '../../../design/primitives';
 import type { ActiveTimeSession, TaskListItem } from '../types';
 
@@ -46,16 +46,16 @@ export function TaskTimerFlowDrawer({
   const [note, setNote] = useState('');
 
   const title = useMemo(() => {
-    if (mode === 'switch') return 'Trocar timer ativo';
+    if (mode === 'switch') return 'Trocar tarefa com timer ativo';
     return 'Parar timer';
   }, [mode]);
 
   const description = useMemo(() => {
     if (!currentSession) return '';
     if (mode === 'switch' && nextTask) {
-      return `Seu timer ativo em "${currentSession.tarefaNome}" será encerrado antes de iniciar em "${nextTask.nome}".`;
+      return `Seu timer em "${currentSession.tarefaNome}" será encerrado antes de iniciar "${nextTask.nome}".`;
     }
-    return `Você está encerrando o timer ativo em "${currentSession.tarefaNome}".`;
+    return `Você esta encerrando o timer ativo em "${currentSession.tarefaNome}".`;
   }, [currentSession, mode, nextTask]);
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
@@ -67,7 +67,7 @@ export function TaskTimerFlowDrawer({
   };
 
   return (
-    <Drawer isOpen={isOpen} onClose={isSubmitting ? () => undefined : onClose} title={title}>
+    <Drawer isOpen={isOpen} mode="contextual" onClose={isSubmitting ? () => undefined : onClose} title={title}>
       <div className="p-6">
         <form onSubmit={handleSubmit} className="space-y-4">
           <Panel>
@@ -82,7 +82,7 @@ export function TaskTimerFlowDrawer({
           </Panel>
 
           {errorMessage ? (
-            <div className="rounded-lg border border-alert-subtle bg-alert-subtle/20 px-4 py-3 text-sm text-alert-DEFAULT">
+            <div className="rounded-lg border border-alert-subtle bg-alert-subtle/20 px-4 py-3 text-sm text-alert">
               {errorMessage}
             </div>
           ) : null}
@@ -99,7 +99,7 @@ export function TaskTimerFlowDrawer({
             label="Observação"
             value={note}
             onChange={(event: React.ChangeEvent<HTMLInputElement>) => setNote(event.target.value)}
-            placeholder="Observação opcional do encerramento"
+            placeholder="Resumo rápido do encerramento (opcional)"
             disabled={isSubmitting}
             maxLength={200}
           />
@@ -114,7 +114,7 @@ export function TaskTimerFlowDrawer({
               Cancelar
             </Button>
             <Button type="submit" variant="primary" loading={isSubmitting}>
-              {mode === 'switch' ? 'Encerrar e iniciar próximo' : 'Encerrar timer'}
+              {mode === 'switch' ? 'Encerrar e iniciar próxima tarefa' : 'Encerrar timer'}
             </Button>
           </div>
         </form>
@@ -122,3 +122,5 @@ export function TaskTimerFlowDrawer({
     </Drawer>
   );
 }
+
+

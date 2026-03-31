@@ -1,4 +1,4 @@
-﻿import { useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { AlertTriangle, ChevronRight, FolderKanban, Pencil } from 'lucide-react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { AppShell } from '../app/layout/AppShell';
@@ -212,7 +212,7 @@ export function GroupPage() {
         {actionError ? (
           <div className="mt-6">
             <Panel className="border-alert-subtle bg-alert-subtle/20" padding="sm">
-              <p className="text-sm text-alert-DEFAULT">{actionError}</p>
+              <p className="text-sm text-alert">{actionError}</p>
             </Panel>
           </div>
         ) : null}
@@ -242,8 +242,8 @@ export function GroupPage() {
                   <p
                     className={`mt-1 flex items-center gap-2 text-sm font-medium ${
                       criticalDeadlineProject.prazo && isOverdue(criticalDeadlineProject.prazo)
-                        ? 'text-alert-DEFAULT'
-                        : 'text-warning-DEFAULT'
+                        ? 'text-alert'
+                        : 'text-warning'
                     }`}
                   >
                     <AlertTriangle className="h-4 w-4" />
@@ -259,6 +259,7 @@ export function GroupPage() {
           <GroupRecordsSection
             records={records}
             projectNamesById={projectNamesById}
+            className="border-border-secondary bg-surface-secondary/20"
             onActionError={(message) => setActionError(message || null)}
             actions={
               <Button
@@ -315,7 +316,7 @@ export function GroupPage() {
                               isOverdue(project.prazo) &&
                               project.status !== ProjectStatus.DONE &&
                               project.status !== ProjectStatus.ARCHIVED
-                                ? 'text-alert-DEFAULT'
+                                ? 'text-alert'
                                 : 'text-text-tertiary'
                             }`}
                           >
@@ -373,4 +374,5 @@ export function GroupPage() {
     </AppShell>
   );
 }
+
 

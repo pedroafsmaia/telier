@@ -15,7 +15,7 @@ export const Select: React.FC<SelectProps> = ({ label, error, options, className
         </label>
       )}
       <select
-        className={`block w-full px-3 py-2 border border-border-primary rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-border-focus focus:border-transparent ${className}`}
+        className={`block w-full rounded-md border border-border-primary px-3 py-2 shadow-sm focus:outline-none focus:ring-2 focus:ring-info-200 focus:border-info-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-info-200 focus-visible:border-info-500 disabled:cursor-not-allowed disabled:opacity-60 ${className}`}
         {...props}
       >
         {options.map(option => (

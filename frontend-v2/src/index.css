@@ -13,12 +13,17 @@
   }
 
   body {
-    @apply bg-gray-50 text-gray-900 antialiased;
+    @apply bg-background-secondary text-text-primary antialiased;
     font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
   }
 
   /* Reset para layout do Telier */
   #root {
     @apply min-h-screen;
+  }
+
+  ::selection {
+    background: var(--color-selection-bg);
+    color: var(--color-selection-text);
   }
 }
