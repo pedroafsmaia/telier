@@ -303,7 +303,7 @@ export function AdminPage() {
 
   if (!authLoading && !isAdmin) {
     return (
-      <AppShell currentUserId={currentUserId} navigationVariant="admin">
+      <AppShell currentUserId={currentUserId}>
         <div className="max-w-7xl mx-auto px-6 py-8">
           <SectionHeader title="Administração" subtitle="Acesso restrito" />
           <div className="mt-8">
@@ -319,7 +319,7 @@ export function AdminPage() {
 
   if (isLoading) {
     return (
-      <AppShell currentUserId={currentUserId} navigationVariant="admin">
+      <AppShell currentUserId={currentUserId}>
         <div className="max-w-7xl mx-auto px-6 py-8 space-y-6">
           <SectionHeader title="Administração" subtitle="Carregando visão global..." />
           <Panel>
@@ -342,7 +342,7 @@ export function AdminPage() {
 
   if (dataError) {
     return (
-      <AppShell currentUserId={currentUserId} navigationVariant="admin">
+      <AppShell currentUserId={currentUserId}>
         <div className="max-w-7xl mx-auto px-6 py-8">
           <SectionHeader title="Administração" subtitle="Erro ao carregar dados" />
           <div className="mt-8">
@@ -354,7 +354,7 @@ export function AdminPage() {
   }
 
   return (
-    <AppShell currentUserId={currentUserId} navigationVariant="admin">
+    <AppShell currentUserId={currentUserId}>
       <div className="max-w-7xl mx-auto px-6 py-8 space-y-6">
         <SectionHeader
           title="Administração"
