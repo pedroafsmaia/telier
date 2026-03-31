@@ -33,7 +33,13 @@ function toBackendDateTime(value: string): string | undefined {
   const withSeconds = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(normalized)
     ? `${normalized}:00`
     : normalized;
-  return withSeconds.replace('T', ' ');
+  const localDate = new Date(withSeconds);
+
+  if (Number.isNaN(localDate.getTime())) {
+    return withSeconds.replace('T', ' ');
+  }
+
+  return localDate.toISOString().slice(0, 19).replace('T', ' ');
 }
 
 export function TaskTimerFlowDrawer({
