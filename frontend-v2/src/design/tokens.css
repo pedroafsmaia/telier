@@ -60,27 +60,41 @@
 
   /* Superficies */
   --color-surface-primary: #ffffff;
+  --color-surface-primary-rgb: 255 255 255;
   --color-surface-secondary: var(--color-telier-50);
+  --color-surface-secondary-rgb: 248 249 250;
   --color-surface-tertiary: var(--color-telier-100);
+  --color-surface-tertiary-rgb: 241 243 244;
   --color-surface-elevated: #ffffff;
+  --color-surface-elevated-rgb: 255 255 255;
   --color-surface-overlay: rgba(255, 255, 255, 0.95);
+  --color-surface-overlay-rgb: 255 255 255;
 
   /* Texto */
   --color-text-primary: var(--color-telier-900);
+  --color-text-primary-rgb: 32 33 36;
   --color-text-secondary: var(--color-telier-700);
+  --color-text-secondary-rgb: 95 99 104;
   --color-text-tertiary: var(--color-telier-600);
+  --color-text-tertiary-rgb: 128 134 139;
   --color-text-disabled: var(--color-telier-400);
+  --color-text-disabled-rgb: 189 193 198;
   --color-text-inverse: #ffffff;
+  --color-text-inverse-rgb: 255 255 255;
 
   /* Bordas */
   --color-border-primary: var(--color-telier-300);
+  --color-border-primary-rgb: 218 220 224;
   --color-border-secondary: var(--color-telier-200);
+  --color-border-secondary-rgb: 232 234 237;
   --color-border-focus: var(--color-info-500);
   --color-border-error: var(--color-error-500);
 
   /* Fundos */
   --color-background-primary: #ffffff;
+  --color-background-primary-rgb: 255 255 255;
   --color-background-secondary: var(--color-telier-50);
+  --color-background-secondary-rgb: 248 249 250;
   --color-background-overlay: rgba(0, 0, 0, 0.5);
 
   /* Tipografia */
@@ -157,37 +171,63 @@
 
 :root[data-theme='dark'] {
   --color-surface-primary: var(--color-telier-900);
+  --color-surface-primary-rgb: 32 33 36;
   --color-surface-secondary: var(--color-telier-800);
+  --color-surface-secondary-rgb: 60 64 67;
   --color-surface-tertiary: var(--color-telier-700);
+  --color-surface-tertiary-rgb: 95 99 104;
   --color-surface-elevated: var(--color-telier-800);
+  --color-surface-elevated-rgb: 60 64 67;
   --color-surface-overlay: rgba(32, 33, 36, 0.95);
+  --color-surface-overlay-rgb: 32 33 36;
 
   --color-text-primary: #ffffff;
+  --color-text-primary-rgb: 255 255 255;
   --color-text-secondary: var(--color-telier-200);
+  --color-text-secondary-rgb: 232 234 237;
   --color-text-tertiary: var(--color-telier-300);
+  --color-text-tertiary-rgb: 218 220 224;
   --color-text-disabled: var(--color-telier-500);
+  --color-text-disabled-rgb: 154 160 166;
 
   --color-background-primary: var(--color-telier-900);
+  --color-background-primary-rgb: 32 33 36;
   --color-background-secondary: var(--color-telier-800);
+  --color-background-secondary-rgb: 60 64 67;
 
   --color-border-primary: var(--color-telier-600);
+  --color-border-primary-rgb: 128 134 139;
   --color-border-secondary: var(--color-telier-700);
+  --color-border-secondary-rgb: 95 99 104;
 }
 
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme]) {
     --color-surface-primary: var(--color-telier-900);
+    --color-surface-primary-rgb: 32 33 36;
     --color-surface-secondary: var(--color-telier-800);
+    --color-surface-secondary-rgb: 60 64 67;
     --color-surface-tertiary: var(--color-telier-700);
+    --color-surface-tertiary-rgb: 95 99 104;
     --color-surface-elevated: var(--color-telier-800);
+    --color-surface-elevated-rgb: 60 64 67;
     --color-surface-overlay: rgba(32, 33, 36, 0.95);
+    --color-surface-overlay-rgb: 32 33 36;
     --color-text-primary: #ffffff;
+    --color-text-primary-rgb: 255 255 255;
     --color-text-secondary: var(--color-telier-200);
+    --color-text-secondary-rgb: 232 234 237;
     --color-text-tertiary: var(--color-telier-300);
+    --color-text-tertiary-rgb: 218 220 224;
     --color-text-disabled: var(--color-telier-500);
+    --color-text-disabled-rgb: 154 160 166;
     --color-background-primary: var(--color-telier-900);
+    --color-background-primary-rgb: 32 33 36;
     --color-background-secondary: var(--color-telier-800);
+    --color-background-secondary-rgb: 60 64 67;
     --color-border-primary: var(--color-telier-600);
+    --color-border-primary-rgb: 128 134 139;
     --color-border-secondary: var(--color-telier-700);
+    --color-border-secondary-rgb: 95 99 104;
   }
 }

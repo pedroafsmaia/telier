@@ -7,6 +7,7 @@ export default {
   theme: {
     extend: {
       colors: {
+        dynamicColor: (cssVar) => `rgb(var(${cssVar}) / <alpha-value>)`,
         // Cores institucionais do Telier - neutras e funcionais
         telier: {
           50: '#f8f9fa',
@@ -66,28 +67,28 @@ export default {
           subtle: '#d2e3fc',
         },
         surface: {
-          primary: '#ffffff',
-          secondary: '#f8f9fa',
-          tertiary: '#f1f3f4',
-          elevated: '#ffffff',
-          overlay: 'rgba(255, 255, 255, 0.95)',
+          primary: 'rgb(var(--color-surface-primary-rgb) / <alpha-value>)',
+          secondary: 'rgb(var(--color-surface-secondary-rgb) / <alpha-value>)',
+          tertiary: 'rgb(var(--color-surface-tertiary-rgb) / <alpha-value>)',
+          elevated: 'rgb(var(--color-surface-elevated-rgb) / <alpha-value>)',
+          overlay: 'rgb(var(--color-surface-overlay-rgb) / <alpha-value>)',
         },
         background: {
-          primary: '#ffffff',
-          secondary: '#f8f9fa',
+          primary: 'rgb(var(--color-background-primary-rgb) / <alpha-value>)',
+          secondary: 'rgb(var(--color-background-secondary-rgb) / <alpha-value>)',
         },
         text: {
-          primary: '#202124',
-          secondary: '#5f6368',
-          tertiary: '#80868b',
-          disabled: '#bdc1c6',
-          inverse: '#ffffff',
-          muted: '#80868b',
+          primary: 'rgb(var(--color-text-primary-rgb) / <alpha-value>)',
+          secondary: 'rgb(var(--color-text-secondary-rgb) / <alpha-value>)',
+          tertiary: 'rgb(var(--color-text-tertiary-rgb) / <alpha-value>)',
+          disabled: 'rgb(var(--color-text-disabled-rgb) / <alpha-value>)',
+          inverse: 'rgb(var(--color-text-inverse-rgb) / <alpha-value>)',
+          muted: 'rgb(var(--color-text-tertiary-rgb) / <alpha-value>)',
         },
         border: {
-          primary: '#dadce0',
-          secondary: '#e8eaed',
-          subtle: '#e8eaed',
+          primary: 'rgb(var(--color-border-primary-rgb) / <alpha-value>)',
+          secondary: 'rgb(var(--color-border-secondary-rgb) / <alpha-value>)',
+          subtle: 'rgb(var(--color-border-secondary-rgb) / <alpha-value>)',
           focus: '#4285f4',
           error: '#ea4335',
         },
