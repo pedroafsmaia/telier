@@ -9,6 +9,10 @@ interface CollapsibleSectionProps {
   onToggle?: (isOpen: boolean) => void;
   className?: string;
   actions?: React.ReactNode;
+  headerClassName?: string;
+  contentClassName?: string;
+  titleClassName?: string;
+  subtitleClassName?: string;
 }
 
 export const CollapsibleSection: React.FC<CollapsibleSectionProps> = ({
@@ -20,6 +24,10 @@ export const CollapsibleSection: React.FC<CollapsibleSectionProps> = ({
   onToggle,
   className = '',
   actions,
+  headerClassName = '',
+  contentClassName = '',
+  titleClassName = '',
+  subtitleClassName = '',
 }) => {
   const [internalIsOpen, setInternalIsOpen] = useState(defaultOpen);
   const isControlled = controlledIsOpen !== undefined;
@@ -35,15 +43,15 @@ export const CollapsibleSection: React.FC<CollapsibleSectionProps> = ({
 
   return (
     <div className={`rounded-lg border border-border-primary ${className}`}>
-      <div className="flex items-center gap-3 px-4 py-3">
+      <div className={`flex items-center gap-3 px-4 py-3 ${headerClassName}`}>
         <button
           type="button"
           onClick={handleToggle}
           className="flex min-w-0 flex-1 items-center justify-between text-left transition-colors hover:text-text-secondary"
         >
           <div>
-            <h3 className="font-medium text-text-primary">{title}</h3>
-            {subtitle ? <p className="mt-1 text-xs text-text-tertiary">{subtitle}</p> : null}
+            <h3 className={`font-medium text-text-primary ${titleClassName}`}>{title}</h3>
+            {subtitle ? <p className={`mt-1 text-xs text-text-tertiary ${subtitleClassName}`}>{subtitle}</p> : null}
           </div>
           <svg
             className={`h-4 w-4 text-text-tertiary transition-transform ${isOpen ? 'rotate-180' : ''}`}
@@ -57,7 +65,7 @@ export const CollapsibleSection: React.FC<CollapsibleSectionProps> = ({
         <div className="shrink-0">{actions}</div>
       </div>
 
-      {isOpen ? <div className="border-t border-border-primary px-4 pb-4">{children}</div> : null}
+      {isOpen ? <div className={`border-t border-border-primary px-4 pb-4 ${contentClassName}`}>{children}</div> : null}
     </div>
   );
 };

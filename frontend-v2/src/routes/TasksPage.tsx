@@ -93,7 +93,7 @@ export function TasksPage() {
     <AppShell currentUserId={currentUserId}>
       <div className="max-w-7xl mx-auto px-6 py-8">
         <div className="mb-5 flex flex-wrap items-center justify-between gap-4">
-          <SectionHeader title="Tarefas" subtitle="Painel operacional do dia" />
+          <SectionHeader title="Tarefas" subtitle="Centro operacional do trabalho diário" />
 
           <div className="flex items-center gap-1 rounded-md border border-border-primary bg-surface-primary p-1">
             <Button
@@ -102,7 +102,7 @@ export function TasksPage() {
               icon={Grid3x3}
               onClick={() => setViewMode('blocks')}
             >
-              Lista por status
+              Por status
             </Button>
             <Button
               variant={viewMode === 'project' ? 'secondary' : 'ghost'}
@@ -110,7 +110,7 @@ export function TasksPage() {
               icon={List}
               onClick={() => setViewMode('project')}
             >
-              Agrupar por projeto
+              Por projeto
             </Button>
           </div>
         </div>
@@ -136,11 +136,12 @@ export function TasksPage() {
             onClick={() => setIsTaskFormOpen(true)}
             disabled={projects.length === 0}
           >
-            Formulário completo
+            Abrir formulário
           </Button>
         </div>
 
-        <div className="mb-5">
+        <div className="mb-5 rounded-md border border-border-secondary bg-surface-secondary/35 px-4 py-3">
+          <p className="text-xs font-medium uppercase tracking-[0.12em] text-text-tertiary">Filtros</p>
           <TaskFilters
             projects={projects.map((project) => ({ id: project.id, nome: project.nome }))}
             selectedProject={selectedProject}
@@ -150,6 +151,7 @@ export function TasksPage() {
             onPriorityChange={setSelectedPriority}
             onEaseChange={setSelectedEase}
             onClearFilters={handleClearFilters}
+            className="mt-3"
           />
         </div>
 

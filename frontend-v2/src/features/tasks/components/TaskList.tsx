@@ -22,32 +22,38 @@ interface TaskBlock {
   title: string;
   status: TaskStatus;
   sectionClassName: string;
+  headerClassName: string;
+  titleClassName: string;
 }
 
 const taskBlocks: TaskBlock[] = [
   {
     title: 'Em andamento',
     status: TaskStatus.IN_PROGRESS,
-    sectionClassName:
-      'border-info-200 bg-info-50/35 [&>div:first-child]:border-b [&>div:first-child]:border-info-100 [&>div:first-child]:bg-info-50/75 [&>div:last-child]:border-info-100',
+    sectionClassName: 'border-border-primary bg-surface-primary',
+    headerClassName: 'border-b border-info-100 bg-info-50/45',
+    titleClassName: 'text-info-700',
   },
   {
     title: 'Em espera',
     status: TaskStatus.WAITING,
-    sectionClassName:
-      'border-warning-300 bg-warning-50/45 [&>div:first-child]:border-b [&>div:first-child]:border-warning-200 [&>div:first-child]:bg-warning-50/80 [&>div:last-child]:border-warning-200',
+    sectionClassName: 'border-border-primary bg-surface-primary',
+    headerClassName: 'border-b border-warning-200 bg-warning-50/45',
+    titleClassName: 'text-warning-700',
   },
   {
     title: 'A fazer',
     status: TaskStatus.TODO,
-    sectionClassName:
-      'border-border-primary bg-surface-secondary/35 [&>div:first-child]:border-b [&>div:first-child]:border-border-secondary [&>div:first-child]:bg-surface-secondary/70 [&>div:last-child]:border-border-secondary',
+    sectionClassName: 'border-border-primary bg-surface-primary',
+    headerClassName: 'border-b border-border-secondary bg-surface-secondary/55',
+    titleClassName: '',
   },
   {
     title: 'Concluídas',
     status: TaskStatus.DONE,
-    sectionClassName:
-      'border-success-200 bg-success-50/35 [&>div:first-child]:border-b [&>div:first-child]:border-success-100 [&>div:first-child]:bg-success-50/80 [&>div:last-child]:border-success-100',
+    sectionClassName: 'border-border-primary bg-surface-primary',
+    headerClassName: 'border-b border-success-100 bg-success-50/40',
+    titleClassName: 'text-success-700',
   },
 ];
 
@@ -199,17 +205,22 @@ export const TaskList: React.FC<TaskListProps> = ({
         defaultOpen={!isCollapsed}
         onToggle={(isOpen: boolean) => toggleBlockCollapse(block.status, isOpen)}
         className={`mb-5 ${block.sectionClassName}`}
+        headerClassName={block.headerClassName}
+        titleClassName={block.titleClassName}
         actions={
           <div className="flex items-center gap-2">
             {activeTimersInBlock > 0 ? (
-              <span className="inline-flex items-center rounded-full border border-warning-200 bg-warning-100 px-2 py-1 text-[11px] font-medium text-warning-600">
-                {activeTimersInBlock} timer{activeTimersInBlock === 1 ? '' : 's'} em execucao
+              <span className="text-xs text-text-secondary">
+                Timers ativos:{' '}
+                <span className="font-medium text-text-primary">
+                  {activeTimersInBlock}
+                </span>
               </span>
             ) : null}
           </div>
         }
       >
-        <div className="space-y-2">{blockTasks.map(renderTaskRow)}</div>
+        <div className="space-y-2 pt-4">{blockTasks.map(renderTaskRow)}</div>
       </CollapsibleSection>
     );
   };
@@ -236,7 +247,8 @@ export const TaskList: React.FC<TaskListProps> = ({
               key={projectGroup.projectId}
               title={projectGroup.projectName}
               subtitle={`${projectTasks.length} tarefa${projectTasks.length !== 1 ? 's' : ''}`}
-              className="mb-6"
+              className="mb-6 border-border-primary bg-surface-primary"
+              headerClassName="border-b border-border-secondary bg-surface-secondary/45"
             >
               {taskBlocks
                 .filter((block) => block.status !== TaskStatus.DONE)
@@ -246,19 +258,27 @@ export const TaskList: React.FC<TaskListProps> = ({
                   if (blockTasks.length === 0) return null;
 
                   return (
-                    <div key={block.status} className="mb-4">
-                      <h4 className="mb-2 text-sm font-medium text-text-secondary">
-                        {block.title} ({blockTasks.length})
-                      </h4>
-                      <div className="space-y-2 ml-2">{blockTasks.map(renderTaskRow)}</div>
+                    <div key={block.status} className="border-t border-border-secondary py-4 first:border-t-0">
+                      <div className="mb-2 flex items-center justify-between gap-3">
+                        <h4 className="text-xs font-medium uppercase tracking-[0.12em] text-text-tertiary">
+                          {block.title}
+                        </h4>
+                        <span className="text-xs text-text-secondary">{blockTasks.length}</span>
+                      </div>
+                      <div className="space-y-2">{blockTasks.map(renderTaskRow)}</div>
                     </div>
                   );
                 })}
 
               {completedTasks.length > 0 && (
-                <div className="mt-4 pt-4 border-t border-border-subtle">
-                  <h4 className="text-sm font-medium text-green-600 mb-2">Concluídas ({completedTasks.length})</h4>
-                  <div className="space-y-2 ml-2">{completedTasks.map(renderTaskRow)}</div>
+                <div className="border-t border-border-secondary py-4">
+                  <div className="mb-2 flex items-center justify-between gap-3">
+                    <h4 className="text-xs font-medium uppercase tracking-[0.12em] text-text-tertiary">
+                      Concluídas
+                    </h4>
+                    <span className="text-xs text-text-secondary">{completedTasks.length}</span>
+                  </div>
+                  <div className="space-y-2">{completedTasks.map(renderTaskRow)}</div>
                 </div>
               )}
             </CollapsibleSection>
