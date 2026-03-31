@@ -2,6 +2,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AppRouter } from './app/router';
 import { ErrorBoundary } from './app/ErrorBoundary';
 import { AuthProvider } from './lib/auth';
+import { ThemeProvider } from './lib/theme';
 
 // Cliente React Query configurado para a nova UI do Telier
 const queryClient = new QueryClient({
@@ -29,9 +30,11 @@ function App() {
   return (
     <ErrorBoundary>
       <QueryClientProvider client={queryClient}>
-        <AuthProvider>
-          <AppRouter />
-        </AuthProvider>
+        <ThemeProvider>
+          <AuthProvider>
+            <AppRouter />
+          </AuthProvider>
+        </ThemeProvider>
       </QueryClientProvider>
     </ErrorBoundary>
   );

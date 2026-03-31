@@ -1,6 +1,5 @@
 import React from 'react';
 import { Sidebar } from './Sidebar';
-import { Topbar } from './Topbar';
 import { GlobalTimerBar } from './GlobalTimerBar';
 
 interface AppShellProps {
@@ -17,10 +16,7 @@ export const AppShell: React.FC<AppShellProps> = ({ children, navigationVariant 
       <div className="flex min-h-[calc(100vh-3rem)]">
         <Sidebar variant={navigationVariant} />
 
-        <div className="flex flex-1 flex-col">
-          <Topbar />
-          <main className="flex-1">{children}</main>
-        </div>
+        <main className="flex-1">{children}</main>
       </div>
     </div>
   );

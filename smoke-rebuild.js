@@ -21,6 +21,17 @@ async function existsVisible(page, selector) {
   return loc.isVisible().catch(() => false);
 }
 
+async function ensureNoActiveTimer(page) {
+  const stopButton = page.locator('button[aria-label="Parar timer"]').first();
+  if (!(await stopButton.count())) return;
+
+  await stopButton.click();
+  await page
+    .getByRole('button', { name: /Encerrar timer|Encerrar e iniciar próxima tarefa|Encerrar e iniciar proxima tarefa/i })
+    .click();
+  await page.waitForTimeout(1500);
+}
+
 function sleep(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
@@ -281,6 +292,26 @@ async function run() {
       )
       .first()
       .waitFor({ timeout: TIMEOUT });
+
+    const startTimerButtons = page.locator('button[aria-label="Iniciar timer"]');
+    if (await startTimerButtons.count()) {
+      await ensureNoActiveTimer(page);
+
+      await startTimerButtons.first().click();
+      await page.locator('button[aria-label="Parar timer"]').first().waitFor({ timeout: TIMEOUT });
+
+      await page.locator('button[aria-label="Parar timer"]').first().click();
+      await page
+        .getByRole('button', { name: /Encerrar timer|Encerrar e iniciar próxima tarefa|Encerrar e iniciar proxima tarefa/i })
+        .click();
+      await page.waitForTimeout(1500);
+
+      if (await existsVisible(page, 'text=/Erro interno no servidor|Nao foi possivel concluir o fluxo de timer/i')) {
+        throw new Error('Fluxo de parar timer falhou na tela de tarefas.');
+      }
+    } else {
+      console.log('REBUILD SMOKE: sem tarefas disponiveis para validar timer no ambiente atual.');
+    }
 
     if (await existsVisible(page, 'text=Checklist documentado')) {
       throw new Error('Banner de migracao ainda visivel no shell principal.');

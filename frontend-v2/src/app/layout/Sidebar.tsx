@@ -1,6 +1,9 @@
 import React from 'react';
+import { Moon, Sun } from 'lucide-react';
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../../lib/auth';
+import { Button, IconButton } from '../../design/primitives';
+import { useTheme } from '../../lib/theme';
 
 type SidebarItem = {
   name: string;
@@ -71,7 +74,8 @@ interface SidebarProps {
 
 export const Sidebar: React.FC<SidebarProps> = ({ variant = 'default' }) => {
   const location = useLocation();
-  const { isLoading: authLoading, isAdmin } = useAuth();
+  const { isLoading: authLoading, isAdmin, user, logout } = useAuth();
+  const { theme, toggleTheme } = useTheme();
 
   const isActive = (href: string) => {
     if (href === '/tarefas') {
@@ -94,8 +98,19 @@ export const Sidebar: React.FC<SidebarProps> = ({ variant = 'default' }) => {
   const visibleItems =
     variant === 'admin' ? roleVisibleItems.filter((item) => item.href === '/admin') : roleVisibleItems;
 
+  const initials = user?.nome
+    ?.split(' ')
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0]?.toUpperCase() || '')
+    .join('') || 'TL';
+
   return (
-    <aside className={`w-64 min-h-screen border-r ${variant === 'admin' ? 'border-border-secondary bg-surface-primary' : 'border-border-primary bg-surface-secondary'}`}>
+    <aside
+      className={`flex min-h-screen w-64 flex-col border-r ${
+        variant === 'admin' ? 'border-border-secondary bg-surface-primary' : 'border-border-primary bg-surface-secondary'
+      }`}
+    >
       <div className="p-6">
         <h1 className="text-xl font-semibold text-text-primary">Telier</h1>
         {variant === 'admin' ? (
@@ -128,6 +143,44 @@ export const Sidebar: React.FC<SidebarProps> = ({ variant = 'default' }) => {
           })}
         </ul>
       </nav>
+
+      <div className="mt-auto border-t border-border-primary px-4 py-4">
+        <div className="rounded-lg border border-border-primary bg-surface-primary px-3 py-3">
+          <div className="flex items-center gap-3">
+            <div className="flex h-9 w-9 items-center justify-center rounded-full bg-surface-secondary text-xs font-semibold text-text-primary">
+              {initials}
+            </div>
+            <div className="min-w-0">
+              <p className="truncate text-sm font-medium text-text-primary">{user?.nome || 'Usuario'}</p>
+              <p className="truncate text-xs text-text-tertiary">@{user?.usuario_login || 'sem-login'}</p>
+            </div>
+          </div>
+
+          <div className="mt-4 flex items-center justify-between gap-2">
+            <div className="min-w-0">
+              <p className="text-xs uppercase tracking-[0.12em] text-text-tertiary">Tema</p>
+              <p className="text-sm text-text-secondary">{theme === 'dark' ? 'Escuro' : 'Claro'}</p>
+            </div>
+
+            <IconButton
+              type="button"
+              size="sm"
+              className="border border-border-primary bg-surface-secondary text-text-primary hover:bg-surface-tertiary"
+              onClick={toggleTheme}
+              aria-label={theme === 'dark' ? 'Ativar modo claro' : 'Ativar modo escuro'}
+              title={theme === 'dark' ? 'Ativar modo claro' : 'Ativar modo escuro'}
+            >
+              {theme === 'dark' ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+            </IconButton>
+          </div>
+
+          <div className="mt-4">
+            <Button variant="ghost" size="sm" className="w-full justify-center" onClick={() => void logout()}>
+              Sair
+            </Button>
+          </div>
+        </div>
+      </div>
     </aside>
   );
 };

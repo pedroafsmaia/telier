@@ -29,7 +29,11 @@ function toLocalDateTimeValue(date: Date): string {
 
 function toBackendDateTime(value: string): string | undefined {
   if (!value.trim()) return undefined;
-  return value.replace('T', ' ');
+  const normalized = value.trim();
+  const withSeconds = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(normalized)
+    ? `${normalized}:00`
+    : normalized;
+  return withSeconds.replace('T', ' ');
 }
 
 export function TaskTimerFlowDrawer({
