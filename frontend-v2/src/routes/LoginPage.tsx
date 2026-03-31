@@ -1,12 +1,60 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Navigate, useNavigate, useSearchParams } from 'react-router-dom';
-import { ArrowRight, LockKeyhole } from 'lucide-react';
+import { ArrowRight, Eye, EyeOff, LockKeyhole } from 'lucide-react';
 import { Button, Input, Panel } from '../design/primitives';
 import { useAuth } from '../lib/auth';
 import http from '../lib/http';
 
 interface LoginPageProps {
   technicalEntry?: boolean;
+}
+
+interface PasswordFieldProps {
+  label: string;
+  value: string;
+  onChange: (value: string) => void;
+  placeholder: string;
+  autoComplete?: string;
+  disabled?: boolean;
+}
+
+function PasswordField({
+  label,
+  value,
+  onChange,
+  placeholder,
+  autoComplete,
+  disabled,
+}: PasswordFieldProps) {
+  const [isVisible, setIsVisible] = useState(false);
+
+  return (
+    <div className="space-y-1">
+      <label className="block text-sm font-medium text-text-primary">{label}</label>
+      <div className="relative">
+        <Input
+          type={isVisible ? 'text' : 'password'}
+          value={value}
+          onChange={(event) => onChange(event.target.value)}
+          placeholder={placeholder}
+          autoComplete={autoComplete}
+          disabled={disabled}
+          required
+          className="pr-12"
+        />
+        <button
+          type="button"
+          className="absolute inset-y-0 right-0 flex w-12 items-center justify-center text-text-tertiary transition-colors hover:text-text-primary focus:outline-none focus-visible:text-text-primary"
+          onClick={() => setIsVisible((current) => !current)}
+          aria-label={isVisible ? 'Ocultar senha' : 'Mostrar senha'}
+          title={isVisible ? 'Ocultar senha' : 'Mostrar senha'}
+          disabled={disabled}
+        >
+          {isVisible ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+        </button>
+      </div>
+    </div>
+  );
 }
 
 export function LoginPage({ technicalEntry = false }: LoginPageProps) {
@@ -34,10 +82,6 @@ export function LoginPage({ technicalEntry = false }: LoginPageProps) {
   }, [searchParams]);
 
   useEffect(() => {
-    if (!technicalEntry) {
-      return;
-    }
-
     let cancelled = false;
 
     async function fetchNeedsSetup() {
@@ -58,7 +102,7 @@ export function LoginPage({ technicalEntry = false }: LoginPageProps) {
     return () => {
       cancelled = true;
     };
-  }, [technicalEntry]);
+  }, []);
 
   if (isAuthenticated) {
     return <Navigate to={nextPath} replace />;
@@ -119,7 +163,8 @@ export function LoginPage({ technicalEntry = false }: LoginPageProps) {
               <p className="text-xs font-medium uppercase tracking-[0.14em] text-text-tertiary">Telier</p>
               <h1 className="text-2xl font-semibold text-text-primary">Acesso tecnico inicial</h1>
               <p className="text-sm text-text-secondary">
-                Esta entrada e exclusiva para configuracao inicial. O login comum segue em <span className="font-medium text-text-primary">/login</span>.
+                Esta entrada e exclusiva para configuracao inicial. O login comum segue em{' '}
+                <span className="font-medium text-text-primary">/login</span>.
               </p>
 
               {needsSetup ? (
@@ -143,15 +188,13 @@ export function LoginPage({ technicalEntry = false }: LoginPageProps) {
                       disabled={isSubmittingSetup}
                       required
                     />
-                    <Input
+                    <PasswordField
                       label="Senha"
-                      type="password"
                       value={setupSenha}
-                      onChange={(event) => setSetupSenha(event.target.value)}
+                      onChange={setSetupSenha}
                       placeholder="Minimo de 8 caracteres"
                       autoComplete="new-password"
                       disabled={isSubmittingSetup}
-                      required
                     />
                     {setupErrorMessage ? (
                       <div className="rounded-md border border-alert-subtle bg-alert-subtle/20 px-3 py-2 text-sm text-alert">
@@ -200,6 +243,29 @@ export function LoginPage({ technicalEntry = false }: LoginPageProps) {
                   Use usuario e senha ja cadastrados para acessar tarefas, projetos e grupos.
                 </p>
               </div>
+
+              {needsSetup ? (
+                <div className="rounded-lg border border-info-100 bg-info-50 px-4 py-4">
+                  <p className="text-xs uppercase tracking-[0.14em] text-info-600">Primeiro acesso</p>
+                  <p className="mt-2 text-base font-medium text-text-primary">Criar administrador inicial</p>
+                  <p className="mt-2 text-sm text-text-secondary">
+                    O ambiente ainda nao foi inicializado. Conclua o setup tecnico antes do primeiro login.
+                  </p>
+                  <div className="mt-4">
+                    <Button type="button" variant="secondary" onClick={() => navigate('/login/setup')}>
+                      Criar administrador inicial
+                    </Button>
+                  </div>
+                </div>
+              ) : (
+                <div className="rounded-lg border border-border-primary bg-surface-primary px-4 py-4">
+                  <p className="text-xs uppercase tracking-[0.14em] text-text-tertiary">Cadastro</p>
+                  <p className="mt-2 text-base font-medium text-text-primary">Contas novas sao liberadas pelo administrador</p>
+                  <p className="mt-2 text-sm text-text-secondary">
+                    O registro publico fica fechado depois do setup inicial. Se voce precisa de acesso, peca ao administrador para criar sua conta.
+                  </p>
+                </div>
+              )}
             </div>
           </Panel>
 
@@ -223,15 +289,13 @@ export function LoginPage({ technicalEntry = false }: LoginPageProps) {
                 required
               />
 
-              <Input
+              <PasswordField
                 label="Senha"
-                type="password"
-                autoComplete="current-password"
                 value={senha}
-                onChange={(event) => setSenha(event.target.value)}
+                onChange={setSenha}
                 placeholder="Digite sua senha"
+                autoComplete="current-password"
                 disabled={isSubmitting}
-                required
               />
 
               {errorMessage ? (

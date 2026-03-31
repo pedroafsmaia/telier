@@ -4,7 +4,7 @@
 const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL?.trim() || '/api').replace(/\/$/, '');
 const REQUEST_TIMEOUT_MS = 30000;
 
-// Token de autenticação - será injetado pelo módulo de auth
+// Token de autenticacao - sera injetado pelo modulo de auth
 let authToken: string | null = null;
 
 export function setAuthToken(token: string | null): void {
@@ -29,7 +29,7 @@ export class ApiError extends Error {
 }
 
 export class NetworkError extends Error {
-  constructor(message: string = 'Falha de conexão com o servidor.') {
+  constructor(message: string = 'Falha de conexao com o servidor.') {
     super(message);
     this.name = 'NetworkError';
   }
@@ -42,7 +42,7 @@ export class TimeoutError extends Error {
   }
 }
 
-// Opções de requisição
+// Opcoes de requisicao
 interface RequestOptions {
   timeout?: number;
   headers?: Record<string, string>;
@@ -53,12 +53,21 @@ export interface HttpMetaResponse<T> {
   headers: Headers;
 }
 
-// Função principal de requisição HTTP
+function getPagesApiErrorMessage(status: number): string | null {
+  if (typeof window === 'undefined') return null;
+  if (!window.location.hostname.endsWith('pages.dev')) return null;
+  if (!API_BASE_URL.startsWith('/')) return null;
+  if (status !== 404 && status !== 405) return null;
+
+  return 'A API nao esta configurada neste dominio. Configure o Cloudflare Pages para usar VITE_API_BASE_URL com a URL publica do Worker.';
+}
+
+// Funcao principal de requisicao HTTP
 export async function request<T>(
   method: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE',
   path: string,
   body?: unknown,
-  options: RequestOptions = {}
+  options: RequestOptions = {},
 ): Promise<T> {
   const controller = new AbortController();
   const timeoutMs = options.timeout ?? REQUEST_TIMEOUT_MS;
@@ -70,7 +79,7 @@ export async function request<T>(
   };
 
   if (authToken) {
-    headers['Authorization'] = `Bearer ${authToken}`;
+    headers.Authorization = `Bearer ${authToken}`;
   }
 
   let response: Response;
@@ -91,7 +100,6 @@ export async function request<T>(
     clearTimeout(timeoutId);
   }
 
-  // Parse da resposta
   let data: T | null = null;
   try {
     const text = await response.text();
@@ -101,15 +109,18 @@ export async function request<T>(
   } catch {
     if (!response.ok) {
       throw new ApiError(
-        `Erro na requisição (${response.status})`,
-        response.status
+        getPagesApiErrorMessage(response.status) || `Erro na requisicao (${response.status})`,
+        response.status,
       );
     }
-    throw new ApiError('Resposta inválida do servidor (não é JSON).', response.status);
+    throw new ApiError('Resposta invalida do servidor (nao e JSON).', response.status);
   }
 
   if (!response.ok) {
-    const errorMessage = (data as { error?: string })?.error || `Erro na requisição (${response.status})`;
+    const errorMessage =
+      getPagesApiErrorMessage(response.status) ||
+      (data as { error?: string })?.error ||
+      `Erro na requisicao (${response.status})`;
     throw new ApiError(errorMessage, response.status);
   }
 
@@ -120,7 +131,7 @@ export async function requestWithMeta<T>(
   method: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE',
   path: string,
   body?: unknown,
-  options: RequestOptions = {}
+  options: RequestOptions = {},
 ): Promise<HttpMetaResponse<T>> {
   const controller = new AbortController();
   const timeoutMs = options.timeout ?? REQUEST_TIMEOUT_MS;
@@ -132,7 +143,7 @@ export async function requestWithMeta<T>(
   };
 
   if (authToken) {
-    headers['Authorization'] = `Bearer ${authToken}`;
+    headers.Authorization = `Bearer ${authToken}`;
   }
 
   let response: Response;
@@ -162,15 +173,18 @@ export async function requestWithMeta<T>(
   } catch {
     if (!response.ok) {
       throw new ApiError(
-        `Erro na requisição (${response.status})`,
-        response.status
+        getPagesApiErrorMessage(response.status) || `Erro na requisicao (${response.status})`,
+        response.status,
       );
     }
-    throw new ApiError('Resposta inválida do servidor (não é JSON).', response.status);
+    throw new ApiError('Resposta invalida do servidor (nao e JSON).', response.status);
   }
 
   if (!response.ok) {
-    const errorMessage = (data as { error?: string })?.error || `Erro na requisição (${response.status})`;
+    const errorMessage =
+      getPagesApiErrorMessage(response.status) ||
+      (data as { error?: string })?.error ||
+      `Erro na requisicao (${response.status})`;
     throw new ApiError(errorMessage, response.status);
   }
 
@@ -180,24 +194,15 @@ export async function requestWithMeta<T>(
   };
 }
 
-// Métodos de conveniência
+// Metodos de conveniencia
 export const http = {
-  get: <T>(path: string, options?: RequestOptions) => 
-    request<T>('GET', path, undefined, options),
+  get: <T>(path: string, options?: RequestOptions) => request<T>('GET', path, undefined, options),
   getWithMeta: <T>(path: string, options?: RequestOptions) =>
     requestWithMeta<T>('GET', path, undefined, options),
-  
-  post: <T>(path: string, body?: unknown, options?: RequestOptions) => 
-    request<T>('POST', path, body, options),
-  
-  put: <T>(path: string, body?: unknown, options?: RequestOptions) => 
-    request<T>('PUT', path, body, options),
-  
-  patch: <T>(path: string, body?: unknown, options?: RequestOptions) => 
-    request<T>('PATCH', path, body, options),
-  
-  delete: <T>(path: string, options?: RequestOptions) => 
-    request<T>('DELETE', path, undefined, options),
+  post: <T>(path: string, body?: unknown, options?: RequestOptions) => request<T>('POST', path, body, options),
+  put: <T>(path: string, body?: unknown, options?: RequestOptions) => request<T>('PUT', path, body, options),
+  patch: <T>(path: string, body?: unknown, options?: RequestOptions) => request<T>('PATCH', path, body, options),
+  delete: <T>(path: string, options?: RequestOptions) => request<T>('DELETE', path, undefined, options),
 };
 
 export default http;
