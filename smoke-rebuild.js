@@ -8,7 +8,7 @@ const net = require('net');
 const TIMEOUT = Number(process.env.SMOKE_TIMEOUT_MS || 20000);
 const LOCAL_API_ORIGIN = 'http://127.0.0.1:8787';
 const LOCAL_API_BASE_URL = `${LOCAL_API_ORIGIN}/api`;
-const LOCAL_APP_ORIGIN = 'http://127.0.0.1:4173';
+const LOCAL_APP_HOST = '127.0.0.1';
 const LOCAL_STATE_DIR = path.join(os.tmpdir(), 'telier-rebuild-smoke');
 
 const EXTERNAL_BASE_URL = process.env.REBUILD_BASE_URL || process.env.BASE_URL || '';
@@ -137,6 +137,30 @@ async function waitForPort(port, host, timeoutMs) {
   throw new Error(`Timeout aguardando porta ${host}:${port}`);
 }
 
+async function getAvailablePort(host) {
+  return new Promise((resolve, reject) => {
+    const server = net.createServer();
+    server.unref();
+    server.on('error', reject);
+    server.listen(0, host, () => {
+      const address = server.address();
+      if (!address || typeof address === 'string') {
+        server.close(() => reject(new Error('Nao foi possivel obter porta livre para preview.')));
+        return;
+      }
+
+      const { port } = address;
+      server.close((error) => {
+        if (error) {
+          reject(error);
+          return;
+        }
+        resolve(port);
+      });
+    });
+  });
+}
+
 function uniqueSmokeCredentials() {
   const suffix = `${Date.now()}`;
   return {
@@ -187,12 +211,14 @@ async function ensureAdminCredentials(apiBaseUrl, fallbackCredentials) {
 
 async function prepareLocalEnvironment() {
   fs.rmSync(LOCAL_STATE_DIR, { recursive: true, force: true });
+  const previewPort = await getAvailablePort(LOCAL_APP_HOST);
+  const localAppOrigin = `http://${LOCAL_APP_HOST}:${previewPort}`;
 
   const worker = spawnProcess(getCommand('npx'), ['wrangler', 'dev', '--local', '--port', '8787', '--persist-to', LOCAL_STATE_DIR], {
     cwd: __dirname,
     env: {
       ...process.env,
-      ALLOWED_ORIGIN: LOCAL_APP_ORIGIN,
+      ALLOWED_ORIGIN: localAppOrigin,
       AUTO_SCHEMA_SYNC: '1',
     },
   });
@@ -217,7 +243,7 @@ async function prepareLocalEnvironment() {
     throw new Error(`Build local do rebuild falhou com codigo ${buildExitCode}.`);
   }
 
-  const preview = spawnProcess(getCommand('npm'), ['run', 'preview', '--prefix', 'frontend-v2', '--', '--host', '127.0.0.1', '--port', '4173'], {
+  const preview = spawnProcess(getCommand('npm'), ['run', 'preview', '--prefix', 'frontend-v2', '--', '--host', LOCAL_APP_HOST, '--port', String(previewPort)], {
     cwd: __dirname,
     env: {
       ...process.env,
@@ -225,14 +251,14 @@ async function prepareLocalEnvironment() {
     },
   });
 
-  await waitForPort(4173, '127.0.0.1', TIMEOUT);
-  await waitForHttp(`${LOCAL_APP_ORIGIN}/login`, TIMEOUT);
+  await waitForPort(previewPort, LOCAL_APP_HOST, TIMEOUT);
+  await waitForHttp(`${localAppOrigin}/login`, TIMEOUT);
 
   const generatedCredentials = uniqueSmokeCredentials();
   const credentials = await ensureAdminCredentials(LOCAL_API_BASE_URL, generatedCredentials);
 
   return {
-    baseUrl: LOCAL_APP_ORIGIN,
+    baseUrl: localAppOrigin,
     credentials,
     cleanup: async () => {
       await killProcessTree(preview);
@@ -278,12 +304,13 @@ async function run() {
     console.log('REBUILD SMOKE: realizando login...');
     await page.fill('input[autocomplete="username"]', environment.credentials.login);
     await page.fill('input[autocomplete="current-password"]', environment.credentials.password);
-    await page.getByRole('button', { name: 'Entrar no Telier' }).click();
+    await page.getByRole('button', { name: /Entrar no Telier|Entrar/i }).click();
 
     await page.waitForURL(/\/(?:$|tarefas)/, { timeout: TIMEOUT });
-    const sidebarNav = page.locator('aside nav[aria-label="Navegacao estrutural"]').first();
+    const sidebarNav = page.locator('aside nav[aria-label="Navegação estrutural"]').first();
     await sidebarNav.waitFor({ timeout: TIMEOUT });
-    await sidebarNav.getByRole('link', { name: 'Tarefas' }).waitFor({ timeout: TIMEOUT });
+    await sidebarNav.getByRole('link', { name: 'Hoje' }).waitFor({ timeout: TIMEOUT });
+    await sidebarNav.getByRole('link', { name: 'Minhas tarefas' }).waitFor({ timeout: TIMEOUT });
     await sidebarNav.getByRole('link', { name: 'Projetos' }).waitFor({ timeout: TIMEOUT });
     await sidebarNav.getByRole('link', { name: 'Grupos' }).waitFor({ timeout: TIMEOUT });
 
@@ -297,7 +324,7 @@ async function run() {
     await page.getByText(/Timer global/i).first().waitFor({ timeout: TIMEOUT });
     await page
       .getByText(
-        /Nenhum timer ativo no momento\.|Seu timer esta ativo em|timer ativo na equipe\.|timers ativos na equipe\.|Nao foi possivel atualizar os timers ativos\./,
+        /Nenhum timer ativo no momento\.|Seu timer está ativo em|Seu timer esta ativo em|timer ativo na equipe\.|timers ativos na equipe\.|Não foi possível atualizar os timers ativos\.|Nao foi possivel atualizar os timers ativos\./,
       )
       .first()
       .waitFor({ timeout: TIMEOUT });

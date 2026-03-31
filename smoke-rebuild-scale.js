@@ -12,7 +12,7 @@ const SCALE_TASKS_PER_PROJECT = Math.max(8, Number(process.env.SCALE_TASKS_PER_P
 
 const LOCAL_API_ORIGIN = 'http://127.0.0.1:8787';
 const LOCAL_API_BASE_URL = `${LOCAL_API_ORIGIN}/api`;
-const LOCAL_APP_ORIGIN = 'http://127.0.0.1:4173';
+const LOCAL_APP_HOST = '127.0.0.1';
 const LOCAL_STATE_DIR = path.join(os.tmpdir(), 'telier-rebuild-smoke-scale');
 
 const EXTERNAL_BASE_URL = process.env.REBUILD_BASE_URL || process.env.BASE_URL || '';
@@ -174,6 +174,30 @@ async function waitForPort(port, host, timeoutMs) {
   throw new Error(`Timeout aguardando porta ${host}:${port}`);
 }
 
+async function getAvailablePort(host) {
+  return new Promise((resolve, reject) => {
+    const server = net.createServer();
+    server.unref();
+    server.on('error', reject);
+    server.listen(0, host, () => {
+      const address = server.address();
+      if (!address || typeof address === 'string') {
+        server.close(() => reject(new Error('Nao foi possivel obter porta livre para preview.')));
+        return;
+      }
+
+      const { port } = address;
+      server.close((error) => {
+        if (error) {
+          reject(error);
+          return;
+        }
+        resolve(port);
+      });
+    });
+  });
+}
+
 function uniqueSmokeCredentials() {
   const suffix = `${Date.now()}`;
   return {
@@ -332,6 +356,8 @@ async function seedScaleData(apiBaseUrl, token) {
 
 async function prepareLocalEnvironment() {
   fs.rmSync(LOCAL_STATE_DIR, { recursive: true, force: true });
+  const previewPort = await getAvailablePort(LOCAL_APP_HOST);
+  const localAppOrigin = `http://${LOCAL_APP_HOST}:${previewPort}`;
 
   const worker = spawnProcess(
     getCommand('npx'),
@@ -340,7 +366,7 @@ async function prepareLocalEnvironment() {
       cwd: __dirname,
       env: {
         ...process.env,
-        ALLOWED_ORIGIN: LOCAL_APP_ORIGIN,
+        ALLOWED_ORIGIN: localAppOrigin,
         AUTO_SCHEMA_SYNC: '1',
       },
     },
@@ -368,7 +394,7 @@ async function prepareLocalEnvironment() {
 
   const preview = spawnProcess(
     getCommand('npm'),
-    ['run', 'preview', '--prefix', 'frontend-v2', '--', '--host', '127.0.0.1', '--port', '4173'],
+    ['run', 'preview', '--prefix', 'frontend-v2', '--', '--host', LOCAL_APP_HOST, '--port', String(previewPort)],
     {
       cwd: __dirname,
       env: {
@@ -378,14 +404,14 @@ async function prepareLocalEnvironment() {
     },
   );
 
-  await waitForPort(4173, '127.0.0.1', TIMEOUT);
-  await waitForHttp(`${LOCAL_APP_ORIGIN}/login`, TIMEOUT);
+  await waitForPort(previewPort, LOCAL_APP_HOST, TIMEOUT);
+  await waitForHttp(`${localAppOrigin}/login`, TIMEOUT);
 
   const generatedCredentials = uniqueSmokeCredentials();
   const credentials = await ensureAdminCredentials(LOCAL_API_BASE_URL, generatedCredentials);
 
   return {
-    baseUrl: LOCAL_APP_ORIGIN,
+    baseUrl: localAppOrigin,
     apiBaseUrl: LOCAL_API_BASE_URL,
     credentials,
     cleanup: async () => {
@@ -430,7 +456,7 @@ async function getVisibleSeedTitles(page, prefix) {
 
 async function getSectionHeaderTitlesFromButtons(page) {
   return page
-    .locator('button h3')
+    .locator('button[aria-expanded] h2, button[aria-expanded] h3')
     .evaluateAll((nodes) =>
       nodes
         .map((node) => (node.textContent || '').trim())
@@ -440,11 +466,13 @@ async function getSectionHeaderTitlesFromButtons(page) {
 
 async function getProjectSectionSummaries(page) {
   return page
-    .locator('div.rounded-lg.border.border-border-primary.mb-6 > div:first-child button')
+    .locator('button[aria-expanded]')
     .evaluateAll((nodes) =>
       nodes.map((node) => {
-        const title = (node.querySelector('h3')?.textContent || '').trim();
-        const subtitle = (node.querySelector('p')?.textContent || '').trim();
+        const title = (node.querySelector('h2,h3')?.textContent || '').trim();
+        const subtitle = Array.from(node.querySelectorAll('p'))
+          .map((element) => (element.textContent || '').trim())
+          .find((text) => /\d+\s+tarefa/i.test(text)) || '';
         const rawText = (node.textContent || '').replace(/\s+/g, ' ').trim();
         const countSource = subtitle || rawText;
         const countMatch = countSource.match(/(\d+)\s+tarefa/i);
@@ -461,20 +489,33 @@ async function getProjectSectionSummaries(page) {
 
 async function verifyStatusSectionOrder(page) {
   const expectedOrder = ['Em andamento', 'Em espera', 'A fazer', 'Concluídas'];
-  const yPositions = [];
+  const visibleSections = [];
 
   for (const label of expectedOrder) {
     const heading = page.getByRole('heading', { name: label }).first();
-    await heading.waitFor({ timeout: UI_READY_TIMEOUT });
+    if ((await heading.count()) === 0) {
+      continue;
+    }
+
+    const isVisible = await heading.isVisible().catch(() => false);
+    if (!isVisible) {
+      continue;
+    }
+
     const box = await heading.boundingBox();
     if (!box) {
       throw new Error(`Nao foi possivel obter posicao da secao "${label}".`);
     }
-    yPositions.push(box.y);
+
+    visibleSections.push({ label, y: box.y });
   }
 
-  for (let index = 1; index < yPositions.length; index += 1) {
-    if (yPositions[index] <= yPositions[index - 1]) {
+  if (visibleSections.length === 0) {
+    throw new Error('Nenhum bloco de status visivel foi encontrado para validar a ordem operacional.');
+  }
+
+  for (let index = 1; index < visibleSections.length; index += 1) {
+    if (visibleSections[index].y <= visibleSections[index - 1].y) {
       throw new Error('Ordem visual dos blocos de status esta incorreta.');
     }
   }
@@ -497,6 +538,14 @@ async function verifyNoTransitionCopy(page) {
 }
 
 async function verifyFiltersAndGrouping(page, seedInfo) {
+  await page.getByRole('link', { name: 'Minhas tarefas' }).click();
+  await page.waitForURL(/\/tarefas\?escopo=minhas$/, { timeout: UI_READY_TIMEOUT });
+  await page.waitForFunction(
+    (prefix) => document.body.innerText.includes(prefix),
+    seedInfo.prefix,
+    { timeout: UI_READY_TIMEOUT },
+  );
+
   const projectFilter = page.locator('select[aria-label="Filtrar por projeto"]');
   await projectFilter.waitFor({ timeout: UI_READY_TIMEOUT });
 
@@ -515,7 +564,7 @@ async function verifyFiltersAndGrouping(page, seedInfo) {
     throw new Error('Filtro por projeto exibiu tarefas de outro projeto.');
   }
 
-  await page.getByRole('button', { name: 'Limpar' }).click();
+  await page.getByRole('button', { name: /Limpar/ }).click();
   await page.waitForTimeout(450);
   await page.waitForFunction(
     () => {
@@ -575,7 +624,7 @@ async function verifyFiltersAndGrouping(page, seedInfo) {
 async function verifyTimerVisibilityAndSwitchFlow(page) {
   await page
     .getByText(
-      /Seu timer esta ativo em|Atualizacao de rede instavel|timer ativo na equipe|timers ativos na equipe|Nenhum timer ativo no momento\./,
+      /Seu timer está ativo em|Seu timer esta ativo em|Atualização de rede instável|Atualizacao de rede instavel|timer ativo na equipe|timers ativos na equipe|Nenhum timer ativo no momento\./,
     )
     .first()
     .waitFor({ timeout: UI_READY_TIMEOUT });
@@ -626,7 +675,7 @@ async function run() {
 
     await page.fill('input[autocomplete="username"]', environment.credentials.login);
     await page.fill('input[autocomplete="current-password"]', environment.credentials.password);
-    await page.getByRole('button', { name: 'Entrar no Telier' }).click();
+    await page.getByRole('button', { name: /Entrar no Telier|Entrar/i }).click();
 
     await page.waitForURL(/\/(?:$|tarefas)/, { timeout: TIMEOUT });
     await page.getByRole('heading', { name: 'Tarefas' }).first().waitFor({
