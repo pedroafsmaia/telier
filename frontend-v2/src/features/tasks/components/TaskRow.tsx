@@ -189,6 +189,8 @@ export const TaskRow: React.FC<TaskRowProps> = ({
           <Button
             variant="secondary"
             size="sm"
+            aria-label="Parar timer"
+            title="Parar timer"
             onClick={(event: React.MouseEvent) => {
               event.stopPropagation();
               onStopTimer();
@@ -202,6 +204,8 @@ export const TaskRow: React.FC<TaskRowProps> = ({
           <Button
             variant="secondary"
             size="sm"
+            aria-label="Iniciar timer"
+            title="Iniciar timer"
             onClick={(event: React.MouseEvent) => {
               event.stopPropagation();
               onStartTimer();

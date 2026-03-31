@@ -44,7 +44,7 @@ function PasswordField({
         />
         <button
           type="button"
-          className="absolute inset-y-0 right-0 flex w-12 items-center justify-center text-text-tertiary transition-colors hover:text-text-primary focus:outline-none focus-visible:text-text-primary"
+          className="absolute inset-y-0 right-0 flex w-12 items-center justify-center rounded-sm text-text-tertiary transition-colors hover:text-text-primary focus:outline-none focus-visible:ring-2 focus-visible:ring-info-200 focus-visible:ring-offset-2 focus-visible:text-text-primary"
           onClick={() => setIsVisible((current) => !current)}
           aria-label={isVisible ? 'Ocultar senha' : 'Mostrar senha'}
           title={isVisible ? 'Ocultar senha' : 'Mostrar senha'}
@@ -306,7 +306,7 @@ export function LoginPage({ technicalEntry = false }: LoginPageProps) {
 
               <div className="flex flex-wrap items-center gap-2">
                 <Button type="submit" variant="primary" loading={isSubmitting} icon={ArrowRight}>
-                  Entrar
+                  Entrar no Telier
                 </Button>
               </div>
             </form>

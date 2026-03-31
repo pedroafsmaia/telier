@@ -72,7 +72,7 @@ function ActionRow({
         <Icon className="mt-0.5 h-4 w-4 shrink-0" />
         <div className="min-w-0">
           <p className="text-sm font-medium">{item.label}</p>
-          {item.description ? <p className="mt-1 text-xs leading-5">{item.description}</p> : null}
+          {item.description ? <p className="mt-0.5 text-xs leading-5">{item.description}</p> : null}
         </div>
       </div>
     );
@@ -87,7 +87,7 @@ function ActionRow({
       <Icon className="mt-0.5 h-4 w-4 shrink-0" />
       <div className="min-w-0">
         <p className="text-sm font-medium text-text-primary">{item.label}</p>
-        {item.description ? <p className="mt-1 text-xs leading-5 text-text-secondary">{item.description}</p> : null}
+        {item.description ? <p className="mt-0.5 text-xs leading-5 text-text-secondary">{item.description}</p> : null}
       </div>
     </Link>
   );
@@ -151,7 +151,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
         label: 'Continuar última tarefa',
         description: continueReference
           ? `${continueReference.projetoNome} · ${continueReference.tarefaNome}`
-          : 'Nenhuma tarefa recente para retomar.',
+          : 'Sem tarefa recente para retomar.',
         href: continueReference ? `/tarefas?escopo=minhas&abrir=${continueReference.tarefaId}` : undefined,
         icon: Clock3,
       },
@@ -213,12 +213,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
   return (
     <aside className={containerClassName} aria-label="Navegação principal do Telier">
       <div className="flex min-h-0 flex-1 flex-col">
-        <div className="border-b border-border-secondary px-5 py-5">
+        <div className="border-b border-border-secondary px-5 py-4">
           <div className="flex items-start justify-between gap-3">
-            <div>
-              <p className="text-[11px] font-medium uppercase tracking-[0.16em] text-text-tertiary">Telier</p>
-              <p className="mt-2 text-base font-semibold text-text-primary">Operação</p>
-            </div>
+            <p className="text-[11px] font-medium uppercase tracking-[0.16em] text-text-tertiary">Telier</p>
 
             {isMobile ? (
               <IconButton
@@ -234,7 +231,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
             ) : null}
           </div>
 
-          <div className="mt-5 space-y-1" aria-label="Ações operacionais">
+          <div className="mt-4 space-y-1" aria-label="Ações operacionais">
             {actionItems.map((item) => (
               <ActionRow key={item.label} item={item} onNavigate={onNavigate} />
             ))}

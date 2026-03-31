@@ -59,6 +59,7 @@ function SectionToggle({
   toneClassName = 'text-text-primary',
   isOpen,
   onToggle,
+  titleAs = 'h3',
 }: {
   title: string;
   subtitle: string;
@@ -66,16 +67,21 @@ function SectionToggle({
   toneClassName?: string;
   isOpen: boolean;
   onToggle: () => void;
+  titleAs?: 'h2' | 'h3';
 }) {
+  const TitleTag = titleAs;
+
   return (
     <button
       type="button"
       onClick={onToggle}
-      className="flex w-full items-start justify-between gap-4 text-left"
+      className="flex w-full items-start justify-between gap-4 rounded-sm text-left transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-info-200 focus-visible:ring-offset-2"
       aria-expanded={isOpen}
     >
       <div className="min-w-0">
-        <p className={`text-xs uppercase tracking-[0.12em] ${toneClassName}`}>{title}</p>
+        <TitleTag className={`text-xs font-medium uppercase tracking-[0.12em] ${toneClassName}`}>
+          {title}
+        </TitleTag>
         <p className="mt-1 text-sm text-text-secondary">{subtitle}</p>
       </div>
 
@@ -249,6 +255,7 @@ export const TaskList: React.FC<TaskListProps> = ({
           toneClassName={block.toneClassName}
           isOpen={isOpen}
           onToggle={() => toggleSection(sectionKey)}
+          titleAs="h2"
         />
 
         {isOpen ? <div className="space-y-2">{blockTasks.map(renderTaskRow)}</div> : null}
@@ -289,6 +296,7 @@ export const TaskList: React.FC<TaskListProps> = ({
                 toneClassName="text-text-primary"
                 isOpen={isOpen}
                 onToggle={() => toggleSection(sectionKey)}
+                titleAs="h2"
               />
 
               {isOpen ? (
