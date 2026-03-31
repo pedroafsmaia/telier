@@ -65,8 +65,8 @@ export const GlobalTimerBar: React.FC = () => {
   }
 
   return (
-    <div className="fixed left-0 right-0 top-0 z-[60] border-b border-info-100 bg-info-50/70">
-      <div className="mx-auto flex h-12 max-w-[1800px] items-center justify-between px-6">
+    <div className="border-b border-info-100 bg-info-50/70 backdrop-blur-sm">
+      <div className="flex h-12 items-center justify-between px-6">
         <div className="flex items-center gap-2 text-xs font-medium uppercase tracking-[0.1em] text-text-tertiary">
           <Clock3 className="h-4 w-4" />
           <span>Timer global</span>

@@ -25,6 +25,7 @@ function getInitialTheme(): ThemeMode {
 function applyTheme(theme: ThemeMode) {
   if (typeof document === 'undefined') return;
   document.documentElement.dataset.theme = theme;
+  document.documentElement.style.colorScheme = theme;
 }
 
 export function ThemeProvider({ children }: { children: ReactNode }) {

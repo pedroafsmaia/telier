@@ -10,13 +10,15 @@ interface AppShellProps {
 
 export const AppShell: React.FC<AppShellProps> = ({ children, navigationVariant = 'default' }) => {
   return (
-    <div className="min-h-screen bg-surface-primary pt-12">
-      <GlobalTimerBar />
+    <div className="flex min-h-screen bg-surface-primary">
+      <Sidebar variant={navigationVariant} />
 
-      <div className="flex min-h-[calc(100vh-3rem)]">
-        <Sidebar variant={navigationVariant} />
+      <div className="flex min-h-screen min-w-0 flex-1 flex-col">
+        <div className="sticky top-0 z-40">
+          <GlobalTimerBar />
+        </div>
 
-        <main className="flex-1">{children}</main>
+        <main className="min-w-0 flex-1 overflow-x-hidden">{children}</main>
       </div>
     </div>
   );

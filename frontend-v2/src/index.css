@@ -9,7 +9,7 @@
 @layer base {
   html {
     font-family: var(--font-family-sans);
-    color-scheme: light dark;
+    color-scheme: light;
   }
 
   body {

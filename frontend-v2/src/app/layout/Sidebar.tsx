@@ -107,7 +107,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ variant = 'default' }) => {
 
   return (
     <aside
-      className={`flex min-h-screen w-64 flex-col border-r ${
+      className={`sticky top-0 flex h-screen w-64 shrink-0 flex-col border-r ${
         variant === 'admin' ? 'border-border-secondary bg-surface-primary' : 'border-border-primary bg-surface-secondary'
       }`}
     >
@@ -118,7 +118,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ variant = 'default' }) => {
         ) : null}
       </div>
 
-      <nav className="px-4 pb-4" aria-label="Navegacao estrutural">
+      <nav className="flex-1 overflow-y-auto px-4 pb-4" aria-label="Navegacao estrutural">
         <ul className="space-y-1">
           {visibleItems.map((item) => {
             const active = isActive(item.href);
