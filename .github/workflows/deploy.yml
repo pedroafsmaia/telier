@@ -1,4 +1,4 @@
-name: Deploy Telier Platform
+name: Deploy Worker
 
 on:
   push:
@@ -48,7 +48,7 @@ jobs:
 
   deploy:
     runs-on: ubuntu-latest
-    name: Deploy Worker and Pages
+    name: Deploy to Cloudflare Workers
     needs: validate-rebuild
     permissions:
       contents: read
@@ -58,25 +58,8 @@ jobs:
       - name: Install root dependencies
         run: npm ci
 
-      - name: Install frontend-v2 dependencies
-        run: npm ci
-        working-directory: frontend-v2
-
-      - name: Build frontend-v2 for Pages
-        run: npm run build
-        working-directory: frontend-v2
-        env:
-          VITE_API_BASE_URL: ${{ secrets.VITE_API_BASE_URL }}
-
       - name: Deploy Worker via Wrangler
         uses: cloudflare/wrangler-action@v3
         with:
           apiToken: ${{ secrets.CF_API_TOKEN }}
           accountId: ${{ secrets.CF_ACCOUNT_ID }}
-
-      - name: Deploy Pages via Wrangler
-        uses: cloudflare/wrangler-action@v3
-        with:
-          apiToken: ${{ secrets.CF_API_TOKEN }}
-          accountId: ${{ secrets.CF_ACCOUNT_ID }}
-          command: pages deploy frontend-v2/dist --project-name telier
