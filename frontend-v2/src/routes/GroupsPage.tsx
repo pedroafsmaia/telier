@@ -1,21 +1,12 @@
 import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { AppShell } from '../app/layout/AppShell';
-import { AvatarStack, Button, EmptyState, SearchField, Select } from '../design/primitives';
+import { AvatarStack, Button, EmptyState, MetricStrip, SearchField, Select } from '../design/primitives';
 import { GroupFormDrawer, useCreateGroup, useGroups } from '../features/groups';
 import type { CreateGroupPayload } from '../features/groups';
 import { GroupStatus } from '../lib/enums';
 import { useAuth } from '../lib/auth';
 import { formatAreaLabel, formatHoursLabel, getGroupStatusLabel, getGroupStatusToneClass } from '../lib/projectUi';
-
-function MetricItem({ label, value }: { label: string; value: string | number }) {
-  return (
-    <div>
-      <p className="text-[11px] uppercase tracking-[0.12em] text-text-tertiary">{label}</p>
-      <p className="mt-1 text-lg font-semibold text-text-primary">{value}</p>
-    </div>
-  );
-}
 
 function DetailField({
   label,
@@ -139,12 +130,15 @@ export function GroupsPage() {
             </Button>
           </div>
 
-          <div className="mt-4 grid gap-4 border-t border-border-secondary pt-4 sm:grid-cols-2 xl:grid-cols-4">
-            <MetricItem label="Grupos" value={summary.total} />
-            <MetricItem label="Ativos" value={summary.active} />
-            <MetricItem label="Pausados" value={summary.paused} />
-            <MetricItem label="Arquivados" value={summary.archived} />
-          </div>
+          <MetricStrip
+            className="mt-4"
+            items={[
+              { label: 'Grupos', value: summary.total },
+              { label: 'Ativos', value: summary.active },
+              { label: 'Pausados', value: summary.paused },
+              { label: 'Arquivados', value: summary.archived },
+            ]}
+          />
         </header>
 
         <div className="mt-5 border-b border-border-secondary pb-4">

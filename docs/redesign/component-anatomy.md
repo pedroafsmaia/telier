@@ -35,13 +35,16 @@
    - nome + avatar discreto
 5. **Ações**
    - botão primário: Abrir
-   - botão secundário: Compartilhar
+   - botão secundário: ação contextual real do item
+     - padrão atual: Ver grupo, quando houver grupo vinculado
+     - omitir quando não houver ação secundária útil
 
 ### Regras
 - Sem pills como estrutura de metadado.
 - Cor apenas como sinal semântico (status/prazo crítico).
 - Layout compacto, sem “cards dentro do card”.
 - Não repetir o mesmo dado em dois blocos equivalentes.
+- Não usar CTA secundária fictícia só para preencher anatomia.
 
 ## 4. Task Row (LINHA DE TAREFA)
 
@@ -89,6 +92,7 @@ Formato de leitura esperado:
 - Não usar cards para métricas simples.
 - Densidade alta com leitura rápida.
 - Priorizar escaneabilidade em 1 passagem.
+- Em telas estreitas, priorizar rolagem horizontal discreta da própria faixa antes de quebrar a métrica em mini-cards ou blocos separados.
 
 ## 7. Sidebar
 

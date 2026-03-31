@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { AppShell } from '../app/layout/AppShell';
-import { AvatarStack, Button, EmptyState, Panel, SearchField, Select } from '../design/primitives';
+import { AvatarStack, Button, EmptyState, MetricStrip, Panel, SearchField, Select } from '../design/primitives';
 import { useGroups } from '../features/groups';
 import { ProjectFormDrawer, useCreateProject, useProjects } from '../features/projects';
 import type { CreateProjectPayload } from '../features/projects';
@@ -16,15 +16,6 @@ import {
   getProjectStatusLabel,
   getProjectStatusToneClass,
 } from '../lib/projectUi';
-
-function MetricItem({ label, value }: { label: string; value: string | number }) {
-  return (
-    <div>
-      <p className="text-[11px] uppercase tracking-[0.12em] text-text-tertiary">{label}</p>
-      <p className="mt-1 text-lg font-semibold text-text-primary">{value}</p>
-    </div>
-  );
-}
 
 function DetailField({
   label,
@@ -242,12 +233,15 @@ export function ProjectsPage() {
             </Button>
           </div>
 
-          <div className="mt-4 grid gap-4 border-t border-border-secondary pt-4 sm:grid-cols-2 xl:grid-cols-4">
-            <MetricItem label="Projetos" value={summary.total} />
-            <MetricItem label="Em andamento" value={summary.active} />
-            <MetricItem label="Atrasados" value={summary.overdue} />
-            <MetricItem label="Concluídos" value={summary.completed} />
-          </div>
+          <MetricStrip
+            className="mt-4"
+            items={[
+              { label: 'Projetos', value: summary.total },
+              { label: 'Em andamento', value: summary.active },
+              { label: 'Atrasados', value: summary.overdue },
+              { label: 'Concluídos', value: summary.completed },
+            ]}
+          />
         </header>
 
         {groupsError ? (
@@ -337,6 +331,13 @@ export function ProjectsPage() {
                     </div>
 
                     <div className="flex flex-wrap items-center gap-2">
+                      <Button
+                        variant="secondary"
+                        size="sm"
+                        onClick={() => navigate(`/projetos/${project.id}`)}
+                      >
+                        Abrir
+                      </Button>
                       {project.grupoId ? (
                         <Button
                           variant="ghost"
@@ -346,13 +347,6 @@ export function ProjectsPage() {
                           Ver grupo
                         </Button>
                       ) : null}
-                      <Button
-                        variant="secondary"
-                        size="sm"
-                        onClick={() => navigate(`/projetos/${project.id}`)}
-                      >
-                        Abrir
-                      </Button>
                     </div>
                   </div>
 

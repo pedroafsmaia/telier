@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { AppShell } from '../app/layout/AppShell';
-import { Button, EmptyState, Panel } from '../design/primitives';
+import { Button, EmptyState, MetricStrip, Panel } from '../design/primitives';
 import { ProjectFormDrawer, useProjectPageData, useUpdateProject } from '../features/projects';
 import { useGroups } from '../features/groups';
 import { ProjectRecordsSection, RecordFormDrawer, useCreateRecord } from '../features/records';
@@ -21,23 +21,6 @@ import {
   getProjectStatusLabel,
   getProjectStatusToneClass,
 } from '../lib/projectUi';
-
-function MetricItem({
-  label,
-  value,
-  toneClassName = 'text-text-primary',
-}: {
-  label: string;
-  value: string;
-  toneClassName?: string;
-}) {
-  return (
-    <div>
-      <p className="text-[11px] uppercase tracking-[0.12em] text-text-tertiary">{label}</p>
-      <p className={`mt-1 text-lg font-semibold ${toneClassName}`}>{value}</p>
-    </div>
-  );
-}
 
 function toUserErrorMessage(error: unknown, fallback: string): string {
   if (error instanceof Error && error.message.trim()) {
@@ -175,25 +158,30 @@ export function ProjectPage() {
             </div>
           </div>
 
-          <div className="mt-4 grid gap-4 border-t border-border-secondary pt-4 sm:grid-cols-2 xl:grid-cols-3">
-            <MetricItem label="Grupo" value={project.grupoNome || 'Sem grupo'} />
-            <MetricItem label="Fase" value={getProjectPhaseLabel(project.fase)} />
-            <MetricItem
-              label="Status"
-              value={getProjectStatusLabel(project.status)}
-              toneClassName={getProjectStatusToneClass(project.status)}
-            />
-            <MetricItem
-              label="Prazo"
-              value={project.prazo ? formatFullDate(project.prazo) : 'Sem prazo'}
-              toneClassName={projectIsOverdue ? 'text-error-600' : 'text-text-primary'}
-            />
-            <MetricItem
-              label="Progresso"
-              value={formatProjectProgressLabel(project.tarefasConcluidas, project.totalTarefas)}
-            />
-            <MetricItem label="Área" value={formatAreaLabel(project.areaM2)} />
-          </div>
+          <MetricStrip
+            className="mt-4"
+            items={[
+              { label: 'Grupo', value: project.grupoNome || 'Sem grupo' },
+              { label: 'Fase', value: getProjectPhaseLabel(project.fase) },
+              {
+                label: 'Status',
+                value: getProjectStatusLabel(project.status),
+                valueClassName: getProjectStatusToneClass(project.status),
+              },
+              {
+                label: 'Prazo',
+                value: project.prazo ? formatFullDate(project.prazo) : 'Sem prazo',
+                valueClassName: projectIsOverdue ? 'text-error-600' : undefined,
+                minWidthClassName: 'min-w-[11rem]',
+              },
+              {
+                label: 'Progresso',
+                value: formatProjectProgressLabel(project.tarefasConcluidas, project.totalTarefas),
+                minWidthClassName: 'min-w-[12rem]',
+              },
+              { label: 'Área', value: formatAreaLabel(project.areaM2) },
+            ]}
+          />
         </header>
 
         {taskActions.actionError ? (

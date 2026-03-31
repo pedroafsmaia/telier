@@ -13,6 +13,7 @@ export { PriorityTag } from './PriorityTag';
 export { EaseTag } from './EaseTag';
 export { Panel } from './Panel';
 export { SectionHeader } from './SectionHeader';
+export { MetricStrip } from './MetricStrip';
 export { EmptyState } from './EmptyState';
 export { Skeleton } from './Skeleton';
 export { Drawer } from './Drawer';

@@ -1,13 +1,13 @@
 import { useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { AppShell } from '../app/layout/AppShell';
-import { AvatarStack, Button, EmptyState, Panel } from '../design/primitives';
+import { AvatarStack, Button, EmptyState, MetricStrip, Panel } from '../design/primitives';
 import { GroupFormDrawer, useGroupPageData, useUpdateGroup } from '../features/groups';
 import { ProjectFormDrawer, useCreateProject } from '../features/projects';
 import type { CreateProjectPayload } from '../features/projects';
 import { GroupRecordsSection, RecordFormDrawer, useCreateRecord } from '../features/records';
 import type { CreateRecordPayload } from '../features/records';
-import { formatFullDate, isOverdue } from '../lib/dates';
+import { formatFullDate, formatShortDate, isOverdue } from '../lib/dates';
 import { ProjectStatus, getPriorityLabel } from '../lib/enums';
 import { useAuth } from '../lib/auth';
 import type { UpdateGroupPayload } from '../features/groups';
@@ -20,23 +20,6 @@ import {
   getProjectStatusLabel,
   getProjectStatusToneClass,
 } from '../lib/projectUi';
-
-function MetricItem({
-  label,
-  value,
-  toneClassName = 'text-text-primary',
-}: {
-  label: string;
-  value: string;
-  toneClassName?: string;
-}) {
-  return (
-    <div>
-      <p className="text-[11px] uppercase tracking-[0.12em] text-text-tertiary">{label}</p>
-      <p className={`mt-1 text-lg font-semibold ${toneClassName}`}>{value}</p>
-    </div>
-  );
-}
 
 function DetailField({
   label,
@@ -204,24 +187,36 @@ export function GroupPage() {
             </div>
           </div>
 
-          <div className="mt-4 grid gap-4 border-t border-border-secondary pt-4 sm:grid-cols-2 xl:grid-cols-4">
-            <MetricItem
-              label="Status"
-              value={getGroupStatusLabel(group.status)}
-              toneClassName={getGroupStatusToneClass(group.status)}
-            />
-            <MetricItem label="Projetos" value={String(projects.length)} />
-            <MetricItem label="Andamento agregado" value={aggregateProgressLabel} />
-            <MetricItem
-              label="Prazo crítico"
-              value={criticalDeadlineProject ? `${criticalDeadlineProject.nome} · ${formatFullDate(criticalDeadlineProject.prazo || '')}` : 'Sem prazo crítico'}
-              toneClassName={
-                criticalDeadlineProject?.prazo && isOverdue(criticalDeadlineProject.prazo)
-                  ? 'text-error-600'
-                  : 'text-text-primary'
-              }
-            />
-          </div>
+          <MetricStrip
+            className="mt-4"
+            items={[
+              {
+                label: 'Status',
+                value: getGroupStatusLabel(group.status),
+                valueClassName: getGroupStatusToneClass(group.status),
+              },
+              { label: 'Projetos', value: String(projects.length) },
+              {
+                label: 'Andamento agregado',
+                value: aggregateProgressLabel,
+                minWidthClassName: 'min-w-[14rem]',
+              },
+              {
+                label: 'Prazo crítico',
+                value: criticalDeadlineProject
+                  ? `${criticalDeadlineProject.nome} · ${formatShortDate(criticalDeadlineProject.prazo || '')}`
+                  : 'Sem prazo crítico',
+                valueClassName:
+                  criticalDeadlineProject?.prazo && isOverdue(criticalDeadlineProject.prazo)
+                    ? 'text-error-600'
+                    : undefined,
+                minWidthClassName: 'min-w-[14rem]',
+                title: criticalDeadlineProject?.prazo
+                  ? `${criticalDeadlineProject.nome} · ${formatFullDate(criticalDeadlineProject.prazo || '')}`
+                  : 'Sem prazo crítico',
+              },
+            ]}
+          />
         </header>
 
         {actionError ? (

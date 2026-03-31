@@ -61,10 +61,12 @@ Este documento define regras duráveis de interface para o Telier.
 ### Metric strip
 **Deve ser:** faixa horizontal compacta (label pequena + valor forte).
 **Evitar:** quatro “mini-cards” grandes para métricas simples.
+**Comportamento responsivo:** manter leitura de faixa contínua; em larguras estreitas, pode haver rolagem horizontal discreta antes de fragmentar em cards.
 
 ### Cards de projeto
 **Deve ser:** título, contexto, grid técnico de metadados, resumo operacional, responsável/alerta, ações.
 **Evitar:** duplicação de informação (ex.: progresso repetido em dois blocos equivalentes).
+**Regra adicional:** ação secundária só existe quando for real e útil no contexto; no padrão atual, `Ver grupo` substitui qualquer CTA genérica de compartilhamento na listagem de projetos.
 
 ### Itens de tarefa
 **Deve ser:** leitura rápida de status, prazo, responsável e ação.
