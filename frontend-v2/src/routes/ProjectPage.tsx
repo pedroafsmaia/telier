@@ -4,7 +4,7 @@ import { AlertTriangle, ClipboardList, Pencil } from 'lucide-react';
 import { AppShell } from '../app/layout/AppShell';
 import { Button, EmptyState, Panel, SectionHeader } from '../design/primitives';
 import { formatFullDate, isOverdue } from '../lib/dates';
-import { ProjectPhase, ProjectStatus } from '../lib/enums';
+import { ProjectStatus } from '../lib/enums';
 import { useAuth } from '../lib/auth';
 import { useProjectPageData, ProjectFormDrawer, useUpdateProject } from '../features/projects';
 import { useGroups } from '../features/groups';
@@ -15,42 +15,11 @@ import { ProjectRecordsSection, RecordFormDrawer, useCreateRecord } from '../fea
 import type { CreateRecordPayload } from '../features/records';
 import type { UpdateProjectPayload } from '../features/projects';
 import type { CreateTaskPayload } from '../features/tasks';
-
-function getProjectStatusLabel(status: string): string {
-  switch (status) {
-    case ProjectStatus.TODO:
-      return 'A fazer';
-    case ProjectStatus.IN_PROGRESS:
-      return 'Em andamento';
-    case ProjectStatus.IN_REVIEW:
-      return 'Em revisao';
-    case ProjectStatus.PAUSED:
-      return 'Pausado';
-    case ProjectStatus.DONE:
-      return 'Concluido';
-    case ProjectStatus.ARCHIVED:
-      return 'Arquivado';
-    default:
-      return status;
-  }
-}
-
-function getProjectPhaseLabel(phase: string): string {
-  switch (phase) {
-    case ProjectPhase.PRELIMINARY_STUDY:
-      return 'Estudo preliminar';
-    case ProjectPhase.PRELIMINARY_PROJECT:
-      return 'Anteprojeto';
-    case ProjectPhase.BASIC_PROJECT:
-      return 'Projeto basico';
-    case ProjectPhase.EXECUTIVE_PROJECT:
-      return 'Projeto executivo';
-    case ProjectPhase.IN_CONSTRUCTION:
-      return 'Em obra';
-    default:
-      return phase;
-  }
-}
+import {
+  getProjectPhaseLabel,
+  getProjectStatusLabel,
+  getProjectStatusToneClass,
+} from '../lib/projectUi';
 
 function toUserErrorMessage(error: unknown, fallback: string): string {
   if (error instanceof Error && error.message.trim()) {
@@ -106,7 +75,7 @@ export function ProjectPage() {
     try {
       await createRecordMutation.mutateAsync(payload);
     } catch (error) {
-      const message = toUserErrorMessage(error, 'Nao foi possivel criar o registro.');
+      const message = toUserErrorMessage(error, 'Não foi possível criar o registro.');
       taskActions.setActionError(message);
       throw error;
     }
@@ -125,7 +94,7 @@ export function ProjectPage() {
     return (
       <AppShell currentUserId={currentUserId}>
         <div className="mx-auto max-w-6xl px-6 py-8">
-          <EmptyState title="Projeto invalido" description="Nao foi possivel identificar o projeto solicitado." />
+          <EmptyState title="Projeto inválido" description="Não foi possível identificar o projeto solicitado." />
         </div>
       </AppShell>
     );
@@ -152,7 +121,7 @@ export function ProjectPage() {
           <div className="mt-8">
             <EmptyState
               title="Erro ao carregar projeto"
-              description="Nao foi possivel carregar os dados do projeto. Tente recarregar a pagina."
+              description="Não foi possível carregar os dados do projeto. Tente recarregar a página."
             />
           </div>
         </div>
@@ -165,7 +134,7 @@ export function ProjectPage() {
       <div className="mx-auto max-w-6xl px-6 py-8">
         <SectionHeader
           title={project.nome}
-          subtitle="Projeto: tarefas e registros operacionais"
+          subtitle="Tarefas e registros operacionais do projeto"
           actions={
             <Button variant="secondary" size="sm" icon={Pencil} onClick={() => setIsProjectFormOpen(true)}>
               Editar projeto
@@ -194,7 +163,9 @@ export function ProjectPage() {
               </div>
               <div>
                 <p className="text-xs uppercase tracking-wide text-text-tertiary">Status</p>
-                <p className="mt-1 text-sm font-medium text-text-primary">{getProjectStatusLabel(project.status)}</p>
+                <p className={`mt-1 text-sm font-medium ${getProjectStatusToneClass(project.status)}`}>
+                  {getProjectStatusLabel(project.status)}
+                </p>
               </div>
               <div>
                 <p className="text-xs uppercase tracking-wide text-text-tertiary">Prazo</p>

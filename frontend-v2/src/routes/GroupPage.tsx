@@ -2,16 +2,21 @@ import { useMemo, useState } from 'react';
 import { AlertTriangle, ChevronRight, FolderKanban, Pencil } from 'lucide-react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { AppShell } from '../app/layout/AppShell';
-import { Badge, Button, EmptyState, Panel, SectionHeader } from '../design/primitives';
+import { Button, EmptyState, Panel, SectionHeader } from '../design/primitives';
 import { useCreateProject, ProjectFormDrawer } from '../features/projects';
 import { useGroupPageData, useUpdateGroup, GroupFormDrawer } from '../features/groups';
 import { GroupRecordsSection, RecordFormDrawer, useCreateRecord } from '../features/records';
 import { useAuth } from '../lib/auth';
 import { formatFullDate, isOverdue } from '../lib/dates';
-import { GroupStatus, ProjectPhase, ProjectStatus } from '../lib/enums';
+import { GroupStatus, ProjectStatus } from '../lib/enums';
 import type { CreateProjectPayload } from '../features/projects';
 import type { CreateRecordPayload } from '../features/records';
 import type { UpdateGroupPayload } from '../features/groups';
+import {
+  getProjectPhaseLabel,
+  getProjectStatusLabel,
+  getProjectStatusToneClass,
+} from '../lib/projectUi';
 
 function getGroupStatusLabel(status: string): string {
   switch (status) {
@@ -24,49 +29,6 @@ function getGroupStatusLabel(status: string): string {
     default:
       return status;
   }
-}
-
-function getProjectPhaseLabel(phase: string): string {
-  switch (phase) {
-    case ProjectPhase.PRELIMINARY_STUDY:
-      return 'Estudo preliminar';
-    case ProjectPhase.PRELIMINARY_PROJECT:
-      return 'Anteprojeto';
-    case ProjectPhase.BASIC_PROJECT:
-      return 'Projeto basico';
-    case ProjectPhase.EXECUTIVE_PROJECT:
-      return 'Projeto executivo';
-    case ProjectPhase.IN_CONSTRUCTION:
-      return 'Em obra';
-    default:
-      return phase;
-  }
-}
-
-function getProjectStatusLabel(status: string): string {
-  switch (status) {
-    case ProjectStatus.TODO:
-      return 'A fazer';
-    case ProjectStatus.IN_PROGRESS:
-      return 'Em andamento';
-    case ProjectStatus.IN_REVIEW:
-      return 'Em revisao';
-    case ProjectStatus.PAUSED:
-      return 'Pausado';
-    case ProjectStatus.DONE:
-      return 'Concluido';
-    case ProjectStatus.ARCHIVED:
-      return 'Arquivado';
-    default:
-      return status;
-  }
-}
-
-function getProjectStatusBadgeVariant(status: string): 'default' | 'warning' | 'success' | 'error' {
-  if (status === ProjectStatus.DONE) return 'success';
-  if (status === ProjectStatus.PAUSED || status === ProjectStatus.IN_REVIEW) return 'warning';
-  if (status === ProjectStatus.ARCHIVED) return 'default';
-  return 'default';
 }
 
 function toUserErrorMessage(error: unknown, fallback: string): string {
@@ -110,7 +72,7 @@ export function GroupPage() {
     const doneProjects = projects.filter((project) => project.status === ProjectStatus.DONE).length;
     const inProgressProjects = projects.filter((project) => project.status === ProjectStatus.IN_PROGRESS).length;
 
-    return `${doneProjects}/${projects.length} concluidos · ${inProgressProjects} em andamento`;
+    return `${doneProjects}/${projects.length} concluídos · ${inProgressProjects} em andamento`;
   }, [projects]);
 
   const criticalDeadlineProject = useMemo(() => {
@@ -146,7 +108,7 @@ export function GroupPage() {
     try {
       await createRecordMutation.mutateAsync(payload);
     } catch (error) {
-      const message = toUserErrorMessage(error, 'Nao foi possivel criar o registro.');
+      const message = toUserErrorMessage(error, 'Não foi possível criar o registro.');
       setActionError(message);
       throw error;
     }
@@ -156,7 +118,7 @@ export function GroupPage() {
     return (
       <AppShell currentUserId={currentUserId}>
         <div className="mx-auto max-w-6xl px-6 py-8">
-          <EmptyState title="Grupo invalido" description="Nao foi possivel identificar o grupo solicitado." />
+          <EmptyState title="Grupo inválido" description="Não foi possível identificar o grupo solicitado." />
         </div>
       </AppShell>
     );
@@ -183,7 +145,7 @@ export function GroupPage() {
           <div className="mt-8">
             <EmptyState
               title="Erro ao carregar grupo"
-              description="Nao foi possivel carregar os dados do grupo. Tente recarregar a pagina."
+              description="Não foi possível carregar os dados do grupo. Tente recarregar a página."
             />
           </div>
         </div>
@@ -238,7 +200,7 @@ export function GroupPage() {
               </div>
               {criticalDeadlineProject ? (
                 <div>
-                  <p className="text-xs uppercase tracking-wide text-text-tertiary">Prazo critico</p>
+                  <p className="text-xs uppercase tracking-wide text-text-tertiary">Prazo crítico</p>
                   <p
                     className={`mt-1 flex items-center gap-2 text-sm font-medium ${
                       criticalDeadlineProject.prazo && isOverdue(criticalDeadlineProject.prazo)
@@ -279,7 +241,7 @@ export function GroupPage() {
             <div className="mb-4 flex items-center justify-between">
               <div>
                 <h2 className="text-base font-medium text-text-primary">Projetos do grupo</h2>
-                <p className="text-sm text-text-secondary">Cards compactos com leitura rapida</p>
+                <p className="text-sm text-text-secondary">Lista operacional compacta</p>
               </div>
               <div className="flex items-center gap-2 text-xs text-text-tertiary">
                 <FolderKanban className="h-4 w-4" />
@@ -290,45 +252,57 @@ export function GroupPage() {
             {projects.length === 0 ? (
               <EmptyState
                 title="Sem projetos neste grupo"
-                description="Crie o primeiro projeto do grupo usando a acao principal acima."
+                description="Crie o primeiro projeto do grupo usando a ação principal acima."
                 className="py-10"
               />
             ) : (
-              <ul className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+              <ul className="space-y-3">
                 {projects.map((project) => (
                   <li key={project.id}>
                     <Link
                       to={`/projetos/${project.id}`}
-                      className="flex items-center justify-between gap-4 rounded-lg border border-border-primary bg-surface-primary px-4 py-3 transition-colors hover:bg-surface-secondary"
+                      className="block rounded-md border border-border-primary bg-surface-primary px-4 py-4 transition-colors hover:bg-surface-secondary focus:outline-none focus-visible:ring-2 focus-visible:ring-info-200"
                     >
-                      <div className="min-w-0">
-                        <p className="truncate text-sm font-medium text-text-primary">{project.nome}</p>
-                        <p className="mt-1 text-xs text-text-tertiary">
-                          {getProjectPhaseLabel(project.fase)} · {project.tarefasConcluidas}/{project.totalTarefas}{' '}
-                          tarefas concluidas
-                        </p>
+                      <div className="flex items-start justify-between gap-4">
+                        <div className="min-w-0">
+                          <p className="truncate text-base font-medium text-text-primary">{project.nome}</p>
+                          <p className="mt-1 text-sm text-text-secondary">{group.nome}</p>
+                        </div>
+                        <ChevronRight className="mt-0.5 h-4 w-4 shrink-0 text-text-tertiary" />
                       </div>
 
-                      <div className="flex items-center gap-3">
-                        {project.prazo ? (
-                          <span
-                            className={`text-xs ${
+                      <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+                        <div>
+                          <p className="text-[11px] uppercase tracking-[0.12em] text-text-tertiary">Status</p>
+                          <p className={`mt-1 text-sm font-medium ${getProjectStatusToneClass(project.status)}`}>
+                            {getProjectStatusLabel(project.status)}
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-[11px] uppercase tracking-[0.12em] text-text-tertiary">Fase</p>
+                          <p className="mt-1 text-sm font-medium text-text-primary">{getProjectPhaseLabel(project.fase)}</p>
+                        </div>
+                        <div>
+                          <p className="text-[11px] uppercase tracking-[0.12em] text-text-tertiary">Prazo</p>
+                          <p
+                            className={`mt-1 text-sm font-medium ${
+                              project.prazo &&
                               isOverdue(project.prazo) &&
                               project.status !== ProjectStatus.DONE &&
                               project.status !== ProjectStatus.ARCHIVED
                                 ? 'text-alert'
-                                : 'text-text-tertiary'
+                                : 'text-text-primary'
                             }`}
                           >
-                            {formatFullDate(project.prazo)}
-                          </span>
-                        ) : (
-                          <span className="text-xs text-text-tertiary">Sem prazo</span>
-                        )}
-                        <Badge variant={getProjectStatusBadgeVariant(project.status)} size="sm">
-                          {getProjectStatusLabel(project.status)}
-                        </Badge>
-                        <ChevronRight className="h-4 w-4 text-text-tertiary" />
+                            {project.prazo ? formatFullDate(project.prazo) : 'Sem prazo'}
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-[11px] uppercase tracking-[0.12em] text-text-tertiary">Tarefas</p>
+                          <p className="mt-1 text-sm font-medium text-text-primary">
+                            {project.tarefasConcluidas}/{project.totalTarefas} concluídas
+                          </p>
+                        </div>
                       </div>
                     </Link>
                   </li>

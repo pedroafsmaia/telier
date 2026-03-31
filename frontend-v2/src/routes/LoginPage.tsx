@@ -121,7 +121,7 @@ export function LoginPage({ technicalEntry = false }: LoginPageProps) {
       });
       navigate(nextPath, { replace: true });
     } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : 'Nao foi possivel autenticar.');
+      setErrorMessage(error instanceof Error ? error.message : 'Não foi possível autenticar.');
     } finally {
       setIsSubmitting(false);
     }
@@ -148,7 +148,7 @@ export function LoginPage({ technicalEntry = false }: LoginPageProps) {
 
       navigate('/tarefas', { replace: true });
     } catch (error) {
-      setSetupErrorMessage(error instanceof Error ? error.message : 'Nao foi possivel concluir o setup inicial.');
+      setSetupErrorMessage(error instanceof Error ? error.message : 'Não foi possível concluir o setup inicial.');
     } finally {
       setIsSubmittingSetup(false);
     }
@@ -161,9 +161,9 @@ export function LoginPage({ technicalEntry = false }: LoginPageProps) {
           <Panel className="w-full border-border-secondary" padding="lg">
             <div className="space-y-4">
               <p className="text-xs font-medium uppercase tracking-[0.14em] text-text-tertiary">Telier</p>
-              <h1 className="text-2xl font-semibold text-text-primary">Acesso tecnico inicial</h1>
+              <h1 className="text-2xl font-semibold text-text-primary">Acesso técnico inicial</h1>
               <p className="text-sm text-text-secondary">
-                Esta entrada e exclusiva para configuracao inicial. O login comum segue em{' '}
+                Esta entrada é exclusiva para a configuração inicial. O login comum segue em{' '}
                 <span className="font-medium text-text-primary">/login</span>.
               </p>
 
@@ -180,7 +180,7 @@ export function LoginPage({ technicalEntry = false }: LoginPageProps) {
                       required
                     />
                     <Input
-                      label="Usuario"
+                      label="Usuário"
                       value={setupLogin}
                       onChange={(event) => setSetupLogin(event.target.value)}
                       placeholder="usuario_inicial"
@@ -192,7 +192,7 @@ export function LoginPage({ technicalEntry = false }: LoginPageProps) {
                       label="Senha"
                       value={setupSenha}
                       onChange={setSetupSenha}
-                      placeholder="Minimo de 8 caracteres"
+                      placeholder="Mínimo de 8 caracteres"
                       autoComplete="new-password"
                       disabled={isSubmittingSetup}
                     />
@@ -208,7 +208,7 @@ export function LoginPage({ technicalEntry = false }: LoginPageProps) {
                 </div>
               ) : (
                 <div className="rounded-md border border-border-secondary bg-surface-secondary p-4">
-                  <p className="text-sm text-text-secondary">Setup inicial ja concluido. Use o login padrao.</p>
+                  <p className="text-sm text-text-secondary">Setup inicial já concluído. Use o login padrão.</p>
                 </div>
               )}
 
@@ -230,26 +230,26 @@ export function LoginPage({ technicalEntry = false }: LoginPageProps) {
             <div className="space-y-6">
               <div className="space-y-3">
                 <p className="text-xs font-medium uppercase tracking-[0.16em] text-text-tertiary">Telier</p>
-                <h1 className="text-3xl font-semibold tracking-tight text-text-primary">Acesse o Telier</h1>
+                <h1 className="text-3xl font-semibold tracking-tight text-text-primary">Acesso ao Telier</h1>
                 <p className="max-w-xl text-sm leading-6 text-text-secondary">
-                  Entre com seu usuario operacional para continuar no ambiente principal.
+                  Use sua conta operacional para entrar em tarefas, projetos e grupos.
                 </p>
               </div>
 
-              <div className="rounded-lg border border-border-primary bg-surface-primary px-4 py-4">
+              <div className="border-t border-border-secondary pt-4">
                 <p className="text-xs uppercase tracking-[0.14em] text-text-tertiary">Fluxo principal</p>
                 <p className="mt-2 text-base font-medium text-text-primary">Entrar com conta existente</p>
                 <p className="mt-2 text-sm text-text-secondary">
-                  Use usuario e senha ja cadastrados para acessar tarefas, projetos e grupos.
+                  Use usuário e senha já cadastrados para acessar o ambiente principal.
                 </p>
               </div>
 
               {needsSetup ? (
-                <div className="rounded-lg border border-info-100 bg-info-50 px-4 py-4">
+                <div className="border-t border-border-secondary pt-4">
                   <p className="text-xs uppercase tracking-[0.14em] text-info-600">Primeiro acesso</p>
                   <p className="mt-2 text-base font-medium text-text-primary">Criar administrador inicial</p>
                   <p className="mt-2 text-sm text-text-secondary">
-                    O ambiente ainda nao foi inicializado. Conclua o setup tecnico antes do primeiro login.
+                    O ambiente ainda não foi inicializado. Conclua o setup técnico antes do primeiro login.
                   </p>
                   <div className="mt-4">
                     <Button type="button" variant="secondary" onClick={() => navigate('/login/setup')}>
@@ -258,11 +258,11 @@ export function LoginPage({ technicalEntry = false }: LoginPageProps) {
                   </div>
                 </div>
               ) : (
-                <div className="rounded-lg border border-border-primary bg-surface-primary px-4 py-4">
+                <div className="border-t border-border-secondary pt-4">
                   <p className="text-xs uppercase tracking-[0.14em] text-text-tertiary">Cadastro</p>
-                  <p className="mt-2 text-base font-medium text-text-primary">Contas novas sao liberadas pelo administrador</p>
+                  <p className="mt-2 text-base font-medium text-text-primary">Contas novas são liberadas pelo administrador</p>
                   <p className="mt-2 text-sm text-text-secondary">
-                    O registro publico fica fechado depois do setup inicial. Se voce precisa de acesso, peca ao administrador para criar sua conta.
+                    O registro público fica fechado depois do setup inicial. Se você precisa de acesso, peça ao administrador para criar sua conta.
                   </p>
                 </div>
               )}
@@ -276,11 +276,11 @@ export function LoginPage({ technicalEntry = false }: LoginPageProps) {
                   <LockKeyhole className="h-5 w-5" />
                   <h2 className="text-xl font-semibold">Entrar</h2>
                 </div>
-                <p className="text-sm text-text-secondary">Informe seu usuario e senha para acessar o Telier.</p>
+                <p className="text-sm text-text-secondary">Informe seu usuário e senha para acessar o Telier.</p>
               </div>
 
               <Input
-                label="Usuario de acesso"
+                label="Usuário"
                 autoComplete="username"
                 value={usuarioLogin}
                 onChange={(event) => setUsuarioLogin(event.target.value)}
@@ -306,7 +306,7 @@ export function LoginPage({ technicalEntry = false }: LoginPageProps) {
 
               <div className="flex flex-wrap items-center gap-2">
                 <Button type="submit" variant="primary" loading={isSubmitting} icon={ArrowRight}>
-                  Entrar no Telier
+                  Entrar
                 </Button>
               </div>
             </form>
