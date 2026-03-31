@@ -7,11 +7,11 @@ export function getProjectStatusLabel(status: string): string {
     case ProjectStatus.IN_PROGRESS:
       return 'Em andamento';
     case ProjectStatus.IN_REVIEW:
-      return 'Em revisao';
+      return 'Em revisão';
     case ProjectStatus.PAUSED:
       return 'Pausado';
     case ProjectStatus.DONE:
-      return 'Concluido';
+      return 'Concluído';
     case ProjectStatus.ARCHIVED:
       return 'Arquivado';
     default:
@@ -26,7 +26,7 @@ export function getProjectPhaseLabel(phase: string): string {
     case ProjectPhase.PRELIMINARY_PROJECT:
       return 'Anteprojeto';
     case ProjectPhase.BASIC_PROJECT:
-      return 'Projeto basico';
+      return 'Projeto básico';
     case ProjectPhase.EXECUTIVE_PROJECT:
       return 'Projeto executivo';
     case ProjectPhase.IN_CONSTRUCTION:
@@ -36,9 +36,18 @@ export function getProjectPhaseLabel(phase: string): string {
   }
 }
 
-export function getProjectStatusBadgeVariant(status: string): 'default' | 'warning' | 'success' | 'error' {
-  if (status === ProjectStatus.DONE) return 'success';
-  if (status === ProjectStatus.PAUSED || status === ProjectStatus.IN_REVIEW) return 'warning';
-  if (status === ProjectStatus.ARCHIVED) return 'default';
-  return 'default';
+export function getProjectStatusToneClass(status: string): string {
+  switch (status) {
+    case ProjectStatus.IN_PROGRESS:
+      return 'text-info-700';
+    case ProjectStatus.IN_REVIEW:
+    case ProjectStatus.PAUSED:
+      return 'text-warning-700';
+    case ProjectStatus.DONE:
+      return 'text-success-700';
+    case ProjectStatus.ARCHIVED:
+      return 'text-text-tertiary';
+    default:
+      return 'text-text-primary';
+  }
 }
