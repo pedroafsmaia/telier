@@ -65,7 +65,7 @@ export const CollapsibleSection: React.FC<CollapsibleSectionProps> = ({
         <div className="shrink-0">{actions}</div>
       </div>
 
-      {isOpen ? <div className={`border-t border-border-primary px-4 pb-4 ${contentClassName}`}>{children}</div> : null}
+      {isOpen ? <div className={`border-t border-border-primary px-4 pb-4 animate-fade-in ${contentClassName}`}>{children}</div> : null}
     </div>
   );
 };

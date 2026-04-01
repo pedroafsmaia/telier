@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Grid3x3, List } from 'lucide-react';
+import { Filter, Grid3x3, List } from 'lucide-react';
 import { useSearchParams } from 'react-router-dom';
 import { AppShell } from '../app/layout/AppShell';
 import { Button, EmptyState, Panel, SectionHeader } from '../design/primitives';
@@ -7,6 +7,7 @@ import { TaskDrawer } from '../features/tasks/components/TaskDrawer';
 import { TaskFilters } from '../features/tasks/components/TaskFilters';
 import { TaskFormDrawer } from '../features/tasks/components/TaskFormDrawer';
 import { TaskList } from '../features/tasks/components/TaskList';
+import { TaskSummaryChart } from '../features/tasks/components/TaskSummaryChart';
 import { QuickTaskCreate } from '../features/tasks/components/QuickTaskCreate';
 import { TaskTimerFlowDrawer } from '../features/tasks/components/TaskTimerFlowDrawer';
 import { useTaskActionState } from '../features/tasks/hooks/useTaskActionState';
@@ -34,13 +35,14 @@ export function TasksPage() {
   );
   const tasksLoading = taskScope === 'today' ? todayTasksQuery.isLoading : visibleTasksQuery.isLoading;
   const tasksError = taskScope === 'today' ? todayTasksQuery.error : visibleTasksQuery.error;
-  const tasksScopeLabel = taskScope === 'today' ? 'Operação do dia' : 'Todas as tarefas vinculadas';
+  const tasksScopeLabel = taskScope === 'today' ? 'Hoje' : 'Minhas tarefas';
 
   const [selectedProject, setSelectedProject] = useState('');
   const [selectedPriority, setSelectedPriority] = useState('');
   const [selectedEase, setSelectedEase] = useState('');
   const [viewMode, setViewMode] = useState<'blocks' | 'project'>('blocks');
   const [isTaskFormExpanded, setIsTaskFormExpanded] = useState(false);
+  const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
 
   const taskActions = useTaskActionState({
     tasks,
@@ -141,7 +143,6 @@ export function TasksPage() {
       <div className="mx-auto max-w-7xl px-6 py-8">
         <SectionHeader
           title="Tarefas"
-          subtitle={tasksScopeLabel}
           actions={
             <div className="flex items-center gap-1 rounded-md border border-border-primary bg-surface-primary p-1">
               <Button
@@ -163,6 +164,12 @@ export function TasksPage() {
             </div>
           }
         />
+
+        {tasks.length > 0 ? (
+          <div className="mt-5">
+            <TaskSummaryChart tasks={tasks} />
+          </div>
+        ) : null}
 
         {taskActions.actionError ? (
           <div className="mt-6">
@@ -191,23 +198,33 @@ export function TasksPage() {
               </Button>
             </div>
 
-            <TaskFilters
-              projects={projects.map((project) => ({ id: project.id, nome: project.nome }))}
-              selectedProject={selectedProject}
-              selectedPriority={selectedPriority}
-              selectedEase={selectedEase}
-              onProjectChange={setSelectedProject}
-              onPriorityChange={setSelectedPriority}
-              onEaseChange={setSelectedEase}
-              onClearFilters={handleClearFilters}
-              className="justify-end"
-            />
+            <Button
+              variant="ghost"
+              size="sm"
+              icon={Filter}
+              onClick={() => setMobileFiltersOpen(!mobileFiltersOpen)}
+              className="sm:hidden"
+            >
+              Filtros
+            </Button>
+            <div className={`${mobileFiltersOpen ? 'block' : 'hidden'} w-full sm:block sm:w-auto`}>
+              <TaskFilters
+                projects={projects.map((project) => ({ id: project.id, nome: project.nome }))}
+                selectedProject={selectedProject}
+                selectedPriority={selectedPriority}
+                selectedEase={selectedEase}
+                onProjectChange={setSelectedProject}
+                onPriorityChange={setSelectedPriority}
+                onEaseChange={setSelectedEase}
+                onClearFilters={handleClearFilters}
+                className="justify-end"
+              />
+            </div>
           </div>
 
           <div className="mt-3 flex flex-wrap items-center justify-between gap-3 text-sm text-text-secondary">
             <p>
               Mostrando {filteredTasks.length} de {tasks.length} tarefa{tasks.length === 1 ? '' : 's'}.
-              {!hasActiveFilters ? ' A lista mantém a leitura operacional por status e prioridade do dia.' : ''}
             </p>
             {hasActiveFilters ? (
               <span className="text-xs uppercase tracking-[0.12em] text-text-tertiary">Filtros ativos</span>

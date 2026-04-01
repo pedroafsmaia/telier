@@ -1,4 +1,4 @@
-import React, { useEffect, useId, useRef } from 'react';
+import React, { useEffect, useId, useRef, useState } from 'react';
 import { getFocusableElements } from '../../lib/a11y';
 
 type DrawerMode = 'modal' | 'contextual';
@@ -12,11 +12,11 @@ interface DrawerProps {
   mode?: DrawerMode;
 }
 
-export const Drawer: React.FC<DrawerProps> = ({ 
-  isOpen, 
-  onClose, 
-  title, 
-  children, 
+export const Drawer: React.FC<DrawerProps> = ({
+  isOpen,
+  onClose,
+  title,
+  children,
   className = '',
   mode = 'contextual',
 }) => {
@@ -25,6 +25,22 @@ export const Drawer: React.FC<DrawerProps> = ({
   const drawerRef = useRef<HTMLDivElement | null>(null);
   const closeButtonRef = useRef<HTMLButtonElement | null>(null);
   const lastFocusedElementRef = useRef<HTMLElement | null>(null);
+
+  const [isVisible, setIsVisible] = useState(false);
+  const [isAnimating, setIsAnimating] = useState(false);
+
+  useEffect(() => {
+    if (isOpen) {
+      setIsVisible(true);
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => setIsAnimating(true));
+      });
+    } else {
+      setIsAnimating(false);
+      const timer = setTimeout(() => setIsVisible(false), 300);
+      return () => clearTimeout(timer);
+    }
+  }, [isOpen]);
 
   useEffect(() => {
     if (!isOpen) return undefined;
@@ -71,7 +87,7 @@ export const Drawer: React.FC<DrawerProps> = ({
     };
   }, [isOpen, onClose]);
 
-  if (!isOpen) return null;
+  if (!isVisible) return null;
 
   return (
     <div className="fixed inset-0 z-50 overflow-hidden">
@@ -79,17 +95,19 @@ export const Drawer: React.FC<DrawerProps> = ({
         type="button"
         tabIndex={-1}
         aria-label="Fechar painel"
-        className={`absolute inset-0 transition-opacity ${isContextual ? 'bg-background-overlay md:bg-transparent' : 'bg-background-overlay'}`}
+        className={`absolute inset-0 transition-opacity duration-300 ${isContextual ? 'bg-background-overlay md:bg-transparent' : 'bg-background-overlay'} ${isAnimating ? 'opacity-100' : 'opacity-0'}`}
         onClick={onClose}
       />
-      
+
       <div
         ref={drawerRef}
         role="dialog"
         aria-modal="true"
         aria-labelledby={title ? titleId : undefined}
-        className={`absolute inset-y-0 right-0 w-full max-w-md bg-surface-primary shadow-xl ${
-          isContextual ? 'border-l border-border-primary md:shadow-lg' : ''
+        className={`absolute inset-y-0 right-0 w-full max-w-md bg-surface-primary shadow-drawer transform transition-transform duration-300 ease-out ${
+          isAnimating ? 'translate-x-0' : 'translate-x-full'
+        } ${
+          isContextual ? 'border-l border-border-primary' : ''
         }`}
       >
         <div className="flex flex-col h-full">
@@ -110,7 +128,7 @@ export const Drawer: React.FC<DrawerProps> = ({
               </button>
             </div>
           )}
-          
+
           <div className={`flex-1 overflow-y-auto ${className}`}>
             {children}
           </div>

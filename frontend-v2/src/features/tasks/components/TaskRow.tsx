@@ -1,8 +1,9 @@
 import React from 'react';
-import { AlertTriangle, Check, FileText, Pause, Play, Share2 } from 'lucide-react';
+import { AlertTriangle, Check, Pause, Play } from 'lucide-react';
 import { AvatarStack, Button, IconButton } from '../../../design/primitives';
 import { formatElapsedDuration, formatShortDate, isOverdue } from '../../../lib/dates';
-import { getEaseLabel, getPriorityLabel, getTaskStatusLabel, TaskStatus } from '../../../lib/enums';
+import { getTaskStatusLabel, Priority, TaskStatus } from '../../../lib/enums';
+import { getProjectColor } from '../../../lib/projectColors';
 import type { ActiveTimeSession, TaskListItem } from '../types';
 
 interface TaskRowProps {
@@ -16,6 +17,20 @@ interface TaskRowProps {
   density?: 'default' | 'compact';
   className?: string;
 }
+
+const priorityBorderClass: Record<string, string> = {
+  [Priority.LOW]: 'border-l-emerald-400',
+  [Priority.MEDIUM]: 'border-l-amber-400',
+  [Priority.HIGH]: 'border-l-orange-500',
+  [Priority.URGENT]: 'border-l-red-500',
+};
+
+const statusDotClass: Record<string, string> = {
+  [TaskStatus.TODO]: 'bg-telier-400',
+  [TaskStatus.IN_PROGRESS]: 'bg-info-500',
+  [TaskStatus.WAITING]: 'bg-warning-500',
+  [TaskStatus.DONE]: 'bg-success-500',
+};
 
 function getResponsibleNames(task: TaskListItem): string {
   if (task.responsaveis.length === 0) {
@@ -38,7 +53,6 @@ export const TaskRow: React.FC<TaskRowProps> = ({
 }) => {
   const isWaiting = task.status === TaskStatus.WAITING;
   const isCompleted = task.status === TaskStatus.DONE;
-  const waitingHasObservation = Boolean(task.observacaoEspera?.trim());
   const hasOverdue = Boolean(task.prazo && isOverdue(task.prazo) && !isCompleted);
   const hasAnyActiveTimer = activeSessions.length > 0;
   const hasCurrentUserTimer = Boolean(currentUserSession);
@@ -46,6 +60,8 @@ export const TaskRow: React.FC<TaskRowProps> = ({
   const titleClassName = density === 'compact' ? 'text-sm' : 'text-[15px]';
   const metaTextClassName = density === 'compact' ? 'text-[11px]' : 'text-xs';
   const timerButtonClassName = density === 'compact' ? 'min-w-[5.5rem]' : 'min-w-[6rem]';
+
+  const projectColor = getProjectColor(task.projetoId);
 
   const timerReference = currentUserSession || activeSessions[0];
   const timerLabel = hasCurrentUserTimer
@@ -56,21 +72,16 @@ export const TaskRow: React.FC<TaskRowProps> = ({
       ? `${activeSessions.length} ativo${activeSessions.length === 1 ? '' : 's'}`
       : null;
   const timerToneClassName = hasCurrentUserTimer ? 'text-info-700' : 'text-text-primary';
-  const statusToneClassName = isCompleted
-    ? 'text-success-600'
-    : isWaiting
-      ? waitingHasObservation
-        ? 'text-warning-700'
-        : 'text-error-600'
-      : 'text-text-primary';
-  const waitingToneClassName = waitingHasObservation ? 'text-warning-700' : 'text-error-600';
   const responsibleNames = getResponsibleNames(task);
+  const isHighPriority = task.prioridade === Priority.HIGH || task.prioridade === Priority.URGENT;
 
   return (
     <article
       className={`
-        flex items-start gap-3 rounded-md border bg-surface-primary transition-colors
-        hover:bg-surface-secondary focus-within:border-info-300
+        flex items-start gap-3 rounded-md border border-l-[3px] bg-surface-primary
+        shadow-card transition-all duration-200 hover:shadow-card-hover hover:-translate-y-px
+        focus-within:border-info-300
+        ${priorityBorderClass[task.prioridade] || 'border-l-telier-300'}
         ${hasAnyActiveTimer ? 'border-info-200 bg-info-50/15' : 'border-border-primary'}
         ${rowPadding}
         ${className}
@@ -82,40 +93,27 @@ export const TaskRow: React.FC<TaskRowProps> = ({
         className="min-w-0 flex-1 text-left focus:outline-none focus-visible:rounded-sm focus-visible:ring-2 focus-visible:ring-info-200"
         aria-label={`Abrir tarefa ${task.nome}`}
       >
+        {/* Line 1: task name + project dot/name + deadline + avatars */}
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0 flex-1">
             <h3 className={`truncate font-medium text-text-primary ${titleClassName}`}>{task.nome}</h3>
 
             <div className={`mt-1.5 flex flex-wrap items-center gap-x-4 gap-y-1 ${metaTextClassName}`}>
               <span className="inline-flex items-center gap-1.5">
-                <span className="text-text-tertiary">Projeto:</span>
-                <span className="font-medium text-text-primary">{task.projetoNome}</span>
+                <span
+                  className="inline-block h-2 w-2 shrink-0 rounded-full"
+                  style={{ backgroundColor: projectColor.light }}
+                  aria-hidden="true"
+                />
+                <span className="hidden text-text-secondary sm:inline">{task.projetoNome}</span>
               </span>
 
               <span className={`inline-flex items-center gap-1.5 ${hasOverdue ? 'font-medium text-error-600' : ''}`}>
-                <span className="text-text-tertiary">Prazo:</span>
-                <span className={hasOverdue ? 'text-error-600' : 'text-text-primary'}>
-                  {task.prazo ? formatShortDate(task.prazo) : 'Sem data'}
+                <span className={hasOverdue ? 'text-error-600' : 'text-text-secondary'}>
+                  {task.prazo ? formatShortDate(task.prazo) : 'Sem prazo'}
                 </span>
                 {hasOverdue ? <AlertTriangle className="h-3.5 w-3.5" aria-hidden="true" /> : null}
               </span>
-
-              <span className="inline-flex items-center gap-1.5">
-                <span className="text-text-tertiary">Status:</span>
-                <span className={statusToneClassName}>{getTaskStatusLabel(task.status)}</span>
-              </span>
-
-              {timerLabel ? (
-                <span className="inline-flex items-center gap-1.5">
-                  <span className="text-text-tertiary">Timer:</span>
-                  <span className={timerToneClassName}>{timerLabel}</span>
-                </span>
-              ) : task.foco ? (
-                <span className="inline-flex items-center gap-1.5">
-                  <span className="text-text-tertiary">Foco:</span>
-                  <span className="text-text-primary">Em foco</span>
-                </span>
-              ) : null}
             </div>
           </div>
 
@@ -134,37 +132,33 @@ export const TaskRow: React.FC<TaskRowProps> = ({
           ) : null}
         </div>
 
+        {/* Line 2: status dot + label + timer + priority badge (if high/urgent) */}
         <div className={`mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 ${metaTextClassName}`}>
           <span className="inline-flex items-center gap-1.5">
-            <span className="text-text-tertiary">Prioridade:</span>
-            <span className="text-text-primary">{getPriorityLabel(task.prioridade)}</span>
+            <span className={`h-2 w-2 rounded-full ${statusDotClass[task.status] || 'bg-telier-400'}`} aria-hidden="true" />
+            <span className="text-text-secondary">{getTaskStatusLabel(task.status)}</span>
           </span>
 
-          <span className="inline-flex items-center gap-1.5">
-            <span className="text-text-tertiary">Facilidade:</span>
-            <span className="text-text-primary">{getEaseLabel(task.facilidade)}</span>
-          </span>
+          {timerLabel ? (
+            <span className={`inline-flex items-center gap-1.5 ${timerToneClassName}`}>
+              {timerLabel}
+            </span>
+          ) : task.foco ? (
+            <span className="inline-flex items-center gap-1.5 text-info-600 font-medium">
+              Em foco
+            </span>
+          ) : null}
 
-          {task.compartilhada ? (
-            <span
-              className="inline-flex items-center gap-1.5 text-text-secondary"
-              title="Tarefa compartilhada"
-              aria-label="Tarefa compartilhada"
-            >
-              <span className="text-text-tertiary">Compartilhamento:</span>
-              <Share2 className="h-3.5 w-3.5" aria-hidden="true" />
-              <span className="text-text-primary">Compartilhada</span>
+          {isHighPriority ? (
+            <span className={`inline-flex items-center gap-1 font-medium ${task.prioridade === Priority.URGENT ? 'text-error-600' : 'text-warning-600'}`}>
+              <AlertTriangle className="h-3 w-3" aria-hidden="true" />
+              {task.prioridade === Priority.URGENT ? 'Urgente' : 'Alta'}
             </span>
           ) : null}
 
           {isWaiting ? (
-            <span
-              className="inline-flex items-center gap-1.5"
-              title={waitingHasObservation ? 'Em espera com contexto registrado' : 'Em espera sem contexto registrado'}
-            >
-              <span className="text-text-tertiary">Espera:</span>
-              <FileText className={`h-3.5 w-3.5 ${waitingToneClassName}`} aria-hidden="true" />
-              <span className={waitingToneClassName}>{waitingHasObservation ? 'Com contexto' : 'Sem contexto'}</span>
+            <span className="text-warning-600">
+              {task.observacaoEspera?.trim() ? 'Aguardando (com contexto)' : 'Aguardando (sem contexto)'}
             </span>
           ) : null}
 

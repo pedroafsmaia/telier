@@ -13,7 +13,7 @@ import {
 } from 'lucide-react';
 import { Link, useLocation } from 'react-router-dom';
 import { IconButton } from '../../design/primitives';
-import { useActiveSessions, useRecentSessions } from '../../features/tasks/queries';
+import { useActiveSessions } from '../../features/tasks/queries';
 import { useAuth } from '../../lib/auth';
 import { useTheme } from '../../lib/theme';
 
@@ -130,33 +130,20 @@ export const Sidebar: React.FC<SidebarProps> = ({
   const { isLoading: authLoading, isAdmin, user, logout, currentUserId: authCurrentUserId } = useAuth();
   const { theme, toggleTheme } = useTheme();
   const { data: activeSessions = [] } = useActiveSessions();
-  const { data: recentSessions = [] } = useRecentSessions(10);
 
   const taskScope = getTaskScope(location.search);
   const isMobile = mode === 'mobile';
   const sessionOwnerId = currentUserId ?? authCurrentUserId;
-  const currentUserSession = activeSessions.find((session) => session.usuarioId === sessionOwnerId);
-  const latestUserSession = recentSessions.find((session) => session.usuarioId === sessionOwnerId);
 
   const actionItems = useMemo<SidebarActionItem[]>(() => {
-    const continueReference = currentUserSession || latestUserSession;
-
     return [
       {
         label: 'Nova tarefa',
         href: '/tarefas?nova=1',
         icon: Plus,
       },
-      {
-        label: 'Continuar última tarefa',
-        description: continueReference
-          ? `${continueReference.projetoNome} · ${continueReference.tarefaNome}`
-          : 'Sem tarefa recente para retomar.',
-        href: continueReference ? `/tarefas?escopo=minhas&abrir=${continueReference.tarefaId}` : undefined,
-        icon: Clock3,
-      },
     ];
-  }, [currentUserSession, latestUserSession]);
+  }, []);
 
   const navigationItems = useMemo<SidebarNavItem[]>(
     () => [

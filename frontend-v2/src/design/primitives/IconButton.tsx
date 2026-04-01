@@ -14,7 +14,7 @@ export const IconButton = React.forwardRef<HTMLButtonElement, IconButtonProps>(f
   },
   ref,
 ) {
-  const baseClasses = 'inline-flex items-center justify-center rounded-md transition-colors focus:outline-none focus-visible:outline-none focus:ring-2 focus-visible:ring-2 focus:ring-info-200 focus-visible:ring-info-200 focus:ring-offset-2';
+  const baseClasses = 'inline-flex items-center justify-center rounded-md transition-all duration-150 active:scale-95 focus:outline-none focus-visible:outline-none focus:ring-2 focus-visible:ring-2 focus:ring-info-200 focus-visible:ring-info-200 focus:ring-offset-2';
 
   const sizeClasses = {
     sm: 'p-1.5',

@@ -11,7 +11,7 @@ export const Panel: React.FC<PanelProps> = ({
   className = '', 
   padding = 'md' 
 }) => {
-  const baseClasses = 'bg-surface-primary border border-border-primary rounded-lg shadow-sm';
+  const baseClasses = 'bg-surface-primary border border-border-primary rounded-lg shadow-card';
   
   const paddingClasses = {
     none: '',

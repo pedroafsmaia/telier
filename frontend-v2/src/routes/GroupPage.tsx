@@ -173,9 +173,6 @@ export function GroupPage() {
           <div className="flex flex-wrap items-end justify-between gap-3">
             <div>
               <h1 className="text-xl font-semibold tracking-tight text-text-primary">{group.nome}</h1>
-              <p className="mt-1 text-sm text-text-secondary">
-                Escala de grupo: projetos, registros e leitura agregada.
-              </p>
             </div>
             <div className="flex flex-wrap items-center gap-2">
               <Button variant="secondary" size="sm" onClick={() => setIsGroupFormOpen(true)}>

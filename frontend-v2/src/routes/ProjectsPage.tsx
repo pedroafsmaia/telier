@@ -224,9 +224,6 @@ export function ProjectsPage() {
           <div className="flex flex-wrap items-end justify-between gap-3">
             <div>
               <h1 className="text-xl font-semibold tracking-tight text-text-primary">Projetos</h1>
-              <p className="mt-1 text-sm text-text-secondary">
-                Operação dos projetos ativos, atrasos críticos e acervo recente.
-              </p>
             </div>
             <Button variant="primary" onClick={() => setIsProjectFormOpen(true)}>
               Novo projeto

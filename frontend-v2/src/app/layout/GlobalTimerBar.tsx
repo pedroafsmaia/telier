@@ -71,15 +71,15 @@ export const GlobalTimerBar: React.FC = () => {
   return (
     <div className={barClassName}>
       <div className="px-4 py-2 sm:px-6">
-        <div className="flex flex-col gap-2 sm:h-8 sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex items-center gap-2 text-xs font-medium uppercase tracking-[0.1em] text-text-tertiary">
+        <div className="flex flex-col gap-2 overflow-hidden sm:h-8 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex shrink-0 items-center gap-2 text-xs font-medium uppercase tracking-[0.1em] text-text-tertiary">
             <Clock3 className="h-4 w-4" />
             <span>Timer global</span>
           </div>
 
-          <div className="flex min-w-0 flex-wrap items-center gap-2 sm:justify-end sm:gap-3">
+          <div className="flex min-w-0 items-center gap-2 sm:justify-end sm:gap-3">
             {badge}
-            <p className={`min-w-0 flex-1 text-sm sm:max-w-[36rem] sm:flex-none sm:truncate ${statusClassName}`}>
+            <p className={`min-w-0 truncate text-sm sm:max-w-[36rem] ${statusClassName}`}>
               {statusDescription}
             </p>
           </div>

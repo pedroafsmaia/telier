@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Menu } from 'lucide-react';
 import { useLocation } from 'react-router-dom';
 import { IconButton } from '../../design/primitives';
@@ -29,6 +29,8 @@ function getMobileContextLabel(pathname: string, search: string): string {
 export const AppShell: React.FC<AppShellProps> = ({ children, currentUserId }) => {
   const location = useLocation();
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
+  const [isMobileSidebarVisible, setIsMobileSidebarVisible] = useState(false);
+  const [isMobileSidebarAnimating, setIsMobileSidebarAnimating] = useState(false);
   const mobileMenuButtonRef = useRef<HTMLButtonElement | null>(null);
   const mobileSidebarContainerRef = useRef<HTMLDivElement | null>(null);
 
@@ -36,6 +38,21 @@ export const AppShell: React.FC<AppShellProps> = ({ children, currentUserId }) =
     () => getMobileContextLabel(location.pathname, location.search),
     [location.pathname, location.search],
   );
+
+  const closeMobileSidebar = useCallback(() => setIsMobileSidebarOpen(false), []);
+
+  useEffect(() => {
+    if (isMobileSidebarOpen) {
+      setIsMobileSidebarVisible(true);
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => setIsMobileSidebarAnimating(true));
+      });
+    } else {
+      setIsMobileSidebarAnimating(false);
+      const timer = setTimeout(() => setIsMobileSidebarVisible(false), 300);
+      return () => clearTimeout(timer);
+    }
+  }, [isMobileSidebarOpen]);
 
   useEffect(() => {
     if (!isMobileSidebarOpen) return undefined;
@@ -88,22 +105,25 @@ export const AppShell: React.FC<AppShellProps> = ({ children, currentUserId }) =
         <Sidebar mode="desktop" currentUserId={currentUserId} />
       </div>
 
-      {isMobileSidebarOpen ? (
+      {isMobileSidebarVisible ? (
         <div className="fixed inset-0 z-50 lg:hidden" role="dialog" aria-modal="true" aria-label="Navegação principal">
           <button
             type="button"
-            className="absolute inset-0 bg-background-overlay"
-            onClick={() => setIsMobileSidebarOpen(false)}
+            className={`absolute inset-0 bg-background-overlay transition-opacity duration-300 ${isMobileSidebarAnimating ? 'opacity-100' : 'opacity-0'}`}
+            onClick={closeMobileSidebar}
             aria-label="Fechar navegação"
             tabIndex={-1}
           />
 
-          <div ref={mobileSidebarContainerRef} className="relative h-full">
+          <div
+            ref={mobileSidebarContainerRef}
+            className={`relative h-full transform transition-transform duration-300 ease-out ${isMobileSidebarAnimating ? 'translate-x-0' : '-translate-x-full'}`}
+          >
             <Sidebar
               mode="mobile"
               currentUserId={currentUserId}
-              onDismiss={() => setIsMobileSidebarOpen(false)}
-              onNavigate={() => setIsMobileSidebarOpen(false)}
+              onDismiss={closeMobileSidebar}
+              onNavigate={closeMobileSidebar}
             />
           </div>
         </div>

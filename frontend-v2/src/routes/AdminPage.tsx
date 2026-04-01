@@ -358,7 +358,6 @@ export function AdminPage() {
       <div className="max-w-7xl mx-auto px-6 py-8 space-y-6">
         <SectionHeader
           title="Administração"
-          subtitle="Camada administrativa para auditoria e ajustes globais, separada da rotina operacional."
         />
 
         {actionFeedback ? (
@@ -366,13 +365,6 @@ export function AdminPage() {
             <p className="text-sm text-text-secondary">{actionFeedback}</p>
           </Panel>
         ) : null}
-
-        <Panel className="border-border-secondary bg-surface-secondary" padding="sm">
-          <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-text-tertiary">Contexto administrativo</p>
-          <p className="mt-1 text-sm text-text-secondary">
-            Leitura orientada a manutenção de dados. Use esta área para ajustes globais e validação transversal.
-          </p>
-        </Panel>
 
         <Panel className="border-border-secondary">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -490,7 +482,7 @@ export function AdminPage() {
                       >
                         Salvar
                       </Button>
-                      <span className="text-xs text-text-tertiary">Projeto #{task.projetoId}</span>
+                      <span className="text-xs text-text-tertiary truncate max-w-[6rem]" title={task.projetoId}>Projeto</span>
                     </div>
                   </div>
                 ))}
@@ -562,7 +554,7 @@ export function AdminPage() {
                       >
                         Salvar
                       </Button>
-                      <span className="text-xs text-text-tertiary">Projeto #{project.id}</span>
+                      <span className="text-xs text-text-tertiary truncate max-w-[6rem]" title={project.id}>Projeto</span>
                     </div>
                   </div>
                 ))}
@@ -634,7 +626,7 @@ export function AdminPage() {
                       >
                         Salvar
                       </Button>
-                      <span className="text-xs text-text-tertiary">Grupo #{group.id}</span>
+                      <span className="text-xs text-text-tertiary truncate max-w-[6rem]" title={group.id}>Grupo</span>
                     </div>
                   </div>
                 ))}

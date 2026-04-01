@@ -121,9 +121,6 @@ export function GroupsPage() {
           <div className="flex flex-wrap items-end justify-between gap-3">
             <div>
               <h1 className="text-xl font-semibold tracking-tight text-text-primary">Grupos</h1>
-              <p className="mt-1 text-sm text-text-secondary">
-                Estrutura dos projetos por grupo, com leitura de volume e atraso.
-              </p>
             </div>
             <Button variant="primary" onClick={() => setIsGroupFormOpen(true)}>
               Novo grupo
