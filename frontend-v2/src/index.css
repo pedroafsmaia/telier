@@ -13,7 +13,10 @@
   }
 
   body {
-    @apply bg-background-secondary text-text-primary antialiased;
+    background-color: rgb(var(--color-background-secondary-rgb));
+    color: rgb(var(--color-text-primary-rgb));
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
     font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
   }
 
