@@ -59,7 +59,7 @@ export const TaskFilters: React.FC<TaskFiltersProps> = ({
         options={projectOptions}
         value={selectedProject}
         onChange={(e: React.ChangeEvent<HTMLSelectElement>) => onProjectChange(e.target.value)}
-        className="min-w-[180px] bg-surface-primary text-sm"
+        className="min-w-0 w-full sm:min-w-[180px] sm:w-auto bg-surface-primary text-sm"
       />
 
       <Select
@@ -67,7 +67,7 @@ export const TaskFilters: React.FC<TaskFiltersProps> = ({
         options={priorityOptions}
         value={selectedPriority}
         onChange={(e: React.ChangeEvent<HTMLSelectElement>) => onPriorityChange(e.target.value)}
-        className="min-w-[170px] bg-surface-primary text-sm"
+        className="min-w-0 w-full sm:min-w-[170px] sm:w-auto bg-surface-primary text-sm"
       />
 
       <Select
@@ -75,7 +75,7 @@ export const TaskFilters: React.FC<TaskFiltersProps> = ({
         options={easeOptions}
         value={selectedEase}
         onChange={(e: React.ChangeEvent<HTMLSelectElement>) => onEaseChange(e.target.value)}
-        className="min-w-[170px] bg-surface-primary text-sm"
+        className="min-w-0 w-full sm:min-w-[170px] sm:w-auto bg-surface-primary text-sm"
       />
 
       {hasActiveFilters ? (

@@ -207,9 +207,6 @@ export function ProjectPage() {
           <div className="flex flex-wrap items-end justify-between gap-3">
             <div>
               <h2 className="text-base font-medium text-text-primary">Tarefas do projeto</h2>
-              <p className="mt-1 text-sm text-text-secondary">
-                Lista operacional compacta com progresso atual de {completionPercent}%.
-              </p>
             </div>
             <p className="text-sm text-text-secondary">
               {tasks.length} tarefa{tasks.length === 1 ? '' : 's'}

@@ -247,9 +247,6 @@ export function GroupPage() {
           <div className="flex flex-wrap items-end justify-between gap-3">
             <div>
               <h2 className="text-base font-medium text-text-primary">Projetos do grupo</h2>
-              <p className="mt-1 text-sm text-text-secondary">
-                Lista compacta de projetos com responsável, prazo e progresso.
-              </p>
             </div>
             <p className="text-sm text-text-secondary">
               {projects.length} projeto{projects.length === 1 ? '' : 's'}
@@ -283,7 +280,7 @@ export function GroupPage() {
                     <div className="flex flex-wrap items-start justify-between gap-4">
                       <div className="min-w-0">
                         <h3 className="truncate text-base font-semibold text-text-primary">{project.nome}</h3>
-                        <p className="mt-1 text-sm text-text-secondary">Projeto vinculado a este grupo.</p>
+                        <p className="mt-1 text-sm text-text-secondary">{getProjectPhaseLabel(project.fase)}</p>
                       </div>
 
                       <Button

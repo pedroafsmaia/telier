@@ -376,12 +376,14 @@ export function AdminPage() {
               onClear={() => setSearchQuery('')}
             />
             <Select
+              label="Entidade"
               aria-label="Filtro por entidade"
               options={entityOptions}
               value={selectedEntity}
               onChange={(event) => setSelectedEntity(event.target.value as AdminEntityFilter)}
             />
             <Select
+              label="Pessoa"
               aria-label="Filtro por pessoa"
               options={personOptions}
               value={selectedPersonId}
@@ -466,6 +468,7 @@ export function AdminPage() {
                     </div>
                     <div className="flex flex-wrap items-center gap-2">
                       <Select
+                        label="Novo status"
                         options={taskStatusOptions}
                         value={taskStatusValue(task.id, task.status)}
                         onChange={(event) => {
@@ -482,7 +485,7 @@ export function AdminPage() {
                       >
                         Salvar
                       </Button>
-                      <span className="text-xs text-text-tertiary truncate max-w-[6rem]" title={task.projetoId}>Projeto</span>
+                      <span className="text-xs text-text-tertiary cursor-help" title={`ID: ${task.projetoId}`}>Projeto</span>
                     </div>
                   </div>
                 ))}
@@ -538,6 +541,7 @@ export function AdminPage() {
                     </div>
                     <div className="flex items-center gap-2">
                       <Select
+                        label="Novo status"
                         options={projectStatusOptions}
                         value={projectStatusValue(project.id, project.status)}
                         onChange={(event) => {
@@ -554,7 +558,7 @@ export function AdminPage() {
                       >
                         Salvar
                       </Button>
-                      <span className="text-xs text-text-tertiary truncate max-w-[6rem]" title={project.id}>Projeto</span>
+                      <span className="text-xs text-text-tertiary cursor-help" title={`ID: ${project.id}`}>#{filteredProjects.indexOf(project) + 1}</span>
                     </div>
                   </div>
                 ))}
@@ -610,6 +614,7 @@ export function AdminPage() {
                     </div>
                     <div className="flex items-center gap-2">
                       <Select
+                        label="Novo status"
                         options={groupStatusOptions}
                         value={groupStatusValue(group.id, group.status)}
                         onChange={(event) => {
@@ -626,7 +631,7 @@ export function AdminPage() {
                       >
                         Salvar
                       </Button>
-                      <span className="text-xs text-text-tertiary truncate max-w-[6rem]" title={group.id}>Grupo</span>
+                      <span className="text-xs text-text-tertiary cursor-help" title={`ID: ${group.id}`}>#{filteredGroups.indexOf(group) + 1}</span>
                     </div>
                   </div>
                 ))}

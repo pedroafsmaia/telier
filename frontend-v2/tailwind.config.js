@@ -56,8 +56,8 @@ export default {
           subtle: 'var(--color-error-100)',
         },
         info: {
-          50: '#eef2ff',
-          100: '#e0e7ff',
+          50: 'rgb(var(--color-info-50-rgb) / <alpha-value>)',
+          100: 'rgb(var(--color-info-100-rgb) / <alpha-value>)',
           200: '#c7d2fe',
           300: '#a5b4fc',
           400: '#818cf8',
@@ -67,7 +67,7 @@ export default {
           800: '#3730a3',
           900: '#312e81',
           DEFAULT: 'var(--color-info-600)',
-          subtle: '#e0e7ff',
+          subtle: 'rgb(var(--color-info-100-rgb) / <alpha-value>)',
         },
         surface: {
           primary: 'rgb(var(--color-surface-primary-rgb) / <alpha-value>)',
@@ -97,7 +97,7 @@ export default {
         },
         primary: {
           DEFAULT: 'var(--color-info-500)',
-          subtle: '#e0e7ff',
+          subtle: 'rgb(var(--color-info-100-rgb) / <alpha-value>)',
         },
         alert: {
           DEFAULT: 'var(--color-error-600)',

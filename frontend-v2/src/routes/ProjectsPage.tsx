@@ -286,7 +286,6 @@ export function ProjectsPage() {
           <div className="mt-3 flex flex-wrap items-center justify-between gap-3 text-sm text-text-secondary">
             <p>
               Mostrando {visibleProjects.length} de {projects.length} projeto{projects.length === 1 ? '' : 's'}.
-              {!hasActiveFilters ? ' Projetos em andamento e prazos críticos aparecem primeiro.' : ''}
             </p>
             {hasActiveFilters ? (
               <Button variant="ghost" size="sm" onClick={clearFilters}>
